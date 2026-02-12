@@ -16,6 +16,17 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-class Failure {
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
+case class Failure(
+  reasonCode: String,
+  reasonDescription: String,
+  checkId: String,
+  checkDescription: String,
+  additionalInfo: Option[String]
+) {}
+
+object Failure {
+  implicit val format: OFormat[Failure] = Json.format[Failure]
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,23 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
+import org.bson.types.ObjectId
 import play.api.libs.json.Format
+import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentregistrationrisking.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistrationrisking.util.ValueClassBinder
 
-enum ApplicationStatus:
+import javax.inject.Singleton
 
-  case ReadyForSubmission
-  case SubmittedForRisking
-  case Approved
-  case FailedNonFixable
-  case FailedFixable
-  case ReadyForResubmission
+/** Agent application Identifier, which is unique for an application
+  */
+final case class ApplicationReference(value: String)
 
-object ApplicationStatus:
-  given Format[ApplicationStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationStatus]
+object ApplicationReference:
+
+  given format: Format[ApplicationReference] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[ApplicationReference] = ValueClassBinder.valueClassBinder[ApplicationReference](_.value)
+
+@Singleton
+class ApplicationReferenceGenerator:
+  def nextApplicationReference(): ApplicationReference = ApplicationReference(ObjectId.get().toHexString)

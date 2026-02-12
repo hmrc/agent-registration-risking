@@ -16,6 +16,26 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-class Individual {
+import play.api.libs.json.{Json, OFormat}
 
+case class Individual(
+  personReference: String,
+  status: ApplicationStatus = ApplicationStatus.ReadyForSubmission,
+  vrns: Option[List[String]],
+  payeRefs: Option[List[String]],
+  companiesHouseName: Option[String],
+  companiesHouseDateOfBirth: Option[String],
+  providedName: String,
+  providedDateOfBirth: String,
+  nino: Option[String],
+  saUtr: Option[String],
+  phoneNumber: String,
+  email: String,
+  providedByApplicant: Boolean,
+  passedIV: Boolean,
+  failures: Option[List[Failure]]
+) {}
+
+object Individual {
+  implicit val format: OFormat[Individual] = Json.format[Individual]
 }

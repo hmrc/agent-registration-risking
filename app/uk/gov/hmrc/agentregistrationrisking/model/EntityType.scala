@@ -20,11 +20,10 @@ import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistrationrisking.util.JsonFormatsFactory
 
 enum EntityType:
-  
+
   case SoleTrader
   case LimitedCompany
   case Partnership
 
 object EntityType:
   given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
-

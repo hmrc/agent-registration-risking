@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import java.time.{Instant, LocalDate}
+import play.api.libs.json.{Json, OFormat}
 
-class ApplicationForRisking(
-  
-  applicationReference: String,
+import java.time.Instant
+import java.time.LocalDate
+
+case class ApplicationForRisking(
+  applicationReference: ApplicationReference,
   status: ApplicationStatus = ApplicationStatus.ReadyForSubmission,
   createdAt: Instant = Instant.now(),
   uploadedAt: Option[Instant],
@@ -39,7 +41,8 @@ class ApplicationForRisking(
   amlEvidence: Option[String],
   individuals: Option[List[Individual]],
   failures: Option[List[Failure]]
-)
-  {
-  
+) {}
+
+object ApplicationForRisking {
+  implicit val format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
 }
