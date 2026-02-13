@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared
 
 import org.bson.types.ObjectId
 import play.api.libs.json.Format
@@ -26,13 +26,13 @@ import javax.inject.Singleton
 
 /** Agent application Identifier, which is unique for an application
   */
-final case class ApplicationReference(value: String)
+final case class AgentApplicationId(value: String)
 
-object ApplicationReference:
+object AgentApplicationId:
 
-  given format: Format[ApplicationReference] = JsonFormatsFactory.makeValueClassFormat
-  given pathBindable: PathBindable[ApplicationReference] = ValueClassBinder.valueClassBinder[ApplicationReference](_.value)
+  given format: Format[AgentApplicationId] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[AgentApplicationId] = ValueClassBinder.valueClassBinder[AgentApplicationId](_.value)
 
 @Singleton
-class ApplicationReferenceGenerator:
-  def nextApplicationReference(): ApplicationReference = ApplicationReference(ObjectId.get().toHexString)
+class AgentApplicationIdGenerator:
+  def nextApplicationId(): AgentApplicationId = AgentApplicationId(ObjectId.get().toHexString)

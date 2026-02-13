@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.lists
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-enum EntityType:
-
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
-
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+final case class NumberOfOtherRelevantIndividuals(
+  value: Int
+)
+object NumberOfOtherRelevantIndividuals:
+  given Format[NumberOfOtherRelevantIndividuals] = JsonFormatsFactory.makeIntValueClassFormat

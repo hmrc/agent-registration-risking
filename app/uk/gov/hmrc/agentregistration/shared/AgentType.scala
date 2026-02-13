@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared
 
-import org.bson.types.ObjectId
 import play.api.libs.json.Format
 import play.api.mvc.PathBindable
+import uk.gov.hmrc.agentregistration.shared.util.PathBindableFactory
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
-import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
-import javax.inject.Singleton
+enum AgentType:
 
-/** Agent application Identifier, which is unique for an application
-  */
-final case class ApplicationReference(value: String)
+  case UkTaxAgent
+  case NonUkTaxAgent
 
-object ApplicationReference:
+object AgentType:
 
-  given format: Format[ApplicationReference] = JsonFormatsFactory.makeValueClassFormat
-  given pathBindable: PathBindable[ApplicationReference] = ValueClassBinder.valueClassBinder[ApplicationReference](_.value)
-
-@Singleton
-class ApplicationReferenceGenerator:
-  def nextApplicationReference(): ApplicationReference = ApplicationReference(ObjectId.get().toHexString)
+  given Format[AgentType] = JsonFormatsFactory.makeEnumFormat[AgentType]
+  given PathBindable[AgentType] = PathBindableFactory.pathBindable[AgentType]

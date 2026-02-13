@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.businessdetails
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import play.api.libs.json.Json
+import uk.gov.hmrc.agentregistration.shared.Crn
+import uk.gov.hmrc.agentregistration.shared.companieshouse.ChroAddress
 
-enum EntityType:
+import java.time.LocalDate
 
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
+final case class CompanyProfile(
+  companyNumber: Crn,
+  companyName: String,
+  dateOfIncorporation: Option[LocalDate],
+  unsanitisedCHROAddress: Option[ChroAddress]
+)
 
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+object CompanyProfile:
+  given Format[CompanyProfile] = Json.format[CompanyProfile]
