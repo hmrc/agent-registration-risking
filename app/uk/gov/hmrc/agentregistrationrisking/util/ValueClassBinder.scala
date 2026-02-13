@@ -17,7 +17,8 @@
 package uk.gov.hmrc.agentregistrationrisking.util
 
 import play.api.libs.json.*
-import play.api.mvc.{PathBindable, QueryStringBindable}
+import play.api.mvc.PathBindable
+import play.api.mvc.QueryStringBindable
 
 import scala.reflect.TypeTest
 

@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.config
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import play.api.Configuration
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -24,8 +25,10 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
-class AppConfig @Inject()(servicesConfig: ServicesConfig, 
-                          config: Configuration):
+class AppConfig @Inject() (
+  servicesConfig: ServicesConfig,
+  config: Configuration
+):
 
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")

@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.action
 
-import com.google.inject.{Inject, Singleton}
+import com.google.inject.Inject
+import com.google.inject.Singleton
 import play.api.mvc.*
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -27,7 +28,8 @@ import uk.gov.hmrc.auth.core.retrieve.*
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 
 import scala.annotation.nowarn
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class AuthorisedRequest[A](
   val request: Request[A]

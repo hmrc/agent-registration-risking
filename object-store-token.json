@@ -1,0 +1,8 @@
+{
+  "token": "1234",
+  "principal": "agent-registration-risking",
+  "permissions": [{
+    "resourceType": "object-store",
+    "resourceLocation": "*",
+    "actions": ["*"]}]
+}

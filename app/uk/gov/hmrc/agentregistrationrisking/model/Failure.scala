@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-case class Failure(
+final case class Failure(
   reasonCode: String,
   reasonDescription: String,
   checkId: String,

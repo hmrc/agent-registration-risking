@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.action
+package uk.gov.hmrc.agentregistrationrisking.testsupport
 
-import play.api.mvc.ActionBuilder
-import play.api.mvc.AnyContent
-import play.api.mvc.DefaultActionBuilder
+import org.scalatest.freespec.AnyFreeSpec
 
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class Actions @Inject() (
-  actionBuilder: DefaultActionBuilder,
-  authorisedAction: AuthorisedAction
-):
-
-  val authorised: ActionBuilder[AuthorisedRequest, AnyContent] = actionBuilder
-    .andThen(authorisedAction)
+trait UnitSpec
+extends AnyFreeSpec,
+  RichMatchers

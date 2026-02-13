@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.action
+package uk.gov.hmrc.agentregistrationrisking.testsupport
 
-import play.api.mvc.ActionBuilder
-import play.api.mvc.AnyContent
-import play.api.mvc.DefaultActionBuilder
+import play.api.libs.ws.WSClient
+import uk.gov.hmrc.http.client.HttpClientV2
 
-import javax.inject.Inject
-import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
 
-@Singleton
-class Actions @Inject() (
-  actionBuilder: DefaultActionBuilder,
-  authorisedAction: AuthorisedAction
-):
+trait ControllerSpec
+extends ISpec:
 
-  val authorised: ActionBuilder[AuthorisedRequest, AnyContent] = actionBuilder
-    .andThen(authorisedAction)
+  val wsClient: WSClient = app.injector.instanceOf[WSClient]
+  val httpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]

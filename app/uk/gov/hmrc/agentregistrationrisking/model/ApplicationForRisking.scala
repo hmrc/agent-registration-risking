@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 import java.time.Instant
 import java.time.LocalDate
 
-case class ApplicationForRisking(
+final case class ApplicationForRisking(
   applicationReference: ApplicationReference,
   status: ApplicationStatus = ApplicationStatus.ReadyForSubmission,
   createdAt: Instant = Instant.now(),

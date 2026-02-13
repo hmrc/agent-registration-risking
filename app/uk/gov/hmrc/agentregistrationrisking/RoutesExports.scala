@@ -14,20 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.action
+package uk.gov.hmrc.agentregistrationrisking
 
-import play.api.mvc.ActionBuilder
-import play.api.mvc.AnyContent
-import play.api.mvc.DefaultActionBuilder
+object RoutesExports
 
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class Actions @Inject() (
-  actionBuilder: DefaultActionBuilder,
-  authorisedAction: AuthorisedAction
-):
-
-  val authorised: ActionBuilder[AuthorisedRequest, AnyContent] = actionBuilder
-    .andThen(authorisedAction)
+//  export uk.gov.hmrc.agentregistration.shared.AgentApplicationId
+//  export uk.gov.hmrc.agentregistration.shared.LinkId
+//  export uk.gov.hmrc.agentregistration.shared.Utr
+//  export uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsId

@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking
+package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import play.api.{Configuration, Environment}
-import play.api.inject.{Binding, Module => AppModule}
+object TdAll:
 
-import java.time.Clock
+  def apply(): TdAll = new TdAll {}
 
-class Module extends AppModule:
+  val tdAll: TdAll = new TdAll {}
 
-  override def bindings(
-    environment  : Environment,
-    configuration: Configuration
-  ): Seq[Binding[_]] =
-    bind[Clock].toInstance(Clock.systemDefaultZone) :: // inject if current time needs to be controlled in unit tests
-    Nil
+/** TestData (Td), All instances
+  */
+trait TdAll
+extends AnyRef
+with TdBase
+with TdRequest
