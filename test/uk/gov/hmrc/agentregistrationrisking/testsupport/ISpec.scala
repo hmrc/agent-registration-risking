@@ -67,7 +67,6 @@ extends AnyFreeSpecLike,
       "auditing.enabled" -> false,
       "auditing.traceRequests" -> false,
       "microservice.services.auth.port" -> WireMockSupport.port,
-      "microservice.services.des.port" -> WireMockSupport.port,
       "mongodb.uri" -> mongoUri
     ) ++ configOverrides
 
@@ -100,4 +99,4 @@ extends AnyFreeSpecLike,
   }
 
 object ISpec:
-  val testServerPort: Int = 19001
+  val testServerPort: Int = 19003

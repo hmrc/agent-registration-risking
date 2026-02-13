@@ -20,13 +20,26 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
+import uk.gov.hmrc.agentregistration.shared.GroupId
+import uk.gov.hmrc.agentregistration.shared.InternalUserId
+import uk.gov.hmrc.agentregistration.shared.LinkId
+import uk.gov.hmrc.agentregistration.shared.Utr
 
 trait TdBase:
 
-  lazy val dateString: String = "2059-11-25"
-  lazy val timeString: String = s"${dateString}T16:33:51.880"
-  lazy val localDateTime: LocalDateTime =
+  def dateString: String = "2059-11-25"
+  def timeString: String = s"${dateString}T16:33:51.880"
+  def localDateTime: LocalDateTime =
     // the frozen time has to be in future otherwise the applications will disappear from mongodb because of expiry index
     LocalDateTime.parse(timeString, DateTimeFormatter.ISO_DATE_TIME)
-  lazy val instant: Instant = localDateTime.toInstant(ZoneOffset.UTC)
-  lazy val newInstant: Instant = instant.plusSeconds(20) // used when a new application is created from existing one
+  def instant: Instant = localDateTime.toInstant(ZoneOffset.UTC)
+  def newInstant: Instant = instant.plusSeconds(20) // used when a new application is created from existing one
+
+  def internalUserId: InternalUserId = InternalUserId("internal-user-id-12345")
+  def agentApplicationId: AgentApplicationId = AgentApplicationId("agent-application-id-12345")
+  def linkId: LinkId = LinkId("link-id-12345")
+  def utr: Utr = Utr("1234567890")
+  def email: String = "test@example.com"
+  def telephoneNumber: String = "01234567890"
+  def groupId: GroupId = GroupId("group-id-12345")

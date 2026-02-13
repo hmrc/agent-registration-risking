@@ -19,17 +19,32 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
+import uk.gov.hmrc.agentregistration.shared.util.Errors
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistrationrisking.action.Actions
+import uk.gov.hmrc.agentregistrationrisking.model.SubmitForRiskingRequest
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.Inject
 import javax.inject.Singleton
+import scala.concurrent.Future
 
 @Singleton()
-class MicroserviceHelloWorldController @Inject() (
+class SubmitForRiskingController @Inject() (
+  actions: Actions,
   cc: ControllerComponents
 )
 extends BackendController(cc):
 
-  def hello(): Action[AnyContent] = Action:
-    implicit request =>
-      Ok("Hello world")
+  def submitForRisking(applicationId: AgentApplicationId) =
+    actions
+      .authorised
+      .async(parse.json[SubmitForRiskingRequest]):
+        implicit request =>
+//          Errors.require(request.internalUserId === request.body.internalUserId.internalUserId, "Only applicant can submit application for risking")
+
+          // TODO: this is just a scaffold, the actual request structure and what this endpoint does needs to be defined
+
+          Future.successful(Accepted)
