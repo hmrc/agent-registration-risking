@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-case class Individual(
+final case class Individual(
   personReference: String,
   status: ApplicationStatus = ApplicationStatus.ReadyForSubmission,
   vrns: Option[List[String]],

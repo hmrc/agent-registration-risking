@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistrationrisking
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+object RoutesExports
 
-final case class Failure(
-  reasonCode: String,
-  reasonDescription: String,
-  checkId: String,
-  checkDescription: String,
-  additionalInfo: Option[String]
-) {}
-
-object Failure {
-  implicit val format: OFormat[Failure] = Json.format[Failure]
-}
+//  export uk.gov.hmrc.agentregistration.shared.AgentApplicationId
+//  export uk.gov.hmrc.agentregistration.shared.LinkId
+//  export uk.gov.hmrc.agentregistration.shared.Utr
+//  export uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsId
