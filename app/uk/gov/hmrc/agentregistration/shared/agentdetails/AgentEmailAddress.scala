@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.agentdetails
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import play.api.libs.json.Json
 
-enum EntityType:
+final case class AgentEmailAddress(
+  agentEmailAddress: String,
+  otherAgentEmailAddress: Option[String]
+)
 
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
+object AgentEmailAddress:
 
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+  given format: Format[AgentEmailAddress] = Json.format[AgentEmailAddress]
+  def isValid(email: String): Boolean = email.matches("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-enum EntityType:
+enum StateOfAgreement:
 
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
+  case NotSet
+  case Agreed
 
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+object StateOfAgreement:
+  given Format[StateOfAgreement] = JsonFormatsFactory.makeEnumFormat[StateOfAgreement]

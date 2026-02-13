@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-enum EntityType:
+/** Self Assessment (Sa) Unique Taxpayer Reference (Utr)
+  */
+final case class SaUtr(value: String):
+  def asUtr: Utr = Utr(value)
 
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
+object SaUtr:
 
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+  given format: Format[SaUtr] = JsonFormatsFactory.makeValueClassFormat
+
+  private val saUtrRegex = "^[0-9]{10}$"
+
+  def isValid(utr: String): Boolean = utr.matches(saUtrRegex)

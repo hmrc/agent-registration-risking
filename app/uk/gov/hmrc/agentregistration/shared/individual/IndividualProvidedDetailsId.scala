@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.individual
 
 import org.bson.types.ObjectId
 import play.api.libs.json.Format
@@ -24,15 +24,15 @@ import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
 import javax.inject.Singleton
 
-/** Agent application Identifier, which is unique for an application
+/** Individual provided details Identifier, which is unique for an member provided details
   */
-final case class ApplicationReference(value: String)
+final case class IndividualProvidedDetailsId(value: String)
 
-object ApplicationReference:
+object IndividualProvidedDetailsId:
 
-  given format: Format[ApplicationReference] = JsonFormatsFactory.makeValueClassFormat
-  given pathBindable: PathBindable[ApplicationReference] = ValueClassBinder.valueClassBinder[ApplicationReference](_.value)
+  given format: Format[IndividualProvidedDetailsId] = JsonFormatsFactory.makeValueClassFormat
+  given PathBindable[IndividualProvidedDetailsId] = ValueClassBinder.valueClassBinder[IndividualProvidedDetailsId](_.value)
 
 @Singleton
-class ApplicationReferenceGenerator:
-  def nextApplicationReference(): ApplicationReference = ApplicationReference(ObjectId.get().toHexString)
+class IndividualProvidedDetailsIdGenerator:
+  def nextIndividualProvidedDetailsId(): IndividualProvidedDetailsId = IndividualProvidedDetailsId(ObjectId.get().toHexString)

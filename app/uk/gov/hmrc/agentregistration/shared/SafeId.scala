@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.util
+package uk.gov.hmrc.agentregistration.shared
 
-object HyphenTool:
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.Format
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-  /** Converts a CamelCase string to a hyphen-separated string Example: "SoleTrader" -> "sole-trader"
-    */
-  private[util] def camelCaseToHyphenated(input: String): String = {
-    input.replaceAll("([A-Z])", "-$1")
-      .toLowerCase
-      .stripPrefix("-")
-  }
+/** SafeId (aka BusinessPartnerId in Etmp systems), is an unique identifier retrieved from the Grs that identifies the business entity being currently
+  * registered.
+  */
+final case class SafeId(value: String)
+
+object SafeId:
+  given format: Format[SafeId] = JsonFormatsFactory.makeValueClassFormat

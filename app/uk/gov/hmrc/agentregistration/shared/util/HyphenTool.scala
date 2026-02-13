@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.util
 
-import play.api.libs.json.Format
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+object HyphenTool:
 
-enum EntityType:
-
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
-
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+  /** Converts a CamelCase string to a hyphen-separated string Example: "SoleTrader" -> "sole-trader"
+    */
+  private[util] def camelCaseToHyphenated(input: String): String = {
+    input.replaceAll("([A-Z])", "-$1")
+      .toLowerCase
+      .stripPrefix("-")
+  }

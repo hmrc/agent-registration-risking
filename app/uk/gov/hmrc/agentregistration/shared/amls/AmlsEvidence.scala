@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.amls
 
-import play.api.libs.json.Format
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.upload.UploadId
+import uk.gov.hmrc.objectstore.client.Path
 
-enum EntityType:
+final case class AmlsEvidence(
+  uploadId: UploadId,
+  fileName: String,
+  objectStoreLocation: Path.File
+)
 
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
-
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+object AmlsEvidence:
+  given OFormat[AmlsEvidence] =
+    given OFormat[Path.File] = Json.format[Path.File]
+    given OFormat[Path.Directory] = Json.format[Path.Directory]
+    Json.format[AmlsEvidence]

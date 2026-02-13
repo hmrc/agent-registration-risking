@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.util
+package uk.gov.hmrc.agentregistration.shared.util
 
-import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
-import uk.gov.hmrc.agentregistrationrisking.util.SafeEquals.===
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.Format
 
 import scala.compiletime.erasedValue
 import scala.compiletime.error
@@ -34,7 +35,7 @@ object JsonFormatsFactory:
   /** Creates a Format for Scala 3 enums by automatically retrieving all enum values. Enum values are represented as hyphenated strings, eg. "sole-trader"
     */
   inline def makeEnumFormatHyphenated[E <: reflect.Enum](using ct: ClassTag[E]): Format[E] =
-    import uk.gov.hmrc.agentregistrationrisking.util.EnumExtensions.toStringHyphenated
+    import uk.gov.hmrc.agentregistration.shared.util.EnumExtensions.toStringHyphenated
     makeFormat(
       EnumValues.all[E],
       stringRepresentation = _.toStringHyphenated

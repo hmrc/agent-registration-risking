@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-enum EntityType:
+final case class TelephoneNumber(value: String):
+  def isValid: Boolean = value.matches("^[0-9 -+()#x]{1,24}$")
 
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
+object TelephoneNumber:
 
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+  given format: Format[TelephoneNumber] = JsonFormatsFactory.makeValueClassFormat

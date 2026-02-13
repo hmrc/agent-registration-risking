@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.util
 
-import play.api.libs.json.Format
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+object StringExtensions:
 
-enum EntityType:
+  extension (s: String)
 
-  case SoleTrader
-  case LimitedCompany
-  case Partnership
+    /* Removes leading/trailing spaces and replaces multiple spaces with a single space */
+    inline def canonicalise: String = s.trim.replaceAll("\\s+", " ")
 
-object EntityType:
-  given Format[EntityType] = JsonFormatsFactory.makeEnumFormat[EntityType]
+    inline def stripAllWhiteSpace: String = s.trim.replaceAll("\\s", "")
+
+    /* Replaces commas with spaces and then canonicalise the string */
+    inline def replaceCommasWithSpaces: String = s.replaceAll(",", " ").canonicalise

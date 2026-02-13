@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.util
+package uk.gov.hmrc.agentregistration.shared.util
 
-object EnumExtensions:
-  extension [E <: reflect.Enum](eenum: E)
-    def toStringHyphenated: String = HyphenTool.camelCaseToHyphenated(eenum.toString)
+object SealedObjectsExtensions:
+
+  extension [E](e: E)
+
+    inline def toStringHyphenated: String = {
+      val _ = SealedObjects.all[E] // macro enforces E to be SealedObject type at call site
+      HyphenTool.camelCaseToHyphenated(e.toString)
+    }
