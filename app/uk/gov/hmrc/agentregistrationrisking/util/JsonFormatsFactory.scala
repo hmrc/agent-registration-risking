@@ -20,7 +20,8 @@ import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 import uk.gov.hmrc.agentregistrationrisking.util.SafeEquals.===
 
-import scala.compiletime.{erasedValue, error}
+import scala.compiletime.erasedValue
+import scala.compiletime.error
 import scala.deriving.Mirror
 import scala.reflect.ClassTag
 

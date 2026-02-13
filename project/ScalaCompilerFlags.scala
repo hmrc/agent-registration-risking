@@ -1,0 +1,20 @@
+object ScalaCompilerFlags {
+
+  val scalaCompilerOptions: Seq[String] = Seq(
+//    "-explain",
+    "-explain-cyclic",
+    "-language:implicitConversions",
+    "-language:reflectiveCalls",
+    "-Wconf:msg=While parsing annotations in:silent",
+    "-Wconf:src=html/.*:silent", // Suppress warnings in all `.html` template files
+    "-Wconf:src=.*conf/.*\\.routes:silent", // Suppress warnings specifically for .routes files in conf directory
+    "-Wconf:src=.*\\.scala\\.html:silent", // Suppress warnings specifically for Play template files
+    "-Wconf:src=target/.*:s"
+  )
+
+  val strictScalaCompilerOptions: Seq[String] = Seq(
+    "-Xfatal-warnings",
+    "-Wvalue-discard",
+    "-feature",
+  )
+}

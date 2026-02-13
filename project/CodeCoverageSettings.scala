@@ -10,12 +10,11 @@ object CodeCoverageSettings {
     "app.*",
     "prod.*",
     ".*Routes.*",
-    "testOnly.*",
-    "testOnlyDoNotUseInAppConf.*"
+    "testOnly.*"
   )
 
   val settings: Seq[Setting[_]] = Seq(
-    ScoverageKeys.coverageExcludedPackages := excludedPackages.mkString(";"),
+    ScoverageKeys.coverageExcludedPackages := excludedPackages.mkString(","),
     ScoverageKeys.coverageMinimumStmtTotal := 100,
     ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true

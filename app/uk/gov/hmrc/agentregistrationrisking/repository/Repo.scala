@@ -17,14 +17,18 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.bson.codecs.Codec
-import org.mongodb.scala.model.{Filters, IndexModel, ReplaceOptions}
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.ReplaceOptions
 import org.mongodb.scala.result.DeleteResult
 import play.api.libs.json.*
-import uk.gov.hmrc.agentregistrationrisking.repository.Repo.{IdExtractor, IdString}
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.reflect.ClassTag
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))

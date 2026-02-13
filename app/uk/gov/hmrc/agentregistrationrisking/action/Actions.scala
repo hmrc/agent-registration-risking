@@ -16,12 +16,15 @@
 
 package uk.gov.hmrc.agentregistrationrisking.action
 
-import play.api.mvc.{ActionBuilder, AnyContent, DefaultActionBuilder}
+import play.api.mvc.ActionBuilder
+import play.api.mvc.AnyContent
+import play.api.mvc.DefaultActionBuilder
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
-class Actions @Inject()(
+class Actions @Inject() (
   actionBuilder: DefaultActionBuilder,
   authorisedAction: AuthorisedAction
 ):
