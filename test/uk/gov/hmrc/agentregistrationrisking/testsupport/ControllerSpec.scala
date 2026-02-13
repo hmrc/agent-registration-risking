@@ -24,5 +24,16 @@ import scala.concurrent.ExecutionContext
 trait ControllerSpec
 extends ISpec:
 
+  export uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
+  export uk.gov.hmrc.http.HttpReads.Implicits.*
+  export play.api.libs.ws.JsonBodyWritables.*
+
+  export play.api.http.Status
+  export play.api.mvc.Request
+  export play.api.test.Helpers.*
+  export play.api.libs.json.Json
+  export uk.gov.hmrc.http.StringContextOps
+  export uk.gov.hmrc.http.HttpResponse
+
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
   val httpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]

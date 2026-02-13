@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.action
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import play.api.mvc.*
+import uk.gov.hmrc.agentregistration.shared.InternalUserId
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
@@ -32,6 +33,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class AuthorisedRequest[A](
+  val internalUserId: InternalUserId,
   val request: Request[A]
 )
 extends WrappedRequest[A](request)
@@ -62,6 +64,9 @@ with RequestAwareLogging:
           Future.failed(AuthorisationException.fromString(s"Enrolment ${appConfig.hmrcAsAgentEnrolment} is assigned to user"))
         else
           Future.successful(Right(new AuthorisedRequest(
+            internalUserId = maybeInternalId
+              .map(InternalUserId.apply)
+              .getOrElse(throw RuntimeException("Retrievals for internalId is missing")),
             request = request
           )))
 
