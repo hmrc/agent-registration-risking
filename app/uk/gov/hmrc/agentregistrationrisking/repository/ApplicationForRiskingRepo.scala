@@ -29,7 +29,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import AgentApplicationRepoHelp.given
+import ApplicationForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReference
@@ -37,14 +37,14 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
 @Singleton
-final class AgentApplicationRepo @Inject() (
+final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends Repo[ApplicationReference, ApplicationForRisking](
   collectionName = "application-for-risking",
   mongoComponent = mongoComponent,
-  indexes = AgentApplicationRepoHelp.indexes(appConfig.AgentApplicationRepo.ttl),
+  indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
   extraCodecs = Seq(Codecs.playFormatCodec(ApplicationForRisking.format)),
   replaceIndexes = true
 ):
@@ -55,9 +55,9 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
     .headOption()
 
-// when named it AgentApplicationRepo, Scala 3 compiler complains
+// when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
-object AgentApplicationRepoHelp:
+object ApplicationForRiskingRepoHelp:
 
   given IdString[ApplicationReference] =
     new IdString[ApplicationReference]:
@@ -73,15 +73,9 @@ object AgentApplicationRepoHelp:
       indexOptions = IndexOptions().expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS).name("lastUpdatedIdx")
     ),
     IndexModel(
-      keys = Indexes.ascending("internalUserId"),
+      keys = Indexes.ascending("applicationReference"),
       IndexOptions()
         .unique(true)
-        .name("internalUserId")
-    ),
-    IndexModel(
-      keys = Indexes.ascending("linkId"),
-      IndexOptions()
-        .unique(true)
-        .name("linkId")
+        .name("applicationReference")
     )
   )

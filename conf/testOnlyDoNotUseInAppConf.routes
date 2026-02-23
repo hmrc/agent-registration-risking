@@ -11,3 +11,4 @@
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes
+GET        /agent-registration-risking/test-only/create-application-for-risking uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.createTestApplicationForRisking

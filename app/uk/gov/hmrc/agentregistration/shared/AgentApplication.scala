@@ -47,6 +47,8 @@ sealed trait AgentApplication:
   def hmrcStandardForAgentsAgreed: StateOfAgreement
   def numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals] // all applications require this, sole traders will have a list of one
   def numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals]
+  def vrns: Option[List[Vrn]]
+  def payeRefs: Option[List[PayeRef]]
 
   //  /** Updates the application state to the next state */
   //  def updateApplicationState: AgentApplication =
@@ -141,7 +143,9 @@ final case class AgentApplicationSoleTrader(
   override val agentDetails: Option[AgentDetails],
   override val refusalToDealWithCheckResult: Option[CheckResult],
   deceasedCheckResult: Option[CheckResult],
-  override val hmrcStandardForAgentsAgreed: StateOfAgreement
+  override val hmrcStandardForAgentsAgreed: StateOfAgreement,
+  override val vrns: Option[List[Vrn]],
+  override val payeRefs: Option[List[PayeRef]]
 )
 extends AgentApplication:
 
@@ -171,7 +175,9 @@ final case class AgentApplicationLlp(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals]
+  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals],
+  override val vrns: Option[List[Vrn]],
+  override val payeRefs: Option[List[PayeRef]]
 )
 extends AgentApplication:
 
@@ -198,7 +204,9 @@ final case class AgentApplicationLimitedCompany(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals]
+  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals],
+  override val vrns: Option[List[Vrn]],
+  override val payeRefs: Option[List[PayeRef]]
 )
 extends AgentApplication:
 
@@ -224,7 +232,9 @@ final case class AgentApplicationGeneralPartnership(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals]
+  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals],
+  override val vrns: Option[List[Vrn]],
+  override val payeRefs: Option[List[PayeRef]]
 )
 extends AgentApplication:
 
@@ -249,7 +259,9 @@ final case class AgentApplicationLimitedPartnership(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals]
+  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals],
+  override val vrns: Option[List[Vrn]],
+  override val payeRefs: Option[List[PayeRef]]
 )
 extends AgentApplication:
 
@@ -274,7 +286,9 @@ final case class AgentApplicationScottishLimitedPartnership(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals]
+  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals],
+  override val vrns: Option[List[Vrn]],
+  override val payeRefs: Option[List[PayeRef]]
 )
 extends AgentApplication:
 
@@ -298,7 +312,9 @@ final case class AgentApplicationScottishPartnership(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals]
+  override val numberOfOtherRelevantIndividuals: Option[NumberOfOtherRelevantIndividuals],
+  override val vrns: Option[List[Vrn]],
+  override val payeRefs: Option[List[PayeRef]]
 )
 extends AgentApplication:
 

@@ -16,16 +16,14 @@
 
 package uk.gov.hmrc.agentregistrationrisking.controllers
 
+import play.api.libs.json.Json
 import play.api.mvc.Action
-import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
-import uk.gov.hmrc.agentregistration.shared.util.Errors
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.SubmitForRiskingRequest
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.toApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,17 +32,19 @@ import scala.concurrent.Future
 @Singleton()
 class SubmitForRiskingController @Inject() (
   actions: Actions,
-  cc: ControllerComponents
+  cc: ControllerComponents,
+  applicationForRiskingRepo: ApplicationForRiskingRepo
 )
 extends BackendController(cc):
 
-  def submitForRisking(applicationId: AgentApplicationId) =
+  def submitForRisking(): Action[SubmitForRiskingRequest] =
     actions
       .authorised
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
-//          Errors.require(request.internalUserId === request.body.internalUserId.internalUserId, "Only applicant can submit application for risking")
-
-          // TODO: this is just a scaffold, the actual request structure and what this endpoint does needs to be defined
-
+          println("TEST = " + Json.prettyPrint(Json.toJson(request.body)))
+          val agentApplication: ApplicationForRisking = toApplicationForRisking(request.body)
+          applicationForRiskingRepo
+            .upsert(agentApplication)
+            .map(result => Ok(result.toString))
           Future.successful(Accepted)
