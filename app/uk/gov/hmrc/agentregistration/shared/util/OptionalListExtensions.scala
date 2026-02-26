@@ -20,7 +20,4 @@ object OptionalListExtensions:
 
   extension (s: Option[List[String]])
 
-    inline def transformToCommaSeparatedString: String = {
-      println("DATA = " + s.getOrElse("NOTHING").toString)
-      s.fold("")(_.mkString(","))
-    }
+    inline def transformToCommaSeparatedString: String = s.fold("")(_.mkString(","))

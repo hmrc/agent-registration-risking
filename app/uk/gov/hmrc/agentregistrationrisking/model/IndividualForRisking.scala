@@ -61,16 +61,16 @@ object IndividualForRisking {
       personReference = PersonReference(individual._id.value),
       vrns = transformToCommaSeparatedString(individual.vrns.map(_.map(_.value))),
       payeRefs = transformToCommaSeparatedString(individual.payeRefs.map(_.map(_.value))),
-      companiesHouseName = None,
-      companiesHouseDateOfBirth = None,
+      companiesHouseName = None, // We don't currently store the name retrieved from companies house
+      companiesHouseDateOfBirth = None, // As above
       providedName = individual.individualName,
       providedDateOfBirth = individual.getDateOfBirth,
       nino = individual.individualNino,
       saUtr = individual.individualSaUtr,
       phoneNumber = individual.getTelephoneNumber,
       email = individual.getEmailAddress.emailAddress,
-      providedByApplicant = true,
-      passedIV = true
+      providedByApplicant = true, // Not currently possible for anyone other than the applicant to provide details
+      passedIV = true // We don't currently log whether the applicant passed IV or not, this will come later
     )
   }
 

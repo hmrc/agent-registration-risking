@@ -42,9 +42,8 @@ extends BackendController(cc):
       .authorised
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
-          println("TEST = " + Json.prettyPrint(Json.toJson(request.body)))
           val agentApplication: ApplicationForRisking = toApplicationForRisking(request.body)
           applicationForRiskingRepo
             .upsert(agentApplication)
             .map(result => Ok(result.toString))
-          Future.successful(Accepted)
+          Future.successful(Created)

@@ -18,20 +18,19 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.AgentApplication.IsIncorporated
 import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedCompany
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedPartnership
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationScottishLimitedPartnership
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationSoleTrader
 import uk.gov.hmrc.agentregistration.shared.AmlsCode
 import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
 import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.Utr
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
@@ -49,7 +48,7 @@ final case class ApplicationForRisking(
   applicantPhone: Option[TelephoneNumber],
   applicantEmail: Option[EmailAddress],
   entityType: BusinessType,
-  entityIdentifier: String,
+  entityIdentifier: Utr,
   crn: Option[Crn],
   vrns: String,
   payeRefs: String,
@@ -71,7 +70,7 @@ extension (submitForRiskingRequest: SubmitForRiskingRequest)
       applicantPhone = application.getApplicantContactDetails.telephoneNumber,
       applicantEmail = application.getApplicantContactDetails.applicantEmailAddress.map(_.emailAddress),
       entityType = application.businessType,
-      entityIdentifier = application.businessType.toString, // TODO: Check value
+      entityIdentifier = application.getUtr,
       crn = getMaybeCrn(application),
       vrns = transformToCommaSeparatedString(application.vrns.map(_.map(_.value))),
       payeRefs = transformToCommaSeparatedString(application.payeRefs.map(_.map(_.value))),

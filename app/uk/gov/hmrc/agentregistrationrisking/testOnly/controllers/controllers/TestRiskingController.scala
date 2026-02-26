@@ -26,10 +26,9 @@ import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.Nino
-import uk.gov.hmrc.agentregistration.shared.PayeRef
 import uk.gov.hmrc.agentregistration.shared.SaUtr
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
-import uk.gov.hmrc.agentregistration.shared.Vrn
+import uk.gov.hmrc.agentregistration.shared.Utr
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Provided
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
@@ -77,7 +76,7 @@ extends BackendController(cc):
     applicantPhone = Some(TelephoneNumber("1234658979")),
     applicantEmail = Some(EmailAddress("user@test.com")),
     entityType = BusinessType.Partnership.LimitedLiabilityPartnership,
-    entityIdentifier = "12345566",
+    entityIdentifier = Utr("12345566"),
     crn = Some(Crn("12345566")),
     vrns = "22345566,22345567",
     payeRefs = "32345566,32345567",
