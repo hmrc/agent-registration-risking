@@ -174,7 +174,7 @@ final case class AgentApplicationLlp(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val hasOtherRelevantIndividuals: Option[Boolean]
+  override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
 )
@@ -203,7 +203,7 @@ final case class AgentApplicationLimitedCompany(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val hasOtherRelevantIndividuals: Option[Boolean]
+  override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
 )
@@ -231,7 +231,7 @@ final case class AgentApplicationGeneralPartnership(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val hasOtherRelevantIndividuals: Option[Boolean]
+  override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
 )
@@ -258,7 +258,7 @@ final case class AgentApplicationLimitedPartnership(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val hasOtherRelevantIndividuals: Option[Boolean]
+  override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
 )
@@ -285,7 +285,7 @@ final case class AgentApplicationScottishLimitedPartnership(
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val hasOtherRelevantIndividuals: Option[Boolean]
+  override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
 )
@@ -311,7 +311,7 @@ final case class AgentApplicationScottishPartnership(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
   override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
-  override val hasOtherRelevantIndividuals: Option[Boolean]
+  override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
 )

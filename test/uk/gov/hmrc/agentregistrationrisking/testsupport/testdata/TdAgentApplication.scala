@@ -85,6 +85,7 @@ trait TdAgentApplication { dependencies: TdBase =>
     companyStatusCheckResult = None,
     hmrcStandardForAgentsAgreed = Agreed,
     numberOfRequiredKeyIndividuals = Some(FiveOrLess(2)),
+    hasOtherRelevantIndividuals = Some(true),
     vrns = Some(List(Vrn(vrn), Vrn(vrn))),
     payeRefs = Some(List(PayeRef(payeRef), PayeRef(payeRef)))
   )
