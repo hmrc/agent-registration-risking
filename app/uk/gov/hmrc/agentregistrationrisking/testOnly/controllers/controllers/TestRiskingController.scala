@@ -36,6 +36,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReferenceGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.PersonReferenceGenerator
@@ -70,6 +71,8 @@ extends BackendController(cc):
 
   private def makeApplicationForRisking(): ApplicationForRisking = ApplicationForRisking(
     applicationReference = agentReferenceGenerator.nextApplicationReference(),
+    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    createdAt = Instant.now(),
     uploadedAt = None,
     fileName = None,
     applicantName = ApplicantName("Bob Ross"),
@@ -84,12 +87,13 @@ extends BackendController(cc):
     amlRegNumber = AmlsRegistrationNumber("11223344"),
     amlExpiryDate = Some(LocalDate.of(2030, 1, 1)),
     amlEvidence = None,
-    individuals = Some(List(makeIndividual(), makeIndividual())),
+    individuals = List(makeIndividual(), makeIndividual()),
     failures = None
   )
 
   private def makeIndividual(): IndividualForRisking = IndividualForRisking(
     personReference = personReferenceGenerator.nextPersonReference(),
+    status = ApplicationForRiskingStatus.ReadyForSubmission,
     vrns = "55345566,55345567",
     payeRefs = "66345566,66345567",
     companiesHouseName = Some("John Thompson"),

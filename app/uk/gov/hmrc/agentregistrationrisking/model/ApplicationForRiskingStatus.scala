@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-enum ApplicationStatus:
+enum ApplicationForRiskingStatus:
 
   case ReadyForSubmission
   case SubmittedForRisking
@@ -28,5 +28,5 @@ enum ApplicationStatus:
   case FailedFixable
   case ReadyForResubmission
 
-object ApplicationStatus:
-  given Format[ApplicationStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationStatus]
+object ApplicationForRiskingStatus:
+  given Format[ApplicationForRiskingStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationForRiskingStatus]

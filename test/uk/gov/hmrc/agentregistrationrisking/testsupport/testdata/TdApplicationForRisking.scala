@@ -22,8 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.upload.UploadId
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReference
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationStatus
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
 import uk.gov.hmrc.objectstore.client.Path.File
 
 import java.time.Instant
@@ -35,6 +34,7 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
 
   val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
     applicationReference = ApplicationReference(agentApplicationId.value),
+    status = ApplicationForRiskingStatus.ReadyForSubmission,
     createdAt = createdAt,
     uploadedAt = None,
     fileName = None,
@@ -54,7 +54,7 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
       "certificate.pdf",
       File("test.txt")
     )),
-    individuals = Some(List(dependencies.readyForSubmissionIndividual)),
+    individuals = List(dependencies.readyForSubmissionIndividual),
     failures = None
   )
 

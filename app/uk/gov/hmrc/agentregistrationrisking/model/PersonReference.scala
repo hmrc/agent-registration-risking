@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
 import javax.inject.Singleton
 
-/** Agent application Identifier, which is unique for an application
+/** Person Reference used by Minerva as a unique identifier for an individual
   */
 final case class PersonReference(value: String)
 

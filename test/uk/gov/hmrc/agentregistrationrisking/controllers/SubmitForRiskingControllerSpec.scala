@@ -51,19 +51,18 @@ extends ControllerSpec:
     val response =
       httpClient
         .post(url"$baseUrl/agent-registration-risking/submit-for-risking")
-        .withBody(Json.toJson(SubmitForRiskingRequest(tdAll.llpApplication, Some(List(tdAll.individualProvidedDetails)))))
+        .withBody(Json.toJson(SubmitForRiskingRequest(tdAll.llpApplication, List(tdAll.individualProvidedDetails))))
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.CREATED
     response.body shouldBe ""
 
-    val exampleApplicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals = Some(List(tdAll.readyForSubmissionIndividual)))
+    val exampleApplicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals = List(tdAll.readyForSubmissionIndividual))
 
     val result =
       repo.findByAppicationReference(
         tdAll.llpApplicationForRisking.applicationReference
-      ).futureValue
+      ).futureValue.value
 
-    // TODO: Fix this test, it is failing because the insert operation hasn't fully completed by the time the fiindByAppicationReference is called.
-//    result.value shouldBe exampleApplicationForRisking.copy(createdAt = result.createdAt) withClue "after http request there should be records in mongo"
+    result shouldBe exampleApplicationForRisking.copy(createdAt = result.createdAt) withClue "after http request there should be records in mongo"
     AuthStubs.verifyAuthorise()

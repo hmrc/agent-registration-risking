@@ -22,11 +22,11 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Provided
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.PersonReference
 
 import java.time.Instant
-import java.time.LocalDate
 
 trait TdIndividualForRisking { dependencies: TdBase =>
 
@@ -34,6 +34,7 @@ trait TdIndividualForRisking { dependencies: TdBase =>
 
   val readyForSubmissionIndividual: IndividualForRisking = IndividualForRisking(
     personReference = PersonReference(individualProvidedDetailsId.value),
+    status = ApplicationForRiskingStatus.ReadyForSubmission,
     vrns = s"$vrn,$vrn",
     payeRefs = s"$payeRef,$payeRef",
     companiesHouseName = None,

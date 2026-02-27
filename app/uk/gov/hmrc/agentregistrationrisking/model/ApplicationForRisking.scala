@@ -40,10 +40,10 @@ import java.time.LocalDate
 
 final case class ApplicationForRisking(
   applicationReference: ApplicationReference,
-  status: ApplicationStatus = ApplicationStatus.ReadyForSubmission,
-  createdAt: Instant = Instant.now(),
-  uploadedAt: Option[Instant] = None,
-  fileName: Option[String] = None,
+  status: ApplicationForRiskingStatus,
+  createdAt: Instant,
+  uploadedAt: Option[Instant],
+  fileName: Option[String],
   applicantName: ApplicantName,
   applicantPhone: Option[TelephoneNumber],
   applicantEmail: Option[EmailAddress],
@@ -56,16 +56,20 @@ final case class ApplicationForRisking(
   amlRegNumber: AmlsRegistrationNumber,
   amlExpiryDate: Option[LocalDate],
   amlEvidence: Option[AmlsEvidence],
-  individuals: Option[List[IndividualForRisking]],
-  failures: Option[List[Failure]] = None
+  individuals: List[IndividualForRisking],
+  failures: Option[List[Failure]]
 ) {}
 
 extension (submitForRiskingRequest: SubmitForRiskingRequest)
 
-  def toApplicationForRisking: ApplicationForRisking = {
+  def toApplicationForRisking: ApplicationForRisking =
     val application = submitForRiskingRequest.agentApplication
     ApplicationForRisking(
       applicationReference = ApplicationReference(application.agentApplicationId.value),
+      status = ApplicationForRiskingStatus.ReadyForSubmission,
+      createdAt = Instant.now(),
+      uploadedAt = None,
+      fileName = None,
       applicantName = application.getApplicantContactDetails.applicantName,
       applicantPhone = application.getApplicantContactDetails.telephoneNumber,
       applicantEmail = application.getApplicantContactDetails.applicantEmailAddress.map(_.emailAddress),
@@ -78,11 +82,11 @@ extension (submitForRiskingRequest: SubmitForRiskingRequest)
       amlRegNumber = application.getAmlsDetails.getRegistrationNumber,
       amlExpiryDate = application.getAmlsDetails.amlsExpiryDate,
       amlEvidence = application.getAmlsDetails.amlsEvidence,
-      individuals = submitForRiskingRequest.individuals.map(_.toIndividualsForRisking)
+      individuals = submitForRiskingRequest.individuals.toIndividualsForRisking,
+      failures = None
     )
 
-  }
-  private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] = {
+  private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
     agentApplication match {
       case a: AgentApplicationLimitedCompany => Some(a.getBusinessDetails.companyProfile.companyNumber)
       case a: AgentApplicationLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
@@ -90,7 +94,6 @@ extension (submitForRiskingRequest: SubmitForRiskingRequest)
       case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
       case _ => None
     }
-  }
 
 object ApplicationForRisking:
   implicit val format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]

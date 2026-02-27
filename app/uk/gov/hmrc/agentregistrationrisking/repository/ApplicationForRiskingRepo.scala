@@ -55,9 +55,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
     .headOption()
 
-  def findAll(): Future[Seq[ApplicationForRisking]] = collection
-    .find().toFuture()
-
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
 object ApplicationForRiskingRepoHelp:

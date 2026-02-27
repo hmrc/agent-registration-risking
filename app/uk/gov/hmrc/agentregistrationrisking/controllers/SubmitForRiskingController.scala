@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.Future
+import scala.util.chaining.scalaUtilChainingOps
 
 @Singleton()
 class SubmitForRiskingController @Inject() (
@@ -42,8 +43,8 @@ extends BackendController(cc):
       .authorised
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
-          val agentApplication: ApplicationForRisking = toApplicationForRisking(request.body)
-          applicationForRiskingRepo
-            .upsert(agentApplication)
-            .map(result => Ok(result.toString))
-          Future.successful(Created)
+          request
+            .body
+            .toApplicationForRisking
+            .pipe(applicationForRiskingRepo.upsert)
+            .map(_ => Created)
