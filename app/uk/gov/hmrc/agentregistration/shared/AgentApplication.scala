@@ -105,10 +105,6 @@ sealed trait AgentApplication:
     expectedDataNotDefinedError("numberOfRequiredKeyIndividuals")
   )
 
-  def getHasOtherRelevantIndividuals: Boolean = hasOtherRelevantIndividuals.getOrElse(
-    expectedDataNotDefinedError("hasOtherRelevantIndividuals")
-  )
-
   private def as[T <: AgentApplication](using ct: reflect.ClassTag[T]): Option[T] =
     this match
       case t: T => Some(t)
@@ -143,6 +139,7 @@ final case class AgentApplicationSoleTrader(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   deceasedCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
+  override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
 )
@@ -151,7 +148,6 @@ extends AgentApplication:
   override val businessType: BusinessType.SoleTrader.type = BusinessType.SoleTrader
   def getBusinessDetails: BusinessDetailsSoleTrader = businessDetails.getOrElse(expectedDataNotDefinedError("businessDetails"))
   override def numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals] = Some(AgentApplicationSoleTrader.numberOfRequiredKeyIndividuals)
-  override def hasOtherRelevantIndividuals: Option[Boolean] = Some(false)
 
 object AgentApplicationSoleTrader:
   val numberOfRequiredKeyIndividuals: NumberOfRequiredKeyIndividuals = FiveOrLess(1)
