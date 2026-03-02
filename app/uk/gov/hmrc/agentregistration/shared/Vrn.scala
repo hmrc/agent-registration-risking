@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
+package uk.gov.hmrc.agentregistration.shared
 
-object TdAll:
+import play.api.libs.json.Format
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-  def apply(): TdAll = new TdAll {}
-
-  val tdAll: TdAll = new TdAll {}
-
-/** TestData (Td), All instances
+/** Vat Registration Number (Vrn)
   */
-trait TdAll
-extends AnyRef
-with TdBase
-with TdRequest
-with TdApplicationForRisking
-with TdIndividualForRisking
-with TdAgentApplication
-with TdIndividualProvidedDetails
+final case class Vrn(value: String)
+
+object Vrn:
+  given format: Format[Vrn] = JsonFormatsFactory.makeValueClassFormat

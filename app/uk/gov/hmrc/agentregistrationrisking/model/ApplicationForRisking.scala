@@ -18,32 +18,82 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedCompany
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedPartnership
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationScottishLimitedPartnership
+import uk.gov.hmrc.agentregistration.shared.AmlsCode
+import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
+import uk.gov.hmrc.agentregistration.shared.BusinessType
+import uk.gov.hmrc.agentregistration.shared.Crn
+import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.Utr
+import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
+import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 
 import java.time.Instant
 import java.time.LocalDate
 
 final case class ApplicationForRisking(
   applicationReference: ApplicationReference,
-  status: ApplicationStatus = ApplicationStatus.ReadyForSubmission,
-  createdAt: Instant = Instant.now(),
+  status: ApplicationForRiskingStatus,
+  createdAt: Instant,
   uploadedAt: Option[Instant],
   fileName: Option[String],
-  applicantName: String,
-  applicantPhone: Option[String],
-  applicantEmail: Option[String],
-  entityType: EntityType,
-  entityIdentifier: String,
-  crn: Option[String],
-  vrns: Option[List[String]],
-  payeRefs: Option[List[String]],
-  amlSupervisoryBody: String,
-  amlRegNumber: String,
+  applicantName: ApplicantName,
+  applicantPhone: Option[TelephoneNumber],
+  applicantEmail: Option[EmailAddress],
+  entityType: BusinessType,
+  entityIdentifier: Utr,
+  crn: Option[Crn],
+  vrns: String,
+  payeRefs: String,
+  amlSupervisoryBody: AmlsCode,
+  amlRegNumber: AmlsRegistrationNumber,
   amlExpiryDate: Option[LocalDate],
-  amlEvidence: Option[String],
-  individuals: Option[List[Individual]],
+  amlEvidence: Option[AmlsEvidence],
+  individuals: List[IndividualForRisking],
   failures: Option[List[Failure]]
 ) {}
 
-object ApplicationForRisking {
+extension (submitForRiskingRequest: SubmitForRiskingRequest)
+
+  def toApplicationForRisking: ApplicationForRisking =
+    val application = submitForRiskingRequest.agentApplication
+    ApplicationForRisking(
+      applicationReference = ApplicationReference(application.agentApplicationId.value),
+      status = ApplicationForRiskingStatus.ReadyForSubmission,
+      createdAt = Instant.now(),
+      uploadedAt = None,
+      fileName = None,
+      applicantName = application.getApplicantContactDetails.applicantName,
+      applicantPhone = application.getApplicantContactDetails.telephoneNumber,
+      applicantEmail = application.getApplicantContactDetails.applicantEmailAddress.map(_.emailAddress),
+      entityType = application.businessType,
+      entityIdentifier = application.getUtr,
+      crn = getMaybeCrn(application),
+      vrns = transformToCommaSeparatedString(application.vrns.map(_.map(_.value))),
+      payeRefs = transformToCommaSeparatedString(application.payeRefs.map(_.map(_.value))),
+      amlSupervisoryBody = application.getAmlsDetails.supervisoryBody,
+      amlRegNumber = application.getAmlsDetails.getRegistrationNumber,
+      amlExpiryDate = application.getAmlsDetails.amlsExpiryDate,
+      amlEvidence = application.getAmlsDetails.amlsEvidence,
+      individuals = submitForRiskingRequest.individuals.toIndividualsForRisking,
+      failures = None
+    )
+
+  private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
+    agentApplication match {
+      case a: AgentApplicationLimitedCompany => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case a: AgentApplicationLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case a: AgentApplicationLlp => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case _ => None
+    }
+
+object ApplicationForRisking:
   implicit val format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
-}

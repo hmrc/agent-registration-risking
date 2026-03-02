@@ -16,7 +16,10 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
+import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsId
+
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -24,6 +27,7 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
 import uk.gov.hmrc.agentregistration.shared.GroupId
 import uk.gov.hmrc.agentregistration.shared.InternalUserId
 import uk.gov.hmrc.agentregistration.shared.LinkId
+import uk.gov.hmrc.agentregistration.shared.Nino
 import uk.gov.hmrc.agentregistration.shared.Utr
 
 trait TdBase:
@@ -38,8 +42,19 @@ trait TdBase:
 
   def internalUserId: InternalUserId = InternalUserId("internal-user-id-12345")
   def agentApplicationId: AgentApplicationId = AgentApplicationId("agent-application-id-12345")
+  def individualProvidedDetailsId: IndividualProvidedDetailsId = IndividualProvidedDetailsId("individual-id-12345")
   def linkId: LinkId = LinkId("link-id-12345")
   def utr: Utr = Utr("1234567890")
+  def nino: Nino = Nino("AA0011221A")
   def email: String = "test@example.com"
   def telephoneNumber: String = "01234567890"
   def groupId: GroupId = GroupId("group-id-12345")
+  def applicantName: String = "Test Applicant"
+  def individualName: String = "Test Individual"
+  def agentBusinessName: String = "Test Agent"
+  def crn: String = "OC123456"
+  def amlsCode: String = "HMRC"
+  def amlsRegistrationNumber: String = "XAML00000123456"
+  def vrn: String = "123456789"
+  def payeRef: String = "123/AB12345"
+  def individualDateOfBirth: LocalDate = LocalDate.of(1980, 1, 1)

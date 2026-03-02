@@ -33,5 +33,5 @@ class AppConfig @Inject() (
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
 
-  object AgentApplicationRepo:
-    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.submission-repo-ttl", servicesConfig)
+  object ApplicationForRiskingRepo:
+    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)

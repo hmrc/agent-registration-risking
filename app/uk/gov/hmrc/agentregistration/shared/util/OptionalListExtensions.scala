@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.util
 
-import play.api.libs.json.Format
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+object OptionalListExtensions:
 
-enum ApplicationStatus:
+  extension (s: Option[List[String]])
 
-  case ReadyForSubmission
-  case SubmittedForRisking
-  case Approved
-  case FailedNonFixable
-  case FailedFixable
-  case ReadyForResubmission
-
-object ApplicationStatus:
-  given Format[ApplicationStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationStatus]
+    inline def transformToCommaSeparatedString: String = s.fold("")(_.mkString(","))
