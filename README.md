@@ -1,4 +1,12 @@
 # agent-registration-risking
+This service handles the risking element of an agent registration made through agent-registration-frontend.
+
+  API
+---
+
+| *Task*                                               | *Supported Methods* | *Description*                                                                  |
+|------------------------------------------------------|---------------------|--------------------------------------------------------------------------------|
+| ```/agent-registration-risking/submit-for-risking``` | POST                | Submit a completed applicaton for risking. [More...](docs/submitForRisking.md) |
 
 # Running the Service
 

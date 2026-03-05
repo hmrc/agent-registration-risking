@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.applicationId
 
 class RiskingFileServiceSpec
 extends ISpec:
@@ -28,14 +31,41 @@ extends ISpec:
 
   "buildRiskingFile retrieves all applications ready for risking and creates risking file in correct format" in:
 
-    val upsert = repo.upsert(tdAll.llpApplicationForRisking.copy(individuals =
+    val readyForSubmissionUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(individuals =
       List(
         tdAll.readyForSubmissionIndividual,
         tdAll.readyForSubmissionIndividual,
         tdAll.readyForSubmissionIndividual
       )
     ))
-    upsert.futureValue
+    readyForSubmissionUpsert.futureValue
+
+    val result: String = service.buildRiskingFile.futureValue
+    val recordCount = result.substring(result.length - 1).toInt
+    recordCount shouldBe 4
+    val pipeCount = result.count(_ == '|')
+    pipeCount shouldBe 109
+
+  "buildRiskingFile ignores any applications without a status of readyForSubmission" in:
+
+    val readyForSubmissionUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(individuals =
+      List(
+        tdAll.readyForSubmissionIndividual,
+        tdAll.readyForSubmissionIndividual,
+        tdAll.readyForSubmissionIndividual
+      )
+    ))
+    readyForSubmissionUpsert.futureValue
+    val submittedUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(
+      applicationReference = ApplicationReference(randomId),
+      status = ApplicationForRiskingStatus.SubmittedForRisking,
+      individuals = List(
+        tdAll.readyForSubmissionIndividual,
+        tdAll.readyForSubmissionIndividual,
+        tdAll.readyForSubmissionIndividual
+      )
+    ))
+    submittedUpsert.futureValue
 
     val result: String = service.buildRiskingFile.futureValue
     val recordCount = result.substring(result.length - 1).toInt
