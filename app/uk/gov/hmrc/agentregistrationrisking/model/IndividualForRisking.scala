@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import org.apache.pekko.util.Helpers.Requiring
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import play.api.libs.json.__
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
@@ -28,6 +27,9 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.*
+import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.*
+import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
+import java.time.format.DateTimeFormatter.ofPattern
 
 import java.time.LocalDate
 
@@ -47,7 +49,7 @@ final case class IndividualForRisking(
   providedByApplicant: Boolean,
   passedIV: Boolean,
   failures: Option[List[Failure]]
-) {}
+)
 
 extension (individuals: List[IndividualProvidedDetails])
   def toIndividualsForRisking: List[IndividualForRisking] = individuals.map(IndividualForRisking.fromIndividualProvidedDetails)

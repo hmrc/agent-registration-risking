@@ -32,6 +32,7 @@ import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
@@ -54,6 +55,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       filter = Filters.eq("applicationReference", applicationReference.value)
     )
     .headOption()
+
+  def findByStatus(status: ApplicationForRiskingStatus): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      filter = Filters.eq("status", status.toString)
+    ).toFuture()
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
