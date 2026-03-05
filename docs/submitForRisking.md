@@ -11,7 +11,7 @@ Submit a completed application for risking.
   `POST`
 
 * **Body**
-  > Uses shared [SubmitForRiskingRequest](app/uk/gov/hmrc/agentregistration/shared/risking/SubmitForRiskingRequest.scala) model
+  > Uses shared [SubmitForRiskingRequest](../app/uk/gov/hmrc/agentregistration/shared/risking/SubmitForRiskingRequest.scala) model
 
 ```json
 {
