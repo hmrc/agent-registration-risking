@@ -30,6 +30,8 @@ import uk.gov.hmrc.agentregistration.shared.LinkId
 import uk.gov.hmrc.agentregistration.shared.Nino
 import uk.gov.hmrc.agentregistration.shared.Utr
 
+import java.util.UUID
+
 trait TdBase:
 
   def dateString: String = "2059-11-25"
@@ -40,6 +42,7 @@ trait TdBase:
   def instant: Instant = localDateTime.toInstant(ZoneOffset.UTC)
   def newInstant: Instant = instant.plusSeconds(20) // used when a new application is created from existing one
 
+  def randomId: String = UUID.randomUUID().toString
   def internalUserId: InternalUserId = InternalUserId("internal-user-id-12345")
   def agentApplicationId: AgentApplicationId = AgentApplicationId("agent-application-id-12345")
   def individualProvidedDetailsId: IndividualProvidedDetailsId = IndividualProvidedDetailsId("individual-id-12345")

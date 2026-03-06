@@ -34,6 +34,8 @@ import uk.gov.hmrc.agentregistration.shared.Utr
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
+import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.convertBooleanToStringRepresentation
+import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.convertToMinervaDateString
 
 import java.time.Instant
 import java.time.LocalDate
@@ -58,7 +60,7 @@ final case class ApplicationForRisking(
   amlEvidence: Option[AmlsEvidence],
   individuals: List[IndividualForRisking],
   failures: Option[List[Failure]]
-) {}
+)
 
 extension (submitForRiskingRequest: SubmitForRiskingRequest)
 

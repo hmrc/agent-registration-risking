@@ -33,7 +33,7 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
   private val createdAt: Instant = dependencies.instant
 
   val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
-    applicationReference = ApplicationReference(agentApplicationId.value),
+    applicationReference = ApplicationReference(randomId),
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     createdAt = createdAt,
     uploadedAt = None,
