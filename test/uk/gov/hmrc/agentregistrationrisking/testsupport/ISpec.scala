@@ -67,7 +67,8 @@ extends AnyFreeSpecLike,
       "auditing.enabled" -> false,
       "auditing.traceRequests" -> false,
       "microservice.services.auth.port" -> WireMockSupport.port,
-      "mongodb.uri" -> mongoUri
+      "mongodb.uri" -> mongoUri,
+      "microservice.services.object-store.port" -> WireMockSupport.port
     ) ++ configOverrides
 
   protected def configOverrides: Map[String, Any] = Map[String, Any]()

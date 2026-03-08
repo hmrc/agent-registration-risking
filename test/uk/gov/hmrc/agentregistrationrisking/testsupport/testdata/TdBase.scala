@@ -42,6 +42,7 @@ trait TdBase:
   def instant: Instant = localDateTime.toInstant(ZoneOffset.UTC)
   def newInstant: Instant = instant.plusSeconds(20) // used when a new application is created from existing one
 
+  // TODO the test data must be deterministic otherwise they can't be used in tests
   def randomId: String = UUID.randomUUID().toString
   def internalUserId: InternalUserId = InternalUserId("internal-user-id-12345")
   def agentApplicationId: AgentApplicationId = AgentApplicationId("agent-application-id-12345")

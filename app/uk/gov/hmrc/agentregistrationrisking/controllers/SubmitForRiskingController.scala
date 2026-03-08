@@ -19,12 +19,24 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedCompany
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedPartnership
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationScottishLimitedPartnership
+import uk.gov.hmrc.agentregistration.shared.Crn
+import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.toApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.Future
@@ -48,3 +60,57 @@ extends BackendController(cc):
             .toApplicationForRisking
             .pipe(applicationForRiskingRepo.upsert)
             .map(_ => Created)
+
+  extension (individual: IndividualProvidedDetails)
+    def toIndividualsForRisking: IndividualForRisking = IndividualForRisking(
+      personReference = PersonReference(individual._id.value),
+      status = ApplicationForRiskingStatus.ReadyForSubmission,
+      vrns = transformToCommaSeparatedString(individual.vrns.map(_.map(_.value))),
+      payeRefs = transformToCommaSeparatedString(individual.payeRefs.map(_.map(_.value))),
+      companiesHouseName = None, // We don't currently store the name retrieved from companies house
+      companiesHouseDateOfBirth = None, // As above
+      providedName = individual.individualName,
+      providedDateOfBirth = individual.getDateOfBirth,
+      nino = individual.individualNino,
+      saUtr = individual.individualSaUtr,
+      phoneNumber = individual.getTelephoneNumber,
+      email = individual.getEmailAddress.emailAddress,
+      providedByApplicant = true, // Not currently possible for anyone other than the applicant to provide details
+      passedIV = true, // We don't currently log whether the applicant passed IV or not, this will come later
+      failures = None
+    )
+
+  extension (submitForRiskingRequest: SubmitForRiskingRequest)
+
+    def toApplicationForRisking: ApplicationForRisking =
+      val application = submitForRiskingRequest.agentApplication
+      ApplicationForRisking(
+        applicationReference = ApplicationReference(application.agentApplicationId.value),
+        status = ApplicationForRiskingStatus.ReadyForSubmission,
+        createdAt = Instant.now(),
+        uploadedAt = None,
+        fileName = None,
+        applicantName = application.getApplicantContactDetails.applicantName,
+        applicantPhone = application.getApplicantContactDetails.telephoneNumber,
+        applicantEmail = application.getApplicantContactDetails.applicantEmailAddress.map(_.emailAddress),
+        entityType = application.businessType,
+        entityIdentifier = application.getUtr,
+        crn = getMaybeCrn(application),
+        vrns = transformToCommaSeparatedString(application.vrns.map(_.map(_.value))),
+        payeRefs = transformToCommaSeparatedString(application.payeRefs.map(_.map(_.value))),
+        amlSupervisoryBody = application.getAmlsDetails.supervisoryBody,
+        amlRegNumber = application.getAmlsDetails.getRegistrationNumber,
+        amlExpiryDate = application.getAmlsDetails.amlsExpiryDate,
+        amlEvidence = application.getAmlsDetails.amlsEvidence,
+        individuals = submitForRiskingRequest.individuals.map(_.toIndividualsForRisking),
+        failures = None
+      )
+
+    private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
+      agentApplication match {
+        case a: AgentApplicationLimitedCompany => Some(a.getBusinessDetails.companyProfile.companyNumber)
+        case a: AgentApplicationLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
+        case a: AgentApplicationLlp => Some(a.getBusinessDetails.companyProfile.companyNumber)
+        case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
+        case _ => None
+      }

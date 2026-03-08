@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationFormats
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 
-final case class SubmitForRiskingRequest(
-  agentApplication: AgentApplication,
-  individuals: List[IndividualProvidedDetails]
-)
+trait TdObjectStore { dependencies: TdBase =>
 
-object SubmitForRiskingRequest:
+  def fileName: String = "application-for-risking-xxxx.txt"
 
-  given OFormat[SubmitForRiskingRequest] = Json.format[SubmitForRiskingRequest]
+  def objectStoreLocation: String = s"agent-registration-risking/applications-for-risking/$fileName"
+  def sizeInBytes: Long = 12345L
+
+  def objectStoreUploadResponse: JsObject = Json.obj(
+    "location" -> objectStoreLocation,
+    "contentLength" -> sizeInBytes,
+    "contentMD5" -> "a3c2f1e38701bd2c7b54ebd7b1cd0dbc",
+    "lastModified" -> dependencies.instant
+  )
+
+}
