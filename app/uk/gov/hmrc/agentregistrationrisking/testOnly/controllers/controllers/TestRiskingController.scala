@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers
 
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -60,9 +61,12 @@ class TestRiskingController @Inject() (
   personReferenceGenerator: PersonReferenceGenerator,
   riskingFileService: RiskingFileService
 )
-extends BackendController(cc):
+extends BackendController(cc) with Logging:
 
   given ExecutionContext = controllerComponents.executionContext
+  
+  def createRiskingFile: Unit =
+    logger.info("Creating risking file")
 
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
