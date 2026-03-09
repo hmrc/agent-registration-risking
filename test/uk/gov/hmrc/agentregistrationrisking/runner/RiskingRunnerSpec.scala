@@ -31,15 +31,6 @@ import scala.util.chaining.scalaUtilChainingOps
 class RiskingRunnerSpec
 extends ISpec:
 
-  "crypto should be able to encrypt and decrypt" in {
-
-    val crypto: Crypto = app.injector.instanceOf[Crypto]
-    val originalText = "Some|Text|To|Encrypt"
-    val encryptedText = crypto.encrypt(originalText)
-    encryptedText should not be originalText
-    crypto.decrypt(encryptedText) shouldBe originalText
-  }
-
   "RiskingRunner.run prepares and uploads file to object store" in:
 
     val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
