@@ -27,7 +27,7 @@ class RiskingFileServiceSpec
 extends ISpec:
 
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-  val service = new RiskingFileService(repo)
+  val service = app.injector.instanceOf[RiskingFileService]
 
   "buildRiskingFile retrieves all applications ready for risking and creates risking file in correct format" in:
 

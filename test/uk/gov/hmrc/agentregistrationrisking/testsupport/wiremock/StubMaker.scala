@@ -24,11 +24,11 @@ import com.github.tomakehurst.wiremock.matching.ContentPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import com.github.tomakehurst.wiremock.matching.UrlPattern
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status
 
-import scala.jdk.CollectionConverters.MapHasAsJava
-import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.CollectionConverters.*
 
 object StubMaker:
 
@@ -110,3 +110,13 @@ object StubMaker:
       case HttpMethod.POST => wm.postRequestedFor
       case HttpMethod.DELETE => wm.deleteRequestedFor
       case HttpMethod.PUT => wm.putRequestedFor
+
+  def getAllEvents(): List[ServeEvent] =
+    wm
+      .getAllServeEvents()
+      .asScala
+      .toList
+
+  def getEvents(
+    predicate: ServeEvent => Boolean // i.e. (a: ServeEvent) => a.getRequest.getUrl == "/your/endpoint"
+  ): List[ServeEvent] = getAllEvents().filter(predicate)

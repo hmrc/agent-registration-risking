@@ -28,6 +28,7 @@ trait TdAll
 extends AnyRef
 with TdBase
 with TdRequest
+with TdObjectStore
 with TdApplicationForRisking
 with TdIndividualForRisking
 with TdAgentApplication

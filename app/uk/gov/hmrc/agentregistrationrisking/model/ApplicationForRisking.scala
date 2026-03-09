@@ -62,40 +62,5 @@ final case class ApplicationForRisking(
   failures: Option[List[Failure]]
 )
 
-extension (submitForRiskingRequest: SubmitForRiskingRequest)
-
-  def toApplicationForRisking: ApplicationForRisking =
-    val application = submitForRiskingRequest.agentApplication
-    ApplicationForRisking(
-      applicationReference = ApplicationReference(application.agentApplicationId.value),
-      status = ApplicationForRiskingStatus.ReadyForSubmission,
-      createdAt = Instant.now(),
-      uploadedAt = None,
-      fileName = None,
-      applicantName = application.getApplicantContactDetails.applicantName,
-      applicantPhone = application.getApplicantContactDetails.telephoneNumber,
-      applicantEmail = application.getApplicantContactDetails.applicantEmailAddress.map(_.emailAddress),
-      entityType = application.businessType,
-      entityIdentifier = application.getUtr,
-      crn = getMaybeCrn(application),
-      vrns = transformToCommaSeparatedString(application.vrns.map(_.map(_.value))),
-      payeRefs = transformToCommaSeparatedString(application.payeRefs.map(_.map(_.value))),
-      amlSupervisoryBody = application.getAmlsDetails.supervisoryBody,
-      amlRegNumber = application.getAmlsDetails.getRegistrationNumber,
-      amlExpiryDate = application.getAmlsDetails.amlsExpiryDate,
-      amlEvidence = application.getAmlsDetails.amlsEvidence,
-      individuals = submitForRiskingRequest.individuals.toIndividualsForRisking,
-      failures = None
-    )
-
-  private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
-    agentApplication match {
-      case a: AgentApplicationLimitedCompany => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case a: AgentApplicationLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case a: AgentApplicationLlp => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case _ => None
-    }
-
 object ApplicationForRisking:
-  implicit val format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
+  given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]

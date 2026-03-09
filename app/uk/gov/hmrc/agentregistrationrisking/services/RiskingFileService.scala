@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
 import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -33,13 +34,17 @@ import scala.concurrent.Future
 @Singleton
 class RiskingFileService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo
-)(using ExecutionContext)
+)(using
+  ExecutionContext,
+  Clock
+)
 extends RequestAwareLogging:
 
+  val clock: Clock = summon[Clock]
   extension (r: RiskingFileDataRecord)
     private def asPipe: String = r.toPipeDelimitedString
 
-  val instant: Instant = Instant.now()
+  val instant: Instant = Instant.now(clock)
   private val headerRow = s"00|ARR|SAS|${convertToMinervaHeaderDateString(instant)}|${convertToMinervaHeaderTimeString(instant)}"
   private val footerRowPrefix = "99|"
 
