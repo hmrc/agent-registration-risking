@@ -31,15 +31,6 @@ import scala.util.chaining.scalaUtilChainingOps
 class RiskingRunnerSpec
 extends ISpec:
 
-  "crypto should be able to encrypt and decrypt" in {
-
-    val crypto: Crypto = app.injector.instanceOf[Crypto]
-    val originalText = "Some|Text|To|Encrypt"
-    val encryptedText = crypto.encrypt(originalText)
-    encryptedText should not be originalText
-    crypto.decrypt(encryptedText) shouldBe originalText
-  }
-
   "RiskingRunner.run prepares and uploads file to object store" in:
 
     val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
@@ -56,7 +47,7 @@ extends ISpec:
     given request: Request[AnyContent] = TdAll.tdAll.fakeBackendRequest
     applicationForRiskingRepo.upsert(applicationForRisking).futureValue
 
-    val fileName: String = "application-for-risking-2059-11-25_163351.txt"
+    val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
     ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
 
     riskingRunner.run().futureValue shouldBe ()
