@@ -21,7 +21,7 @@ import play.api.libs.json.Json
 
 trait TdObjectStore { dependencies: TdBase =>
 
-  def fileName: String = "application-for-risking-2059-11-25_163351.txt"
+  def fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
 
   def objectStoreLocation: String = s"agent-registration-risking/applications-for-risking/$fileName"
   def sizeInBytes: Long = 12345L

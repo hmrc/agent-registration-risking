@@ -47,7 +47,7 @@ extends ISpec:
     given request: Request[AnyContent] = TdAll.tdAll.fakeBackendRequest
     applicationForRiskingRepo.upsert(applicationForRisking).futureValue
 
-    val fileName: String = "application-for-risking-2059-11-25_163351.txt"
+    val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
     ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
 
     riskingRunner.run().futureValue shouldBe ()

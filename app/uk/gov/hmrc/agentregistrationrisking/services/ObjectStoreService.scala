@@ -44,14 +44,14 @@ class ObjectStoreService @Inject() (
 )
 extends RequestAwareLogging:
 
-  private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss")
+  private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
 
   def put(fileContent: String)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
 
     val timestamp: String = LocalDateTime
       .now(summon[Clock])
       .format(formatter)
-    val fileName = s"application-for-risking-$timestamp.txt"
+    val fileName = s"asa_risking_file_version1_0_4_$timestamp.txt"
 
     playObjectStoreClient.putObject[String](
       path = Path.Directory("applications-for-risking").file(fileName = fileName),
