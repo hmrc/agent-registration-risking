@@ -54,7 +54,7 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
       "certificate.pdf",
       File("test.txt")
     )),
-    individuals = List(dependencies.readyForSubmissionIndividual),
+    individuals = List(dependencies.readyForSubmissionIndividual()),
     failures = None
   )
 

@@ -19,10 +19,12 @@ package uk.gov.hmrc.agentregistrationrisking.runner
 import play.api.mvc.AnyContent
 import play.api.mvc.Request
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.Crypto
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 
@@ -37,11 +39,15 @@ extends ISpec:
     val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
     val crypto: Crypto = app.injector.instanceOf[Crypto]
 
+    val personReference1 = PersonReference(randomId)
+    val personReference2 = PersonReference(randomId)
+    val personReference3 = PersonReference(randomId)
+
     val applicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals =
       List(
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual
+        tdAll.readyForSubmissionIndividual(Some(personReference1)),
+        tdAll.readyForSubmissionIndividual(Some(personReference2)),
+        tdAll.readyForSubmissionIndividual(Some(personReference3))
       )
     )
     given request: Request[AnyContent] = TdAll.tdAll.fakeBackendRequest
@@ -59,8 +65,8 @@ extends ISpec:
       .pipe(crypto.decrypt) shouldBe
       s"""00|ARR|SAS|20591125|163351
          |01|Entity|N|${tdAll.llpApplicationForRisking.applicationReference.value}|Test Applicant|01234567890|test@example.com|LimitedLiabilityPartnership|1234567890|OC123456|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456|25-11-2059|evidence-reference-123|||||||||||
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${tdAll.readyForSubmissionIndividual.personReference.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${tdAll.readyForSubmissionIndividual.personReference.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${tdAll.readyForSubmissionIndividual.personReference.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
          |99|4"""
         .stripMargin

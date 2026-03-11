@@ -57,7 +57,7 @@ extends ControllerSpec:
     response.status shouldBe Status.CREATED
     response.body shouldBe ""
 
-    val exampleApplicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals = List(tdAll.readyForSubmissionIndividual))
+    val exampleApplicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals = List(tdAll.readyForSubmissionIndividual()))
 
     val result =
       repo.findByApplicationReference(
