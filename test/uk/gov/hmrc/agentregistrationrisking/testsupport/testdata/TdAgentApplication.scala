@@ -32,6 +32,7 @@ import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantContactDetai
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantEmailAddress
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLess
+import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLessOfficers
 import uk.gov.hmrc.agentregistration.shared.upload.UploadId
 import uk.gov.hmrc.objectstore.client.Path.File
 
@@ -48,6 +49,7 @@ trait TdAgentApplication { dependencies: TdBase =>
     linkId = linkId,
     groupId = groupId,
     createdAt = createdAt,
+    submittedAt = Some(createdAt),
     applicationState = ApplicationState.SentForRisking,
     userRole = Some(Partner),
     businessDetails = Some(BusinessDetailsLlp(
@@ -84,7 +86,10 @@ trait TdAgentApplication { dependencies: TdBase =>
     refusalToDealWithCheckResult = None,
     companyStatusCheckResult = None,
     hmrcStandardForAgentsAgreed = Agreed,
-    numberOfRequiredKeyIndividuals = Some(FiveOrLess(2)),
+    numberOfIndividuals = Some(FiveOrLessOfficers(
+      numberOfCompaniesHouseOfficers = 2,
+      isCompaniesHouseOfficersListCorrect = true
+    )),
     hasOtherRelevantIndividuals = Some(true),
     vrns = Some(List(Vrn(vrn), Vrn(vrn))),
     payeRefs = Some(List(PayeRef(payeRef), PayeRef(payeRef)))

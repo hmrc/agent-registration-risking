@@ -20,6 +20,8 @@ import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
 import uk.gov.hmrc.agentregistration.shared.businessdetails.*
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantContactDetails
 import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLess
+import uk.gov.hmrc.agentregistration.shared.lists.NumberOfCompaniesHouseOfficers
+import uk.gov.hmrc.agentregistration.shared.lists.NumberOfIndividuals
 import uk.gov.hmrc.agentregistration.shared.lists.NumberOfRequiredKeyIndividuals
 import uk.gov.hmrc.agentregistration.shared.util.DisjointUnions
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
@@ -36,6 +38,7 @@ sealed trait AgentApplication:
   def linkId: LinkId
   def groupId: GroupId
   def createdAt: Instant
+  def submittedAt: Option[Instant] // only populated when the application is submitted, not during the registration journey
   def applicationState: ApplicationState
   def businessType: BusinessType
   def userRole: Option[UserRole]
@@ -44,7 +47,7 @@ sealed trait AgentApplication:
   def agentDetails: Option[AgentDetails]
   def refusalToDealWithCheckResult: Option[CheckResult]
   def hmrcStandardForAgentsAgreed: StateOfAgreement
-  def numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals] // all applications require this, sole traders will have a list of one
+  def numberOfIndividuals: Option[NumberOfIndividuals] // all applications require this, sole traders will have a list of one
   def hasOtherRelevantIndividuals: Option[Boolean]
   def vrns: Option[List[Vrn]]
   def payeRefs: Option[List[PayeRef]]
@@ -101,9 +104,11 @@ sealed trait AgentApplication:
 
   def getAmlsDetails: AmlsDetails = amlsDetails.getOrElse(expectedDataNotDefinedError("amlsDetails"))
 
-  def getNumberOfRequiredKeyIndividuals: NumberOfRequiredKeyIndividuals = numberOfRequiredKeyIndividuals.getOrElse(
-    expectedDataNotDefinedError("numberOfRequiredKeyIndividuals")
+  def getNumberOfIndividuals: NumberOfIndividuals = numberOfIndividuals.getOrElse(
+    expectedDataNotDefinedError("numberOfIndividuals")
   )
+
+  def getSubmittedAt: Instant = submittedAt.getOrElse(expectedDataNotDefinedError("submittedAt"))
 
   private def as[T <: AgentApplication](using ct: reflect.ClassTag[T]): Option[T] =
     this match
@@ -130,6 +135,7 @@ final case class AgentApplicationSoleTrader(
   override val linkId: LinkId,
   override val groupId: GroupId,
   override val createdAt: Instant,
+  override val submittedAt: Option[Instant],
   override val applicationState: ApplicationState,
   override val userRole: Option[UserRole],
   businessDetails: Option[BusinessDetailsSoleTrader],
@@ -147,7 +153,7 @@ extends AgentApplication:
 
   override val businessType: BusinessType.SoleTrader.type = BusinessType.SoleTrader
   def getBusinessDetails: BusinessDetailsSoleTrader = businessDetails.getOrElse(expectedDataNotDefinedError("businessDetails"))
-  override def numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals] = Some(AgentApplicationSoleTrader.numberOfRequiredKeyIndividuals)
+  override def numberOfIndividuals: Option[NumberOfRequiredKeyIndividuals] = Some(AgentApplicationSoleTrader.numberOfRequiredKeyIndividuals)
 
 object AgentApplicationSoleTrader:
   val numberOfRequiredKeyIndividuals: NumberOfRequiredKeyIndividuals = FiveOrLess(1)
@@ -160,6 +166,7 @@ final case class AgentApplicationLlp(
   override val linkId: LinkId,
   override val groupId: GroupId,
   override val createdAt: Instant,
+  override val submittedAt: Option[Instant],
   override val applicationState: ApplicationState,
   override val userRole: Option[UserRole],
   businessDetails: Option[BusinessDetailsLlp],
@@ -169,7 +176,7 @@ final case class AgentApplicationLlp(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
-  override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
+  override val numberOfIndividuals: Option[NumberOfCompaniesHouseOfficers],
   override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
@@ -189,6 +196,7 @@ final case class AgentApplicationLimitedCompany(
   override val linkId: LinkId,
   override val groupId: GroupId,
   override val createdAt: Instant,
+  override val submittedAt: Option[Instant],
   override val applicationState: ApplicationState,
   override val userRole: Option[UserRole],
   businessDetails: Option[BusinessDetailsLimitedCompany],
@@ -198,7 +206,7 @@ final case class AgentApplicationLimitedCompany(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
-  override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
+  override val numberOfIndividuals: Option[NumberOfCompaniesHouseOfficers],
   override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
@@ -218,6 +226,7 @@ final case class AgentApplicationGeneralPartnership(
   override val linkId: LinkId,
   override val groupId: GroupId,
   override val createdAt: Instant,
+  override val submittedAt: Option[Instant],
   override val applicationState: ApplicationState,
   override val userRole: Option[UserRole],
   businessDetails: Option[BusinessDetailsGeneralPartnership],
@@ -226,7 +235,7 @@ final case class AgentApplicationGeneralPartnership(
   override val agentDetails: Option[AgentDetails],
   override val refusalToDealWithCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
-  override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
+  override val numberOfIndividuals: Option[NumberOfRequiredKeyIndividuals],
   override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
@@ -234,6 +243,7 @@ final case class AgentApplicationGeneralPartnership(
 extends AgentApplication:
 
   override val businessType: BusinessType.Partnership.GeneralPartnership.type = BusinessType.Partnership.GeneralPartnership
+
   def getBusinessDetails: BusinessDetailsGeneralPartnership = businessDetails.getOrElse(expectedDataNotDefinedError("businessDetails"))
 
 /** Application for Limited Partnership. This final case class represents the data entered by a user for registering as a Limited Partnership.
@@ -244,6 +254,7 @@ final case class AgentApplicationLimitedPartnership(
   override val linkId: LinkId,
   override val groupId: GroupId,
   override val createdAt: Instant,
+  override val submittedAt: Option[Instant],
   override val applicationState: ApplicationState,
   override val userRole: Option[UserRole],
   businessDetails: Option[BusinessDetailsPartnership],
@@ -253,7 +264,7 @@ final case class AgentApplicationLimitedPartnership(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
-  override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
+  override val numberOfIndividuals: Option[NumberOfCompaniesHouseOfficers],
   override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
@@ -271,6 +282,7 @@ final case class AgentApplicationScottishLimitedPartnership(
   override val linkId: LinkId,
   override val groupId: GroupId,
   override val createdAt: Instant,
+  override val submittedAt: Option[Instant],
   override val applicationState: ApplicationState,
   override val userRole: Option[UserRole],
   businessDetails: Option[BusinessDetailsPartnership],
@@ -280,7 +292,7 @@ final case class AgentApplicationScottishLimitedPartnership(
   override val refusalToDealWithCheckResult: Option[CheckResult],
   companyStatusCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
-  override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
+  override val numberOfIndividuals: Option[NumberOfCompaniesHouseOfficers],
   override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
@@ -298,6 +310,7 @@ final case class AgentApplicationScottishPartnership(
   override val linkId: LinkId,
   override val groupId: GroupId,
   override val createdAt: Instant,
+  override val submittedAt: Option[Instant],
   override val applicationState: ApplicationState,
   override val userRole: Option[UserRole],
   businessDetails: Option[BusinessDetailsScottishPartnership],
@@ -306,7 +319,7 @@ final case class AgentApplicationScottishPartnership(
   override val agentDetails: Option[AgentDetails],
   override val refusalToDealWithCheckResult: Option[CheckResult],
   override val hmrcStandardForAgentsAgreed: StateOfAgreement,
-  override val numberOfRequiredKeyIndividuals: Option[NumberOfRequiredKeyIndividuals],
+  override val numberOfIndividuals: Option[NumberOfRequiredKeyIndividuals],
   override val hasOtherRelevantIndividuals: Option[Boolean],
   override val vrns: Option[List[Vrn]],
   override val payeRefs: Option[List[PayeRef]]
@@ -354,12 +367,15 @@ object AgentApplication:
 
   type IsAgentApplicationForDeclaringNumberOfKeyIndividuals = (AgentApplicationGeneralPartnership | AgentApplicationScottishPartnership) & AgentApplication
 
-  type IsNotAgentApplicationForKeyIndividuals =
-    (AgentApplicationSoleTrader
+  type IsAgentApplicationForKeyIndividuals =
+    (AgentApplicationGeneralPartnership
+      | AgentApplicationScottishPartnership
       | AgentApplicationLimitedCompany
       | AgentApplicationLimitedPartnership
       | AgentApplicationLlp
       | AgentApplicationScottishLimitedPartnership) & AgentApplication
+
+  type IsNotAgentApplicationForKeyIndividuals = AgentApplicationSoleTrader & AgentApplication
 
   private object CompilationProofs:
 
@@ -380,7 +396,7 @@ object AgentApplication:
     ]
     DisjointUnions.prove[
       AgentApplication,
-      IsAgentApplicationForDeclaringNumberOfKeyIndividuals,
+      IsAgentApplicationForKeyIndividuals,
       IsNotAgentApplicationForKeyIndividuals
     ]
 
