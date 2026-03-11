@@ -44,7 +44,7 @@ extends ControllerSpec:
     AuthStubs.stubAuthorise()
     val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
 
-    repo.findByAppicationReference(
+    repo.findByApplicationReference(
       (tdAll.llpApplicationForRisking.applicationReference)
     ).futureValue shouldBe None withClue "assuming initially there is no records in mongo "
 
@@ -60,7 +60,7 @@ extends ControllerSpec:
     val exampleApplicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals = List(tdAll.readyForSubmissionIndividual))
 
     val result =
-      repo.findByAppicationReference(
+      repo.findByApplicationReference(
         tdAll.llpApplicationForRisking.applicationReference
       ).futureValue
 
