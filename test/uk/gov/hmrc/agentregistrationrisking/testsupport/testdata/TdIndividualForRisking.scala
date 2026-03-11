@@ -33,7 +33,7 @@ trait TdIndividualForRisking { dependencies: TdBase =>
   private val createdAt: Instant = dependencies.instant
 
   def readyForSubmissionIndividual: IndividualForRisking = IndividualForRisking(
-    personReference = PersonReference(randomId.value),
+    personReference = PersonReference(randomId),
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     vrns = s"$vrn,$vrn",
     payeRefs = s"$payeRef,$payeRef",
