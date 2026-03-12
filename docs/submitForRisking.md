@@ -169,8 +169,6 @@ Submit a completed application for risking.
 
 * **Error Responses:**
 
-    * **Code:** 401 UNAUTHORIZED <br/>
-      **Content:** `{"code":"UNAUTHORIZED","message":"Bearer token is missing or not authorized for access"}`
+    * **Code:** 401 UNAUTHORIZED
 
-    * **Code:** 403 FORBIDDEN <br/>
-      **Content:** `{"code":"FORBIDDEN","message":Authenticated user is not authorised for this resource"}`
+    * **Code:** 403 FORBIDDEN
