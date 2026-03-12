@@ -41,7 +41,7 @@ extends BackendController(cc):
     .authorised
     .async:
       applicationForRiskingRepo
-        .findByAppicationReference(applicationReference)
+        .findByApplicationReference(applicationReference)
         .map:
           case Some(application) => Ok(Json.toJson(toApplicationRiskingResponse(application)))
           case None => NotFound

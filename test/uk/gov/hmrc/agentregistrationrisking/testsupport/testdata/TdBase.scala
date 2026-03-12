@@ -29,6 +29,7 @@ import uk.gov.hmrc.agentregistration.shared.InternalUserId
 import uk.gov.hmrc.agentregistration.shared.LinkId
 import uk.gov.hmrc.agentregistration.shared.Nino
 import uk.gov.hmrc.agentregistration.shared.Utr
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 
 import java.util.UUID
 
@@ -47,6 +48,7 @@ trait TdBase:
   def internalUserId: InternalUserId = InternalUserId("internal-user-id-12345")
   def agentApplicationId: AgentApplicationId = AgentApplicationId("agent-application-id-12345")
   def individualProvidedDetailsId: IndividualProvidedDetailsId = IndividualProvidedDetailsId("individual-id-12345")
+  def personReference: PersonReference = PersonReference("1234567890")
   def linkId: LinkId = LinkId("link-id-12345")
   def utr: Utr = Utr("1234567890")
   def nino: Nino = Nino("AA0011221A")

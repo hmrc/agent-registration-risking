@@ -21,6 +21,9 @@ import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistration.shared.upload.UploadId
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.objectstore.client.Path.File
@@ -54,7 +57,21 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
       "certificate.pdf",
       File("test.txt")
     )),
-    individuals = List(dependencies.readyForSubmissionIndividual()),
+    individuals = List(dependencies.readyForSubmissionIndividual(Some(this.personReference))),
+    failures = None
+  )
+
+  def applicationRiskingResponseReadyForSubmission(
+    applicationReference: ApplicationReference,
+    personReference: PersonReference
+  ) = ApplicationRiskingResponse(
+    applicationReference = applicationReference,
+    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    individuals = List(IndividualRiskingResponse(
+      personReference = personReference,
+      status = ApplicationForRiskingStatus.ReadyForSubmission,
+      failures = None
+    )),
     failures = None
   )
 
