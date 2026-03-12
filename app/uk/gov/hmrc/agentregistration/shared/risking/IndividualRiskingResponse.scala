@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.risking
 
-import play.api.libs.json.Format
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-enum ApplicationForRiskingStatus:
+final case class IndividualRiskingResponse(
+  personReference: PersonReference,
+  status: ApplicationForRiskingStatus,
+  failures: Option[List[Failure]]
+)
 
-  case ReadyForSubmission
-  case SubmittedForRisking
-  case Approved
-  case FailedNonFixable
-  case FailedFixable
-  case ReadyForResubmission
+object IndividualRiskingResponse:
 
-object ApplicationForRiskingStatus:
-  given Format[ApplicationForRiskingStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationForRiskingStatus]
+  given OFormat[IndividualRiskingResponse] = Json.format[IndividualRiskingResponse]

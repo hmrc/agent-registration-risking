@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.controllers
 
-import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
@@ -26,20 +25,19 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationScottishLimitedPartnership
 import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.Future
 import scala.util.chaining.scalaUtilChainingOps
 
 @Singleton()
