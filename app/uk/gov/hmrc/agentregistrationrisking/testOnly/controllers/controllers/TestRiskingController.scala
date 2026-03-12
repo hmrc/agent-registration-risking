@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers
 
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -41,6 +42,7 @@ import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -58,11 +60,18 @@ class TestRiskingController @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
-  riskingFileService: RiskingFileService
+  riskingFileService: RiskingFileService,
+  riskingRunner: RiskingRunner
 )
-extends BackendController(cc):
+extends BackendController(cc)
+with Logging:
 
   given ExecutionContext = controllerComponents.executionContext
+
+  def createAndSendRiskingFile: Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        riskingRunner.run().map(_ => Ok)
 
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:

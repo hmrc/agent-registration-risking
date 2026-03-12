@@ -50,7 +50,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   replaceIndexes = true
 ):
 
-  def findByAppicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRisking]] = collection
+  def findByApplicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRisking]] = collection
     .find(
       filter = Filters.eq("applicationReference", applicationReference.value)
     )

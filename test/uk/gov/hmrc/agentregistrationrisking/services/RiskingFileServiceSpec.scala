@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.model.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
@@ -27,15 +28,18 @@ class RiskingFileServiceSpec
 extends ISpec:
 
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-  val service = app.injector.instanceOf[RiskingFileService]
+  val service: RiskingFileService = app.injector.instanceOf[RiskingFileService]
+  val personReference1: PersonReference = PersonReference(randomId)
+  val personReference2: PersonReference = PersonReference(randomId)
+  val personReference3: PersonReference = PersonReference(randomId)
 
   "buildRiskingFile retrieves all applications ready for risking and creates risking file in correct format" in:
 
     val readyForSubmissionUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(individuals =
       List(
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual
+        tdAll.readyForSubmissionIndividual(Some(personReference1)),
+        tdAll.readyForSubmissionIndividual(Some(personReference2)),
+        tdAll.readyForSubmissionIndividual(Some(personReference3))
       )
     ))
     readyForSubmissionUpsert.futureValue
@@ -50,9 +54,9 @@ extends ISpec:
 
     val readyForSubmissionUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(individuals =
       List(
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual
+        tdAll.readyForSubmissionIndividual(Some(personReference1)),
+        tdAll.readyForSubmissionIndividual(Some(personReference2)),
+        tdAll.readyForSubmissionIndividual(Some(personReference3))
       )
     ))
     readyForSubmissionUpsert.futureValue
@@ -60,9 +64,9 @@ extends ISpec:
       applicationReference = ApplicationReference(randomId),
       status = ApplicationForRiskingStatus.SubmittedForRisking,
       individuals = List(
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual,
-        tdAll.readyForSubmissionIndividual
+        tdAll.readyForSubmissionIndividual(Some(personReference1)),
+        tdAll.readyForSubmissionIndividual(Some(personReference2)),
+        tdAll.readyForSubmissionIndividual(Some(personReference3))
       )
     ))
     submittedUpsert.futureValue
