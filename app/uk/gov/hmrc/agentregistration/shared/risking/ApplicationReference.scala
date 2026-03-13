@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.risking
 
 import org.bson.types.ObjectId
 import play.api.libs.json.Format
@@ -24,15 +24,15 @@ import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
 import javax.inject.Singleton
 
-/** Person Reference used by Minerva as a unique identifier for an individual
+/** Application Reference used by Minerva as a unique identifier for an Entity(application)
   */
-final case class PersonReference(value: String)
+final case class ApplicationReference(value: String)
 
-object PersonReference:
+object ApplicationReference:
 
-  given format: Format[PersonReference] = JsonFormatsFactory.makeValueClassFormat
-  given pathBindable: PathBindable[PersonReference] = ValueClassBinder.valueClassBinder[PersonReference](_.value)
+  given format: Format[ApplicationReference] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[ApplicationReference] = ValueClassBinder.valueClassBinder[ApplicationReference](_.value)
 
 @Singleton
-class PersonReferenceGenerator:
-  def nextPersonReference(): PersonReference = PersonReference(ObjectId.get().toHexString)
+class ApplicationReferenceGenerator:
+  def nextApplicationReference(): ApplicationReference = ApplicationReference(ObjectId.get().toHexString)

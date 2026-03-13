@@ -1,4 +1,5 @@
 # microservice specific routes
 
-POST        /submit-for-risking           uk.gov.hmrc.agentregistrationrisking.controllers.SubmitForRiskingController.submitForRisking()
+POST        /submit-for-risking                       uk.gov.hmrc.agentregistrationrisking.controllers.SubmitForRiskingController.submitForRisking()
+GET         /application/:applicationReference        uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationController.getApplicationRiskingResponse(applicationReference: ApplicationReference)
 GET         /application-status/:applicationReference uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationStatusController.getApplicationStatus(applicationReference: ApplicationReference)

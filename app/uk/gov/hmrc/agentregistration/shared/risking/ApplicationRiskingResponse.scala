@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking
+package uk.gov.hmrc.agentregistration.shared.risking
 
-object RoutesExports:
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-  export uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+final case class ApplicationRiskingResponse(
+  applicationReference: ApplicationReference,
+  status: ApplicationForRiskingStatus,
+  individuals: List[IndividualRiskingResponse],
+  failures: Option[List[Failure]]
+)
+
+object ApplicationRiskingResponse:
+
+  given OFormat[ApplicationRiskingResponse] = Json.format[ApplicationRiskingResponse]

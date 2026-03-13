@@ -4,9 +4,11 @@ This service handles the risking element of an agent registration made through a
   API
 ---
 
-| *Task*                                               | *Supported Methods* | *Description*                                                                  |
-|------------------------------------------------------|---------------------|--------------------------------------------------------------------------------|
-| ```/agent-registration-risking/submit-for-risking``` | POST                | Submit a completed applicaton for risking. [More...](docs/submitForRisking.md) |
+| *Task*                                               | *Supported Methods* | *Description*                                                                                       |
+|------------------------------------------------------|---------------------|-----------------------------------------------------------------------------------------------------|
+| ```/agent-registration-risking/submit-for-risking``` | POST                | Submit a completed applicaton for risking. [More...](docs/submitForRisking.md)                      |
+| ```/agent-registration-risking/application```        | GET                 | Get the application for the given reference. [More...](docs/getApplication.md)                      |
+| ```/agent-registration-risking/application-status``` | GET                 | Get the application risking status for the given reference. [More...](docs/getApplicationStatus.md) |
 
 # Running the Service
 

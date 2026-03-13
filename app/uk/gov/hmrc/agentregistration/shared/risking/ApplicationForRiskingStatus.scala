@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking
+package uk.gov.hmrc.agentregistration.shared.risking
 
-object RoutesExports:
+import play.api.libs.json.Format
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-  export uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+enum ApplicationForRiskingStatus:
+
+  case ReadyForSubmission
+  case SubmittedForRisking
+  case Approved
+  case FailedNonFixable
+  case FailedFixable
+  case ReadyForResubmission
+
+object ApplicationForRiskingStatus:
+  given Format[ApplicationForRiskingStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationForRiskingStatus]

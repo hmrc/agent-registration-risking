@@ -28,7 +28,6 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualVerifiedEmailAddress
 import uk.gov.hmrc.agentregistration.shared.individual.ProvidedDetailsState.Finished
-import uk.gov.hmrc.agentregistration.shared.individual.ProvidedDetailsState.Started
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 
 trait TdIndividualProvidedDetails { dependencies: (TdBase) =>

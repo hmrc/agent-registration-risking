@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileDataRecord
 
 import javax.inject.Inject
