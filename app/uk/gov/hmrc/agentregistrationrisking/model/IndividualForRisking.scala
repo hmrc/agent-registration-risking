@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.Failure
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
@@ -50,4 +51,11 @@ final case class IndividualForRisking(
 )
 
 object IndividualForRisking:
+
   given OFormat[IndividualForRisking] = Json.format[IndividualForRisking]
+
+  def toIndividualRiskingResponse(individualForRisking: IndividualForRisking): IndividualRiskingResponse = IndividualRiskingResponse(
+    personReference = individualForRisking.personReference,
+    status = individualForRisking.status,
+    failures = individualForRisking.failures
+  )

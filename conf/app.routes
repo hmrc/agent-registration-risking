@@ -2,4 +2,5 @@
 
 POST        /submit-for-risking                       uk.gov.hmrc.agentregistrationrisking.controllers.SubmitForRiskingController.submitForRisking()
 GET         /application/:applicationReference        uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationController.getApplicationRiskingResponse(applicationReference: ApplicationReference)
+GET         /individual/:personReference              uk.gov.hmrc.agentregistrationrisking.controllers.GetIndividualController.getIndividualRiskingResponse(personReference: PersonReference)
 GET         /application-status/:applicationReference uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationStatusController.getApplicationStatus(applicationReference: ApplicationReference)

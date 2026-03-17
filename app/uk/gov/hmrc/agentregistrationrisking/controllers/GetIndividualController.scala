@@ -20,38 +20,27 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking.toIndividualRiskingResponse
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 
 import javax.inject.Inject
 
-class GetApplicationController @Inject() (
+class GetIndividualController @Inject() (
   actions: Actions,
   cc: ControllerComponents,
   applicationForRiskingRepo: ApplicationForRiskingRepo
 )
 extends BackendController(cc):
 
-  def getApplicationRiskingResponse(applicationReference: ApplicationReference): Action[AnyContent] = actions
+  def getIndividualRiskingResponse(personReference: PersonReference): Action[AnyContent] = actions
     .authorised
     .async:
       applicationForRiskingRepo
-        .findByApplicationReference(applicationReference)
+        .findIndividualByPersonReference(personReference)
         .map:
-          case Some(application) => Ok(Json.toJson(toApplicationRiskingResponse(application)))
+          case Some(individual) => Ok(Json.toJson(toIndividualRiskingResponse(individual)))
           case None => NotFound
-
-  extension (applicationForRisking: ApplicationForRisking)
-
-    private def toApplicationRiskingResponse: ApplicationRiskingResponse = ApplicationRiskingResponse(
-      applicationReference = applicationForRisking.applicationReference,
-      status = applicationForRisking.status,
-      individuals = applicationForRisking.individuals.map(toIndividualRiskingResponse),
-      failures = applicationForRisking.failures
-    )
