@@ -73,8 +73,8 @@ extends BackendController(cc):
       saUtr = individual.individualSaUtr,
       phoneNumber = individual.getTelephoneNumber,
       email = individual.getEmailAddress.emailAddress,
-      providedByApplicant = true, // Not currently possible for anyone other than the applicant to provide details
-      passedIV = true, // We don't currently log whether the applicant passed IV or not, this will come later
+      providedByApplicant = false, // It's not currently possible for the applicant to provide details, only individuals can do it themselves
+      passedIV = individual.getPassedIv,
       failures = None
     )
 
