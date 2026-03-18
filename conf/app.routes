@@ -4,3 +4,5 @@ POST        /submit-for-risking                       uk.gov.hmrc.agentregistrat
 GET         /application/:applicationReference        uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationController.getApplicationRiskingResponse(applicationReference: ApplicationReference)
 GET         /individual/:personReference              uk.gov.hmrc.agentregistrationrisking.controllers.GetIndividualController.getIndividualRiskingResponse(personReference: PersonReference)
 GET         /application-status/:applicationReference uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationStatusController.getApplicationStatus(applicationReference: ApplicationReference)
+
+POST        /receive-sdes-notifications               uk.gov.hmrc.agentregistrationrisking.controllers.SDESNotificationController.processSDESNotification
