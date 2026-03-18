@@ -50,7 +50,7 @@ extends ControllerSpec:
       url = path
     )
 
-  "get application returns NOT_FOUND if there is no underlying records" in:
+  "get application returns NO_CONTENT if there is no underlying records" in:
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
     val response =
@@ -58,7 +58,7 @@ extends ControllerSpec:
         .get(url"$baseUrl/agent-registration-risking/application/${tdAll.agentApplicationId.value}")
         .execute[HttpResponse]
         .futureValue
-    response.status shouldBe Status.NOT_FOUND
+    response.status shouldBe Status.NO_CONTENT
     response.body shouldBe ""
     AuthStubs.verifyAuthorise()
 

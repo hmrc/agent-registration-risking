@@ -22,6 +22,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking.toIndividualRiskingResponse
@@ -40,7 +41,8 @@ extends BackendController(cc):
     .authorised
     .async:
       applicationForRiskingRepo
-        .findIndividualByPersonReference(personReference)
+        .findByPersonReference(personReference)
+        .map(_.flatMap(_.individuals.find(_.personReference === personReference)))
         .map:
           case Some(individual) => Ok(Json.toJson(toIndividualRiskingResponse(individual)))
-          case None => NotFound
+          case None => NoContent

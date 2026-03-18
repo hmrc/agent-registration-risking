@@ -20,10 +20,11 @@ Returns the individual for the given reference.
           "status": "ReadyForSubmission"
         }
          ```
+      
+        * **Code:** 201 <br/>
+          Returned when no matching individual found
 
 * **Error Responses:**
-
-    * **Code:** 404 NOT_FOUND <br/>
 
     * **Code:** 401 UNAUTHORIZED <br/>
 

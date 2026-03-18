@@ -64,12 +64,10 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       filter = Filters.eq("status", status.toString)
     ).toFuture()
 
-  def findIndividualByPersonReference(personReference: PersonReference): Future[Option[IndividualForRisking]] = collection
+  def findByPersonReference(personReference: PersonReference): Future[Option[ApplicationForRisking]] = collection
     .find(
       filter = Filters.eq("individuals.personReference", personReference.value)
-    )
-    .headOption()
-    .map(_.flatMap(_.individuals.find(_.personReference === personReference)))
+    ).headOption()
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
@@ -93,5 +91,11 @@ object ApplicationForRiskingRepoHelp:
       IndexOptions()
         .unique(true)
         .name("applicationReference")
+    ),
+    IndexModel(
+      keys = Indexes.ascending("individuals.personReference"),
+      IndexOptions()
+        .unique(true)
+        .name("personReference")
     )
   )
