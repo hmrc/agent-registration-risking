@@ -49,7 +49,8 @@ final case class IndividualProvidedDetails(
   hmrcStandardForAgentsAgreed: StateOfAgreement = StateOfAgreement.NotSet,
   hasApprovedApplication: Option[Boolean] = None,
   vrns: Option[List[Vrn]] = None,
-  payeRefs: Option[List[PayeRef]] = None
+  payeRefs: Option[List[PayeRef]] = None,
+  passedIv: Option[Boolean] = None
 ):
 
   val individualProvidedDetailsId: IndividualProvidedDetailsId = _id
@@ -69,6 +70,8 @@ final case class IndividualProvidedDetails(
   def getSaUtr: IndividualSaUtr = individualSaUtr.getOrThrowExpectedDataMissing("SaUtr")
 
   def getDateOfBirth: IndividualDateOfBirth = individualDateOfBirth.getOrThrowExpectedDataMissing("Date of birth")
+
+  def getPassedIv: Boolean = passedIv.getOrThrowExpectedDataMissing("Passed IV result")
 
 object IndividualProvidedDetails:
   given format: OFormat[IndividualProvidedDetails] = Json.format[IndividualProvidedDetails]

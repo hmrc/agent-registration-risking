@@ -29,4 +29,6 @@ final case class SubmitForRiskingRequest(
 
 object SubmitForRiskingRequest:
 
+  import AgentApplicationFormats.format
+
   given OFormat[SubmitForRiskingRequest] = Json.format[SubmitForRiskingRequest]
