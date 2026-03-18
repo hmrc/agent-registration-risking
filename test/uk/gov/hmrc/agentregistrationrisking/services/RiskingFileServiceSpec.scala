@@ -63,9 +63,9 @@ extends ISpec:
       applicationReference = ApplicationReference(randomId),
       status = ApplicationForRiskingStatus.SubmittedForRisking,
       individuals = List(
-        tdAll.readyForSubmissionIndividual(Some(personReference1)),
-        tdAll.readyForSubmissionIndividual(Some(personReference2)),
-        tdAll.readyForSubmissionIndividual(Some(personReference3))
+        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference4"))),
+        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference5"))),
+        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference6")))
       )
     ))
     submittedUpsert.futureValue

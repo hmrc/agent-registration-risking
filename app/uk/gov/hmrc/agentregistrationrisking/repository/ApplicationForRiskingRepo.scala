@@ -32,8 +32,11 @@ import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
@@ -61,6 +64,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       filter = Filters.eq("status", status.toString)
     ).toFuture()
 
+  def findByPersonReference(personReference: PersonReference): Future[Option[ApplicationForRisking]] = collection
+    .find(
+      filter = Filters.eq("individuals.personReference", personReference.value)
+    ).headOption()
+
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
 object ApplicationForRiskingRepoHelp:
@@ -83,5 +91,11 @@ object ApplicationForRiskingRepoHelp:
       IndexOptions()
         .unique(true)
         .name("applicationReference")
+    ),
+    IndexModel(
+      keys = Indexes.ascending("individuals.personReference"),
+      IndexOptions()
+        .unique(true)
+        .name("personReference")
     )
   )

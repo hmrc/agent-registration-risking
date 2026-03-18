@@ -17,13 +17,13 @@
 package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import play.api.mvc.Call
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
 
-class GetApplicationControllerSpec /*
+class GetIndividualControllerSpec /*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,29 +40,29 @@ class GetApplicationControllerSpec /*
  */
 extends ControllerSpec:
 
-  val agentApplicationReference: ApplicationReference = ApplicationReference(tdAll.agentApplicationId.value)
-  val path: String = s"/agent-registration-risking/application/${agentApplicationReference.value}"
+  val personReference: PersonReference = PersonReference(tdAll.personReference.value)
+  val path: String = s"/agent-registration-risking/individual/${personReference.value}"
 
   "routes should have correct paths and methods" in:
-    val call: Call = routes.GetApplicationController.getApplicationRiskingResponse(agentApplicationReference)
+    val call: Call = routes.GetIndividualController.getIndividualRiskingResponse(personReference)
     call shouldBe Call(
       method = "GET",
       url = path
     )
 
-  "get application returns NO_CONTENT if there is no underlying records" in:
+  "get individual returns NO_CONTENT if there is no underlying records" in:
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
     val response =
       httpClient
-        .get(url"$baseUrl/agent-registration-risking/application/${tdAll.agentApplicationId.value}")
+        .get(url"$baseUrl/agent-registration-risking/individual/${tdAll.personReference.value}")
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.NO_CONTENT
     response.body shouldBe ""
     AuthStubs.verifyAuthorise()
 
-  "find application returns Ok and the Application as Json body" in:
+  "find individual returns Ok and the Individual as Json body" in:
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
     val repo = app.injector.instanceOf[ApplicationForRiskingRepo]
@@ -71,13 +71,12 @@ extends ControllerSpec:
 
     val response =
       httpClient
-        .get(url"$baseUrl/agent-registration-risking/application/${application.applicationReference.value}")
+        .get(url"$baseUrl/agent-registration-risking/individual/${personReference.value}")
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.OK
-    val parsedResponse = response.json.as[ApplicationRiskingResponse]
-    parsedResponse shouldBe tdAll.applicationRiskingResponseReadyForSubmission(
-      applicationReference = application.applicationReference,
-      personReference = tdAll.personReference
+    val parsedResponse = response.json.as[IndividualRiskingResponse]
+    parsedResponse shouldBe tdAll.individualRiskingResponseReadyForSubmission(
+      personReference = personReference
     )
     AuthStubs.verifyAuthorise()

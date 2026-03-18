@@ -30,10 +30,12 @@ Returns the application for the given reference.
           ]
         }
          ```
+      
+        * **Code:** 201 <br/>
+        Returned when no matching application found
+
 
 * **Error Responses:**
-
-    * **Code:** 404 NOT_FOUND <br/>
 
     * **Code:** 401 UNAUTHORIZED <br/>
 
