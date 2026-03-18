@@ -48,7 +48,8 @@ trait TdIndividualProvidedDetails { dependencies: (TdBase) =>
     hmrcStandardForAgentsAgreed = Agreed,
     hasApprovedApplication = Some(true),
     vrns = Some(List(Vrn(vrn), Vrn(vrn))),
-    payeRefs = Some(List(PayeRef(payeRef), PayeRef(payeRef)))
+    payeRefs = Some(List(PayeRef(payeRef), PayeRef(payeRef))),
+    passedIv = Some(true)
   )
 
 }
