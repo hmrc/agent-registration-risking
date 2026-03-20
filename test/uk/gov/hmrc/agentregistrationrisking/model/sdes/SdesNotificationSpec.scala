@@ -20,48 +20,49 @@ import play.api.libs.json.JsValue
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 
-class SDESNotificationSpec
+class SdesNotificationSpec
 extends UnitSpec:
 
   "reader parses a file upload notification correctly" in:
-    val testJsonValue: JsValue = testFileReadyNotification
-    val result = testJsonValue.validate[SDESNotification].get
+    val testJsonValue: JsValue = fileReadyNotification
+
+    val result = testJsonValue.validate[SdesNotification].get
 
     result shouldBe FileReady(
-      testFileName,
-      testCorrelationId,
-      testSdesAvailableUntil,
-      testNotificationDate
+      notificationFileName,
+      correlationId,
+      sdesAvailableUntil,
+      notificationDate
     )
 
   "reader parses a file received notification correctly" in:
-    val testJsonValue: JsValue = testFileReceivedNotification
-    val result = testJsonValue.validate[SDESNotification].get
+    val testJsonValue: JsValue = fileReceivedNotification
+    val result = testJsonValue.validate[SdesNotification].get
 
     result shouldBe FileReceived(
-      testFileName,
-      testCorrelationId,
-      testNotificationDate
+      notificationFileName,
+      correlationId,
+      notificationDate
     )
 
   "reader parses a file processed notification correctly" in:
-    val testJsonValue: JsValue = testFileProcessedNotification
-    val result = testJsonValue.validate[SDESNotification].get
+    val testJsonValue: JsValue = fileProcessedNotification
+    val result = testJsonValue.validate[SdesNotification].get
 
     result shouldBe FileReceived(
-      testFileName,
-      testCorrelationId,
-      testNotificationDate
+      notificationFileName,
+      correlationId,
+      notificationDate
     )
 
   "reader parses a file processing failure notification correctly" in:
-    val testJsonValue: JsValue = testFileProcessingFailureNotification
-    val result = testJsonValue.validate[SDESNotification].get
+    val testJsonValue: JsValue = fileProcessingFailureNotification
+    val result = testJsonValue.validate[SdesNotification].get
 
     result shouldBe FileProcessingFailure(
-      testFileName,
-      testCorrelationId,
-      testNotificationDate,
-      testFailureReason,
-      testFailureAction
+      notificationFileName,
+      correlationId,
+      notificationDate,
+      failureReason,
+      failureAction
     )

@@ -16,15 +16,12 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model.sdes
 
-import play.api.libs.json.JsError
-import play.api.libs.json.JsPath
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
+import play.api.libs.json.*
 
 /** Possible responses from the SDES file service
   */
 
-type SDESNotification = FileReady | FileReceived | FileProcessed | FileProcessingFailure
+sealed trait SdesNotification
 
 final case class FileReady(
   filename: String,
@@ -32,18 +29,21 @@ final case class FileReady(
   availableUntil: String,
   dateTime: String
 )
+extends SdesNotification
 
 final case class FileReceived(
   filename: String,
   correlationID: String,
   dateTime: String
 )
+extends SdesNotification
 
 final case class FileProcessed(
   filename: String,
   correlationID: String,
   dateTime: String
 )
+extends SdesNotification
 
 final case class FileProcessingFailure(
   filename: String,
@@ -52,16 +52,21 @@ final case class FileProcessingFailure(
   failureReason: String,
   actionRequired: String
 )
+extends SdesNotification
 
-given Reads[FileReady] = Json.reads[FileReady]
-given Reads[FileReceived] = Json.reads[FileReceived]
-given Reads[FileProcessed] = Json.reads[FileProcessed]
-given Reads[FileProcessingFailure] = Json.reads[FileProcessingFailure]
+object SdesNotification:
 
-given Reads[SDESNotification] = Reads: json =>
-  (json \ "notification").validate[String].flatMap:
-    case "FileReady" => json.validate[FileReady]
-    case "FileReceived" => json.validate[FileReceived]
-    case "FileProcessed" => json.validate[FileProcessed]
-    case "FileProcessingFailure" => json.validate[FileProcessingFailure]
-    case _ => JsError(s"Received Malformed SDESNotification")
+  given Reads[SdesNotification] =
+    given JsonConfiguration = JsonConfiguration(
+      discriminator = "notification",
+      typeNaming = JsonNaming { fullName =>
+        fullName.split('.').last
+      }
+    )
+
+    given Reads[FileReady] = Json.reads[FileReady]
+    given Reads[FileReceived] = Json.reads[FileReceived]
+    given Reads[FileProcessed] = Json.reads[FileProcessed]
+    given Reads[FileProcessingFailure] = Json.reads[FileProcessingFailure]
+
+    Json.reads[SdesNotification]

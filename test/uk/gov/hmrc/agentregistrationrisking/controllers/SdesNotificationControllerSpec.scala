@@ -23,31 +23,25 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
-import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
 
-class SDESNotificationControllerSpec
+class SdesNotificationControllerSpec
 extends ControllerSpec:
 
   val path: String = s"/agent-registration-risking/receive-sdes-notifications"
 
   "SDES Notification controller should have the correct route" in:
-    val call: Call = routes.SDESNotificationController.processSDESNotification
+    val call: Call = routes.SdesNotificationController.receiveSdesNotification
     call shouldBe Call(
       method = "POST",
       url = path
     )
 
   "receiveNotification should handle the File Ready Notification correctly" in:
-    val SDESNotification: JsObject = testFileReadyNotification
-    AuthStubs.stubAuthorise()
+    val SDESNotification: JsObject = fileReadyNotification
 
     val response: WSResponse =
       wsClient
         .url(s"$baseUrl/agent-registration-risking/receive-sdes-notifications")
-        .withHttpHeaders(
-          "Content-Type" -> "application/json",
-          "Authorization" -> "test_token"
-        )
         .post(SDESNotification)
         .futureValue
 
@@ -55,48 +49,34 @@ extends ControllerSpec:
     response.body[String] === ""
 
   "receiveNotifications should handle the File Received Notification correctly" in:
-    val SDESNotification = testFileReceivedNotification
-    AuthStubs.stubAuthorise()
+    val SDESNotification = fileReceivedNotification
 
     val response: WSResponse =
       wsClient
         .url(s"$baseUrl/agent-registration-risking/receive-sdes-notifications")
-        .withHttpHeaders(
-          "Content-Type" -> "application/json",
-          "Authorization" -> "test_token"
-        )
         .post(SDESNotification)
         .futureValue
+
     response.status shouldBe Status.OK
     response.body[String] === ""
 
   "receiveNotifications should handle the File Processing Failed Notification correctly" in:
-    val SDESNotification = testFileProcessingFailureNotification
-    AuthStubs.stubAuthorise()
+    val SDESNotification = fileProcessingFailureNotification
 
     val response: WSResponse =
       wsClient
         .url(s"$baseUrl/agent-registration-risking/receive-sdes-notifications")
-        .withHttpHeaders(
-          "Content-Type" -> "application/json",
-          "Authorization" -> "test_token"
-        )
         .post(SDESNotification)
         .futureValue
     response.status shouldBe Status.OK
     response.body[String] === ""
 
   "receiveNotification should handle the File Processed Notification correctly" in:
-    val SDESNotification = testFileProcessedNotification
-    AuthStubs.stubAuthorise()
+    val SDESNotification = fileProcessedNotification
 
     val response: WSResponse =
       wsClient
         .url(s"$baseUrl/agent-registration-risking/receive-sdes-notifications")
-        .withHttpHeaders(
-          "Content-Type" -> "application/json",
-          "Authorization" -> "test_token"
-        )
         .post(SDESNotification)
         .futureValue
 
@@ -105,15 +85,10 @@ extends ControllerSpec:
 
   "should handle malformed JSON correctly" in:
     val SDESNotification = JsString("{Test Bad Json")
-    AuthStubs.stubAuthorise()
 
     val response: WSResponse =
       wsClient
         .url(s"$baseUrl/agent-registration-risking/receive-sdes-notifications")
-        .withHttpHeaders(
-          "Content-Type" -> "application/json",
-          "Authorization" -> "test_token"
-        )
         .post(SDESNotification)
         .futureValue
 

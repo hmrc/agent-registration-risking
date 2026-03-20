@@ -21,54 +21,54 @@ import play.api.libs.json.Json
 
 trait TdSdesData:
 
-  val testFileName = "testFileName.zip"
-  val testCorrelationId = "testCorrelationId"
-  val testSdesAvailableUntil = "01/02/2024"
-  val testNotificationDate = "01/02/2024"
-  val testFailureReason = "Virus Detected"
-  val testFailureAction = "address-failure-then-retry"
+  val notificationFileName: String = "testFileName.zip"
+  val correlationId: String = "testCorrelationId"
+  val sdesAvailableUntil: String = "01/02/2024"
+  val notificationDate: String = "01/02/2024"
+  val failureReason: String = "Virus Detected"
+  val failureAction: String = "address-failure-then-retry"
 
-  val testFileReadyNotification: JsObject = Json.obj(
+  val fileReadyNotification: JsObject = Json.obj(
     "notification" -> "FileReady",
-    "filename" -> "testFileName.zip",
+    "filename" -> notificationFileName,
     "checksumAlgorithm" -> "md5",
     "checksum" -> "123456",
-    "correlationID" -> "testCorrelationId",
-    "availableUntil" -> "01/02/2024",
-    "dateTime" -> "01/02/2024"
+    "correlationID" -> correlationId,
+    "availableUntil" -> sdesAvailableUntil,
+    "dateTime" -> notificationDate
   )
 
-  val testFileReceivedNotification: JsObject = Json.obj(
+  val fileReceivedNotification: JsObject = Json.obj(
     "notification" -> "FileReceived",
-    "filename" -> "testFileName.zip",
+    "filename" -> notificationFileName,
     "checksumAlgorithm" -> "md5",
     "checksum" -> "123456",
-    "correlationID" -> "testCorrelationId",
-    "dateTime" -> "01/02/2024",
+    "correlationID" -> correlationId,
+    "dateTime" -> notificationDate,
     "properties" -> Json.arr(
       Json.obj("property 1" -> "value 1", "property 2" -> "value 2")
     )
   )
 
-  val testFileProcessedNotification: JsObject = Json.obj(
+  val fileProcessedNotification: JsObject = Json.obj(
     "notification" -> "FileReceived",
-    "filename" -> "testFileName.zip",
+    "filename" -> notificationFileName,
     "checksumAlgorithm" -> "md5",
     "checksum" -> "123456",
-    "correlationID" -> "testCorrelationId",
-    "dateTime" -> "01/02/2024",
+    "correlationID" -> correlationId,
+    "dateTime" -> notificationDate,
     "properties" -> Json.arr(
       Json.obj("property 1" -> "value 1", "property 2" -> "value 2")
     )
   )
 
-  val testFileProcessingFailureNotification: JsObject = Json.obj(
+  val fileProcessingFailureNotification: JsObject = Json.obj(
     "notification" -> "FileProcessingFailure",
-    "filename" -> "testFileName.zip",
+    "filename" -> notificationFileName,
     "checksumAlgorithm" -> "md5",
     "checksum" -> "123456",
-    "correlationID" -> "testCorrelationId",
-    "dateTime" -> "01/02/2024",
-    "failureReason" -> "Virus Detected",
-    "actionRequired" -> "address-failure-then-retry"
+    "correlationID" -> correlationId,
+    "dateTime" -> notificationDate,
+    "failureReason" -> failureReason,
+    "actionRequired" -> failureAction
   )
