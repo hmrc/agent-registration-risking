@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes.TdSdesData
+
 object TdAll:
 
   def apply(): TdAll = new TdAll {}
@@ -33,3 +35,4 @@ with TdApplicationForRisking
 with TdIndividualForRisking
 with TdAgentApplication
 with TdIndividualProvidedDetails
+with TdSdesData
