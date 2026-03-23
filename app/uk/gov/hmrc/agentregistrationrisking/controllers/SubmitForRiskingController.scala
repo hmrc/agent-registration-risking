@@ -29,6 +29,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
@@ -77,6 +78,9 @@ extends BackendController(cc):
       passedIV = individual.getPassedIv,
       failures = None
     )
+
+  extension (individual: IndividualProvidedDetails)
+    def getPassedIv: Boolean = individual.passedIv.getOrThrowExpectedDataMissing("Passed IV result")
 
   extension (submitForRiskingRequest: SubmitForRiskingRequest)
 
