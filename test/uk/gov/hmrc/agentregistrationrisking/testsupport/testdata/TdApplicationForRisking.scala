@@ -27,13 +27,14 @@ import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistration.shared.upload.UploadId
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.objectstore.client.Path.File
+import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 
 import java.time.Instant
 import java.time.LocalDate
 
 trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
 
-  private val createdAt: Instant = dependencies.instant
+  private val createdAt: Instant = dependencies.nowAsInstant
 
   val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
     applicationReference = ApplicationReference(randomId),
@@ -41,16 +42,16 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
     createdAt = createdAt,
     uploadedAt = None,
     fileName = None,
-    applicantName = ApplicantName(applicantName),
-    applicantPhone = Some(TelephoneNumber(telephoneNumber)),
-    applicantEmail = Some(EmailAddress(email)),
+    applicantName = applicantName,
+    applicantPhone = Some(telephoneNumber),
+    applicantEmail = Some(applicantEmailAddress),
     entityType = BusinessType.Partnership.LimitedLiabilityPartnership,
-    entityIdentifier = Utr(utr.value),
-    crn = Some(Crn(crn)),
-    vrns = s"$vrn,$vrn",
-    payeRefs = s"$payeRef,$payeRef",
-    amlSupervisoryBody = AmlsCode(amlsCode),
-    amlRegNumber = AmlsRegistrationNumber(amlsRegistrationNumber),
+    entityIdentifier = saUtr.asUtr,
+    crn = Some(crn),
+    vrns = s"${vrn.value},${vrn.value}",
+    payeRefs = s"${payeRef.value},${payeRef.value}",
+    amlSupervisoryBody = amlsCode,
+    amlRegNumber = amlsRegistrationNumber,
     amlExpiryDate = Some(LocalDate.parse(dateString)),
     amlEvidence = Some(AmlsEvidence(
       UploadId("evidence-reference-123"),
