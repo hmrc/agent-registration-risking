@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-object TdAll:
+import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileProcessingStatus.Downloaded
+import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileLog
+import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileName
 
-  def apply(): TdAll = new TdAll {}
+import java.time.Instant
 
-  val tdAll: TdAll = new TdAll {}
+trait TdResultsFileLog {
+  dependencies: TdBase =>
 
-/** TestData (Td), All instances
-  */
-trait TdAll
-extends AnyRef
-with TdBase
-with TdRequest
-with TdObjectStore
-with TdApplicationForRisking
-with TdIndividualForRisking
-with TdAgentApplication
-with TdIndividualProvidedDetails
-with TdSDESProxy
-with TdResultsFileLog
+  private val downloadedAt: Instant = dependencies.instant
+
+  def resultsFileLog(fileName: String): ResultsFileLog = ResultsFileLog(
+    fileName = ResultsFileName(fileName),
+    status = Downloaded,
+    downloadedAt = downloadedAt
+  )
+
+}

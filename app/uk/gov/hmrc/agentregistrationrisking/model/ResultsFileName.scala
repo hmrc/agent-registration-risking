@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
+package uk.gov.hmrc.agentregistrationrisking.model
 
-object TdAll:
+import org.bson.types.ObjectId
+import play.api.libs.json.Format
+import play.api.mvc.PathBindable
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
-  def apply(): TdAll = new TdAll {}
-
-  val tdAll: TdAll = new TdAll {}
-
-/** TestData (Td), All instances
+/** The name of a risking results file received from Minerva
   */
-trait TdAll
-extends AnyRef
-with TdBase
-with TdRequest
-with TdObjectStore
-with TdApplicationForRisking
-with TdIndividualForRisking
-with TdAgentApplication
-with TdIndividualProvidedDetails
-with TdSDESProxy
-with TdResultsFileLog
+final case class ResultsFileName(value: String)
+
+object ResultsFileName:
+  given format: Format[ResultsFileName] = JsonFormatsFactory.makeValueClassFormat

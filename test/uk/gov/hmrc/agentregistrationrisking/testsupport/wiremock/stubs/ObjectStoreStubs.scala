@@ -82,3 +82,18 @@ object ObjectStoreStubs:
       .value
       .getRequest
       .getBodyAsString
+
+  def stubObjectStoreUploadFromUrl(
+    uploadedFilePath: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),
+    responseStatus = 200,
+    responseBody = Json.prettyPrint(TdAll.tdAll.objectStoreUploadFromUrlResponse(uploadedFilePath))
+  )
+
+  def verifyObjectStoreUploadFromUrl(count: Int = 1): Unit = StubMaker.verify(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),
+    count = count
+  )

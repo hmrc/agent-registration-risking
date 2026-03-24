@@ -32,6 +32,14 @@ class AppConfig @Inject() (
 
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
+  val sdesProxyBaseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
+  val sdesInformationType: String = config.get[String]("secure-data-exchange-proxy-config.information-type")
+  val sdesServerToken: String = config.get[String]("secure-data-exchange-proxy-config.server-token")
+  val sdesSRN: String = config.get[String]("secure-data-exchange-proxy-config.srn")
 
   object ApplicationForRiskingRepo:
+
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
+
+  object ResultsFileLogRepo:
+    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.results-file-log-ttl", servicesConfig)

@@ -43,6 +43,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
+import uk.gov.hmrc.agentregistrationrisking.services.ResultsFileService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -61,7 +62,8 @@ class TestRiskingController @Inject() (
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
   riskingFileService: RiskingFileService,
-  riskingRunner: RiskingRunner
+  riskingRunner: RiskingRunner,
+  resultsFileService: ResultsFileService
 )
 extends BackendController(cc)
 with Logging:
@@ -85,6 +87,11 @@ with Logging:
         applicationForRiskingRepo
           .upsert(applicationForRisking)
           .map(_ => Ok(Json.obj("applicationReference" -> applicationForRisking.applicationReference.value)))
+
+  def downloadAvailableResultsFiles: Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        resultsFileService.retrieveAndProcessResultsFiles.map(result => Ok(result.toString()))
 
   private def makeApplicationForRisking(numberOfIndividuals: Int): ApplicationForRisking = ApplicationForRisking(
     applicationReference = agentReferenceGenerator.nextApplicationReference(),

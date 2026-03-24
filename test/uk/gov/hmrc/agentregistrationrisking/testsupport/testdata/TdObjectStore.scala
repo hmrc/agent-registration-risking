@@ -33,4 +33,11 @@ trait TdObjectStore { dependencies: TdBase =>
     "lastModified" -> dependencies.instant
   )
 
+  def objectStoreUploadFromUrlResponse(uploadedPath: String): JsObject = Json.obj(
+    "location" -> uploadedPath,
+    "contentLength" -> sizeInBytes,
+    "contentMD5" -> "a3c2f1e38701bd2c7b54ebd7b1cd0dbc",
+    "lastModified" -> dependencies.instant
+  )
+
 }
