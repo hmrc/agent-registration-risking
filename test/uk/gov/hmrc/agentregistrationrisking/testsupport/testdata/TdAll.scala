@@ -37,3 +37,5 @@ with TdApplicationForRisking
 with TdIndividualForRisking
 with TdGrsBusinessDetails
 with TdAgentApplicationLlp
+with TdAgentApplication
+with sdes.TdSdesData
