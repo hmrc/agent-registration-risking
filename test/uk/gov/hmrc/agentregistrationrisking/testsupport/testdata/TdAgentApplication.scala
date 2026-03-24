@@ -19,30 +19,26 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.StateOfAgreement.Agreed
 import uk.gov.hmrc.agentregistration.shared.UserRole.Partner
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddress
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentVerifiedEmailAddress
 import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
 import uk.gov.hmrc.agentregistration.shared.businessdetails.BusinessDetailsLlp
 import uk.gov.hmrc.agentregistration.shared.businessdetails.CompanyProfile
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantContactDetails
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantEmailAddress
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
-import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLess
 import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLessOfficers
+import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.upload.UploadId
 import uk.gov.hmrc.objectstore.client.Path.File
 
 import java.time.Instant
 import java.time.LocalDate
 
+//TODO - replace with share TdAgentApplicationLlp
 trait TdAgentApplication { dependencies: TdBase =>
 
-  private val createdAt: Instant = dependencies.instant
+  private val createdAt: Instant = dependencies.nowAsInstant
 
+  // TODO - create TdAgentApplicationLlp after risking state
   val llpApplication: AgentApplicationLlp = AgentApplicationLlp(
     _id = agentApplicationId,
     internalUserId = internalUserId,
@@ -54,22 +50,22 @@ trait TdAgentApplication { dependencies: TdBase =>
     userRole = Some(Partner),
     businessDetails = Some(BusinessDetailsLlp(
       companyProfile = CompanyProfile(
-        companyNumber = Crn(crn),
+        companyNumber = crn,
         companyName = "Test LLP",
         dateOfIncorporation = Some(LocalDate.now()),
         unsanitisedCHROAddress = None
       ),
-      saUtr = SaUtr(dependencies.utr.value),
+      saUtr = dependencies.saUtr,
       safeId = SafeId("AARN1234567")
     )),
     applicantContactDetails = Some(ApplicantContactDetails(
-      applicantName = ApplicantName(applicantName),
-      telephoneNumber = Some(TelephoneNumber(telephoneNumber)),
-      applicantEmailAddress = Some(ApplicantEmailAddress(EmailAddress(email), isVerified = true))
+      applicantName = applicantName,
+      telephoneNumber = Some(telephoneNumber),
+      applicantEmailAddress = Some(ApplicantEmailAddress(applicantEmailAddress, isVerified = true))
     )),
     amlsDetails = Some(AmlsDetails(
-      supervisoryBody = AmlsCode(amlsCode),
-      amlsRegistrationNumber = Some(AmlsRegistrationNumber(amlsRegistrationNumber)),
+      supervisoryBody = amlsCode,
+      amlsRegistrationNumber = Some(amlsRegistrationNumber),
       amlsExpiryDate = Some(LocalDate.parse(dateString)),
       amlsEvidence = Some(AmlsEvidence(
         UploadId("evidence-reference-123"),
@@ -78,9 +74,9 @@ trait TdAgentApplication { dependencies: TdBase =>
       ))
     )),
     agentDetails = Some(AgentDetails(
-      businessName = AgentBusinessName(agentBusinessName, None),
-      telephoneNumber = Some(AgentTelephoneNumber(telephoneNumber, None)),
-      agentEmailAddress = Some(AgentVerifiedEmailAddress(AgentEmailAddress(email, None), isVerified = true)),
+      businessName = agentBusinessName,
+      telephoneNumber = Some(agentTelephoneNumber),
+      agentEmailAddress = Some(agentVerifiedEmailAddress),
       agentCorrespondenceAddress = None
     )),
     refusalToDealWithCheckResult = None,
@@ -91,8 +87,8 @@ trait TdAgentApplication { dependencies: TdBase =>
       isCompaniesHouseOfficersListCorrect = true
     )),
     hasOtherRelevantIndividuals = Some(true),
-    vrns = Some(List(Vrn(vrn), Vrn(vrn))),
-    payeRefs = Some(List(PayeRef(payeRef), PayeRef(payeRef)))
+    vrns = Some(List(vrn, vrn)),
+    payeRefs = Some(List(payeRef, payeRef))
   )
 
 }

@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes.TdSdesData
+import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
+import uk.gov.hmrc.agentregistration.shared.testdata.TdGrsBusinessDetails
+import uk.gov.hmrc.agentregistration.shared.testdata.agentapplication.TdAgentApplicationLlp
 
 object TdAll:
 
@@ -33,6 +35,7 @@ with TdRequest
 with TdObjectStore
 with TdApplicationForRisking
 with TdIndividualForRisking
+with TdGrsBusinessDetails
+with TdAgentApplicationLlp
 with TdAgentApplication
-with TdIndividualProvidedDetails
-with TdSdesData
+with sdes.TdSdesData
