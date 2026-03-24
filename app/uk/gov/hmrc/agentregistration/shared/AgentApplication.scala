@@ -154,7 +154,6 @@ extends AgentApplication:
   override val businessType: BusinessType.SoleTrader.type = BusinessType.SoleTrader
   def getBusinessDetails: BusinessDetailsSoleTrader = businessDetails.getOrElse(expectedDataNotDefinedError("businessDetails"))
   override def numberOfIndividuals: Option[NumberOfRequiredKeyIndividuals] = Some(AgentApplicationSoleTrader.numberOfRequiredKeyIndividuals)
-  def isOwner: Boolean = userRole.contains(UserRole.Owner)
 
 object AgentApplicationSoleTrader:
   val numberOfRequiredKeyIndividuals: NumberOfRequiredKeyIndividuals = FiveOrLess(1)

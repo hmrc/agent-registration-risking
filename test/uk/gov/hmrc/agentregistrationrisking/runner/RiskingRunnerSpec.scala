@@ -64,9 +64,9 @@ extends ISpec:
       .getRequestBody(fileName = fileName)
       .pipe(crypto.decrypt) shouldBe
       s"""00|ARR|SAS|20591125|163351
-         |01|Entity|N|${tdAll.llpApplicationForRisking.applicationReference.value}|Test Applicant|01234567890|test@example.com|LimitedLiabilityPartnership|1234567890|OC123456|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456|25-11-2059|evidence-reference-123|||||||||||
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Individual|01-01-1980|AA0011221A|1234567890|01234567890|test@example.com|Y|Y
+         |01|Entity|N|${tdAll.llpApplicationForRisking.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456|25-11-2059|evidence-reference-123|||||||||||
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
          |99|4"""
         .stripMargin

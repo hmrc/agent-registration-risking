@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 
 trait TdObjectStore { dependencies: TdBase =>
 
@@ -30,7 +31,7 @@ trait TdObjectStore { dependencies: TdBase =>
     "location" -> objectStoreLocation,
     "contentLength" -> sizeInBytes,
     "contentMD5" -> "a3c2f1e38701bd2c7b54ebd7b1cd0dbc",
-    "lastModified" -> dependencies.instant
+    "lastModified" -> dependencies.nowAsInstant
   )
 
 }

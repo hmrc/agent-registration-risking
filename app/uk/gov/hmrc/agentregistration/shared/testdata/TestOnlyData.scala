@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
+package uk.gov.hmrc.agentregistration.shared.testdata
 
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
-import uk.gov.hmrc.agentregistration.shared.testdata.TdGrsBusinessDetails
-import uk.gov.hmrc.agentregistration.shared.testdata.agentapplication.TdAgentApplicationLlp
+import uk.gov.hmrc.agentregistration.shared.testdata.agentapplication.*
 
-object TdAll:
+trait TestOnlyData
+extends TdBase,
+  TdAgentApplicationLlp,
+  TdAgentApplicationGeneralPartnership,
+  TdAgentApplicationScottishPartnership,
+  TdAgentApplicationSoleTrader,
+  TdAgentApplicationLimitedCompany,
+  TdAgentApplicationLimitedPartnership,
+  TdAgentApplicationScottishLimitedPartnership,
+  providedetails.individual.TdIndividualProvidedDetails,
+  TdGrsBusinessDetails
 
-  def apply(): TdAll = new TdAll {}
-
-  val tdAll: TdAll = new TdAll {}
-
-/** TestData (Td), All instances
-  */
-trait TdAll
-extends AnyRef
-with TdBase
-with TdRequest
-with TdObjectStore
-with TdApplicationForRisking
-with TdIndividualForRisking
-with TdGrsBusinessDetails
-with TdAgentApplicationLlp
+object TestOnlyData
+extends TestOnlyData

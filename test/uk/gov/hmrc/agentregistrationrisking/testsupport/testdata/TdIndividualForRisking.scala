@@ -26,26 +26,27 @@ import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 
 import java.time.Instant
 
 trait TdIndividualForRisking { dependencies: TdBase =>
 
-  private val createdAt: Instant = dependencies.instant
+  private val createdAt: Instant = dependencies.nowAsInstant
 
   def readyForSubmissionIndividual(personReference: Option[PersonReference] = None): IndividualForRisking = IndividualForRisking(
     personReference = personReference.getOrElse(PersonReference(randomId)),
     status = ApplicationForRiskingStatus.ReadyForSubmission,
-    vrns = s"$vrn,$vrn",
-    payeRefs = s"$payeRef,$payeRef",
+    vrns = s"${vrn.value},${vrn.value}",
+    payeRefs = s"${payeRef.value},${payeRef.value}",
     companiesHouseName = None,
     companiesHouseDateOfBirth = None,
-    providedName = IndividualName(individualName),
+    providedName = individualName,
     providedDateOfBirth = Provided(individualDateOfBirth),
     nino = Some(IndividualNino.Provided(nino)),
-    saUtr = Some(IndividualSaUtr.Provided(SaUtr(utr.value))),
-    phoneNumber = TelephoneNumber(telephoneNumber),
-    email = EmailAddress(email),
+    saUtr = Some(saUtrProvided),
+    phoneNumber = telephoneNumber,
+    email = individualEmailAddress,
     providedByApplicant = true,
     passedIV = true,
     failures = None
