@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.model.SDESFileData
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileProcessingStatus.Downloaded
 import uk.gov.hmrc.agentregistrationrisking.repository.ResultsFileLogRepo
+import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 
 import java.time.Clock
@@ -39,14 +40,19 @@ class ResultsFileService @Inject() (
 )(using
   ExecutionContext,
   Clock
-):
+)
+extends RequestAwareLogging:
 
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
+    logger.info(s"Results file retrieval started...")
     for {
       unprocessedFileList <- getUnprocessedAvailableFiles
+      _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
       uploadUnprocessedFiles = unprocessedFileList.map(uploadResultFile)
       uploadResults <- Future.sequence(uploadUnprocessedFiles)
+      _ = logger.info(s"Files uploaded to object store: ${uploadResults.size}")
       addUploadedFilesToLog <- Future successful uploadResults.map(downloadedFile => upsertDownloadedFile(downloadedFile.location.fileName))
+      _ = logger.info("File details added to mongo log")
     } yield uploadResults
 
   private def uploadResultFile(file: SDESFileData)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =

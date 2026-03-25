@@ -92,6 +92,13 @@ object ObjectStoreStubs:
     responseBody = Json.prettyPrint(TdAll.tdAll.objectStoreUploadFromUrlResponse(uploadedFilePath))
   )
 
+  def stubObjectStoreUploadFromUrlFailure: StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),
+    responseStatus = 500,
+    responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
+  )
+
   def verifyObjectStoreUploadFromUrl(count: Int = 1): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),

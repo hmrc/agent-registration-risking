@@ -38,7 +38,7 @@ trait TdObjectStore { dependencies: TdBase =>
     "location" -> uploadedPath,
     "contentLength" -> sizeInBytes,
     "contentMD5" -> "a3c2f1e38701bd2c7b54ebd7b1cd0dbc",
-    "lastModified" -> dependencies.instant
+    "lastModified" -> dependencies.nowAsInstant
   )
 
 }

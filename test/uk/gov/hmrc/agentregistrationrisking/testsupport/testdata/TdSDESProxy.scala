@@ -27,12 +27,13 @@ import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.SDESFileData
+import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 
 import java.time.Instant
 
 trait TdSDESProxy { dependencies: TdBase =>
 
-  private val createdAt: Instant = dependencies.instant
+  private val createdAt: Instant = dependencies.nowAsInstant
 
   def sdesFileData(fileName: String): SDESFileData = SDESFileData(
     downloadURL = "https://some.sdes.domain?token=abc123",

@@ -34,6 +34,7 @@ extends ISpec:
     given RequestHeader = FakeRequest()
 
     val alreadyProcessedFilesUpsert: Unit = repo.upsert(tdAll.resultsFileLog("resultsFile01.txt")).futureValue
+    val verifyUpsert = repo.findAll().futureValue.size shouldBe 1
 
     SDESProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
@@ -43,3 +44,16 @@ extends ISpec:
     result.size shouldBe 1
     result.headOption.value.location.fileName shouldBe "resultsFile02.txt"
     result.headOption.value.location.directory.value shouldBe "agent-registration-risking/received-results-files"
+    val verifyNewUpsert = repo.findAll().futureValue.size shouldBe 2
+
+  "retrieveAndProcessResultsFile doesn't update mongo if file not successfully uploaded to object store" in:
+
+    given RequestHeader = FakeRequest()
+
+    val alreadyProcessedFilesUpsert: Unit = repo.upsert(tdAll.resultsFileLog("resultsFile01.txt")).futureValue
+    val verifyUpsert = repo.findAll().futureValue.size shouldBe 1
+
+    SDESProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
+    ObjectStoreStubs.stubObjectStoreUploadFromUrlFailure
+    val result = service.retrieveAndProcessResultsFiles
+    val verifyNoUpsert = repo.findAll().futureValue.size shouldBe 1

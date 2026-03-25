@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.testdata.TdGrsBusinessDetails
+import uk.gov.hmrc.agentregistration.shared.testdata.providedetails.individual.TdIndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.testdata.agentapplication.TdAgentApplicationLlp
 
 object TdAll:
