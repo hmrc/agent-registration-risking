@@ -20,7 +20,7 @@ import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentregistrationrisking.repository.ResultsFileLogRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
-import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SDESProxyStubs
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 
 class ResultsFileServiceSpec
@@ -36,7 +36,7 @@ extends ISpec:
     val alreadyProcessedFilesUpsert: Unit = repo.upsert(tdAll.resultsFileLog("resultsFile01.txt")).futureValue
     val verifyUpsert = repo.findAll().futureValue.size shouldBe 1
 
-    SDESProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
+    SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
 
     val result = service.retrieveAndProcessResultsFiles.futureValue
@@ -53,7 +53,7 @@ extends ISpec:
     val alreadyProcessedFilesUpsert: Unit = repo.upsert(tdAll.resultsFileLog("resultsFile01.txt")).futureValue
     val verifyUpsert = repo.findAll().futureValue.size shouldBe 1
 
-    SDESProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
+    SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubObjectStoreUploadFromUrlFailure
     val result = service.retrieveAndProcessResultsFiles
     val verifyNoUpsert = repo.findAll().futureValue.size shouldBe 1

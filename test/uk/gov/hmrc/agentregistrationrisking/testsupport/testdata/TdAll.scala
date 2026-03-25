@@ -41,5 +41,5 @@ with TdAgentApplicationLlp
 with TdAgentApplication
 with sdes.TdSdesData
 with TdIndividualProvidedDetails
-with TdSDESProxy
+with TdSdesProxy
 with TdResultsFileLog

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.connectors
 import play.api.http.Status.OK
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.SDESFileData
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesFileData
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpResponse
@@ -31,22 +31,22 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class SDESProxyConnector @Inject() (
+class SdesProxyConnector @Inject() (
   appConfig: AppConfig,
   httpClient: HttpClientV2
 )(using ExecutionContext)
 extends Connector:
 
-  private val headers = Seq("x-client-id" -> appConfig.sdesServerToken, "X-SDES-Key" -> appConfig.sdesSRN)
-  private val filesAvailableUrl = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInformationType}"
+  private val headers = Seq("x-client-id" -> appConfig.sdesServerToken.value, "X-SDES-Key" -> appConfig.sdesSrn.value)
+  private val filesAvailableUrl = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInformationType.value}"
 
-  def getAvailableResultsFiles(using RequestHeader): Future[Seq[SDESFileData]] = httpClient
+  def getAvailableResultsFiles(using RequestHeader): Future[Seq[SdesFileData]] = httpClient
     .get(filesAvailableUrl)
     .setHeader(headers*)
     .execute[HttpResponse]
     .flatMap { response =>
       response.status match {
-        case OK => Future.successful(response.json.as[Seq[SDESFileData]])
+        case OK => Future.successful(response.json.as[Seq[SdesFileData]])
         case _ => Future.failed(UpstreamErrorResponse(response.body, response.status))
       }
     }

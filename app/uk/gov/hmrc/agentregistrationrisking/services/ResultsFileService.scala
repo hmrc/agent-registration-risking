@@ -18,11 +18,11 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
-import uk.gov.hmrc.agentregistrationrisking.connectors.SDESProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileLog
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileName
-import uk.gov.hmrc.agentregistrationrisking.model.SDESFileData
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileProcessingStatus.Downloaded
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesFileData
 import uk.gov.hmrc.agentregistrationrisking.repository.ResultsFileLogRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
@@ -34,7 +34,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ResultsFileService @Inject() (
-  sdesProxyConnector: SDESProxyConnector,
+  sdesProxyConnector: SdesProxyConnector,
   objectStoreService: ObjectStoreService,
   resultsFileLogRepo: ResultsFileLogRepo
 )(using
@@ -51,11 +51,11 @@ extends RequestAwareLogging:
       uploadUnprocessedFiles = unprocessedFileList.map(uploadResultFile)
       uploadResults <- Future.sequence(uploadUnprocessedFiles)
       _ = logger.info(s"Files uploaded to object store: ${uploadResults.size}")
-      addUploadedFilesToLog <- Future successful uploadResults.map(downloadedFile => upsertDownloadedFile(downloadedFile.location.fileName))
+      addUploadedFilesToLog = uploadResults.map(downloadedFile => upsertDownloadedFile(downloadedFile.location.fileName))
       _ = logger.info("File details added to mongo log")
     } yield uploadResults
 
-  private def uploadResultFile(file: SDESFileData)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
+  private def uploadResultFile(file: SdesFileData)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
     val downloadUri = Uri(file.downloadURL).toJavaUri.toURL
     objectStoreService.uploadFromUrl(downloadUrl = downloadUri, fileName = file.filename)
 
@@ -65,10 +65,10 @@ extends RequestAwareLogging:
     downloadedAt = Instant.now(summon[Clock])
   ))
 
-  private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[SDESFileData]] =
+  private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[SdesFileData]] =
     for {
       availableFiles <- sdesProxyConnector.getAvailableResultsFiles
       filesAlreadyProcessed <- resultsFileLogRepo.findAll()
-      fileNamesAlreadyProcessed <- Future successful filesAlreadyProcessed.map(_.fileName.value).toSet
-      unprocessedAvailableFiles <- Future successful availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
+      fileNamesAlreadyProcessed = filesAlreadyProcessed.map(_.fileName.value).toSet
+      unprocessedAvailableFiles = availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
     } yield unprocessedAvailableFiles
