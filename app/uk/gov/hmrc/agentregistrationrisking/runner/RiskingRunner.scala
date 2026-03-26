@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.runner
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistrationrisking.services.Crypto
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -32,8 +31,7 @@ import scala.concurrent.Future
 @Singleton
 class RiskingRunner @Inject() (
   objectStoreService: ObjectStoreService,
-  riskingFileService: RiskingFileService,
-  crypto: Crypto
+  riskingFileService: RiskingFileService
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -42,7 +40,6 @@ extends RequestAwareLogging:
 
     for
       fileContent <- riskingFileService.buildRiskingFile
-      encryptedFileContent = crypto.encrypt(fileContent)
-      objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(encryptedFileContent)
+      objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
     yield ()
