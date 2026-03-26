@@ -37,7 +37,7 @@ import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileLog
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultsFile
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileProcessingStatus
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
@@ -48,23 +48,23 @@ final class ResultsFileLogRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-extends Repo[ResultsFileName, ResultsFileLog](
+extends Repo[ResultsFileName, RiskingResultsFile](
   collectionName = "results-file-log",
   mongoComponent = mongoComponent,
   indexes = ResultsFileLogRepoHelp.indexes(appConfig.ResultsFileLogRepo.ttl),
-  extraCodecs = Seq(Codecs.playFormatCodec(ResultsFileLog.format)),
+  extraCodecs = Seq(Codecs.playFormatCodec(RiskingResultsFile.format)),
   replaceIndexes = true
 ):
 
-  def findAll(): Future[Seq[ResultsFileLog]] = collection.find().toFuture()
+  def findAll(): Future[Seq[RiskingResultsFile]] = collection.find().toFuture()
 
-  def findByFileName(fileName: ResultsFileName): Future[Option[ResultsFileLog]] = collection
+  def findByFileName(fileName: ResultsFileName): Future[Option[RiskingResultsFile]] = collection
     .find(
       filter = Filters.eq("fileName", fileName.value)
     )
     .headOption()
 
-  def findByStatus(status: ResultsFileProcessingStatus): Future[Seq[ResultsFileLog]] = collection
+  def findByStatus(status: ResultsFileProcessingStatus): Future[Seq[RiskingResultsFile]] = collection
     .find(
       filter = Filters.eq("status", status.toString)
     ).toFuture()
@@ -77,9 +77,9 @@ object ResultsFileLogRepoHelp:
     new IdString[ResultsFileName]:
       override def idString(i: ResultsFileName): String = i.value
 
-  given IdExtractor[ResultsFileLog, ResultsFileName] =
-    new IdExtractor[ResultsFileLog, ResultsFileName]:
-      override def id(resultsFileLog: ResultsFileLog): ResultsFileName = resultsFileLog.fileName
+  given IdExtractor[RiskingResultsFile, ResultsFileName] =
+    new IdExtractor[RiskingResultsFile, ResultsFileName]:
+      override def id(resultsFileLog: RiskingResultsFile): ResultsFileName = resultsFileLog.fileName
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(

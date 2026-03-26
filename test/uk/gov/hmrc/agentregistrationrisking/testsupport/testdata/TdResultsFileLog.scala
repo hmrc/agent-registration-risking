@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileProcessingStatus.Downloaded
-import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileLog
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultsFile
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileName
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 
@@ -28,7 +28,7 @@ trait TdResultsFileLog {
 
   private val downloadedAt: Instant = dependencies.nowAsInstant
 
-  def resultsFileLog(fileName: String): ResultsFileLog = ResultsFileLog(
+  def resultsFileLog(fileName: String): RiskingResultsFile = RiskingResultsFile(
     fileName = ResultsFileName(fileName),
     status = Downloaded,
     downloadedAt = downloadedAt

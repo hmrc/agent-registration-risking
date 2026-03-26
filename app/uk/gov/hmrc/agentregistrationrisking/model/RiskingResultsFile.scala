@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model.sdes
+package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-final case class SdesFileData(
-  downloadURL: String,
-  filename: String,
-  fileSize: Int
+import java.time.Instant
+
+final case class RiskingResultsFile(
+  fileName: ResultsFileName,
+  status: ResultsFileProcessingStatus,
+  downloadedAt: Instant
 )
 
-object SdesFileData:
-  implicit val format: OFormat[SdesFileData] = Json.format[SdesFileData]
+object RiskingResultsFile:
+  given format: OFormat[RiskingResultsFile] = Json.format[RiskingResultsFile]

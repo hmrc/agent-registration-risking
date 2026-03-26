@@ -19,10 +19,10 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
-import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileLog
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultsFile
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileProcessingStatus.Downloaded
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesFileData
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.repository.ResultsFileLogRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
@@ -45,30 +45,35 @@ extends RequestAwareLogging:
 
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")
-    for {
+    for
       unprocessedFileList <- getUnprocessedAvailableFiles
       _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
-      uploadUnprocessedFiles = unprocessedFileList.map(uploadResultFile)
+      uploadUnprocessedFiles = unprocessedFileList.map(uploadAndLogResultFile)
       uploadResults <- Future.sequence(uploadUnprocessedFiles)
-      _ = logger.info(s"Files uploaded to object store: ${uploadResults.size}")
-      addUploadedFilesToLog = uploadResults.map(downloadedFile => upsertDownloadedFile(downloadedFile.location.fileName))
-      _ = logger.info("File details added to mongo log")
-    } yield uploadResults
+    yield uploadResults
 
-  private def uploadResultFile(file: SdesFileData)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
+  private def uploadAndLogResultFile(file: AvailableFile)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
     val downloadUri = Uri(file.downloadURL).toJavaUri.toURL
-    objectStoreService.uploadFromUrl(downloadUrl = downloadUri, fileName = file.filename)
+    val fileName = file.filename
+    for
+      uploadResult <- objectStoreService.uploadFromUrl(downloadUrl = downloadUri, fileName = fileName)
+      _ = logger.info(s"Uploaded file to object store: $fileName")
+      _ <- upsertDownloadedFile(fileName).recoverWith: upsertError =>
+        logger.warn(s"Mongo upsert failed for $fileName", upsertError)
+        Future.failed(upsertError)
+      _ = logger.info(s"File details stored in mongo: $fileName")
+    yield uploadResult
 
-  private def upsertDownloadedFile(fileName: String)(using request: RequestHeader) = resultsFileLogRepo.upsert(ResultsFileLog(
+  private def upsertDownloadedFile(fileName: String)(using request: RequestHeader): Future[Unit] = resultsFileLogRepo.upsert(RiskingResultsFile(
     fileName = ResultsFileName(fileName),
     status = Downloaded,
     downloadedAt = Instant.now(summon[Clock])
   ))
 
-  private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[SdesFileData]] =
-    for {
-      availableFiles <- sdesProxyConnector.getAvailableResultsFiles
+  private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[AvailableFile]] =
+    for
+      availableFiles <- sdesProxyConnector.listAvailableFiles
       filesAlreadyProcessed <- resultsFileLogRepo.findAll()
       fileNamesAlreadyProcessed = filesAlreadyProcessed.map(_.fileName.value).toSet
       unprocessedAvailableFiles = availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
-    } yield unprocessedAvailableFiles
+    yield unprocessedAvailableFiles

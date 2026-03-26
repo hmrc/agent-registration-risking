@@ -18,8 +18,9 @@ package uk.gov.hmrc.agentregistrationrisking.connectors
 
 import play.api.http.Status.OK
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesFileData
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpResponse
@@ -37,16 +38,24 @@ class SdesProxyConnector @Inject() (
 )(using ExecutionContext)
 extends Connector:
 
-  private val headers = Seq("x-client-id" -> appConfig.sdesServerToken.value, "X-SDES-Key" -> appConfig.sdesSrn.value)
-  private val filesAvailableUrl = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInformationType.value}"
+  private val headers: Seq[(String, String)] = Seq(
+    "x-client-id" -> appConfig.sdesServerToken.value,
+    "X-SDES-Key" -> appConfig.sdesSrn.value
+  )
+  private val availableFilesUrl: URL = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInformationType.value}"
 
-  def getAvailableResultsFiles(using RequestHeader): Future[Seq[SdesFileData]] = httpClient
-    .get(filesAvailableUrl)
+  def listAvailableFiles(using RequestHeader): Future[Seq[AvailableFile]] = httpClient
+    .get(availableFilesUrl)
     .setHeader(headers*)
     .execute[HttpResponse]
-    .flatMap { response =>
-      response.status match {
-        case OK => Future.successful(response.json.as[Seq[SdesFileData]])
-        case _ => Future.failed(UpstreamErrorResponse(response.body, response.status))
-      }
-    }
+    .map: response =>
+      response.status match
+        case OK => response.json.as[Seq[AvailableFile]]
+        case _ =>
+          Errors.throwUpstreamErrorResponse(
+            httpMethod = "GET",
+            url = availableFilesUrl,
+            status = response.status,
+            response = response,
+            info = "getAvailableResultsFiles problem"
+          )

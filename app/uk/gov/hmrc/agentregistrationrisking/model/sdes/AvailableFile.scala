@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistrationrisking.model.sdes
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-import java.time.Instant
+/** Data returned by the SDES list available files endpoint */
 
-final case class ResultsFileLog(
-  fileName: ResultsFileName,
-  status: ResultsFileProcessingStatus,
-  downloadedAt: Instant
+final case class AvailableFile(
+  downloadURL: String,
+  filename: String,
+  fileSize: Int
 )
 
-object ResultsFileLog:
-  given format: OFormat[ResultsFileLog] = Json.format[ResultsFileLog]
+object AvailableFile:
+  implicit val format: OFormat[AvailableFile] = Json.format[AvailableFile]

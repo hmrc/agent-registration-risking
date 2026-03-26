@@ -19,13 +19,13 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs
 import com.github.tomakehurst.wiremock.client.WireMock as wm
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesFileData
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object SdesProxyStubs:
 
   def stubFindAvailableFiles(
-    response: Seq[SdesFileData]
+    response: Seq[AvailableFile]
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.GET,
     urlPattern = wm.urlEqualTo(s"/files-available/list/1111111"),
