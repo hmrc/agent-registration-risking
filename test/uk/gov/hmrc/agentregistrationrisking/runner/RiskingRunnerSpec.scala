@@ -21,7 +21,6 @@ import play.api.mvc.Request
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.services.Crypto
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
@@ -37,7 +36,6 @@ extends ISpec:
 
     val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
     val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-    val crypto: Crypto = app.injector.instanceOf[Crypto]
 
     val personReference1 = PersonReference(randomId)
     val personReference2 = PersonReference(randomId)
@@ -61,8 +59,7 @@ extends ISpec:
 
     // TODO: there is problem with test data which is not deterministic and is missing data. (APB-10869)
     ObjectStoreStubs
-      .getRequestBody(fileName = fileName)
-      .pipe(crypto.decrypt) shouldBe
+      .getRequestBody(fileName = fileName) shouldBe
       s"""00|ARR|SAS|20591125|163351
          |01|Entity|N|${tdAll.llpApplicationForRisking.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456|25-11-2059|evidence-reference-123|||||||||||
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
