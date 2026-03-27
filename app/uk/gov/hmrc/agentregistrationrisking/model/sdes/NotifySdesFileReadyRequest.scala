@@ -16,11 +16,52 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model.sdes
 
+import play.api.libs.json.Format
 import play.api.libs.json.Json
-import play.api.libs.json.Reads
 import play.api.libs.json.Writes
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-final case class NotifySdesFileReadyRequest()
+final case class NotifySdesFileReadyRequest(
+  informationType: String,
+  file: NotifySdesFile
+)
+
+final case class NotifySdesFile(
+  recipientOrSender: String,
+  name: String,
+  location: String,
+  checksum: NotifySdesFileReadyChecksum,
+  size: Int,
+  properties: List[SdesProxyProperty]
+)
+
+object NotifySdesFile:
+  given Writes[NotifySdesFile] = Json.writes[NotifySdesFile]
 
 object NotifySdesFileReadyRequest:
   given Writes[NotifySdesFileReadyRequest] = Json.writes[NotifySdesFileReadyRequest]
+
+final case class NotifySdesFileReadyChecksum(
+  algorithm: SdesChecksumAlgorithm,
+  value: String
+)
+
+object NotifySdesFileReadyChecksum:
+  given Writes[NotifySdesFileReadyChecksum] = Json.writes[NotifySdesFileReadyChecksum]
+
+enum SdesChecksumAlgorithm:
+
+  case md5
+  case SHA512
+  case SHA256
+
+object SdesChecksumAlgorithm:
+  given Format[SdesChecksumAlgorithm] = JsonFormatsFactory.makeEnumFormat[SdesChecksumAlgorithm]
+
+final case class SdesProxyProperty(
+  name: String,
+  value: String
+)
+
+object SdesProxyProperty:
+  given Writes[SdesProxyProperty] = Json.writes[SdesProxyProperty]
