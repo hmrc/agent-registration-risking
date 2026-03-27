@@ -63,5 +63,8 @@ extends RequestAwareLogging:
     for
       fileContent <- riskingFileService.buildRiskingFile
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
+      _ <- sdesProxyService.notifySdesFileReady(objectSummary)
+      // TODO: Find out if we need to update the status here to show that sdes has been notified
+      // For permanently_failed batches, we need a process for that
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
     yield ()

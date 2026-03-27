@@ -16,17 +16,48 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesChecksumAlgorithm
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 
 import javax.inject.Inject
 import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
 class SdesProxyService @Inject() (
-  sdesProxyConnector: SdesProxyConnector
-)
+  sdesProxyConnector: SdesProxyConnector,
+  appConfig: AppConfig
+)(using ExecutionContext)
 extends RequestAwareLogging:
-  def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5): Future[Unit] = ???
+
+  // TODO: Find out about how we want to handle failed attempts and retries
+  def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[Unit] =
+    val notifySdesFileReadyRequest = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
+    sdesProxyConnector.notifySdesFileReady(notifySdesFileReadyRequest)
+
+  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
+    val informationType = appConfig.sdesInformationType.value
+    val serviceReferenceNumber = appConfig.sdesSrn.value
+    // These values are assumed and should be confirmed
+    NotifySdesFileReadyRequest(
+      informationType = informationType,
+      file = NotifySdesFile(
+        recipientOrSender = Some(serviceReferenceNumber),
+        name = objectSummaryWithMd5.location.fileName,
+        location = Some(objectSummaryWithMd5.location.asUri),
+        checksum = NotifySdesFileReadyChecksum(
+          algorithm = SdesChecksumAlgorithm.md5,
+          value = objectSummaryWithMd5.contentMd5.value
+        ),
+        size = objectSummaryWithMd5.contentLength.intValue,
+        properties = None
+      )
+    )

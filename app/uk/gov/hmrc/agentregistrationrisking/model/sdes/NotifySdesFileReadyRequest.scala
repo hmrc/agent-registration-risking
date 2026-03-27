@@ -23,16 +23,20 @@ import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
 final case class NotifySdesFileReadyRequest(
   informationType: String,
-  file: NotifySdesFile
+  file: NotifySdesFile,
+  /* TODO: I have left this audit optional for now but it is not optional in the EPIDD,
+      we currently aren't handling auditing but this must be handled as part of that epic.
+   */
+  audit: Option[NotifySdesAudit] = None
 )
 
 final case class NotifySdesFile(
-  recipientOrSender: String,
+  recipientOrSender: Option[String],
   name: String,
-  location: String,
+  location: Option[String],
   checksum: NotifySdesFileReadyChecksum,
   size: Int,
-  properties: List[SdesProxyProperty]
+  properties: Option[List[SdesProxyProperty]]
 )
 
 object NotifySdesFile:
@@ -65,3 +69,10 @@ final case class SdesProxyProperty(
 
 object SdesProxyProperty:
   given Writes[SdesProxyProperty] = Json.writes[SdesProxyProperty]
+
+final case class NotifySdesAudit(
+  correlationId: String
+)
+
+object NotifySdesAudit:
+  given Writes[NotifySdesAudit] = Json.writes[NotifySdesAudit]
