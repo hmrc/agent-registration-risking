@@ -26,5 +26,4 @@ object JsonConfig {
       fullName.split('.').last // Extract just the class name
     }
   )
-
 }
