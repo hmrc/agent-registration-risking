@@ -43,6 +43,3 @@ class AppConfig @Inject() (
   object ApplicationForRiskingRepo:
 
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
-
-  object ResultsFileLogRepo:
-    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.results-file-log-ttl", servicesConfig)

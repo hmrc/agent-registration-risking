@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path
 import uk.gov.hmrc.objectstore.client.RetentionPeriod
@@ -44,6 +45,7 @@ class ObjectStoreService @Inject() (
 extends RequestAwareLogging:
 
   private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+  private val receivedResultsFilesPath = Path.Directory("processed-results-files")
 
   def put(fileContent: String)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
 
@@ -72,7 +74,9 @@ extends RequestAwareLogging:
     fileName: String
   )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.uploadFromUrl(
     from = downloadUrl,
-    to = Path.Directory("received-results-files").file(fileName = fileName),
+    to = receivedResultsFilesPath.file(fileName = fileName),
     retentionPeriod = RetentionPeriod.SixMonths,
     contentType = Some("plain/text")
   )
+
+  def listObjects(using request: RequestHeader): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)

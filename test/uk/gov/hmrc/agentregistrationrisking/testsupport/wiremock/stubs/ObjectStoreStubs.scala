@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
+import uk.gov.hmrc.objectstore.client.ObjectListing
 
 object ObjectStoreStubs:
 
@@ -103,4 +104,14 @@ object ObjectStoreStubs:
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),
     count = count
+  )
+
+  def stubObjectStoreListObjects(
+    directory: String = "processed-results-files",
+    processedFileNames: List[String] = List("resultsFile01.txt")
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.GET,
+    urlPattern = wm.urlEqualTo(s"/object-store/list/agent-registration-risking/$directory"),
+    responseStatus = 200,
+    responseBody = Json.prettyPrint(TdAll.tdAll.listObjectsResponse(processedFileNames))
   )

@@ -19,6 +19,9 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
+import uk.gov.hmrc.objectstore.client.Path
+
+import java.time.Instant
 
 trait TdObjectStore { dependencies: TdBase =>
 
@@ -39,6 +42,25 @@ trait TdObjectStore { dependencies: TdBase =>
     "contentLength" -> sizeInBytes,
     "contentMD5" -> "a3c2f1e38701bd2c7b54ebd7b1cd0dbc",
     "lastModified" -> dependencies.nowAsInstant
+  )
+
+  def objectStoreListObjectsResponse(uploadedPath: String): JsObject = Json.obj(
+    "location" -> uploadedPath,
+    "contentLength" -> sizeInBytes,
+    "contentMD5" -> "a3c2f1e38701bd2c7b54ebd7b1cd0dbc",
+    "lastModified" -> dependencies.nowAsInstant
+  )
+
+  def listObjectsResponse(processedFileNames: List[String]): JsObject = Json.obj(
+    "objectSummaries" -> objectSummaryResponse(processedFileNames)
+  )
+
+  private def objectSummaryResponse(processedFileNames: List[String]): Seq[JsObject] = processedFileNames.map(fileName =>
+    Json.obj(
+      "location" -> s"agent-registration-risking/processed-results-files/$fileName",
+      "contentLength" -> sizeInBytes,
+      "lastModified" -> dependencies.nowAsInstant
+    )
   )
 
 }

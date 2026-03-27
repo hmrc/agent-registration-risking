@@ -32,3 +32,10 @@ object SdesProxyStubs:
     responseStatus = 200,
     responseBody = Json.toJson(response).toString()
   )
+
+  def stubFindAvailableFilesFailure: StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.GET,
+    urlPattern = wm.urlEqualTo(s"/files-available/list/1111111"),
+    responseStatus = 500,
+    responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
+  )

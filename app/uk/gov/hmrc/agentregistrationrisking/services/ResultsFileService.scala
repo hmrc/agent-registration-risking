@@ -19,24 +19,19 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultsFile
-import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileName
-import uk.gov.hmrc.agentregistrationrisking.model.ResultsFileProcessingStatus.Downloaded
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
-import uk.gov.hmrc.agentregistrationrisking.repository.ResultsFileLogRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 
 import java.time.Clock
-import java.time.Instant
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ResultsFileService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
-  objectStoreService: ObjectStoreService,
-  resultsFileLogRepo: ResultsFileLogRepo
+  objectStoreService: ObjectStoreService
 )(using
   ExecutionContext,
   Clock
@@ -48,6 +43,7 @@ extends RequestAwareLogging:
     for
       unprocessedFileList <- getUnprocessedAvailableFiles
       _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
+      // TODO: Add file processing logic here
       uploadUnprocessedFiles = unprocessedFileList.map(uploadAndLogResultFile)
       uploadResults <- Future.sequence(uploadUnprocessedFiles)
     yield uploadResults
@@ -58,22 +54,14 @@ extends RequestAwareLogging:
     for
       uploadResult <- objectStoreService.uploadFromUrl(downloadUrl = downloadUri, fileName = fileName)
       _ = logger.info(s"Uploaded file to object store: $fileName")
-      _ <- upsertDownloadedFile(fileName).recoverWith: upsertError =>
-        logger.warn(s"Mongo upsert failed for $fileName", upsertError)
-        Future.failed(upsertError)
-      _ = logger.info(s"File details stored in mongo: $fileName")
     yield uploadResult
-
-  private def upsertDownloadedFile(fileName: String)(using request: RequestHeader): Future[Unit] = resultsFileLogRepo.upsert(RiskingResultsFile(
-    fileName = ResultsFileName(fileName),
-    status = Downloaded,
-    downloadedAt = Instant.now(summon[Clock])
-  ))
 
   private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[AvailableFile]] =
     for
-      availableFiles <- sdesProxyConnector.listAvailableFiles
-      filesAlreadyProcessed <- resultsFileLogRepo.findAll()
-      fileNamesAlreadyProcessed = filesAlreadyProcessed.map(_.fileName.value).toSet
+      availableFiles: Seq[AvailableFile] <- sdesProxyConnector.listAvailableFiles
+      filesAlreadyProcessed: ObjectListing <- objectStoreService.listObjects
+      _ = logger.info(s"Files already processed: ${filesAlreadyProcessed.objectSummaries.size.toString}")
+      fileNamesAlreadyProcessed = filesAlreadyProcessed.objectSummaries.map(_.location.fileName).toSet
+      _ = logger.info(s"File Names already processed: ${fileNamesAlreadyProcessed.toString}")
       unprocessedAvailableFiles = availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
     yield unprocessedAvailableFiles

@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentregistrationrisking.repository.ResultsFileLogRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
@@ -26,17 +25,14 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectSto
 class ResultsFileServiceSpec
 extends ISpec:
 
-  val repo: ResultsFileLogRepo = app.injector.instanceOf[ResultsFileLogRepo]
   val service: ResultsFileService = app.injector.instanceOf[ResultsFileService]
 
   "retrieveAndProcessResultsFile retrieves all unprocessed results files and processes accordingly" in:
 
     given RequestHeader = FakeRequest()
 
-    val alreadyProcessedFilesUpsert: Unit = repo.upsert(tdAll.resultsFileLog("resultsFile01.txt")).futureValue
-    val verifyUpsert = repo.findAll().futureValue.size shouldBe 1
-
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
+    ObjectStoreStubs.stubObjectStoreListObjects()
     ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
 
     val result = service.retrieveAndProcessResultsFiles.futureValue
@@ -44,16 +40,11 @@ extends ISpec:
     result.size shouldBe 1
     result.headOption.value.location.fileName shouldBe "resultsFile02.txt"
     result.headOption.value.location.directory.value shouldBe "agent-registration-risking/received-results-files"
-    val verifyNewUpsert = repo.findAll().futureValue.size shouldBe 2
 
-  "retrieveAndProcessResultsFile doesn't update mongo if file not successfully uploaded to object store" in:
+  "retrieveAndProcessResultsFile does not upload to object store if the file was not processed successfully" in:
 
     given RequestHeader = FakeRequest()
 
-    val alreadyProcessedFilesUpsert: Unit = repo.upsert(tdAll.resultsFileLog("resultsFile01.txt")).futureValue
-    val verifyUpsert = repo.findAll().futureValue.size shouldBe 1
-
-    SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
-    ObjectStoreStubs.stubObjectStoreUploadFromUrlFailure
+    SdesProxyStubs.stubFindAvailableFilesFailure
     val result = service.retrieveAndProcessResultsFiles
-    val verifyNoUpsert = repo.findAll().futureValue.size shouldBe 1
+    ObjectStoreStubs.verifyObjectStoreUploadFromUrl(count = 0)
