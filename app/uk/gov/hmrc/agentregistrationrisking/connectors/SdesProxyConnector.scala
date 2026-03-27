@@ -17,20 +17,16 @@
 package uk.gov.hmrc.agentregistrationrisking.connectors
 
 import play.api.http.Status.OK
-import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
-import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.StringContextOps
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyResponse
+import uk.gov.hmrc.agentregistrationrisking.util.FutureUtil.andLogOnFailure
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class SdesProxyConnector @Inject() (
   appConfig: AppConfig,
@@ -59,3 +55,24 @@ extends Connector:
             response = response,
             info = "getAvailableResultsFiles problem"
           )
+
+  private val notifySdesFileReadyUrl: URL = url"${appConfig.sdesProxyBaseUrl}/notification/fileready"
+
+  def notifySdesFileReady(notifySdesFileReadyRequest: NotifySdesFileReadyRequest)(using
+    RequestHeader
+  ): Future[NotifySdesFileReadyResponse] = httpClient
+    .post(notifySdesFileReadyUrl)
+    .setHeader(headers*)
+    .withBody(Json.toJson(notifySdesFileReadyRequest))
+    .execute[HttpResponse]
+    .map: response =>
+      response.status match
+        case status if is2xx(status) => response.json.as[NotifySdesFileReadyResponse]
+        case status =>
+          Errors.throwUpstreamErrorResponse(
+            httpMethod = "POST",
+            url = notifySdesFileReadyUrl,
+            status = status,
+            response = response
+          )
+    .andLogOnFailure(s"Failed to send notification")
