@@ -23,6 +23,8 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 
 class SdesNotificationControllerSpec
 extends ControllerSpec:
@@ -38,6 +40,10 @@ extends ControllerSpec:
 
   "receiveNotification should handle the File Ready Notification correctly" in:
     val SDESNotification: JsObject = fileReadyNotification
+
+    SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
+    ObjectStoreStubs.stubObjectStoreListObjects()
+    ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
 
     val response: WSResponse =
       wsClient

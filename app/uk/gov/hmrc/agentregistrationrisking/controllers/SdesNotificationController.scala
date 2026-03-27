@@ -17,33 +17,36 @@
 package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import com.google.inject.Inject
-import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.services.ResultsFileService
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
-  actions: Actions
-)
+  actions: Actions,
+  resultsFileService: ResultsFileService
+)(using ExecutionContext)
 extends BackendController(cc):
 
   def receiveSdesNotification: Action[SdesNotification] =
     Action
-      .apply(parse.json[SdesNotification]):
+      .async(parse.json[SdesNotification]):
         implicit request =>
           request.body match
             case n: FileReady =>
               logger.info(s"File ready notification received for ${n.filename} from SDES [${n.correlationID}]")
-              Ok
+              resultsFileService.retrieveAndProcessResultsFiles.map(_ => Ok)
             case n: FileReceived =>
               logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
-              Ok
+              Future.successful(Ok)
             case n: FileProcessed =>
               logger.info(s"File processed notification received for ${n.filename} from SDES")
-              Ok
+              Future.successful(Ok)
             case n: FileProcessingFailure =>
               logger.warn(s"File processing failure notification received for ${n.filename} from SDES. " +
                 s"Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
-              Ok
+              Future.successful(Ok)

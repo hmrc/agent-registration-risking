@@ -30,12 +30,14 @@ import play.api.Logging
 import play.api.Mode
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.guice.GuiceableModule
+import play.api.mvc.RequestHeader
 import play.api.test.DefaultTestServerFactory
 import play.api.test.TestServerFactory
 import play.core.server.ServerConfig
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.mongo.test.MongoSupport
 
@@ -53,6 +55,7 @@ extends AnyFreeSpecLike,
   MongoSupport:
 
   given ExecutionContext = app.injector.instanceOf[ExecutionContext]
+  given HeaderCarrier = app.injector.instanceOf[HeaderCarrier]
 
   private val testServerPort = ISpec.testServerPort
   protected val baseUrl: String = s"http://localhost:${testServerPort.toString}"
@@ -68,7 +71,9 @@ extends AnyFreeSpecLike,
       "auditing.traceRequests" -> false,
       "microservice.services.auth.port" -> WireMockSupport.port,
       "mongodb.uri" -> mongoUri,
-      "microservice.services.object-store.port" -> WireMockSupport.port
+      "microservice.services.object-store.port" -> WireMockSupport.port,
+      "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
+      "secure-data-exchange-proxy-config.information-type" -> "1111111"
     ) ++ configOverrides
 
   protected def configOverrides: Map[String, Any] = Map[String, Any]()

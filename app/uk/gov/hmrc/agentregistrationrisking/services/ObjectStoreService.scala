@@ -17,16 +17,16 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import sttp.model.Uri
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path
 import uk.gov.hmrc.objectstore.client.RetentionPeriod
-import uk.gov.hmrc.objectstore.client.Sha256Checksum
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
-import uk.gov.hmrc.objectstore.client.play.Implicits._
+import uk.gov.hmrc.objectstore.client.play.Implicits.*
 
+import java.net.URL
 import java.time.format.DateTimeFormatter
 import java.time.Clock
 import java.time.LocalDateTime
@@ -45,6 +45,7 @@ class ObjectStoreService @Inject() (
 extends RequestAwareLogging:
 
   private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+  private val receivedResultsFilesPath = Path.Directory("processed-results-files")
 
   def put(fileContent: String)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
 
@@ -67,3 +68,15 @@ extends RequestAwareLogging:
       path
     ).recover:
       case e => logger.error(s"Failed to delete object $path", e)
+
+  def uploadFromUrl(
+    downloadUrl: URL,
+    fileName: String
+  )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.uploadFromUrl(
+    from = downloadUrl,
+    to = receivedResultsFilesPath.file(fileName = fileName),
+    retentionPeriod = RetentionPeriod.SixMonths,
+    contentType = Some("plain/text")
+  )
+
+  def listObjects(using request: RequestHeader): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)
