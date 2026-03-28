@@ -18,11 +18,11 @@ package uk.gov.hmrc.agentregistration.initializer.model
 
 import java.time.{LocalTime, ZonedDateTime}
 
-import uk.gov.hmrc.agentregistration.initializer.chrono._
+import uk.gov.hmrc.agentregistration.initializer.chrono.RichZonedDateTime
 
 import scala.concurrent.duration.FiniteDuration
 
-/** Represents the scheduled time for an event which occurs on weekdays
+/** Represents the scheduled time for an event which occurs daily.
   */
 final case class ScheduledTime(time: LocalTime) {
 
@@ -30,10 +30,10 @@ final case class ScheduledTime(time: LocalTime) {
     */
   def nextAfter(offset: ZonedDateTime): ZonedDateTime = {
     val t = offset.`with`(time)
-    if (offset.isWeekday && offset.isBefore(t)) {
-      offset.`with`(time)
+    if (offset.isBefore(t)) {
+      t
     } else {
-      offset.nextWeekday().`with`(time)
+      offset.plusDays(1).`with`(time)
     }
   }
 
