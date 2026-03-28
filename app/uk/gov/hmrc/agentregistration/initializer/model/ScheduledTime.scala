@@ -1,0 +1,43 @@
+/*
+ * Copyright 2024 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.agentregistration.initializer.model
+
+import java.time.{LocalTime, ZonedDateTime}
+
+import uk.gov.hmrc.agentregistration.initializer.chrono._
+
+import scala.concurrent.duration.FiniteDuration
+
+/** Represents the scheduled time for an event which occurs on weekdays
+  */
+final case class ScheduledTime(time: LocalTime) {
+
+  /** Returns the next scheduled event time (looking ahead from the given time).
+    */
+  def nextAfter(offset: ZonedDateTime): ZonedDateTime = {
+    val t = offset.`with`(time)
+    if (offset.isWeekday && offset.isBefore(t)) {
+      offset.`with`(time)
+    } else {
+      offset.nextWeekday().`with`(time)
+    }
+  }
+
+  /** Returns the time to go between the given time and the next scheduled event.
+    */
+  def timeUntilNext(offset: ZonedDateTime): FiniteDuration = nextAfter(offset) - offset
+}
