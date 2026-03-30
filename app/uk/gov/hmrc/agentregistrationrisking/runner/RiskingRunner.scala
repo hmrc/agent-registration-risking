@@ -22,6 +22,7 @@ import play.api.mvc.RequestHeader
 import play.api.mvc.request.RemoteConnection
 import play.api.mvc.request.RequestTarget
 import uk.gov.hmrc.agentregistration.shared.CheckResult
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
@@ -63,14 +64,14 @@ extends RequestAwareLogging:
     logger.info("Running risking started ...")
 
     for
-      applicationsReadyForRisking <- riskingFileService.getApplicationsReadyForRisking
-      fileContent = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
+      applicationsReadyForRisking: Seq[ApplicationForRisking] <- riskingFileService.getApplicationsReadyForRisking
+      fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
-      checkResult <- sdesProxyService.notifySdesFileReady(objectSummary)
+      checkResult: CheckResult <- sdesProxyService.notifySdesFileReady(objectSummary)
       _ <-
         checkResult match
-          case CheckResult.Pass => riskingFileService.updateManyRiskingFilesStatusSentForRisking(applicationsReadyForRisking)
-          case _ =>
+          case CheckResult.Pass => riskingFileService.setAllStatusSubmittedForRisking(applicationsReadyForRisking)
+          case CheckResult.Fail =>
             logger.error(s"Failed to notify SDES of file ready for risking: ${objectSummary.location}")
             Future.successful(())
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")

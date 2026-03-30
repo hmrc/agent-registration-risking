@@ -76,6 +76,6 @@ extends RequestAwareLogging:
         }
     records.mkString("\n")
 
-  def updateManyRiskingFilesStatusSentForRisking(
+  def setAllStatusSubmittedForRisking(
     applicationsReadyForRisking: Seq[ApplicationForRisking]
-  ): Future[Unit] = applicationForRiskingRepo.updateManyByRiskingFilesStatus(applicationsReadyForRisking, ApplicationForRiskingStatus.SubmittedForRisking)
+  ): Future[Unit] = applicationForRiskingRepo.updateManyByRiskingFileStatus(applicationsReadyForRisking, ApplicationForRiskingStatus.SubmittedForRisking)

@@ -71,7 +71,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       filter = Filters.eq("individuals.personReference", personReference.value)
     ).headOption()
 
-  def updateManyByRiskingFilesStatus(
+  def updateManyByRiskingFileStatus(
     applications: Seq[ApplicationForRisking],
     status: ApplicationForRiskingStatus
   ): Future[Unit] = collection
