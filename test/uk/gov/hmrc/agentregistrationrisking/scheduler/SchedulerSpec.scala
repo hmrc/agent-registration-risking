@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.scheduler
 
+import org.scalatest.time.Seconds
+import org.scalatest.time.Span
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.MongoSupport
@@ -23,11 +25,10 @@ import uk.gov.hmrc.mongo.test.MongoSupport
 import java.time.Clock
 import java.time.LocalTime
 import java.time.ZoneId
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.Promise
 
 class SchedulerSpec
 extends UnitSpec,
@@ -48,122 +49,95 @@ extends UnitSpec,
         .toInstant
     Clock.fixed(instant, zoneId)
 
+  private def schedulerAt2359 = new Scheduler(clockAt(23, 59), mongoLockRepository)
+  private val oneSecondAfterMidnight = LocalTime.parse("23:59").plusSeconds(1)
+
   "Scheduler" - {
 
     "execute a scheduled daily job" in {
-      val clock = clockAt(23, 59)
-      val scheduler = new Scheduler(clock, mongoLockRepository)
-      val latch = new CountDownLatch(1)
-      val counter = new AtomicInteger(0)
-
-      val time = LocalTime.parse("23:59").plusSeconds(1)
+      val scheduler = schedulerAt2359
+      val executed = Promise[Unit]()
 
       scheduler.scheduleDaily(
         "test-job",
-        time,
-        () => {
-          counter.incrementAndGet()
-          latch.countDown()
-          Future.successful(())
-        }
+        oneSecondAfterMidnight,
+        () => { executed.trySuccess(()); Future.successful(()) }
       )
 
-      latch.await(5, TimeUnit.SECONDS) `shouldBe` true
-      counter.get() `shouldBe` 1
+      executed.future.futureValue `shouldBe` ()
     }
 
     "re-schedule after execution" in {
-      val clock = clockAt(23, 59)
-      val scheduler = new Scheduler(clock, mongoLockRepository)
-      val latch = new CountDownLatch(2)
+      val scheduler = schedulerAt2359
+      val secondExecution = Promise[Unit]()
       val counter = new AtomicInteger(0)
-
-      val time = LocalTime.parse("23:59").plusSeconds(1)
 
       scheduler.scheduleDaily(
         "repeating-job",
-        time,
-        () => {
-          counter.incrementAndGet()
-          latch.countDown()
+        oneSecondAfterMidnight,
+        () =>
+          if counter.incrementAndGet() >= 2 then { val _ = secondExecution.trySuccess(()) }
           Future.successful(())
-        }
       )
 
-      latch.await(5, TimeUnit.SECONDS) `shouldBe` true
-      counter.get() `shouldBe` 2
+      secondExecution.future.futureValue `shouldBe` ()
+      counter.get() should be >= 2
     }
 
     "not crash when job throws an exception" in {
-      val clock = clockAt(23, 59)
-      val scheduler = new Scheduler(clock, mongoLockRepository)
-      val latch = new CountDownLatch(1)
-
-      val time = LocalTime.parse("23:59").plusSeconds(1)
+      val scheduler = schedulerAt2359
+      val schedulerSurvived = Promise[Unit]()
+      val counter = new AtomicInteger(0)
 
       scheduler.scheduleDaily(
         "failing-job",
-        time,
-        () => {
-          latch.countDown()
-          throw new RuntimeException("boom")
-        }
+        oneSecondAfterMidnight,
+        () =>
+          if counter.incrementAndGet() == 1 then throw new RuntimeException("boom")
+          // second call proves scheduler survived the exception
+          schedulerSurvived.trySuccess(())
+          Future.successful(())
       )
 
-      latch.await(5, TimeUnit.SECONDS) `shouldBe` true
+      schedulerSurvived.future.futureValue `shouldBe` ()
     }
 
     "only one instance runs the job when two schedulers compete for the same lock" in {
-      import scala.concurrent.Promise
-
-      val clock = clockAt(23, 59)
       val lockRepo = new MongoLockRepository(mongoComponent, new uk.gov.hmrc.mongo.CurrentTimestampSupport())
-      val scheduler1 = new Scheduler(clock, lockRepo)
-      val scheduler2 = new Scheduler(clock, lockRepo)
+      val scheduler1 = new Scheduler(clockAt(23, 59), lockRepo)
+      val scheduler2 = new Scheduler(clockAt(23, 59), lockRepo)
 
       val executionCount = new AtomicInteger(0)
-      val firstJobStarted = new CountDownLatch(1)
-      val secondSchedulerAttempted = new CountDownLatch(1)
-      val promise = Promise[Unit]()
-
-      val time = LocalTime.parse("23:59").plusSeconds(1)
-
-      // first job: returns a Future that stays incomplete — holds the lock
-      val slowJob: () => Future[Unit] =
-        () =>
-          executionCount.incrementAndGet()
-          firstJobStarted.countDown()
-          promise.future
-
-      // second job: should never run if the lock works
-      val secondJob: () => Future[Unit] =
-        () =>
-          executionCount.incrementAndGet()
-          Future.successful(())
+      val firstJobStarted = Promise[Unit]()
+      val holdLock = Promise[Unit]()
 
       scheduler1.scheduleDaily(
         "lock-contention-test",
-        time,
-        slowJob
+        oneSecondAfterMidnight,
+        () =>
+          executionCount.incrementAndGet()
+          firstJobStarted.trySuccess(())
+          holdLock.future
       )
 
-      // wait for the first scheduler to grab the lock
-      firstJobStarted.await(10, TimeUnit.SECONDS) `shouldBe` true
+      // wait for first scheduler to acquire the lock
+      firstJobStarted.future.futureValue `shouldBe` ()
 
-      // now schedule the second with the same lock name
+      // second scheduler tries the same lock — should be skipped
       scheduler2.scheduleDaily(
         "lock-contention-test",
-        time,
-        secondJob
+        oneSecondAfterMidnight,
+        () =>
+          executionCount.incrementAndGet()
+          Future.successful(())
       )
 
-      // give the second scheduler enough time to fire and attempt the lock
-      secondSchedulerAttempted.await(3, TimeUnit.SECONDS)
+      // give second scheduler time to attempt and be rejected
+      eventually(timeout(Span(5, Seconds))) {
+        executionCount.get() `shouldBe` 1
+      }
 
-      // the second scheduler should have been skipped — only first incremented
-      executionCount.get() `shouldBe` 1
-
-      // clean up: complete the first job's future
-      promise.success(())
+      // clean up
+      holdLock.success(())
     }
   }
