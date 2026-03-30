@@ -28,7 +28,7 @@ import java.time.Clock
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
+//NB: could we combine this with SdesProxyService?
 class ResultsFileService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   objectStoreService: ObjectStoreService
