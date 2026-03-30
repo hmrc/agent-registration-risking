@@ -24,10 +24,8 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
-import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
-
-import scala.util.chaining.scalaUtilChainingOps
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 
 class RiskingRunnerSpec
 extends ISpec:
@@ -53,6 +51,7 @@ extends ISpec:
 
     val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
     ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
+    SdesProxyStubs.stubSdesFileReady
 
     riskingRunner.run().futureValue shouldBe ()
     ObjectStoreStubs.verifyObjectStoreTransfer(fileName = fileName)

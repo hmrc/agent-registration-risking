@@ -39,3 +39,9 @@ object SdesProxyStubs:
     responseStatus = 500,
     responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
   )
+
+  def stubSdesFileReady: StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/notification/fileready"),
+    responseStatus = 200
+  )
