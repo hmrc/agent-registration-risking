@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.initializer.model
+package uk.gov.hmrc.agentregistrationrisking.scheduler.model
 
 import java.time.LocalTime
 import java.time.ZonedDateTime
 
-import uk.gov.hmrc.agentregistration.initializer.DateTimeExtensions.*
+import uk.gov.hmrc.agentregistrationrisking.scheduler.DateTimeExtensions.*
 
 import scala.concurrent.duration.FiniteDuration
 

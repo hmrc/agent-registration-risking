@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.initializer.model
+package uk.gov.hmrc.agentregistrationrisking.scheduler.model
 
+import uk.gov.hmrc.agentregistrationrisking.scheduler.model.ScheduledTime
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 
 import java.time.LocalDate

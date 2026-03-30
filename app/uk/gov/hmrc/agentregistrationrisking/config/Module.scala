@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.config
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
-import uk.gov.hmrc.agentregistration.initializer.RiskingSchedulerInitializer
+import uk.gov.hmrc.agentregistrationrisking.scheduler.RiskingSchedulerInitializer
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.AuthorisedFunctions
 

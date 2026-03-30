@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.initializer.model
+package uk.gov.hmrc.agentregistrationrisking.scheduler.model
 
 trait Task[+A]:
 

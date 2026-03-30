@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.initializer
+package uk.gov.hmrc.agentregistrationrisking.scheduler
 
-import play.api.Configuration
 import play.api.Logging
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 
 import javax.inject.Inject
@@ -27,14 +27,14 @@ import javax.inject.Singleton
 class RiskingSchedulerInitializer @Inject() (
   riskingRunner: RiskingRunner,
   scheduler: Scheduler,
-  config: Configuration
+  appConfig: AppConfig
 )
 extends Logging:
 
   initialize()
 
   private def initialize(): Unit =
-    val riskingTask = new RiskingTask(riskingRunner, config)
+    val riskingTask = new RiskingTask(riskingRunner, appConfig)
 
     if riskingTask.enabled then
       logger.info("Bootstrapping risking scheduler")

@@ -14,29 +14,26 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.initializer
+package uk.gov.hmrc.agentregistrationrisking.scheduler
 
-import play.api.Configuration
-import uk.gov.hmrc.agentregistration.initializer.model.ScheduledTime
-import uk.gov.hmrc.agentregistration.initializer.model.Task
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
+import uk.gov.hmrc.agentregistrationrisking.scheduler.model.ScheduledTime
+import uk.gov.hmrc.agentregistrationrisking.scheduler.model.Task
 
-import java.time.LocalTime
 import scala.concurrent.Future
 
 class RiskingTask(
   val riskingRunner: RiskingRunner,
-  config: Configuration
+  appConfig: AppConfig
 )
 extends Task[Future[Unit]]:
 
   val name: String = "risking"
   val repeat: Boolean = true
 
-  override def enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
+  override def enabled: Boolean = appConfig.Scheduler.enabled
 
-  override def scheduledTime: ScheduledTime =
-    val raw = config.get[String]("scheduler.risking.time")
-    ScheduledTime(LocalTime.parse(raw))
+  override def scheduledTime: ScheduledTime = ScheduledTime(appConfig.Scheduler.time)
 
   override def run(): Future[Unit] = riskingRunner.run()

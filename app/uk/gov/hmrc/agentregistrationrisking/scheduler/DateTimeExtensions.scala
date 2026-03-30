@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.initializer
+package uk.gov.hmrc.agentregistrationrisking.scheduler
 
 import java.time.*
 import java.time.format.DateTimeFormatter
@@ -34,9 +34,9 @@ object DateTimeExtensions:
 
     def nextWeekday(): ZonedDateTime =
       date.getDayOfWeek match
-        case DayOfWeek.FRIDAY   => date.plusDays(3)
+        case DayOfWeek.FRIDAY => date.plusDays(3)
         case DayOfWeek.SATURDAY => date.plusDays(2)
-        case _                  => date.plusDays(1)
+        case _ => date.plusDays(1)
 
     def isWorkingDay: Boolean = !isWeekend
 
@@ -47,7 +47,7 @@ object DateTimeExtensions:
       def next(d: ZonedDateTime): ZonedDateTime =
         d match
           case d if d.isWorkingDay => d
-          case d                   => next(d.plusDays(1))
+          case d => next(d.plusDays(1))
 
       next(date.plusDays(days))
 
@@ -59,13 +59,12 @@ object DateTimeExtensions:
       if duration.toDays == 0 then date
       else date.minusDays(duration.toDays)
 
-    def -(other: ZonedDateTime): FiniteDuration =
-      (date.toInstant.toEpochMilli - other.toInstant.toEpochMilli).millis
+    def -(other: ZonedDateTime): FiniteDuration = (date.toInstant.toEpochMilli - other.toInstant.toEpochMilli).millis
 
   given Conversion[String, LocalDate] with
     def apply(str: String): LocalDate =
       str match
-        case date if date.matches("[0-9]{8}")                   => LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
+        case date if date.matches("[0-9]{8}") => LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
         case date if date.matches("\\d\\d\\d\\d-\\d\\d-\\d\\d") => LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
 
   extension (str: String)

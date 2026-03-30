@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.initializer
+package uk.gov.hmrc.agentregistrationrisking.scheduler
 
-import uk.gov.hmrc.agentregistration.initializer.model.ScheduledTime
-import uk.gov.hmrc.agentregistration.initializer.model.Task
+import uk.gov.hmrc.agentregistrationrisking.scheduler.Scheduler
+import uk.gov.hmrc.agentregistrationrisking.scheduler.model.ScheduledTime
+import uk.gov.hmrc.agentregistrationrisking.scheduler.model.Task
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 
 import java.time.Clock
