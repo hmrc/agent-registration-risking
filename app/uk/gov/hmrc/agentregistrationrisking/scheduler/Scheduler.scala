@@ -17,21 +17,30 @@
 package uk.gov.hmrc.agentregistrationrisking.scheduler
 
 import java.time.Clock
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import play.api.Logging
-import uk.gov.hmrc.agentregistrationrisking.scheduler.model.Task
+import uk.gov.hmrc.mongo.lock.LockRepository
+import uk.gov.hmrc.mongo.lock.LockService
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
 @Singleton
-class Scheduler @Inject() (clock: Clock)
+class Scheduler @Inject() (
+  clock: Clock,
+  mongoLockRepository: MongoLockRepository
+)(using ec: ExecutionContext)
 extends Logging:
 
   private val schedulerZoneId = ZoneId.of("Europe/London")
@@ -39,23 +48,60 @@ extends Logging:
 
   private def now(): ZonedDateTime = ZonedDateTime.now(clock.withZone(schedulerZoneId))
 
+  def scheduleDaily(
+    name: String,
+    timeOfDay: LocalTime,
+    job: () => Future[Unit]
+  ): Unit =
+    val lockService =
+      new LockService:
+        override val lockId: String = s"schedules.$name"
+        override val ttl: scala.concurrent.duration.Duration = 1.hour
+        override val lockRepository: LockRepository = mongoLockRepository
+
+    scheduleNext(
+      name,
+      timeOfDay,
+      job,
+      lockService
+    )
+
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  def schedule[A](task: Task[A]): Unit =
+  private def scheduleNext(
+    name: String,
+    timeOfDay: LocalTime,
+    job: () => Future[Unit],
+    lockService: LockService
+  ): Unit =
 
-    logger.info(s"${task.name} scheduled for ${task.scheduledTime.nextAfter(now()).toString}")
+    val nextRun = nextRunTime(timeOfDay)
+    val delayMillis = nextRun.toInstant.toEpochMilli - now().toInstant.toEpochMilli
 
-    val delay: FiniteDuration = task.scheduledTime.timeUntilNext(now())
+    logger.info(s"$name scheduled for ${nextRun.toString}")
 
     executor.schedule(
       new Runnable:
         def run(): Unit =
-          logger.info(s"Starting scheduled task: ${task.name} at ${ZonedDateTime.now(clock).toString}")
-          Try(task.run()) match
-            case Success(_) => logger.info(s"Scheduled task ${task.name} completed successfully")
-            case Failure(e) => logger.error(s"Scheduled task ${task.name} failed with exception: ${e.getMessage}", e)
-          if task.repeat then schedule(task)
+          logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
+          Try(lockService.withLock(job()).map {
+            case Some(_) => logger.info(s"Scheduled task $name completed successfully")
+            case None => logger.info(s"Scheduled task $name skipped - already running on another instance")
+          }) match
+            case Success(_) => ()
+            case Failure(e) => logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
+          scheduleNext(
+            name,
+            timeOfDay,
+            job,
+            lockService
+          )
       ,
-      delay.length,
-      delay.unit
+      delayMillis,
+      TimeUnit.MILLISECONDS
     )
     ()
+
+  private def nextRunTime(timeOfDay: LocalTime): ZonedDateTime =
+    val today = now().`with`(timeOfDay)
+    if now().isBefore(today) then today
+    else today.plusDays(1)

@@ -19,21 +19,23 @@ package uk.gov.hmrc.agentregistrationrisking.scheduler
 import play.api.Configuration
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
-import uk.gov.hmrc.agentregistrationrisking.scheduler.model.Task
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
+import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.time.Clock
-import java.time.ZoneId
+import java.time.LocalTime
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class RiskingSchedulerInitializerSpec
-extends UnitSpec:
+extends UnitSpec,
+  MongoSupport:
 
-  private val zoneId = ZoneId.of("Europe/London")
   private val clock = Clock.systemDefaultZone()
+  private lazy val mongoLockRepository = new MongoLockRepository(mongoComponent, new uk.gov.hmrc.mongo.CurrentTimestampSupport())
 
   private val stubRunner: RiskingRunner =
     new RiskingRunner(
@@ -60,22 +62,40 @@ extends UnitSpec:
 
     "schedule the task when enabled" in {
       val scheduled = new AtomicBoolean(false)
-      val stubScheduler = new Scheduler(clock):
-        override def schedule[A](task: Task[A]): Unit = scheduled.set(true)
+      val stubScheduler =
+        new Scheduler(clock, mongoLockRepository):
+          override def scheduleDaily(
+            name: String,
+            timeOfDay: LocalTime,
+            job: () => Future[Unit]
+          ): Unit = scheduled.set(true)
 
       val appConfig = appConfigWith("scheduler.risking.enabled" -> true, "scheduler.risking.time" -> "02:00")
-      new RiskingSchedulerInitializer(stubRunner, stubScheduler, appConfig)
+      new RiskingSchedulerInitializer(
+        stubRunner,
+        stubScheduler,
+        appConfig
+      )
 
       scheduled.get() `shouldBe` true
     }
 
     "not schedule the task when disabled" in {
       val scheduled = new AtomicBoolean(false)
-      val stubScheduler = new Scheduler(clock):
-        override def schedule[A](task: Task[A]): Unit = scheduled.set(true)
+      val stubScheduler =
+        new Scheduler(clock, mongoLockRepository):
+          override def scheduleDaily(
+            name: String,
+            timeOfDay: LocalTime,
+            job: () => Future[Unit]
+          ): Unit = scheduled.set(true)
 
       val appConfig = appConfigWith("scheduler.risking.enabled" -> false, "scheduler.risking.time" -> "02:00")
-      new RiskingSchedulerInitializer(stubRunner, stubScheduler, appConfig)
+      new RiskingSchedulerInitializer(
+        stubRunner,
+        stubScheduler,
+        appConfig
+      )
 
       scheduled.get() `shouldBe` false
     }

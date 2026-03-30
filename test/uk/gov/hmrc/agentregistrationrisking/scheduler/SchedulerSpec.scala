@@ -16,123 +16,154 @@
 
 package uk.gov.hmrc.agentregistrationrisking.scheduler
 
-import uk.gov.hmrc.agentregistrationrisking.scheduler.Scheduler
-import uk.gov.hmrc.agentregistrationrisking.scheduler.model.ScheduledTime
-import uk.gov.hmrc.agentregistrationrisking.scheduler.model.Task
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
+import uk.gov.hmrc.mongo.test.MongoSupport
 
 import java.time.Clock
-import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class SchedulerSpec
-extends UnitSpec {
+extends UnitSpec,
+  MongoSupport:
 
   private val zoneId = ZoneId.of("Europe/London")
+
+  private lazy val mongoLockRepository = new MongoLockRepository(mongoComponent, new uk.gov.hmrc.mongo.CurrentTimestampSupport())
 
   private def clockAt(
     hour: Int,
     minute: Int
-  ): Clock = {
+  ): Clock =
     val instant =
       java.time.LocalDate.now()
         .atTime(hour, minute)
         .atZone(zoneId)
         .toInstant
     Clock.fixed(instant, zoneId)
-  }
-
-  private def taskThatCountsExecutions(
-    time: LocalTime,
-    shouldRepeat: Boolean,
-    latch: CountDownLatch,
-    counter: AtomicInteger = new AtomicInteger(0),
-    isEnabled: Boolean = true
-  ): Task[Unit] =
-    new Task[Unit] {
-      override def scheduledTime: ScheduledTime = ScheduledTime(time)
-      override def repeat: Boolean = shouldRepeat
-      override def name: String = "test-task"
-      override def enabled: Boolean = isEnabled
-      override def run(): Unit = {
-        counter.incrementAndGet()
-        latch.countDown()
-      }
-    }
 
   "Scheduler" - {
 
-    "execute a scheduled task" in {
+    "execute a scheduled daily job" in {
       val clock = clockAt(23, 59)
-      val scheduler = new Scheduler(clock)
+      val scheduler = new Scheduler(clock, mongoLockRepository)
       val latch = new CountDownLatch(1)
       val counter = new AtomicInteger(0)
 
       val time = LocalTime.parse("23:59").plusSeconds(1)
-      val task = taskThatCountsExecutions(
+
+      scheduler.scheduleDaily(
+        "test-job",
         time,
-        shouldRepeat = false,
-        latch,
-        counter
+        () => {
+          counter.incrementAndGet()
+          latch.countDown()
+          Future.successful(())
+        }
       )
 
-      scheduler.schedule(task)
-
-      latch.await(5, TimeUnit.SECONDS) shouldBe true
-      counter.get() shouldBe 1
+      latch.await(5, TimeUnit.SECONDS) `shouldBe` true
+      counter.get() `shouldBe` 1
     }
 
-    "re-schedule a repeating task after execution" in {
+    "re-schedule after execution" in {
       val clock = clockAt(23, 59)
-      val scheduler = new Scheduler(clock)
+      val scheduler = new Scheduler(clock, mongoLockRepository)
       val latch = new CountDownLatch(2)
       val counter = new AtomicInteger(0)
 
       val time = LocalTime.parse("23:59").plusSeconds(1)
-      val task =
-        new Task[Unit] {
-          override def scheduledTime: ScheduledTime = ScheduledTime(time)
-          override def repeat: Boolean = counter.get() < 2
-          override def name: String = "repeating-task"
-          override def enabled: Boolean = true
-          override def run(): Unit = {
-            counter.incrementAndGet()
-            latch.countDown()
-          }
-        }
 
-      scheduler.schedule(task)
+      scheduler.scheduleDaily(
+        "repeating-job",
+        time,
+        () => {
+          counter.incrementAndGet()
+          latch.countDown()
+          Future.successful(())
+        }
+      )
 
       latch.await(5, TimeUnit.SECONDS) `shouldBe` true
       counter.get() `shouldBe` 2
     }
 
-    "not crash when task throws an exception" in {
+    "not crash when job throws an exception" in {
       val clock = clockAt(23, 59)
-      val scheduler = new Scheduler(clock)
+      val scheduler = new Scheduler(clock, mongoLockRepository)
       val latch = new CountDownLatch(1)
 
       val time = LocalTime.parse("23:59").plusSeconds(1)
-      val task =
-        new Task[Unit] {
-          override def scheduledTime: ScheduledTime = ScheduledTime(time)
-          override def repeat: Boolean = false
-          override def name: String = "failing-task"
-          override def enabled: Boolean = true
-          override def run(): Unit = {
-            latch.countDown()
-            throw new RuntimeException("boom")
-          }
+
+      scheduler.scheduleDaily(
+        "failing-job",
+        time,
+        () => {
+          latch.countDown()
+          throw new RuntimeException("boom")
         }
+      )
 
-      scheduler.schedule(task)
+      latch.await(5, TimeUnit.SECONDS) `shouldBe` true
+    }
 
-      latch.await(5, TimeUnit.SECONDS) shouldBe true
+    "only one instance runs the job when two schedulers compete for the same lock" in {
+      import scala.concurrent.Promise
+
+      val clock = clockAt(23, 59)
+      val lockRepo = new MongoLockRepository(mongoComponent, new uk.gov.hmrc.mongo.CurrentTimestampSupport())
+      val scheduler1 = new Scheduler(clock, lockRepo)
+      val scheduler2 = new Scheduler(clock, lockRepo)
+
+      val executionCount = new AtomicInteger(0)
+      val firstJobStarted = new CountDownLatch(1)
+      val secondSchedulerAttempted = new CountDownLatch(1)
+      val promise = Promise[Unit]()
+
+      val time = LocalTime.parse("23:59").plusSeconds(1)
+
+      // first job: returns a Future that stays incomplete — holds the lock
+      val slowJob: () => Future[Unit] =
+        () =>
+          executionCount.incrementAndGet()
+          firstJobStarted.countDown()
+          promise.future
+
+      // second job: should never run if the lock works
+      val secondJob: () => Future[Unit] =
+        () =>
+          executionCount.incrementAndGet()
+          Future.successful(())
+
+      scheduler1.scheduleDaily(
+        "lock-contention-test",
+        time,
+        slowJob
+      )
+
+      // wait for the first scheduler to grab the lock
+      firstJobStarted.await(10, TimeUnit.SECONDS) `shouldBe` true
+
+      // now schedule the second with the same lock name
+      scheduler2.scheduleDaily(
+        "lock-contention-test",
+        time,
+        secondJob
+      )
+
+      // give the second scheduler enough time to fire and attempt the lock
+      secondSchedulerAttempted.await(3, TimeUnit.SECONDS)
+
+      // the second scheduler should have been skipped — only first incremented
+      executionCount.get() `shouldBe` 1
+
+      // clean up: complete the first job's future
+      promise.success(())
     }
   }
-
-}

@@ -34,10 +34,12 @@ extends Logging:
   initialize()
 
   private def initialize(): Unit =
-    val riskingTask = new RiskingTask(riskingRunner, appConfig)
-
-    if riskingTask.enabled then
+    if appConfig.Scheduler.enabled then
       logger.info("Bootstrapping risking scheduler")
-      scheduler.schedule(riskingTask)
+      scheduler.scheduleDaily(
+        "risking",
+        appConfig.Scheduler.time,
+        () => riskingRunner.run()
+      )
     else
-      logger.info(s"${riskingTask.name} not scheduled as it is not enabled")
+      logger.info("risking not scheduled as it is not enabled")
