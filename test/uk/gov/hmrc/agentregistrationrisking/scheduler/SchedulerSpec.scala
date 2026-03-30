@@ -94,9 +94,24 @@ extends UnitSpec,
         oneSecondAfterMidnight,
         () =>
           if counter.incrementAndGet() == 1 then throw new RuntimeException("boom")
-          // second call proves scheduler survived the exception
           schedulerSurvived.trySuccess(())
           Future.successful(())
+      )
+
+      schedulerSurvived.future.futureValue `shouldBe` ()
+    }
+
+    "recover and re-schedule when job returns a failed Future" in {
+      val scheduler = schedulerAt2359
+      val schedulerSurvived = Promise[Unit]()
+      val counter = new AtomicInteger(0)
+
+      scheduler.scheduleDaily(
+        "async-failing-job",
+        oneSecondAfterMidnight,
+        () =>
+          if counter.incrementAndGet() == 1 then Future.failed(new RuntimeException("async boom"))
+          else { schedulerSurvived.trySuccess(()); Future.successful(()) }
       )
 
       schedulerSurvived.future.futureValue `shouldBe` ()

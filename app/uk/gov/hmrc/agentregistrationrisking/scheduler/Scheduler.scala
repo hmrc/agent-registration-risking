@@ -34,7 +34,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
-import scala.util.Try
 
 @Singleton
 class Scheduler @Inject() (
@@ -83,18 +82,32 @@ extends Logging:
       new Runnable:
         def run(): Unit =
           logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
-          Try(lockService.withLock(job()).map {
-            case Some(_) => logger.info(s"Scheduled task $name completed successfully")
-            case None => logger.info(s"Scheduled task $name skipped - already running on another instance")
-          }) match
-            case Success(_) => ()
-            case Failure(e) => logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
-          scheduleNext(
-            name,
-            timeOfDay,
-            job,
-            lockService
-          )
+          lockService.withLock(job()).onComplete {
+            case Success(Some(_)) =>
+              logger.info(s"Scheduled task $name completed successfully")
+              scheduleNext(
+                name,
+                timeOfDay,
+                job,
+                lockService
+              )
+            case Success(None) =>
+              logger.info(s"Scheduled task $name skipped - already running on another instance")
+              scheduleNext(
+                name,
+                timeOfDay,
+                job,
+                lockService
+              )
+            case Failure(e) =>
+              logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
+              scheduleNext(
+                name,
+                timeOfDay,
+                job,
+                lockService
+              )
+          }
       ,
       delayMillis,
       TimeUnit.MILLISECONDS
