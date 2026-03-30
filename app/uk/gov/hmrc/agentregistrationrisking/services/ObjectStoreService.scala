@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path
 import uk.gov.hmrc.objectstore.client.RetentionPeriod
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
-import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 
 import java.net.URL
@@ -43,7 +41,7 @@ class ObjectStoreService @Inject() (
   ExecutionContext,
   Clock
 )
-extends RequestAwareLogging:
+extends Logging:
 
   private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
   private val receivedResultsFilesPath = Path.Directory("processed-results-files")
@@ -64,7 +62,7 @@ extends RequestAwareLogging:
       // owner  =  // defaults to 'appName' configuration
     ) // returns Future[ObjectSummaryWithMd5]
 
-  def deleteObject(path: Path.File)(using request: RequestHeader): Future[Unit] = playObjectStoreClient
+  def deleteObject(path: Path.File)(using hc: HeaderCarrier): Future[Unit] = playObjectStoreClient
     .deleteObject(
       path
     ).recover:
@@ -73,11 +71,11 @@ extends RequestAwareLogging:
   def uploadFromUrl(
     downloadUrl: URL,
     fileName: String
-  )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.uploadFromUrl(
+  )(using hc: HeaderCarrier): Future[ObjectSummaryWithMd5] = playObjectStoreClient.uploadFromUrl(
     from = downloadUrl,
     to = receivedResultsFilesPath.file(fileName = fileName),
     retentionPeriod = RetentionPeriod.SixMonths,
     contentType = Some("plain/text")
   )
 
-  def listObjects(using request: RequestHeader): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)
+  def listObjects(using hc: HeaderCarrier): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)
