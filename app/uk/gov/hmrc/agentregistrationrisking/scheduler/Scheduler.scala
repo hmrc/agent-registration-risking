@@ -47,30 +47,17 @@ extends Logging:
 
   private def now(): ZonedDateTime = ZonedDateTime.now(clock.withZone(schedulerZoneId))
 
+  private def lockServiceFor(name: String): LockService =
+    new LockService:
+      override val lockId: String = s"schedules.$name"
+      override val ttl: scala.concurrent.duration.Duration = 1.hour
+      override val lockRepository: LockRepository = mongoLockRepository
+
+  @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   def scheduleDaily(
     name: String,
     timeOfDay: LocalTime,
     job: () => Future[Unit]
-  ): Unit =
-    val lockService =
-      new LockService:
-        override val lockId: String = s"schedules.$name"
-        override val ttl: scala.concurrent.duration.Duration = 1.hour
-        override val lockRepository: LockRepository = mongoLockRepository
-
-    scheduleNext(
-      name,
-      timeOfDay,
-      job,
-      lockService
-    )
-
-  @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  private def scheduleNext(
-    name: String,
-    timeOfDay: LocalTime,
-    job: () => Future[Unit],
-    lockService: LockService
   ): Unit =
 
     val nextRun = nextRunTime(timeOfDay)
@@ -80,34 +67,32 @@ extends Logging:
 
     executor.schedule(
       new Runnable:
-        def run(): Unit =
+        def run(): Unit = lockServiceFor(name).withLock {
           logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
-          lockService.withLock(job()).onComplete {
-            case Success(Some(_)) =>
-              logger.info(s"Scheduled task $name completed successfully")
-              scheduleNext(
-                name,
-                timeOfDay,
-                job,
-                lockService
-              )
-            case Success(None) =>
-              logger.info(s"Scheduled task $name skipped - already running on another instance")
-              scheduleNext(
-                name,
-                timeOfDay,
-                job,
-                lockService
-              )
-            case Failure(e) =>
-              logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
-              scheduleNext(
-                name,
-                timeOfDay,
-                job,
-                lockService
-              )
-          }
+          job()
+        }.onComplete {
+          case Success(Some(_)) =>
+            logger.info(s"Scheduled task $name completed successfully")
+            scheduleDaily(
+              name,
+              timeOfDay,
+              job
+            )
+          case Success(None) =>
+            logger.info(s"Scheduled task $name skipped - already running on another instance")
+            scheduleDaily(
+              name,
+              timeOfDay,
+              job
+            )
+          case Failure(e) =>
+            logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
+            scheduleDaily(
+              name,
+              timeOfDay,
+              job
+            )
+        }
       ,
       delayMillis,
       TimeUnit.MILLISECONDS
