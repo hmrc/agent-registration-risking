@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.connectors
 
 import play.api.http.Status.OK
+import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
@@ -59,15 +60,14 @@ extends Connector:
 
   def notifySdesFileReady(notifySdesFileReadyRequest: NotifySdesFileReadyRequest)(using
     RequestHeader
-  ): Future[Unit] = httpClient
+  ): Future[CheckResult] = httpClient
     .post(notifySdesFileReadyUrl)
     .setHeader(headers*)
     .withBody(Json.toJson(notifySdesFileReadyRequest))
     .execute[HttpResponse]
     .map: response =>
       response.status match
-        // Do we want to return something here, if so what?
-        case status if is2xx(status) => ()
+        case status if is2xx(status) => CheckResult.Pass
         case status =>
           Errors.throwUpstreamErrorResponse(
             httpMethod = "POST",
@@ -75,5 +75,5 @@ extends Connector:
             status = status,
             response = response
           )
-    // Is this logging enough?
+          CheckResult.Fail
     .andLogOnFailure(s"Failed to send notification")

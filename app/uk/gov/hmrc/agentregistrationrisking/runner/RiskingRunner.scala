@@ -21,6 +21,7 @@ import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import play.api.mvc.request.RemoteConnection
 import play.api.mvc.request.RequestTarget
+import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
@@ -35,7 +36,8 @@ import scala.concurrent.Future
 @Singleton
 class RiskingRunner @Inject() (
   objectStoreService: ObjectStoreService,
-  riskingFileService: RiskingFileService
+  riskingFileService: RiskingFileService,
+  sdesProxyService: SdesProxyService
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -61,10 +63,15 @@ extends RequestAwareLogging:
     logger.info("Running risking started ...")
 
     for
-      fileContent <- riskingFileService.buildRiskingFile
+      applicationsReadyForRisking <- riskingFileService.getApplicationsReadyForRisking
+      fileContent = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
-      _ <- sdesProxyService.notifySdesFileReady(objectSummary)
-      // TODO: Find out if we need to update the status here to show that sdes has been notified
-      // For permanently_failed batches, we need a process for that
+      checkResult <- sdesProxyService.notifySdesFileReady(objectSummary)
+      _ <-
+        checkResult match
+          case CheckResult.Pass => riskingFileService.updateManyRiskingFilesStatusSentForRisking(applicationsReadyForRisking)
+          case _ =>
+            logger.error(s"Failed to notify SDES of file ready for risking: ${objectSummary.location}")
+            Future.successful(())
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
     yield ()

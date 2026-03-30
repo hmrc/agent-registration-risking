@@ -20,6 +20,7 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.Updates
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
@@ -30,6 +31,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
+import org.mongodb.scala.result.UpdateResult
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
@@ -68,6 +70,16 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .find(
       filter = Filters.eq("individuals.personReference", personReference.value)
     ).headOption()
+
+  def updateManyByRiskingFilesStatus(
+    applications: Seq[ApplicationForRisking],
+    status: ApplicationForRiskingStatus
+  ): Future[Unit] = collection
+    .updateMany(
+      filter = Filters.in("applicationReference", applications.map(_.applicationReference.value)),
+      update = Updates.set("status", status.toString)
+    ).toFuture()
+    .map(_ => ())
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...

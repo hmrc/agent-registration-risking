@@ -24,10 +24,7 @@ import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 final case class NotifySdesFileReadyRequest(
   informationType: String,
   file: NotifySdesFile,
-  /* TODO: I have left this audit optional for now but it is not optional in the EPIDD,
-      we currently aren't handling auditing but this must be handled as part of that epic.
-   */
-  audit: Option[NotifySdesAudit] = None
+  audit: NotifySdesAudit
 )
 
 final case class NotifySdesFile(

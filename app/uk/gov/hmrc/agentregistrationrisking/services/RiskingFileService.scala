@@ -48,6 +48,15 @@ extends RequestAwareLogging:
   private val headerRow = s"00|ARR|SAS|${convertToMinervaHeaderDateString(instant)}|${convertToMinervaHeaderTimeString(instant)}"
   private val footerRowPrefix = "99|"
 
+  def getApplicationsReadyForRisking: Future[Seq[ApplicationForRisking]] = applicationForRiskingRepo.findByStatus(
+    ApplicationForRiskingStatus.ReadyForSubmission
+  )
+
+  def buildRiskingFileFrom(applicationsReadyForRisking: Seq[ApplicationForRisking]): String =
+    val dataRecordString = applicationsReadyForRisking.map(app => s"$headerRow\n${buildDataRecords(app).mkString("\n")}").mkString("\n")
+    val totalRecords = applicationsReadyForRisking.map(i => 1 + i.individuals.length).sum
+    s"$headerRow\n$dataRecordString\n$footerRowPrefix$totalRecords"
+
   def buildRiskingFile: Future[String] =
     val applicationsReadyForRisking = applicationForRiskingRepo.findByStatus(ApplicationForRiskingStatus.ReadyForSubmission)
     for {
@@ -66,3 +75,7 @@ extends RequestAwareLogging:
           RiskingFileDataRecord.fromIndividualForRisking(i).asPipe
         }
     records.mkString("\n")
+
+  def updateManyRiskingFilesStatusSentForRisking(
+    applicationsReadyForRisking: Seq[ApplicationForRisking]
+  ): Future[Unit] = applicationForRiskingRepo.updateManyByRiskingFilesStatus(applicationsReadyForRisking, ApplicationForRiskingStatus.SubmittedForRisking)

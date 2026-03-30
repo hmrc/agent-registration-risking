@@ -17,8 +17,10 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesAudit
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
@@ -26,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesChecksumAlgorithm
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -38,15 +41,13 @@ class SdesProxyService @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
-  // TODO: Find out about how we want to handle failed attempts and retries
-  def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[Unit] =
+  def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[CheckResult] =
     val notifySdesFileReadyRequest = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
     sdesProxyConnector.notifySdesFileReady(notifySdesFileReadyRequest)
 
   private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
     val informationType = appConfig.sdesInformationType.value
     val serviceReferenceNumber = appConfig.sdesSrn.value
-    // These values are assumed and should be confirmed
     NotifySdesFileReadyRequest(
       informationType = informationType,
       file = NotifySdesFile(
@@ -59,5 +60,6 @@ extends RequestAwareLogging:
         ),
         size = objectSummaryWithMd5.contentLength.intValue,
         properties = None
-      )
+      ),
+      audit = NotifySdesAudit(UUID.randomUUID().toString)
     )
