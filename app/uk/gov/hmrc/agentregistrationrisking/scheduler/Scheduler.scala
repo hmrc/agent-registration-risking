@@ -60,46 +60,36 @@ extends Logging:
     job: () => Future[Unit]
   ): Unit =
 
-    val nextRun = nextRunTime(timeOfDay)
-    val delayMillis = nextRun.toInstant.toEpochMilli - now().toInstant.toEpochMilli
-
-    logger.info(s"$name scheduled for ${nextRun.toString}")
+    val nextRun: ZonedDateTime = nextRunTime(timeOfDay)
+    val delayMillis: Long = nextRun.toInstant.toEpochMilli - now().toInstant.toEpochMilli
 
     executor.schedule(
       new Runnable:
         def run(): Unit = lockServiceFor(name).withLock {
           logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
           job()
-        }.onComplete {
-          case Success(Some(_)) =>
-            logger.info(s"Scheduled task $name completed successfully")
-            scheduleDaily(
-              name,
-              timeOfDay,
-              job
-            )
-          case Success(None) =>
-            logger.info(s"Scheduled task $name skipped - already running on another instance")
-            scheduleDaily(
-              name,
-              timeOfDay,
-              job
-            )
-          case Failure(e) =>
-            logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
-            scheduleDaily(
-              name,
-              timeOfDay,
-              job
-            )
+        }.onComplete { result =>
+          result match
+            case Success(Some(_)) => logger.debug(s"Scheduled task $name completed successfully")
+            case Success(None) => logger.info(s"Scheduled task $name skipped - already running on another instance")
+            case Failure(e) => logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
+          scheduleDaily(
+            name,
+            timeOfDay,
+            job
+          )
         }
       ,
       delayMillis,
       TimeUnit.MILLISECONDS
     )
+    logger.info(s"$name scheduled for ${nextRun.toString}")
     ()
 
   private def nextRunTime(timeOfDay: LocalTime): ZonedDateTime =
-    val today = now().`with`(timeOfDay)
-    if now().isBefore(today) then today
-    else today.plusDays(1)
+    val currentTime: ZonedDateTime = now()
+    val today: ZonedDateTime = currentTime.`with`(timeOfDay)
+    if currentTime.isBefore(today) then
+      today
+    else
+      today.plusDays(1)

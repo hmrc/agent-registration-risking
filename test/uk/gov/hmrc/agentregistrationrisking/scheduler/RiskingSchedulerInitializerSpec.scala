@@ -29,13 +29,18 @@ import java.time.LocalTime
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.Promise
+import java.time.LocalDate
+import java.time.ZoneId
+import uk.gov.hmrc.mongo.CurrentTimestampSupport
 
 class RiskingSchedulerInitializerSpec
 extends UnitSpec,
   MongoSupport:
 
   private val clock = Clock.systemDefaultZone()
-  private lazy val mongoLockRepository = new MongoLockRepository(mongoComponent, new uk.gov.hmrc.mongo.CurrentTimestampSupport())
+  private lazy val mongoLockRepository = new MongoLockRepository(mongoComponent, CurrentTimestampSupport())
 
   private val stubRunner: RiskingRunner =
     new RiskingRunner(
@@ -98,5 +103,55 @@ extends UnitSpec,
       )
 
       scheduled.get() `shouldBe` false
+    }
+
+    "only one instance runs the job when two initializers compete for the same lock" in {
+      val executionCount = new AtomicInteger(0)
+      val firstJobStarted = Promise[Unit]()
+      val holdLock = Promise[Unit]()
+
+      // schedule for 02:00 with clock at 01:59:59 — fires in ~1 second
+      val appConfig = appConfigWith("scheduler.risking.enabled" -> true, "scheduler.risking.time" -> "02:00")
+      val zoneId = ZoneId.of("Europe/London")
+      val nearScheduleTime = Clock.fixed(
+        LocalDate.now().atTime(1, 59, 59).atZone(zoneId).toInstant,
+        zoneId
+      )
+
+      val lockRepo = new MongoLockRepository(mongoComponent, new CurrentTimestampSupport())
+      val scheduler1 = new Scheduler(nearScheduleTime, lockRepo)
+      val scheduler2 = new Scheduler(nearScheduleTime, lockRepo)
+
+      val slowRunner: RiskingRunner =
+        new RiskingRunner(objectStoreService = null, riskingFileService = null):
+          override def run(): Future[Unit] =
+            executionCount.incrementAndGet()
+            firstJobStarted.trySuccess(())
+            holdLock.future
+
+      val fastRunner: RiskingRunner =
+        new RiskingRunner(objectStoreService = null, riskingFileService = null):
+          override def run(): Future[Unit] =
+            executionCount.incrementAndGet()
+            Future.successful(())
+
+      new RiskingSchedulerInitializer(
+        slowRunner,
+        scheduler1,
+        appConfig
+      )
+      firstJobStarted.future.futureValue `shouldBe` ()
+
+      new RiskingSchedulerInitializer(
+        fastRunner,
+        scheduler2,
+        appConfig
+      )
+
+      eventually(timeout(org.scalatest.time.Span(5, org.scalatest.time.Seconds))) {
+        executionCount.get() `shouldBe` 1
+      }
+
+      holdLock.success(())
     }
   }
