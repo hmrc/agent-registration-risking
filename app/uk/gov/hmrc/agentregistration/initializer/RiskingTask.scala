@@ -28,18 +28,15 @@ class RiskingTask(
   val riskingRunner: RiskingRunner,
   config: Configuration
 )
-extends Task[Future[Unit]] {
+extends Task[Future[Unit]]:
 
   val name: String = "risking"
   val repeat: Boolean = true
 
   override def enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
 
-  override def scheduledTime: ScheduledTime = {
+  override def scheduledTime: ScheduledTime =
     val raw = config.get[String]("scheduler.risking.time")
     ScheduledTime(LocalTime.parse(raw))
-  }
 
   override def run(): Future[Unit] = riskingRunner.run()
-
-}

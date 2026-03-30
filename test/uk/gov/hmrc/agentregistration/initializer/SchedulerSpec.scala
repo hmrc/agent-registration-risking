@@ -16,23 +16,32 @@
 
 package uk.gov.hmrc.agentregistration.initializer
 
-import uk.gov.hmrc.agentregistration.initializer.model.{ScheduledTime, Task}
+import uk.gov.hmrc.agentregistration.initializer.model.ScheduledTime
+import uk.gov.hmrc.agentregistration.initializer.model.Task
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 
-import java.time.{Clock, Instant, LocalTime, ZoneId}
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-class SchedulerSpec extends UnitSpec {
+class SchedulerSpec
+extends UnitSpec {
 
   private val zoneId = ZoneId.of("Europe/London")
 
-  private def clockAt(hour: Int, minute: Int): Clock = {
-    val instant = java.time.LocalDate.now()
-      .atTime(hour, minute)
-      .atZone(zoneId)
-      .toInstant
+  private def clockAt(
+    hour: Int,
+    minute: Int
+  ): Clock = {
+    val instant =
+      java.time.LocalDate.now()
+        .atTime(hour, minute)
+        .atZone(zoneId)
+        .toInstant
     Clock.fixed(instant, zoneId)
   }
 
@@ -42,27 +51,33 @@ class SchedulerSpec extends UnitSpec {
     latch: CountDownLatch,
     counter: AtomicInteger = new AtomicInteger(0),
     isEnabled: Boolean = true
-  ): Task[Unit] = new Task[Unit] {
-    override def scheduledTime: ScheduledTime = ScheduledTime(time)
-    override def repeat: Boolean              = shouldRepeat
-    override def name: String                 = "test-task"
-    override def enabled: Boolean             = isEnabled
-    override def run(): Unit = {
-      counter.incrementAndGet()
-      latch.countDown()
+  ): Task[Unit] =
+    new Task[Unit] {
+      override def scheduledTime: ScheduledTime = ScheduledTime(time)
+      override def repeat: Boolean = shouldRepeat
+      override def name: String = "test-task"
+      override def enabled: Boolean = isEnabled
+      override def run(): Unit = {
+        counter.incrementAndGet()
+        latch.countDown()
+      }
     }
-  }
 
   "Scheduler" - {
 
     "execute a scheduled task" in {
-      val clock     = clockAt(23, 59)
+      val clock = clockAt(23, 59)
       val scheduler = new Scheduler(clock)
-      val latch     = new CountDownLatch(1)
-      val counter   = new AtomicInteger(0)
+      val latch = new CountDownLatch(1)
+      val counter = new AtomicInteger(0)
 
       val time = LocalTime.parse("23:59").plusSeconds(1)
-      val task = taskThatCountsExecutions(time, shouldRepeat = false, latch, counter)
+      val task = taskThatCountsExecutions(
+        time,
+        shouldRepeat = false,
+        latch,
+        counter
+      )
 
       scheduler.schedule(task)
 
@@ -71,25 +86,27 @@ class SchedulerSpec extends UnitSpec {
     }
 
     "not crash when task throws an exception" in {
-      val clock     = clockAt(23, 59)
+      val clock = clockAt(23, 59)
       val scheduler = new Scheduler(clock)
-      val latch     = new CountDownLatch(1)
+      val latch = new CountDownLatch(1)
 
       val time = LocalTime.parse("23:59").plusSeconds(1)
-      val task = new Task[Unit] {
-        override def scheduledTime: ScheduledTime = ScheduledTime(time)
-        override def repeat: Boolean              = false
-        override def name: String                 = "failing-task"
-        override def enabled: Boolean             = true
-        override def run(): Unit = {
-          latch.countDown()
-          throw new RuntimeException("boom")
+      val task =
+        new Task[Unit] {
+          override def scheduledTime: ScheduledTime = ScheduledTime(time)
+          override def repeat: Boolean = false
+          override def name: String = "failing-task"
+          override def enabled: Boolean = true
+          override def run(): Unit = {
+            latch.countDown()
+            throw new RuntimeException("boom")
+          }
         }
-      }
 
       scheduler.schedule(task)
 
       latch.await(5, TimeUnit.SECONDS) shouldBe true
     }
   }
+
 }

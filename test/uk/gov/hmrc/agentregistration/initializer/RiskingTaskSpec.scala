@@ -26,51 +26,54 @@ import java.time.LocalTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RiskingTaskSpec extends UnitSpec {
+class RiskingTaskSpec
+extends UnitSpec {
 
-  private val stubRunner: RiskingRunner = new RiskingRunner(
-    objectStoreService = null,
-    riskingFileService = null
-  ) {
-    override def run(): Future[Unit] = Future.successful(())
-  }
+  private val stubRunner: RiskingRunner =
+    new RiskingRunner(
+      objectStoreService = null,
+      riskingFileService = null
+    ) {
+      override def run(): Future[Unit] = Future.successful(())
+    }
 
   "RiskingTask" - {
 
     "be enabled when config says true" in {
       val config = Configuration("scheduler.risking.enabled" -> true, "scheduler.risking.time" -> "02:00")
-      val task   = new RiskingTask(stubRunner, config)
+      val task = new RiskingTask(stubRunner, config)
       task.enabled shouldBe true
     }
 
     "be disabled when config says false" in {
       val config = Configuration("scheduler.risking.enabled" -> false, "scheduler.risking.time" -> "02:00")
-      val task   = new RiskingTask(stubRunner, config)
+      val task = new RiskingTask(stubRunner, config)
       task.enabled shouldBe false
     }
 
     "be disabled when config is missing" in {
       val config = Configuration("scheduler.risking.time" -> "02:00")
-      val task   = new RiskingTask(stubRunner, config)
+      val task = new RiskingTask(stubRunner, config)
       task.enabled shouldBe false
     }
 
     "read scheduled time from config" in {
       val config = Configuration("scheduler.risking.enabled" -> true, "scheduler.risking.time" -> "02:00")
-      val task   = new RiskingTask(stubRunner, config)
+      val task = new RiskingTask(stubRunner, config)
       task.scheduledTime.time shouldBe LocalTime.parse("02:00")
     }
 
     "have repeat set to true" in {
       val config = Configuration("scheduler.risking.enabled" -> true, "scheduler.risking.time" -> "02:00")
-      val task   = new RiskingTask(stubRunner, config)
+      val task = new RiskingTask(stubRunner, config)
       task.repeat shouldBe true
     }
 
     "delegate run to riskingRunner" in {
       val config = Configuration("scheduler.risking.enabled" -> true, "scheduler.risking.time" -> "02:00")
-      val task   = new RiskingTask(stubRunner, config)
+      val task = new RiskingTask(stubRunner, config)
       task.run().futureValue shouldBe ()
     }
   }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.concurrent.Executors
 import uk.gov.hmrc.agentregistration.initializer.model.Task
 import javax.inject.Inject
 import javax.inject.Singleton
-import play.api.Logger
+import play.api.Logging
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Failure
@@ -32,38 +32,31 @@ import scala.util.Success
 import scala.util.Try
 
 @Singleton
-class Scheduler @Inject() (clock: Clock) {
+class Scheduler @Inject() (clock: Clock)
+extends Logging:
 
   private val schedulerZoneId = ZoneId.of("Europe/London")
-  private val logger: Logger = Logger(this.getClass)
   private val executor = Executors.newScheduledThreadPool(1)
 
   private def now(): ZonedDateTime = ZonedDateTime.now(clock.withZone(schedulerZoneId))
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  def schedule[A](task: Task[A]): Unit = {
+  def schedule[A](task: Task[A]): Unit =
 
     logger.info(s"${task.name} scheduled for ${task.scheduledTime.nextAfter(now()).toString}")
 
     val delay: FiniteDuration = task.scheduledTime.timeUntilNext(now())
 
     executor.schedule(
-      new Runnable {
-        def run(): Unit = {
+      new Runnable:
+        def run(): Unit =
           logger.info(s"Starting scheduled task: ${task.name} at ${ZonedDateTime.now(clock).toString}")
-          Try(task.run()) match {
+          Try(task.run()) match
             case Success(_) => logger.info(s"Scheduled task ${task.name} completed successfully")
             case Failure(e) => logger.error(s"Scheduled task ${task.name} failed with exception: ${e.getMessage}", e)
-          }
-          if (task.repeat) {
-            schedule(task)
-          }
-        }
-      },
+          if task.repeat then schedule(task)
+      ,
       delay.length,
       delay.unit
     )
     ()
-  }
-
-}

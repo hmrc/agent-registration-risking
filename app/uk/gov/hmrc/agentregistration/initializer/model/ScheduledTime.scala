@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,18 @@ package uk.gov.hmrc.agentregistration.initializer.model
 import java.time.LocalTime
 import java.time.ZonedDateTime
 
-import uk.gov.hmrc.agentregistration.initializer.chrono.RichZonedDateTime
+import uk.gov.hmrc.agentregistration.initializer.DateTimeExtensions.*
 
 import scala.concurrent.duration.FiniteDuration
 
-/** Represents the scheduled time for an event which occurs daily.
-  */
-final case class ScheduledTime(time: LocalTime) {
+/** Represents the scheduled time for an event which occurs daily. */
+final case class ScheduledTime(time: LocalTime):
 
-  /** Returns the next scheduled event time (looking ahead from the given time).
-    */
-  def nextAfter(offset: ZonedDateTime): ZonedDateTime = {
+  /** Returns the next scheduled event time (looking ahead from the given time). */
+  def nextAfter(offset: ZonedDateTime): ZonedDateTime =
     val t = offset.`with`(time)
-    if (offset.isBefore(t)) {
-      t
-    }
-    else {
-      offset.plusDays(1).`with`(time)
-    }
-  }
+    if offset.isBefore(t) then t
+    else offset.plusDays(1).`with`(time)
 
-  /** Returns the time to go between the given time and the next scheduled event.
-    */
+  /** Returns the time to go between the given time and the next scheduled event. */
   def timeUntilNext(offset: ZonedDateTime): FiniteDuration = nextAfter(offset) - offset
-
-}

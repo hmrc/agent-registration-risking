@@ -29,20 +29,15 @@ class RiskingSchedulerInitializer @Inject() (
   scheduler: Scheduler,
   config: Configuration
 )
-extends Logging {
+extends Logging:
 
   initialize()
 
-  private def initialize(): Unit = {
+  private def initialize(): Unit =
     val riskingTask = new RiskingTask(riskingRunner, config)
 
-    if (riskingTask.enabled) {
+    if riskingTask.enabled then
       logger.info("Bootstrapping risking scheduler")
       scheduler.schedule(riskingTask)
-    }
-    else {
+    else
       logger.info(s"${riskingTask.name} not scheduled as it is not enabled")
-    }
-  }
-
-}
