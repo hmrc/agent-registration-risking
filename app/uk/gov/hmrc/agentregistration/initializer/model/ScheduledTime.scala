@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentregistration.initializer.model
 
-import java.time.{LocalTime, ZonedDateTime}
+import java.time.LocalTime
+import java.time.ZonedDateTime
 
 import uk.gov.hmrc.agentregistration.initializer.chrono.RichZonedDateTime
 
@@ -32,7 +33,8 @@ final case class ScheduledTime(time: LocalTime) {
     val t = offset.`with`(time)
     if (offset.isBefore(t)) {
       t
-    } else {
+    }
+    else {
       offset.plusDays(1).`with`(time)
     }
   }
@@ -40,4 +42,5 @@ final case class ScheduledTime(time: LocalTime) {
   /** Returns the time to go between the given time and the next scheduled event.
     */
   def timeUntilNext(offset: ZonedDateTime): FiniteDuration = nextAfter(offset) - offset
+
 }

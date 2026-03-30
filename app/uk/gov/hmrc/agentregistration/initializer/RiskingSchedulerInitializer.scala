@@ -16,17 +16,20 @@
 
 package uk.gov.hmrc.agentregistration.initializer
 
-import play.api.{Configuration, Logging}
+import play.api.Configuration
+import play.api.Logging
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class RiskingSchedulerInitializer @Inject() (
   riskingRunner: RiskingRunner,
-  scheduler:     Scheduler,
-  config:        Configuration
-) extends Logging {
+  scheduler: Scheduler,
+  config: Configuration
+)
+extends Logging {
 
   initialize()
 
@@ -36,8 +39,10 @@ class RiskingSchedulerInitializer @Inject() (
     if (riskingTask.enabled) {
       logger.info("Bootstrapping risking scheduler")
       scheduler.schedule(riskingTask)
-    } else {
+    }
+    else {
       logger.info(s"${riskingTask.name} not scheduled as it is not enabled")
     }
   }
+
 }

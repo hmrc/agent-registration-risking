@@ -16,25 +16,31 @@
 
 package uk.gov.hmrc.agentregistration.initializer
 
-import java.time.{Clock, ZoneId, ZonedDateTime}
+import java.time.Clock
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.concurrent.Executors
 
 import uk.gov.hmrc.agentregistration.initializer.model.Task
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import play.api.Logger
 
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 @Singleton
 class Scheduler @Inject() (clock: Clock) {
 
   private val schedulerZoneId = ZoneId.of("Europe/London")
-  private val logger: Logger  = Logger(this.getClass)
-  private val executor        = Executors.newScheduledThreadPool(1)
+  private val logger: Logger = Logger(this.getClass)
+  private val executor = Executors.newScheduledThreadPool(1)
 
   private def now(): ZonedDateTime = ZonedDateTime.now(clock.withZone(schedulerZoneId))
 
+  @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   def schedule[A](task: Task[A]): Unit = {
 
     logger.info(s"${task.name} scheduled for ${task.scheduledTime.nextAfter(now()).toString}")
@@ -46,10 +52,8 @@ class Scheduler @Inject() (clock: Clock) {
         def run(): Unit = {
           logger.info(s"Starting scheduled task: ${task.name} at ${ZonedDateTime.now(clock).toString}")
           Try(task.run()) match {
-            case Success(_) =>
-              logger.info(s"Scheduled task ${task.name} completed successfully")
-            case Failure(e) =>
-              logger.error(s"Scheduled task ${task.name} failed with exception: ${e.getMessage}", e)
+            case Success(_) => logger.info(s"Scheduled task ${task.name} completed successfully")
+            case Failure(e) => logger.error(s"Scheduled task ${task.name} failed with exception: ${e.getMessage}", e)
           }
           if (task.repeat) {
             schedule(task)
@@ -61,4 +65,5 @@ class Scheduler @Inject() (clock: Clock) {
     )
     ()
   }
+
 }

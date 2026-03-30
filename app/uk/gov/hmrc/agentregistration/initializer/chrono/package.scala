@@ -33,11 +33,12 @@ package object chrono {
 
     def isWeekday: Boolean = !isWeekend
 
-    def nextWeekday(): ZonedDateTime = date.getDayOfWeek match {
-      case DayOfWeek.FRIDAY   => date.plusDays(3)
-      case DayOfWeek.SATURDAY => date.plusDays(2)
-      case _                  => date.plusDays(1)
-    }
+    def nextWeekday(): ZonedDateTime =
+      date.getDayOfWeek match {
+        case DayOfWeek.FRIDAY => date.plusDays(3)
+        case DayOfWeek.SATURDAY => date.plusDays(2)
+        case _ => date.plusDays(1)
+      }
 
     def isWorkingDay: Boolean = !isWeekend
 
@@ -45,23 +46,29 @@ package object chrono {
       require(days > -1, "n must be <= 0")
 
       @tailrec
-      def next(date: ZonedDateTime): ZonedDateTime = date match {
-        case d if d.isWorkingDay => d
-        case d                   => next(d.plusDays(1))
-      }
+      def next(date: ZonedDateTime): ZonedDateTime =
+        date match {
+          case d if d.isWorkingDay => d
+          case d => next(d.plusDays(1))
+        }
 
       next(date.plusDays(days))
     }
 
     def +(duration: FiniteDuration): ZonedDateTime = {
-      if (duration.toDays == 0) date
-      else date.plusDays(duration.toDays)
+      if (duration.toDays == 0)
+        date
+      else
+        date.plusDays(duration.toDays)
     }
 
     def -(duration: FiniteDuration): ZonedDateTime = {
-      if (duration.toDays == 0) date
-      else date.minusDays(duration.toDays)
+      if (duration.toDays == 0)
+        date
+      else
+        date.minusDays(duration.toDays)
     }
+
   }
 
   implicit class RichZonedDateTime(time: ZonedDateTime) {
@@ -70,10 +77,11 @@ package object chrono {
     }
   }
 
-  implicit def convert(str: String): LocalDate = str match {
-    case date if date.matches("[0-9]{8}")                   => LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
-    case date if date.matches("\\d\\d\\d\\d-\\d\\d-\\d\\d") => LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
-  }
+  implicit def convert(str: String): LocalDate =
+    str match {
+      case date if date.matches("[0-9]{8}") => LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
+      case date if date.matches("\\d\\d\\d\\d-\\d\\d-\\d\\d") => LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
+    }
 
   implicit class DateOp(str: String) {
     def asDate: LocalDate = str

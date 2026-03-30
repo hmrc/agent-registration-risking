@@ -17,17 +17,20 @@
 package uk.gov.hmrc.agentregistration.initializer
 
 import play.api.Configuration
-import play.api.mvc.{Headers, RequestHeader}
-import play.api.mvc.request.RequestTarget
-import uk.gov.hmrc.agentregistration.initializer.model.{ScheduledTime, Task}
+import uk.gov.hmrc.agentregistration.initializer.model.ScheduledTime
+import uk.gov.hmrc.agentregistration.initializer.model.Task
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 
 import java.time.LocalTime
 import scala.concurrent.Future
 
-class RiskingTask(val riskingRunner: RiskingRunner, config: Configuration) extends Task[Future[Unit]] {
+class RiskingTask(
+  val riskingRunner: RiskingRunner,
+  config: Configuration
+)
+extends Task[Future[Unit]] {
 
-  val name: String   = "risking"
+  val name: String = "risking"
   val repeat: Boolean = true
 
   override def enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
@@ -37,18 +40,6 @@ class RiskingTask(val riskingRunner: RiskingRunner, config: Configuration) exten
     ScheduledTime(LocalTime.parse(raw))
   }
 
-  override def run(): Future[Unit] = {
-    given RequestHeader = syntheticRequestHeader
-    riskingRunner.run()
-  }
+  override def run(): Future[Unit] = riskingRunner.run()
 
-  private val syntheticRequestHeader: RequestHeader = new RequestHeader {
-    override def target: RequestTarget  = RequestTarget("/", "/", Map.empty)
-    override def version: String        = "HTTP/1.1"
-    override def method: String         = "GET"
-    override def headers: Headers       = Headers()
-    override def connection: play.api.mvc.request.RemoteConnection =
-      play.api.mvc.request.RemoteConnection(java.net.InetAddress.getLoopbackAddress, false, None)
-    override def attrs: play.libs.typedmap.TypedMap = play.libs.typedmap.TypedMap.empty()
-  }
 }

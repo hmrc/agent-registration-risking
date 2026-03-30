@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.agentregistrationrisking.runner
 
-import play.api.mvc.RequestHeader
+import play.api.Logging
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
-import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,9 +32,10 @@ class RiskingRunner @Inject() (
   objectStoreService: ObjectStoreService,
   riskingFileService: RiskingFileService
 )(using ec: ExecutionContext)
-extends RequestAwareLogging:
+extends Logging:
 
-  def run()(using request: RequestHeader): Future[Unit] =
+  def run(): Future[Unit] =
+    given HeaderCarrier = HeaderCarrier()
     logger.info("Running risking started ...")
 
     for

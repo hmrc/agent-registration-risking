@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path
@@ -47,7 +48,7 @@ extends RequestAwareLogging:
   private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
   private val receivedResultsFilesPath = Path.Directory("processed-results-files")
 
-  def put(fileContent: String)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
+  def put(fileContent: String)(using hc: HeaderCarrier): Future[ObjectSummaryWithMd5] =
 
     val timestamp: String = LocalDateTime
       .now(summon[Clock])

@@ -23,4 +23,5 @@ trait Task[+A] {
   def name: String
   def run(): A
   def enabled: Boolean
+
 }
