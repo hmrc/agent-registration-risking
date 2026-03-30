@@ -86,6 +86,31 @@ extends UnitSpec {
       counter.get() shouldBe 1
     }
 
+    "re-schedule a repeating task after execution" in {
+      val clock = clockAt(23, 59)
+      val scheduler = new Scheduler(clock)
+      val latch = new CountDownLatch(2)
+      val counter = new AtomicInteger(0)
+
+      val time = LocalTime.parse("23:59").plusSeconds(1)
+      val task =
+        new Task[Unit] {
+          override def scheduledTime: ScheduledTime = ScheduledTime(time)
+          override def repeat: Boolean = counter.get() < 2
+          override def name: String = "repeating-task"
+          override def enabled: Boolean = true
+          override def run(): Unit = {
+            counter.incrementAndGet()
+            latch.countDown()
+          }
+        }
+
+      scheduler.schedule(task)
+
+      latch.await(5, TimeUnit.SECONDS) `shouldBe` true
+      counter.get() `shouldBe` 2
+    }
+
     "not crash when task throws an exception" in {
       val clock = clockAt(23, 59)
       val scheduler = new Scheduler(clock)
