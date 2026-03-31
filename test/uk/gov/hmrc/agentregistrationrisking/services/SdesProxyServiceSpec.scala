@@ -27,7 +27,7 @@ extends ISpec:
 
   val service: SdesProxyService = app.injector.instanceOf[SdesProxyService]
 
-  "notifySdesFileReady sends the expected request to SDES and returns Pass" in:
+  "notifySdesFileReady sends the expected request to SDES" in:
 
     given RequestHeader = FakeRequest()
 

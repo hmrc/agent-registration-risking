@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.connectors
 
 import play.api.http.Status.OK
-import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
