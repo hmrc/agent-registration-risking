@@ -21,6 +21,8 @@ import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
+/** Notification sent to SDES when a file is ready to be processed in object store */
+
 final case class NotifySdesFileReadyRequest(
   informationType: String,
   file: NotifySdesFile,
