@@ -38,7 +38,7 @@ extends Connector:
     "x-client-id" -> appConfig.sdesInboundServerToken.value,
     "X-SDES-Key" -> appConfig.sdesSrn.value
   )
-  private val availableFilesUrl: URL = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInformationType.value}"
+  private val availableFilesUrl: URL = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInboundInformationType.value}"
 
   def listAvailableFiles(using RequestHeader): Future[Seq[AvailableFile]] = httpClient
     .get(availableFilesUrl)
@@ -72,7 +72,9 @@ extends Connector:
     .execute[HttpResponse]
     .map: response =>
       response.status match
-        case status if is2xx(status) => CheckResult.Pass
+        case status if is2xx(status) =>
+          logger.info(s"Successfully sent notification to SDES, correlationId: ${notifySdesFileReadyRequest.audit.correlationId}")
+          CheckResult.Pass
         case status =>
           Errors.throwUpstreamErrorResponse(
             httpMethod = "POST",
@@ -80,4 +82,4 @@ extends Connector:
             status = status,
             response = response
           )
-    .andLogOnFailure(s"Failed to send notification")
+    .andLogOnFailure(s"Failed to send SDES notification")
