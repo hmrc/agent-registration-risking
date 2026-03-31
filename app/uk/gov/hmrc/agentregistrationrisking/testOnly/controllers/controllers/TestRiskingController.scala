@@ -44,9 +44,9 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
-import uk.gov.hmrc.agentregistrationrisking.services.ResultsFileService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.auth.core.retrieve.Credentials
+import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Instant
@@ -65,7 +65,7 @@ class TestRiskingController @Inject() (
   personReferenceGenerator: PersonReferenceGenerator,
   riskingFileService: RiskingFileService,
   riskingRunner: RiskingRunner,
-  resultsFileService: ResultsFileService
+  sdesProxyService: SdesProxyService
 )
 extends BackendController(cc)
 with Logging:
@@ -93,7 +93,7 @@ with Logging:
   def downloadAvailableResultsFiles: Action[AnyContent] = Action
     .async:
       implicit request =>
-        resultsFileService.retrieveAndProcessResultsFiles.map(result => Ok(result.toString()))
+        sdesProxyService.retrieveAndProcessResultsFiles.map(result => Ok(result.toString()))
 
   private def makeApplicationForRisking(numberOfIndividuals: Int): ApplicationForRisking = ApplicationForRisking(
     applicationReference = agentReferenceGenerator.nextApplicationReference(),

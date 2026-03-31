@@ -17,21 +17,17 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
+import sttp.model.Uri
 import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesAudit
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesChecksumAlgorithm
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 
-import java.util.UUID
+import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -41,8 +37,12 @@ import scala.concurrent.Future
 class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   appConfig: AppConfig,
-  correlationIdGenerator: CorrelationIdGenerator
-)(using ExecutionContext)
+  correlationIdGenerator: CorrelationIdGenerator,
+  objectStoreService: ObjectStoreService
+)(using
+  ExecutionContext,
+  Clock
+)
 extends RequestAwareLogging:
 
   def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[Unit] =
@@ -67,3 +67,31 @@ extends RequestAwareLogging:
       ),
       audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
     )
+
+  def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
+    logger.info(s"Results file retrieval started...")
+    for
+      unprocessedFileList <- getUnprocessedAvailableFiles
+      _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
+      // TODO: Add file processing logic here
+      uploadUnprocessedFiles = unprocessedFileList.map(uploadAndLogResultFile)
+      uploadResults <- Future.sequence(uploadUnprocessedFiles)
+    yield uploadResults
+
+  private def uploadAndLogResultFile(file: AvailableFile)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
+    val downloadUri = Uri(file.downloadURL).toJavaUri.toURL
+    val fileName = file.filename
+    for
+      uploadResult <- objectStoreService.uploadFromUrl(downloadUrl = downloadUri, fileName = fileName)
+      _ = logger.info(s"Uploaded file to object store: $fileName")
+    yield uploadResult
+
+  private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[AvailableFile]] =
+    for
+      availableFiles: Seq[AvailableFile] <- sdesProxyConnector.listAvailableFiles
+      filesAlreadyProcessed: ObjectListing <- objectStoreService.listObjects
+      _ = logger.info(s"Files already processed: ${filesAlreadyProcessed.objectSummaries.size.toString}")
+      fileNamesAlreadyProcessed = filesAlreadyProcessed.objectSummaries.map(_.location.fileName).toSet
+      _ = logger.info(s"File Names already processed: ${fileNamesAlreadyProcessed.toString}")
+      unprocessedAvailableFiles = availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
+    yield unprocessedAvailableFiles
