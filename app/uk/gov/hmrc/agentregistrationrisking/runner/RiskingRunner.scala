@@ -67,12 +67,7 @@ extends RequestAwareLogging:
       applicationsReadyForRisking: Seq[ApplicationForRisking] <- riskingFileService.getApplicationsReadyForRisking
       fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
-      checkResult: CheckResult <- sdesProxyService.notifySdesFileReady(objectSummary)
-      _ <-
-        checkResult match
-          case CheckResult.Pass => riskingFileService.setAllStatusSubmittedForRisking(applicationsReadyForRisking)
-          case CheckResult.Fail =>
-            logger.error(s"Failed to notify SDES of file ready for risking: ${objectSummary.location}")
-            Future.successful(())
+      _ <- sdesProxyService.notifySdesFileReady(objectSummary)
+      _ <- riskingFileService.setAllStatusSubmittedForRisking(applicationsReadyForRisking)
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
     yield ()

@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 
@@ -35,9 +34,8 @@ extends ISpec:
     val objectSummaryWithMd5 = tdAll.objectSummaryWithMd5
     SdesProxyStubs.stubSdesFileReady
 
-    val result = service.notifySdesFileReady(objectSummaryWithMd5).futureValue
+    service.notifySdesFileReady(objectSummaryWithMd5).futureValue
 
-    result shouldBe CheckResult.Pass
     SdesProxyStubs.verifySdesFileReady()
 
     val requestBody = Json.parse(SdesProxyStubs.getSdesFileReadyRequestBody)

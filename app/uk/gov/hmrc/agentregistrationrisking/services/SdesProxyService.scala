@@ -41,13 +41,13 @@ class SdesProxyService @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
-  def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[CheckResult] =
-    val notifySdesFileReadyRequest = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
+  def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[Unit] =
+    val notifySdesFileReadyRequest: NotifySdesFileReadyRequest = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
     sdesProxyConnector.notifySdesFileReady(notifySdesFileReadyRequest)
 
   private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
-    val informationType = appConfig.sdesOutboundInformationType.value
-    val serviceReferenceNumber = appConfig.sdesSrn.value
+    val informationType: String = appConfig.sdesOutboundInformationType.value
+    val serviceReferenceNumber: String = appConfig.sdesSrn.value
     NotifySdesFileReadyRequest(
       informationType = informationType,
       file = NotifySdesFile(

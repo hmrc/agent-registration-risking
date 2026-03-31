@@ -64,7 +64,7 @@ extends Connector:
 
   def notifySdesFileReady(notifySdesFileReadyRequest: NotifySdesFileReadyRequest)(using
     RequestHeader
-  ): Future[CheckResult] = httpClient
+  ): Future[Unit] = httpClient
     .post(notifySdesFileReadyUrl)
     .setHeader(notifySdesFileReadyHeaders*)
     .withBody(Json.toJson(notifySdesFileReadyRequest))
@@ -73,7 +73,7 @@ extends Connector:
       response.status match
         case status if is2xx(status) =>
           logger.info(s"Successfully sent notification to SDES, correlationId: ${notifySdesFileReadyRequest.audit.correlationId}")
-          CheckResult.Pass
+          ()
         case status =>
           Errors.throwUpstreamErrorResponse(
             httpMethod = "POST",
