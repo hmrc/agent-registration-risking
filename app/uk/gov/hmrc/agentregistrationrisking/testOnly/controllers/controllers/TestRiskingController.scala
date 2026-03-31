@@ -80,7 +80,9 @@ with Logging:
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
       implicit request =>
-        riskingFileService.buildRiskingFile.map(file => Ok(file))
+        riskingFileService.getApplicationsReadyForRisking.map: applications =>
+          val riskingFile: String = riskingFileService.buildRiskingFileFrom(applications)
+          Ok(riskingFile)
 
   def createTestApplicationForRisking(numberOfIndividuals: Int): Action[AnyContent] = Action
     .async:

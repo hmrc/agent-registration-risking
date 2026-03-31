@@ -57,15 +57,6 @@ extends RequestAwareLogging:
     val totalRecords = applicationsReadyForRisking.map(i => 1 + i.individuals.length).sum
     s"$headerRow\n$dataRecordString\n$footerRowPrefix$totalRecords"
 
-  def buildRiskingFile: Future[String] =
-    val applicationsReadyForRisking = applicationForRiskingRepo.findByStatus(ApplicationForRiskingStatus.ReadyForSubmission)
-    for {
-      totalRecords <- applicationsReadyForRisking.map(_.map(i => 1 + i.individuals.length).sum)
-      dataRecordStrings <- applicationsReadyForRisking.map(_.map(app => {
-        buildDataRecords(app)
-      }))
-    } yield s"$headerRow\n${dataRecordStrings.mkString("\n")}\n$footerRowPrefix$totalRecords"
-
   private def buildDataRecords(applicationForRisking: ApplicationForRisking): String =
     val records =
       RiskingFileDataRecord

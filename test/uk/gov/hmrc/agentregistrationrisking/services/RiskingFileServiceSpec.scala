@@ -33,50 +33,6 @@ extends ISpec:
   val personReference2: PersonReference = PersonReference(randomId)
   val personReference3: PersonReference = PersonReference(randomId)
 
-  "buildRiskingFile retrieves all applications ready for risking and creates risking file in correct format" in:
-
-    val readyForSubmissionUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(individuals =
-      List(
-        tdAll.readyForSubmissionIndividual(Some(personReference1)),
-        tdAll.readyForSubmissionIndividual(Some(personReference2)),
-        tdAll.readyForSubmissionIndividual(Some(personReference3))
-      )
-    ))
-    readyForSubmissionUpsert.futureValue
-
-    val result: String = service.buildRiskingFile.futureValue
-    val recordCount = result.substring(result.length - 1).toInt
-    recordCount shouldBe 4
-    val pipeCount = result.count(_ == '|')
-    pipeCount shouldBe 109
-
-  "buildRiskingFile ignores any applications without a status of readyForSubmission" in:
-
-    val readyForSubmissionUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(individuals =
-      List(
-        tdAll.readyForSubmissionIndividual(Some(personReference1)),
-        tdAll.readyForSubmissionIndividual(Some(personReference2)),
-        tdAll.readyForSubmissionIndividual(Some(personReference3))
-      )
-    ))
-    readyForSubmissionUpsert.futureValue
-    val submittedUpsert = repo.upsert(tdAll.llpApplicationForRisking.copy(
-      applicationReference = ApplicationReference(randomId),
-      status = ApplicationForRiskingStatus.SubmittedForRisking,
-      individuals = List(
-        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference4"))),
-        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference5"))),
-        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference6")))
-      )
-    ))
-    submittedUpsert.futureValue
-
-    val result: String = service.buildRiskingFile.futureValue
-    val recordCount = result.substring(result.length - 1).toInt
-    recordCount shouldBe 4
-    val pipeCount = result.count(_ == '|')
-    pipeCount shouldBe 109
-
   "getApplicationsReadyForRisking retrieves all applications ready for risking" in:
 
     val readyForSubmissionApplication = tdAll.llpApplicationForRisking.copy(
