@@ -76,7 +76,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     status: ApplicationForRiskingStatus
   ): Future[Unit] = collection
     .updateMany(
-      filter = Filters.in("applicationReference", applications.map(_.applicationReference.value)),
+      filter = Filters.in("applicationReference", applications.map(_.applicationReference.value)*),
       update = Updates.set("status", status.toString)
     ).toFuture()
     .map(_ => ())

@@ -127,3 +127,25 @@ extends ISpec:
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
          |99|4"""
         .stripMargin
+
+  "setAllStatusSubmittedForRisking updates all supplied applications to SubmittedForRisking" in:
+
+    val applicationsReadyForRisking: Seq[ApplicationForRisking] =
+      Seq.fill(3):
+        tdAll.llpApplicationForRisking.copy(
+          applicationReference = ApplicationReference(randomId),
+          individuals = List(
+            tdAll.readyForSubmissionIndividual(Some(PersonReference(randomId)))
+          )
+        )
+
+    applicationsReadyForRisking.foreach(app => repo.upsert(app).futureValue)
+
+    service.setAllStatusSubmittedForRisking(applicationsReadyForRisking).futureValue
+
+    val updatedApplications = applicationsReadyForRisking.map: application =>
+      repo.findByApplicationReference(application.applicationReference).futureValue
+
+    updatedApplications.map(_.map(_.status)) shouldBe Seq.fill(3)(
+      Some(ApplicationForRiskingStatus.SubmittedForRisking)
+    )
