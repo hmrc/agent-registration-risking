@@ -78,7 +78,7 @@ with Logging:
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
       implicit request =>
-        riskingFileService.buildRiskingFile.map(file => Ok(file))
+        riskingFileService.buildRiskingFile.map((file, _) => Ok(file))
 
   def createTestApplicationForRisking(numberOfIndividuals: Int): Action[AnyContent] = Action
     .async:

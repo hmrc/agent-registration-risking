@@ -48,14 +48,12 @@ extends RequestAwareLogging:
   private val headerRow = s"00|ARR|SAS|${convertToMinervaHeaderDateString(instant)}|${convertToMinervaHeaderTimeString(instant)}"
   private val footerRowPrefix = "99|"
 
-  def buildRiskingFile: Future[String] =
-    val applicationsReadyForRisking = applicationForRiskingRepo.findByStatus(ApplicationForRiskingStatus.ReadyForSubmission)
-    for {
-      totalRecords <- applicationsReadyForRisking.map(_.map(i => 1 + i.individuals.length).sum)
-      dataRecordStrings <- applicationsReadyForRisking.map(_.map(app => {
-        buildDataRecords(app)
-      }))
-    } yield s"$headerRow\n${dataRecordStrings.mkString("\n")}\n$footerRowPrefix$totalRecords"
+  def buildRiskingFile: Future[(String, Seq[ApplicationForRisking])] =
+    for
+      applications <- applicationForRiskingRepo.findByStatus(ApplicationForRiskingStatus.ReadyForSubmission)
+      totalRecords = applications.map(i => 1 + i.individuals.length).sum
+      dataRecordStrings = applications.map(buildDataRecords)
+    yield (s"$headerRow\n${dataRecordStrings.mkString("\n")}\n$footerRowPrefix$totalRecords", applications)
 
   private def buildDataRecords(applicationForRisking: ApplicationForRisking): String =
     val records =

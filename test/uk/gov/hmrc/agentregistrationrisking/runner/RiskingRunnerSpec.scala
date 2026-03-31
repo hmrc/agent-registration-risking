@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.runner
 
 import play.api.mvc.AnyContent
 import play.api.mvc.Request
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -32,7 +33,7 @@ import scala.util.chaining.scalaUtilChainingOps
 class RiskingRunnerSpec
 extends ISpec:
 
-  "RiskingRunner.run prepares and uploads file to object store" in:
+  "RiskingRunner.run prepares and uploads file to object store and updates status" in {
 
     val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
     val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
@@ -67,3 +68,45 @@ extends ISpec:
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
          |99|4"""
         .stripMargin
+
+    // verify status updated to SubmittedForRisking
+    val updatedApp = applicationForRiskingRepo.findByApplicationReference(applicationForRisking.applicationReference).futureValue
+    updatedApp.value.status `shouldBe` ApplicationForRiskingStatus.SubmittedForRisking
+  }
+
+  "RiskingRunner.run does not include applications already submitted for risking" in {
+
+    val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
+    val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+
+    val personReference1 = PersonReference(randomId)
+    val personReference2 = PersonReference(randomId)
+    val personReference3 = PersonReference(randomId)
+
+    val applicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(
+      status = ApplicationForRiskingStatus.SubmittedForRisking,
+      individuals = List(
+        tdAll.readyForSubmissionIndividual(Some(personReference1)),
+        tdAll.readyForSubmissionIndividual(Some(personReference2)),
+        tdAll.readyForSubmissionIndividual(Some(personReference3))
+      )
+    )
+    given request: Request[AnyContent] = TdAll.tdAll.fakeBackendRequest
+    applicationForRiskingRepo.upsert(applicationForRisking).futureValue
+
+    val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
+    ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
+
+    riskingRunner.run().futureValue shouldBe ()
+
+    // TODO confirm - file is uploaded but contains no data records (only header + footer)
+    ObjectStoreStubs
+      .getRequestBody(fileName = fileName) shouldBe
+      s"""00|ARR|SAS|20591125|163351
+         |
+         |99|0"""
+        .stripMargin
+
+    val unchangedApp = applicationForRiskingRepo.findByApplicationReference(applicationForRisking.applicationReference).futureValue
+    unchangedApp.value.status `shouldBe` ApplicationForRiskingStatus.SubmittedForRisking
+  }

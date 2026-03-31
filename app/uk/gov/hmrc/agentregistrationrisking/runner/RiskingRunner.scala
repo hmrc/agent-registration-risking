@@ -17,11 +17,12 @@
 package uk.gov.hmrc.agentregistrationrisking.runner
 
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,7 +32,8 @@ import scala.concurrent.Future
 @Singleton
 class RiskingRunner @Inject() (
   objectStoreService: ObjectStoreService,
-  riskingFileService: RiskingFileService
+  riskingFileService: RiskingFileService,
+  applicationForRiskingRepo: ApplicationForRiskingRepo
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -39,7 +41,12 @@ extends RequestAwareLogging:
     logger.info("Running risking started ...")
 
     for
-      fileContent <- riskingFileService.buildRiskingFile
+      (fileContent, applications) <- riskingFileService.buildRiskingFile
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
+      _ <-
+        Future.traverse(applications) { app =>
+          applicationForRiskingRepo.updateStatus(app.applicationReference, ApplicationForRiskingStatus.SubmittedForRisking)
+        }
+      _ = logger.info(s"Updated ${applications.size} applications to SubmittedForRisking")
     yield ()

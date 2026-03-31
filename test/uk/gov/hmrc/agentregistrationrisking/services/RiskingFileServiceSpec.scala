@@ -43,7 +43,7 @@ extends ISpec:
     ))
     readyForSubmissionUpsert.futureValue
 
-    val result: String = service.buildRiskingFile.futureValue
+    val (result: String, _) = service.buildRiskingFile.futureValue
     val recordCount = result.substring(result.length - 1).toInt
     recordCount shouldBe 4
     val pipeCount = result.count(_ == '|')
@@ -70,7 +70,7 @@ extends ISpec:
     ))
     submittedUpsert.futureValue
 
-    val result: String = service.buildRiskingFile.futureValue
+    val (result: String, _) = service.buildRiskingFile.futureValue
     val recordCount = result.substring(result.length - 1).toInt
     recordCount shouldBe 4
     val pipeCount = result.count(_ == '|')

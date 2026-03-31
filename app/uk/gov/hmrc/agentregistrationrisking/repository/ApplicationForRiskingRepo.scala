@@ -20,6 +20,7 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.Updates
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
@@ -63,6 +64,17 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .find(
       filter = Filters.eq("status", status.toString)
     ).toFuture()
+
+  def updateStatus(
+    applicationReference: ApplicationReference,
+    status: ApplicationForRiskingStatus
+  ): Future[Unit] = collection
+    .updateOne(
+      filter = Filters.eq("applicationReference", applicationReference.value),
+      update = Updates.set("status", status.toString)
+    )
+    .toFuture()
+    .map(_ => ())
 
   def findByPersonReference(personReference: PersonReference): Future[Option[ApplicationForRisking]] = collection
     .find(
