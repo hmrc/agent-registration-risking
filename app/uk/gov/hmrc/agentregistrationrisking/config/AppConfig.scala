@@ -38,7 +38,8 @@ class AppConfig @Inject() (
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
   val sdesProxyBaseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
   val sdesInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.information-type"))
-  val sdesServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.server-token"))
+  val sdesInboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.inbound-server-token"))
+  val sdesOutboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.outbound-server-token"))
   val sdesSrn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))
 
   object Scheduler:

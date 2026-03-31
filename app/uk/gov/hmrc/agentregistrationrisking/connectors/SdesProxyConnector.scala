@@ -34,15 +34,15 @@ class SdesProxyConnector @Inject() (
 )(using ExecutionContext)
 extends Connector:
 
-  private val headers: Seq[(String, String)] = Seq(
-    "x-client-id" -> appConfig.sdesServerToken.value,
+  private val listAvailableFilesHeaders: Seq[(String, String)] = Seq(
+    "x-client-id" -> appConfig.sdesInboundServerToken.value,
     "X-SDES-Key" -> appConfig.sdesSrn.value
   )
   private val availableFilesUrl: URL = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInformationType.value}"
 
   def listAvailableFiles(using RequestHeader): Future[Seq[AvailableFile]] = httpClient
     .get(availableFilesUrl)
-    .setHeader(headers*)
+    .setHeader(listAvailableFilesHeaders*)
     .execute[HttpResponse]
     .map: response =>
       response.status match
@@ -56,13 +56,18 @@ extends Connector:
             info = "getAvailableResultsFiles problem"
           )
 
+  private val notifySdesFileReadyHeaders: Seq[(String, String)] = Seq(
+    "x-client-id" -> appConfig.sdesOutboundServerToken.value,
+    "X-SDES-Key" -> appConfig.sdesSrn.value
+  )
+
   private val notifySdesFileReadyUrl: URL = url"${appConfig.sdesProxyBaseUrl}/notification/fileready"
 
   def notifySdesFileReady(notifySdesFileReadyRequest: NotifySdesFileReadyRequest)(using
     RequestHeader
   ): Future[CheckResult] = httpClient
     .post(notifySdesFileReadyUrl)
-    .setHeader(headers*)
+    .setHeader(notifySdesFileReadyHeaders*)
     .withBody(Json.toJson(notifySdesFileReadyRequest))
     .execute[HttpResponse]
     .map: response =>
@@ -75,5 +80,4 @@ extends Connector:
             status = status,
             response = response
           )
-          CheckResult.Fail
     .andLogOnFailure(s"Failed to send notification")
