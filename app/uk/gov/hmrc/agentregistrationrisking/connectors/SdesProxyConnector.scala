@@ -35,7 +35,7 @@ class SdesProxyConnector @Inject() (
 extends Connector:
 
   private val listAvailableFilesHeaders: Seq[(String, String)] = Seq(
-    "x-client-id" -> appConfig.sdesInboundServerToken.value,
+    "X-Client-ID" -> appConfig.sdesInboundServerToken.value,
     "X-SDES-Key" -> appConfig.sdesSrn.value
   )
   private val availableFilesUrl: URL = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInboundInformationType.value}"
@@ -57,8 +57,7 @@ extends Connector:
           )
 
   private val notifySdesFileReadyHeaders: Seq[(String, String)] = Seq(
-    "x-client-id" -> appConfig.sdesOutboundServerToken.value,
-    "X-SDES-Key" -> appConfig.sdesSrn.value
+    "X-Client-ID" -> appConfig.sdesOutboundServerToken.value
   )
 
   private val notifySdesFileReadyUrl: URL = url"${appConfig.sdesProxyBaseUrl}/notification/fileready"
@@ -82,4 +81,4 @@ extends Connector:
             status = status,
             response = response
           )
-    .andLogOnFailure(s"Failed to send SDES notification")
+    .andLogOnFailure(s"Failed to send SDES notification, correlationId: ${notifySdesFileReadyRequest.audit.correlationId}")

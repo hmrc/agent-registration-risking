@@ -60,8 +60,7 @@ object SdesProxyStubs:
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
     requestHeaders = Seq(
-      "x-client-id" -> wm.equalTo("outbound-token"),
-      "X-SDES-Key" -> wm.equalTo("srn")
+      "x-client-id" -> wm.equalTo("outbound-token")
     ),
     count = count
   )
