@@ -46,8 +46,8 @@ extends RequestAwareLogging:
     sdesProxyConnector.notifySdesFileReady(notifySdesFileReadyRequest)
 
   private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
-    val informationType: String = appConfig.sdesOutboundInformationType.value
-    val serviceReferenceNumber: String = appConfig.sdesSrn.value
+    val informationType: String = appConfig.SdesProxy.outboundInformationType.value
+    val serviceReferenceNumber: String = appConfig.SdesProxy.srn.value
     NotifySdesFileReadyRequest(
       informationType = informationType,
       file = NotifySdesFile(

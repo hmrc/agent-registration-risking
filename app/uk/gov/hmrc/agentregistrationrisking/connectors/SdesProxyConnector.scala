@@ -34,10 +34,10 @@ class SdesProxyConnector @Inject() (
 extends Connector:
 
   private val listAvailableFilesHeaders: Seq[(String, String)] = Seq(
-    "X-Client-ID" -> appConfig.sdesInboundServerToken.value,
-    "X-SDES-Key" -> appConfig.sdesSrn.value
+    "X-Client-ID" -> appConfig.SdesProxy.inboundServerToken.value,
+    "X-SDES-Key" -> appConfig.SdesProxy.srn.value
   )
-  private val availableFilesUrl: URL = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInboundInformationType.value}"
+  private val availableFilesUrl: URL = url"${appConfig.SdesProxy.baseUrl}/files-available/list/${appConfig.SdesProxy.inboundInformationType.value}"
 
   def listAvailableFiles(using RequestHeader): Future[Seq[AvailableFile]] = httpClient
     .get(availableFilesUrl)
@@ -56,10 +56,10 @@ extends Connector:
           )
 
   private val notifySdesFileReadyHeaders: Seq[(String, String)] = Seq(
-    "X-Client-ID" -> appConfig.sdesOutboundServerToken.value
+    "X-Client-ID" -> appConfig.SdesProxy.outboundServerToken.value
   )
 
-  private val notifySdesFileReadyUrl: URL = url"${appConfig.sdesProxyBaseUrl}/notification/fileready"
+  private val notifySdesFileReadyUrl: URL = url"${appConfig.SdesProxy.baseUrl}/notification/fileready"
 
   def notifySdesFileReady(notifySdesFileReadyRequest: NotifySdesFileReadyRequest)(using
     RequestHeader
