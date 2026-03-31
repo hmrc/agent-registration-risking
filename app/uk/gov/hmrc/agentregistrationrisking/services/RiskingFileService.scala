@@ -78,4 +78,7 @@ extends RequestAwareLogging:
 
   def setAllStatusSubmittedForRisking(
     applicationsReadyForRisking: Seq[ApplicationForRisking]
-  ): Future[Unit] = applicationForRiskingRepo.updateManyByRiskingFileStatus(applicationsReadyForRisking, ApplicationForRiskingStatus.SubmittedForRisking)
+  ): Future[Unit] = {
+    val applicationReferences = applicationsReadyForRisking.map(_.applicationReference)
+    applicationForRiskingRepo.updateStatusByApplicationReferences(applicationReferences, ApplicationForRiskingStatus.SubmittedForRisking)
+  }

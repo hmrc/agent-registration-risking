@@ -71,12 +71,12 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       filter = Filters.eq("individuals.personReference", personReference.value)
     ).headOption()
 
-  def updateManyByRiskingFileStatus(
-    applications: Seq[ApplicationForRisking],
+  def updateStatusByApplicationReferences(
+    applicationReferences: Seq[ApplicationReference],
     status: ApplicationForRiskingStatus
   ): Future[Unit] = collection
     .updateMany(
-      filter = Filters.in("applicationReference", applications.map(_.applicationReference.value)*),
+      filter = Filters.in("applicationReference", applicationReferences.map(_.value)*),
       update = Updates.set("status", status.toString)
     ).toFuture()
     .map(_ => ())
