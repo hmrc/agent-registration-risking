@@ -51,7 +51,7 @@ extends ISpec:
 
     val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
     ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
-    SdesProxyStubs.stubSdesFileReady
+    SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
 
     riskingRunner.run().futureValue shouldBe ()
     ObjectStoreStubs.verifyObjectStoreTransfer(fileName = fileName)

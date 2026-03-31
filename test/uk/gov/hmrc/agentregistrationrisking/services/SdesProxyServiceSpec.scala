@@ -30,33 +30,19 @@ extends ISpec:
   "notifySdesFileReady sends the expected request to SDES" in:
 
     given RequestHeader = FakeRequest()
+    
+    SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
 
-    val objectSummaryWithMd5 = tdAll.objectSummaryWithMd5
-    SdesProxyStubs.stubSdesFileReady
-
-    service.notifySdesFileReady(objectSummaryWithMd5).futureValue
+    service.notifySdesFileReady(tdAll.objectSummaryWithMd5).futureValue
 
     SdesProxyStubs.verifySdesFileReady()
-
-    val requestBody = Json.parse(SdesProxyStubs.getSdesFileReadyRequestBody)
-
-    (requestBody \ "informationType").as[String] shouldBe "2222222"
-    (requestBody \ "file" \ "recipientOrSender").as[String] shouldBe "srn"
-    (requestBody \ "file" \ "name").as[String] shouldBe objectSummaryWithMd5.location.fileName
-    (requestBody \ "file" \ "location").as[String] shouldBe objectSummaryWithMd5.location.asUri
-    (requestBody \ "file" \ "checksum" \ "algorithm").as[String] shouldBe "md5"
-    (requestBody \ "file" \ "checksum" \ "value").as[String] shouldBe objectSummaryWithMd5.contentMd5.value
-    (requestBody \ "file" \ "size").as[Int] shouldBe objectSummaryWithMd5.contentLength.intValue
-
-    val correlationId = (requestBody \ "audit" \ "correlationId").as[String]
-    correlationId.nonEmpty shouldBe true
 
   "notifySdesFileReady throws when SDES returns a non-2xx response" in:
 
     given RequestHeader = FakeRequest()
 
     val objectSummaryWithMd5 = tdAll.objectSummaryWithMd5
-    SdesProxyStubs.stubSdesFileReadyFailure
+    SdesProxyStubs.stubSdesFileReadyFailure(tdAll.notifySdesFileReadyRequest)
 
     val exception = service.notifySdesFileReady(objectSummaryWithMd5).failed.futureValue
 

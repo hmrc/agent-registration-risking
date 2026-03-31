@@ -17,11 +17,13 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock as wm
+import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
@@ -43,25 +45,29 @@ object SdesProxyStubs:
     responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
   )
 
-  def stubSdesFileReady: StubMapping = StubMaker.make(
+  def stubSdesFileReady(body: NotifySdesFileReadyRequest): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
-    responseStatus = 200
+    responseStatus = 200,
+    requestHeaders = Seq(
+      "x-client-id" -> wm.equalTo("outbound-token")
+    ),
+    requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(body))))
   )
 
-  def stubSdesFileReadyFailure: StubMapping = StubMaker.make(
+  def stubSdesFileReadyFailure(body: NotifySdesFileReadyRequest): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
     responseStatus = 500,
-    responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
+    requestHeaders = Seq(
+      "x-client-id" -> wm.equalTo("outbound-token")
+    ),
+    requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(body))))
   )
 
   def verifySdesFileReady(count: Int = 1): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
-    requestHeaders = Seq(
-      "x-client-id" -> wm.equalTo("outbound-token")
-    ),
     count = count
   )
 

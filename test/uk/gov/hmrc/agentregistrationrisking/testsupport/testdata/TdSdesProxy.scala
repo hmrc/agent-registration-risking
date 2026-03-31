@@ -28,6 +28,13 @@ import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesAudit
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesChecksumAlgorithm
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.correlationId
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.objectSummaryWithMd5
 
 import java.time.Instant
 
@@ -39,6 +46,22 @@ trait TdSdesProxy { dependencies: TdBase =>
     downloadURL = "https://some.sdes.domain?token=abc123",
     filename = fileName,
     fileSize = 1024
+  )
+
+  def notifySdesFileReadyRequest: NotifySdesFileReadyRequest = NotifySdesFileReadyRequest(
+    informationType = "2222222",
+    file = NotifySdesFile(
+      recipientOrSender = Some("srn"),
+      name = objectSummaryWithMd5.location.fileName,
+      location = Some(objectSummaryWithMd5.location.asUri),
+      checksum = NotifySdesFileReadyChecksum(
+        algorithm = SdesChecksumAlgorithm.md5,
+        value = objectSummaryWithMd5.contentMd5.value
+      ),
+      size = objectSummaryWithMd5.contentLength.toInt,
+      properties = None
+    ),
+    audit = NotifySdesAudit(correlationId = correlationId)
   )
 
 }
