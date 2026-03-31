@@ -20,6 +20,7 @@ import play.api.libs.json.Format
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 
 /** Notification sent to SDES when a file is ready to be processed in object store */
 
@@ -70,7 +71,7 @@ object SdesProxyProperty:
   given Writes[SdesProxyProperty] = Json.writes[SdesProxyProperty]
 
 final case class NotifySdesAudit(
-  correlationId: String
+  correlationId: CorrelationId
 )
 
 object NotifySdesAudit:

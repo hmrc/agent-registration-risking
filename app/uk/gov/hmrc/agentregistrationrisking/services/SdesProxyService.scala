@@ -20,6 +20,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesAudit
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
@@ -37,7 +38,8 @@ import scala.concurrent.Future
 @Singleton
 class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  correlationIdGenerator: CorrelationIdGenerator
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -61,5 +63,5 @@ extends RequestAwareLogging:
         size = objectSummaryWithMd5.contentLength.intValue,
         properties = None
       ),
-      audit = NotifySdesAudit(UUID.randomUUID().toString)
+      audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
     )
