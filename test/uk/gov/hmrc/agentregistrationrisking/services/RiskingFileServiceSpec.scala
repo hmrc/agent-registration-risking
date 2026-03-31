@@ -56,11 +56,8 @@ extends ISpec:
     repo.upsert(readyForSubmissionApplication).futureValue
     repo.upsert(submittedApplication).futureValue
 
-    val result: Seq[ApplicationForRisking] = service.getApplicationsReadyForRisking.futureValue
-
-    result.length shouldBe 1
-    result.headOption.map(_.status) shouldBe Some(ApplicationForRiskingStatus.ReadyForSubmission)
-    result.headOption.map(_.applicationReference) shouldBe Some(readyForSubmissionApplication.applicationReference)
+    service.getApplicationsReadyForRisking.futureValue shouldBe Seq(readyForSubmissionApplication) withClue
+      "only readyForSubmission applications are returned"
 
   "buildRiskingFileFrom creates risking file in correct format from supplied applications" in:
 
