@@ -17,9 +17,12 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock as wm
+import com.github.tomakehurst.wiremock.matching.StringValuePattern
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
+import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object SdesProxyStubs:
@@ -45,3 +48,29 @@ object SdesProxyStubs:
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
     responseStatus = 200
   )
+
+  def stubSdesFileReadyFailure: StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/notification/fileready"),
+    responseStatus = 500,
+    responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
+  )
+
+  def verifySdesFileReady(count: Int = 1): Unit = StubMaker.verify(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/notification/fileready"),
+    requestHeaders = Seq(
+      "x-client-id" -> wm.equalTo("outbound-token"),
+      "X-SDES-Key" -> wm.equalTo("srn")
+    ),
+    count = count
+  )
+
+  def getSdesFileReadyRequestBody: String =
+    StubMaker.getEvents((x: ServeEvent) =>
+      x.getRequest.getUrl === "/notification/fileready"
+    )
+      .lastOption
+      .value
+      .getRequest
+      .getBodyAsString
