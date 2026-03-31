@@ -23,7 +23,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
 
 import java.time.Clock
 import javax.inject.Inject
