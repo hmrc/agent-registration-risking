@@ -70,12 +70,3 @@ object SdesProxyStubs:
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
     count = count
   )
-
-  def getSdesFileReadyRequestBody: String =
-    StubMaker.getEvents((x: ServeEvent) =>
-      x.getRequest.getUrl === "/notification/fileready"
-    )
-      .lastOption
-      .value
-      .getRequest
-      .getBodyAsString
