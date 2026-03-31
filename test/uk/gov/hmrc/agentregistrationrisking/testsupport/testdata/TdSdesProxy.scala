@@ -33,6 +33,8 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesChecksumAlgorithm
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.correlationId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.objectSummaryWithMd5
 
@@ -49,9 +51,9 @@ trait TdSdesProxy { dependencies: TdBase =>
   )
 
   def notifySdesFileReadyRequest: NotifySdesFileReadyRequest = NotifySdesFileReadyRequest(
-    informationType = "2222222",
+    informationType = SdesInformationType("2222222"),
     file = NotifySdesFile(
-      recipientOrSender = Some("srn"),
+      recipientOrSender = Some(SdesSrn("srn")),
       name = objectSummaryWithMd5.location.fileName,
       location = Some(objectSummaryWithMd5.location.asUri),
       checksum = NotifySdesFileReadyChecksum(

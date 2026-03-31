@@ -25,13 +25,13 @@ import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 /** Notification sent to SDES when a file is ready to be processed in object store */
 
 final case class NotifySdesFileReadyRequest(
-  informationType: String,
+  informationType: SdesInformationType,
   file: NotifySdesFile,
   audit: NotifySdesAudit
 )
 
 final case class NotifySdesFile(
-  recipientOrSender: Option[String],
+  recipientOrSender: Option[SdesSrn],
   name: String,
   location: Option[String],
   checksum: NotifySdesFileReadyChecksum,

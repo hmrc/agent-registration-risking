@@ -30,7 +30,7 @@ extends ISpec:
   "notifySdesFileReady sends the expected request to SDES" in:
 
     given RequestHeader = FakeRequest()
-    
+
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
 
     service.notifySdesFileReady(tdAll.objectSummaryWithMd5).futureValue

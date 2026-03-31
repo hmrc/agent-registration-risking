@@ -26,6 +26,8 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesChecksumAlgorithm
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 
@@ -48,8 +50,8 @@ extends RequestAwareLogging:
     sdesProxyConnector.notifySdesFileReady(notifySdesFileReadyRequest)
 
   private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
-    val informationType: String = appConfig.SdesProxy.outboundInformationType.value
-    val serviceReferenceNumber: String = appConfig.SdesProxy.srn.value
+    val informationType: SdesInformationType = appConfig.SdesProxy.outboundInformationType
+    val serviceReferenceNumber: SdesSrn = appConfig.SdesProxy.srn
     NotifySdesFileReadyRequest(
       informationType = informationType,
       file = NotifySdesFile(
