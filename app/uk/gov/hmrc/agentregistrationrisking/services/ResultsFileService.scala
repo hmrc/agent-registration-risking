@@ -18,8 +18,16 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.Failure
+import uk.gov.hmrc.agentregistrationrisking.model.FailureParser
+import uk.gov.hmrc.agentregistrationrisking.model.Result
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
@@ -31,7 +39,8 @@ import scala.concurrent.Future
 
 class ResultsFileService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
-  objectStoreService: ObjectStoreService
+  objectStoreService: ObjectStoreService,
+  applicationForRiskingRepo: ApplicationForRiskingRepo
 )(using
   ExecutionContext,
   Clock
@@ -41,12 +50,42 @@ extends RequestAwareLogging:
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")
     for
-      unprocessedFileList <- getUnprocessedAvailableFiles
+      unprocessedFileList <- getUnprocessedAvailableFiles()
       _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
       // TODO: Add file processing logic here
+      results: List[Result] = List(
+        Result(
+          "Entity",
+          "1234",
+          List(Failure(
+            "3.1",
+            "some-message",
+            "3",
+            "some-date",
+            None
+          ))
+        ),
+        Result(
+          "Individual",
+          "1234567890",
+          List(Failure(
+            "4.1",
+            "some-message",
+            "4",
+            "some-date",
+            None
+          ))
+        )
+      )
+      _ <- processResults(results)
       uploadUnprocessedFiles = unprocessedFileList.map(uploadAndLogResultFile)
       uploadResults <- Future.sequence(uploadUnprocessedFiles)
     yield uploadResults
+
+  private def processResults(results: Seq[Result])(using request: RequestHeader): Future[Unit] =
+    // Process in order so repeated updates to the same application do not race.
+    results.foldLeft(Future.unit): (acc, result) =>
+      acc.flatMap(_ => processResult(result))
 
   private def uploadAndLogResultFile(file: AvailableFile)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
     val downloadUri = Uri(file.downloadURL).toJavaUri.toURL
@@ -56,12 +95,52 @@ extends RequestAwareLogging:
       _ = logger.info(s"Uploaded file to object store: $fileName")
     yield uploadResult
 
-  private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[AvailableFile]] =
+  private def getUnprocessedAvailableFiles()(using request: RequestHeader): Future[Seq[AvailableFile]] =
     for
       availableFiles: Seq[AvailableFile] <- sdesProxyConnector.listAvailableFiles
       filesAlreadyProcessed: ObjectListing <- objectStoreService.listObjects
-      _ = logger.info(s"Files already processed: ${filesAlreadyProcessed.objectSummaries.size.toString}")
+      _ = logger.info(s"Files already processed: ${filesAlreadyProcessed.objectSummaries.size}")
       fileNamesAlreadyProcessed = filesAlreadyProcessed.objectSummaries.map(_.location.fileName).toSet
       _ = logger.info(s"File Names already processed: ${fileNamesAlreadyProcessed.toString}")
       unprocessedAvailableFiles = availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
     yield unprocessedAvailableFiles
+
+  private def processResult(result: Result)(using request: RequestHeader): Future[Unit] =
+    logger.info(s"Processing result: $result")
+    result.recordType match
+      case "Entity" => updateEntityWithResult(result)
+      case "Individual" => updateIndividualWithResult(result)
+      case other =>
+        logger.error(s"Skipping unsupported result record type: $other")
+        Future.unit
+
+  private def updateEntityWithResult(result: Result)(using request: RequestHeader): Future[Unit] =
+    val applicationReference = ApplicationReference(result.reference)
+    applicationForRiskingRepo.findById(applicationReference).flatMap:
+      case None =>
+        logger.error(s"No application found for application reference: ${applicationReference.value}")
+        Future.unit
+      case Some(applicationForRisking) =>
+        logger.info(s"Application found: $applicationForRisking")
+        val updatedApplication = applicationForRisking.copy(
+          failures = Some(result.failures.map(FailureParser.parseEntityFailure))
+        )
+        logger.info(s"Updated Application: $updatedApplication")
+        applicationForRiskingRepo.upsert(updatedApplication)
+
+  private def updateIndividualWithResult(result: Result)(using request: RequestHeader): Future[Unit] =
+    val personReference = PersonReference(result.reference)
+    applicationForRiskingRepo.findByPersonReference(personReference).flatMap:
+      case None =>
+        logger.error(s"No individual found for person reference: ${personReference.value}")
+        Future.unit
+      case Some(applicationForRisking) =>
+        val failures: List[IndividualFailure] = result.failures.map(FailureParser.parseIndividualFailure)
+        val updatedIndividuals = applicationForRisking.individuals.map:
+          case individual if individual.personReference.value === personReference.value => individual.copy(failures = Some(failures))
+          case individual => individual
+
+        val updated = applicationForRisking.copy(
+          individuals = updatedIndividuals
+        )
+        applicationForRiskingRepo.upsert(updated)

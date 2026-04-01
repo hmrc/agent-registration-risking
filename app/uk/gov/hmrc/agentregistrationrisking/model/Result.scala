@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.Reads
 
-final case class ApplicationRiskingResponse(
-  applicationReference: ApplicationReference,
-  status: ApplicationForRiskingStatus,
-  individuals: List[IndividualRiskingResponse],
-  failures: Option[List[EntityFailure]]
+final case class Result(
+  recordType: String,
+  reference: String,
+  failures: List[Failure]
 )
 
-object ApplicationRiskingResponse:
-
-  given OFormat[ApplicationRiskingResponse] = Json.format[ApplicationRiskingResponse]
+object Result:
+  given reads: Reads[Result] = Json.reads[Result]

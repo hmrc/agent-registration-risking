@@ -196,14 +196,6 @@ trait TdBase:
     emailAddress = Some(bprEmailAddress)
   )
 
-  def businessPartnerRecordResponseSoleTrader: BusinessPartnerRecordResponse = BusinessPartnerRecordResponse(
-    organisationName = None,
-    individualName = Some(individualName.value),
-    address = bprRegisteredAddress,
-    primaryPhoneNumber = Some(bprPrimaryTelephoneNumber),
-    emailAddress = Some(bprEmailAddress)
-  )
-
   def fiveOrFewerKeyIndividuals: FiveOrLess = FiveOrLess(
     numberOfKeyIndividuals = 3
   )
@@ -310,10 +302,4 @@ trait TdBase:
     hmrcStandardForAgentsAgreed = Agreed,
     hasApprovedApplication = Some(true),
     passedIv = None
-  )
-
-  val soleTraderFinishedProvideDetails: IndividualProvidedDetails = soleTraderProvidedDetails.copy(
-    internalUserId = Some(internalUserId),
-    providedDetailsState = Finished,
-    passedIv = Some(true)
   )

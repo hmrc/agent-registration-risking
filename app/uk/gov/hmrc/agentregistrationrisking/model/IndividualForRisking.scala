@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.Failure
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
@@ -47,7 +47,7 @@ final case class IndividualForRisking(
   email: EmailAddress,
   providedByApplicant: Boolean,
   passedIV: Boolean,
-  failures: Option[List[Failure]]
+  failures: Option[List[IndividualFailure]]
 )
 
 object IndividualForRisking:

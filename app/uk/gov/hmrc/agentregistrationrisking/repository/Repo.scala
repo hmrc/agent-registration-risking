@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.bson.codecs.Codec
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.ReplaceOptions
@@ -77,6 +78,14 @@ extends PlayMongoRepository[A](
     .deleteOne(
       filter = Filters.eq("_id", idString.idString(i))
     ).headOption()
+
+  def updateById(
+    i: ID,
+    update: Bson
+  ): Future[Option[A]] = collection.findOneAndUpdate(
+    filter = Filters.eq("_id", idString.idString(i)),
+    update = update
+  ).headOption()
 
 object Repo:
 
