@@ -17,20 +17,15 @@
 package uk.gov.hmrc.agentregistrationrisking.connectors
 
 import play.api.http.Status.OK
-import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
-import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.StringContextOps
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
+import uk.gov.hmrc.agentregistrationrisking.util.FutureUtil.andLogOnFailure
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class SdesProxyConnector @Inject() (
   appConfig: AppConfig,
@@ -38,15 +33,15 @@ class SdesProxyConnector @Inject() (
 )(using ExecutionContext)
 extends Connector:
 
-  private val headers: Seq[(String, String)] = Seq(
-    "x-client-id" -> appConfig.sdesServerToken.value,
-    "X-SDES-Key" -> appConfig.sdesSrn.value
+  private val listAvailableFilesHeaders: Seq[(String, String)] = Seq(
+    "X-Client-ID" -> appConfig.SdesProxy.inboundServerToken.value,
+    "X-SDES-Key" -> appConfig.SdesProxy.srn.value
   )
-  private val availableFilesUrl: URL = url"${appConfig.sdesProxyBaseUrl}/files-available/list/${appConfig.sdesInformationType.value}"
+  private val availableFilesUrl: URL = url"${appConfig.SdesProxy.baseUrl}/files-available/list/${appConfig.SdesProxy.inboundInformationType.value}"
 
   def listAvailableFiles(using RequestHeader): Future[Seq[AvailableFile]] = httpClient
     .get(availableFilesUrl)
-    .setHeader(headers*)
+    .setHeader(listAvailableFilesHeaders*)
     .execute[HttpResponse]
     .map: response =>
       response.status match
@@ -59,3 +54,30 @@ extends Connector:
             response = response,
             info = "getAvailableResultsFiles problem"
           )
+
+  private val notifySdesFileReadyHeaders: Seq[(String, String)] = Seq(
+    "X-Client-ID" -> appConfig.SdesProxy.outboundServerToken.value
+  )
+
+  private val notifySdesFileReadyUrl: URL = url"${appConfig.SdesProxy.baseUrl}/notification/fileready"
+
+  def notifySdesFileReady(notifySdesFileReadyRequest: NotifySdesFileReadyRequest)(using
+    RequestHeader
+  ): Future[Unit] = httpClient
+    .post(notifySdesFileReadyUrl)
+    .setHeader(notifySdesFileReadyHeaders*)
+    .withBody(Json.toJson(notifySdesFileReadyRequest))
+    .execute[HttpResponse]
+    .map: response =>
+      response.status match
+        case status if is2xx(status) =>
+          logger.info(s"Successfully sent notification to SDES, correlationId: ${notifySdesFileReadyRequest.audit.correlationId}")
+          ()
+        case status =>
+          Errors.throwUpstreamErrorResponse(
+            httpMethod = "POST",
+            url = notifySdesFileReadyUrl,
+            status = status,
+            response = response
+          )
+    .andLogOnFailure(s"Failed to send SDES notification, correlationId: ${notifySdesFileReadyRequest.audit.correlationId}")

@@ -45,7 +45,8 @@ extends UnitSpec,
   private val stubRunner: RiskingRunner =
     new RiskingRunner(
       objectStoreService = null,
-      riskingFileService = null
+      riskingFileService = null,
+      sdesProxyService = null
     ):
       override def run(): Future[Unit] = Future.successful(())
 
@@ -123,14 +124,22 @@ extends UnitSpec,
       val scheduler2 = new Scheduler(nearScheduleTime, lockRepo)
 
       val slowRunner: RiskingRunner =
-        new RiskingRunner(objectStoreService = null, riskingFileService = null):
+        new RiskingRunner(
+          objectStoreService = null,
+          riskingFileService = null,
+          sdesProxyService = null
+        ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()
             firstJobStarted.trySuccess(())
             holdLock.future
 
       val fastRunner: RiskingRunner =
-        new RiskingRunner(objectStoreService = null, riskingFileService = null):
+        new RiskingRunner(
+          objectStoreService = null,
+          riskingFileService = null,
+          sdesProxyService = null
+        ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()
             Future.successful(())

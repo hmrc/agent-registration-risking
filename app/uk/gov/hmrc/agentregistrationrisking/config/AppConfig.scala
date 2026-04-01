@@ -36,10 +36,6 @@ class AppConfig @Inject() (
 
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
-  val sdesProxyBaseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
-  val sdesInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.information-type"))
-  val sdesServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.server-token"))
-  val sdesSrn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))
 
   object Scheduler:
 
@@ -49,3 +45,12 @@ class AppConfig @Inject() (
   object ApplicationForRiskingRepo:
 
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
+
+  object SdesProxy:
+
+    val baseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
+    val inboundInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.inbound.information-type"))
+    val outboundInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.outbound.information-type"))
+    val inboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.inbound.server-token"))
+    val outboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.outbound.server-token"))
+    val srn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))

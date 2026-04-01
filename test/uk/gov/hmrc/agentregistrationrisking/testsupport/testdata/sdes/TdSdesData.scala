@@ -18,11 +18,12 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes
 
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 
 trait TdSdesData:
 
   val notificationFileName: String = "testFileName.zip"
-  val correlationId: String = "testCorrelationId"
+  val correlationId: CorrelationId = CorrelationId("testCorrelationId")
   val sdesAvailableUntil: String = "01/02/2024"
   val notificationDate: String = "01/02/2024"
   val failureReason: String = "Virus Detected"
