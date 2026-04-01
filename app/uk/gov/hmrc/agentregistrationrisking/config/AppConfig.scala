@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.config
 import javax.inject.Inject
 import javax.inject.Singleton
 import play.api.Configuration
+import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesServerToken
@@ -36,6 +37,8 @@ class AppConfig @Inject() (
 
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
+  val hipBaseUrl: String = servicesConfig.baseUrl("hip")
+  val hipAuthToken: HipAuthToken = HipAuthToken(config.get[String]("microservice.services.hip.authorization-token"))
 
   object Scheduler:
 

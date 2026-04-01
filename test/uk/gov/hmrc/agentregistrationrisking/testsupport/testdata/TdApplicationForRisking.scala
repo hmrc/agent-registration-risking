@@ -43,6 +43,7 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
     uploadedAt = None,
     fileName = None,
     applicantCredentials = credentials,
+    agentDetails = completeAgentDetails,
     applicantName = applicantName,
     applicantPhone = Some(telephoneNumber),
     applicantEmail = Some(applicantEmailAddress),

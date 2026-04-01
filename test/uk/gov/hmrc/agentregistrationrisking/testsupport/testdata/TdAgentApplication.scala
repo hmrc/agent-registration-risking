@@ -74,12 +74,7 @@ trait TdAgentApplication { dependencies: TdBase =>
         File("/test.txt")
       ))
     )),
-    agentDetails = Some(AgentDetails(
-      businessName = agentBusinessName,
-      telephoneNumber = Some(agentTelephoneNumber),
-      agentEmailAddress = Some(agentVerifiedEmailAddress),
-      agentCorrespondenceAddress = None
-    )),
+    agentDetails = Some(completeAgentDetails),
     refusalToDealWithCheckResult = None,
     companyStatusCheckResult = None,
     hmrcStandardForAgentsAgreed = Agreed,
