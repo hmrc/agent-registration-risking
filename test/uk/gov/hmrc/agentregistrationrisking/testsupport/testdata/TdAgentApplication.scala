@@ -42,6 +42,7 @@ trait TdAgentApplication { dependencies: TdBase =>
   val llpApplication: AgentApplicationLlp = AgentApplicationLlp(
     _id = agentApplicationId,
     internalUserId = internalUserId,
+    applicantCredentials = credentials,
     linkId = linkId,
     groupId = groupId,
     createdAt = createdAt,

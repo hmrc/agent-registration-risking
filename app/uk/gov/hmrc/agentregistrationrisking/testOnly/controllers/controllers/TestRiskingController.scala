@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.Nino
 import uk.gov.hmrc.agentregistration.shared.SaUtr
+import uk.gov.hmrc.agentregistration.shared.SafeId
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.Utr
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
@@ -45,6 +46,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.ResultsFileService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
+import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Instant
@@ -99,9 +101,14 @@ with Logging:
     createdAt = Instant.now(),
     uploadedAt = None,
     fileName = None,
+    applicantCredentials = Credentials(
+      providerId = "test-provider-id",
+      providerType = "test-provider-type"
+    ),
     applicantName = ApplicantName(generateRandomName()),
     applicantPhone = Some(TelephoneNumber("1234658979")),
     applicantEmail = Some(EmailAddress("user@test.com")),
+    entitySafeId = SafeId("X0TESTSAFEID0X"),
     entityType = BusinessType.Partnership.LimitedLiabilityPartnership,
     entityIdentifier = Utr("12345566"),
     crn = Some(Crn("12345566")),
