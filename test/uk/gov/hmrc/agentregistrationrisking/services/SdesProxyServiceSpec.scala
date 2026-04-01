@@ -22,15 +22,38 @@ import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
-import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
 
-class ResultsFileServiceSpec
+class SdesProxyServiceSpec
 extends ISpec:
 
-  val service: ResultsFileService = app.injector.instanceOf[ResultsFileService]
+  val service: SdesProxyService = app.injector.instanceOf[SdesProxyService]
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+
+
+  "notifySdesFileReady sends the expected request to SDES" in:
+
+    given RequestHeader = FakeRequest()
+
+    SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
+
+    service.notifySdesFileReady(tdAll.objectSummaryWithMd5).futureValue
+
+    SdesProxyStubs.verifySdesFileReady()
+
+  "notifySdesFileReady throws when SDES returns a non-2xx response" in:
+
+    given RequestHeader = FakeRequest()
+
+    val objectSummaryWithMd5 = tdAll.objectSummaryWithMd5
+    SdesProxyStubs.stubSdesFileReadyFailure(tdAll.notifySdesFileReadyRequest)
+
+    val exception = service.notifySdesFileReady(objectSummaryWithMd5).failed.futureValue
+
+    exception shouldBe a[Throwable]
+    SdesProxyStubs.verifySdesFileReady()
 
   "retrieveAndProcessResultsFile retrieves all unprocessed results files and processes accordingly" in:
 

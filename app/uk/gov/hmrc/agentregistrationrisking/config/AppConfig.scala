@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesServerToken
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.LocalTime
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
@@ -35,11 +36,21 @@ class AppConfig @Inject() (
 
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
-  val sdesProxyBaseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
-  val sdesInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.information-type"))
-  val sdesServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.server-token"))
-  val sdesSrn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))
+
+  object Scheduler:
+
+    val enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
+    val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
 
   object ApplicationForRiskingRepo:
 
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
+
+  object SdesProxy:
+
+    val baseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
+    val inboundInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.inbound.information-type"))
+    val outboundInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.outbound.information-type"))
+    val inboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.inbound.server-token"))
+    val outboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.outbound.server-token"))
+    val srn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.model.sdes
 
 import play.api.libs.json.*
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 
 /** Possible responses from the SDES file service
   */
@@ -25,7 +26,7 @@ sealed trait SdesNotification
 
 final case class FileReady(
   filename: String,
-  correlationID: String,
+  correlationID: CorrelationId,
   availableUntil: String,
   dateTime: String
 )
@@ -33,21 +34,21 @@ extends SdesNotification
 
 final case class FileReceived(
   filename: String,
-  correlationID: String,
+  correlationID: CorrelationId,
   dateTime: String
 )
 extends SdesNotification
 
 final case class FileProcessed(
   filename: String,
-  correlationID: String,
+  correlationID: CorrelationId,
   dateTime: String
 )
 extends SdesNotification
 
 final case class FileProcessingFailure(
   filename: String,
-  correlationID: String,
+  correlationID: CorrelationId,
   dateTime: String,
   failureReason: String,
   actionRequired: String

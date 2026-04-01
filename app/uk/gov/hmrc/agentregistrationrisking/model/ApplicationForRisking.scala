@@ -24,12 +24,14 @@ import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
 import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.SafeId
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.Utr
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
+import uk.gov.hmrc.auth.core.retrieve.Credentials
 
 import java.time.Instant
 import java.time.LocalDate
@@ -40,9 +42,11 @@ final case class ApplicationForRisking(
   createdAt: Instant,
   uploadedAt: Option[Instant],
   fileName: Option[String],
+  applicantCredentials: Credentials,
   applicantName: ApplicantName,
   applicantPhone: Option[TelephoneNumber],
   applicantEmail: Option[EmailAddress],
+  entitySafeId: SafeId,
   entityType: BusinessType,
   entityIdentifier: Utr,
   crn: Option[Crn],
@@ -57,4 +61,6 @@ final case class ApplicationForRisking(
 )
 
 object ApplicationForRisking:
+
+  given credentialsFormat: OFormat[Credentials] = Json.format[Credentials]
   given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]

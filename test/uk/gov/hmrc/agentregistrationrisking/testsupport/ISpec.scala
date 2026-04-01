@@ -34,6 +34,8 @@ import play.api.mvc.RequestHeader
 import play.api.test.DefaultTestServerFactory
 import play.api.test.TestServerFactory
 import play.core.server.ServerConfig
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport
@@ -72,15 +74,21 @@ extends AnyFreeSpecLike,
       "microservice.services.auth.port" -> WireMockSupport.port,
       "mongodb.uri" -> mongoUri,
       "microservice.services.object-store.port" -> WireMockSupport.port,
-      "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
-      "secure-data-exchange-proxy-config.information-type" -> "1111111"
+      "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port
     ) ++ configOverrides
 
   protected def configOverrides: Map[String, Any] = Map[String, Any]()
 
   lazy val overridesModule: AbstractModule =
     new AbstractModule:
-      override def configure(): Unit = bind(classOf[Clock]).toInstance(clock)
+      override def configure(): Unit = {
+        bind(classOf[Clock]).toInstance(clock)
+        bind(classOf[CorrelationIdGenerator]).toInstance(
+          new CorrelationIdGenerator {
+            override def nextCorrelationId: CorrelationId = tdAll.correlationId
+          }
+        )
+      }
 
   override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(GuiceableModule.fromGuiceModules(Seq(overridesModule)))

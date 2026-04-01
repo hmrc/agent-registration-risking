@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.runner
 
+import play.api.libs.json.Json
 import play.api.mvc.AnyContent
 import play.api.mvc.Request
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
@@ -24,10 +25,8 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
-import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
-
-import scala.util.chaining.scalaUtilChainingOps
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 
 class RiskingRunnerSpec
 extends ISpec:
@@ -53,9 +52,30 @@ extends ISpec:
 
     val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
     ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
+    SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
 
     riskingRunner.run().futureValue shouldBe ()
     ObjectStoreStubs.verifyObjectStoreTransfer(fileName = fileName)
+
+    SdesProxyStubs.getSdesFileReadyRequestBody shouldBe
+      Json.stringify(Json.parse(
+        s"""{
+           |  "informationType":"test-outbound-information-type",
+           |  "file":{
+           |    "recipientOrSender":"test-srn",
+           |    "name":"$fileName",
+           |    "location":"http://localhost:11111/object-store/object/agent-registration-risking/agent-registration-risking/applications-for-risking/",
+           |    "checksum":{
+           |      "algorithm":"md5",
+           |      "value":"a3c2f1e38701bd2c7b54ebd7b1cd0dbc"
+           |    },
+           |    "size":12345
+           |  },
+           |  "audit":{
+           |    "correlationId":"testCorrelationId"
+           |  }
+           |}""".stripMargin
+      ))
 
     // TODO: there is problem with test data which is not deterministic and is missing data. (APB-10869)
     ObjectStoreStubs

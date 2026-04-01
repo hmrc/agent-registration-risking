@@ -22,7 +22,10 @@ import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.FailureParser
 import uk.gov.hmrc.agentregistrationrisking.model.Result
@@ -31,21 +34,54 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 
 import java.time.Clock
 import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ResultsFileService @Inject() (
+@Singleton
+class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   objectStoreService: ObjectStoreService,
-  applicationForRiskingRepo: ApplicationForRiskingRepo
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  appConfig: AppConfig,
+  correlationIdGenerator: CorrelationIdGenerator,
+  objectStoreService: ObjectStoreService,
+  objectStoreClientConfig: ObjectStoreClientConfig
 )(using
   ExecutionContext,
   Clock
 )
 extends RequestAwareLogging:
+
+  def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[Unit] =
+    val notifySdesFileReadyRequest: NotifySdesFileReadyRequest = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
+    sdesProxyConnector.notifySdesFileReady(notifySdesFileReadyRequest)
+
+  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
+    val informationType: SdesInformationType = appConfig.SdesProxy.outboundInformationType
+    val serviceReferenceNumber: SdesSrn = appConfig.SdesProxy.srn
+    // I'm really not sure the best way to handle this url, it seems to come from the object store config
+    // which is set automatically, is there a cleaner way to do this?
+    val location = s"${objectStoreClientConfig.baseUrl}/object-store/object/${objectStoreClientConfig.owner}/${objectSummaryWithMd5.location.directory.asUri}"
+    NotifySdesFileReadyRequest(
+      informationType = informationType,
+      file = NotifySdesFile(
+        recipientOrSender = Some(serviceReferenceNumber),
+        name = objectSummaryWithMd5.location.fileName,
+        location = Some(location),
+        checksum = NotifySdesFileReadyChecksum(
+          algorithm = SdesChecksumAlgorithm.md5,
+          value = objectSummaryWithMd5.contentMd5.value
+        ),
+        size = objectSummaryWithMd5.contentLength.intValue,
+        properties = None
+      ),
+      audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
+    )
 
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")

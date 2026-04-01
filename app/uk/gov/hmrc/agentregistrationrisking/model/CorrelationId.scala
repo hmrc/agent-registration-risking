@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.util
+package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.Logger
+import play.api.libs.json.Format
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-trait RequestAwareLogging:
-  protected implicit val logger: RequestAwareLogger =
-    new RequestAwareLogger(
-      delegateLogger = Logger(getClass)
-    )
+import java.util.UUID
+import javax.inject.Singleton
+
+final case class CorrelationId(value: String)
+
+object CorrelationId:
+  given format: Format[CorrelationId] = JsonFormatsFactory.makeValueClassFormat
+
+@Singleton
+class CorrelationIdGenerator:
+  def nextCorrelationId: CorrelationId = CorrelationId(UUID.randomUUID().toString)

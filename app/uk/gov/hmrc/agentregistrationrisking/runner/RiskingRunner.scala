@@ -16,12 +16,17 @@
 
 package uk.gov.hmrc.agentregistrationrisking.runner
 
+import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
+import play.api.mvc.request.RemoteConnection
+import play.api.mvc.request.RequestTarget
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
-import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
+import play.api.libs.typedmap.TypedMap
+import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,15 +36,37 @@ import scala.concurrent.Future
 @Singleton
 class RiskingRunner @Inject() (
   objectStoreService: ObjectStoreService,
-  riskingFileService: RiskingFileService
+  riskingFileService: RiskingFileService,
+  sdesProxyService: SdesProxyService
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
-  def run()(using request: RequestHeader): Future[Unit] =
+  private val emptyRequestHeader: RequestHeader =
+    new RequestHeader:
+      def target: RequestTarget = RequestTarget(
+        uriString = "/",
+        path = "riskingRunner/dummyPath",
+        queryString = Map.empty
+      )
+      def version: String = "HTTP/1.1"
+      def method: String = "GET"
+      def headers: Headers = Headers()
+      def connection: RemoteConnection = RemoteConnection(
+        remoteAddress = java.net.InetAddress.getLoopbackAddress,
+        secure = false,
+        clientCertificateChain = None
+      )
+      def attrs: TypedMap = TypedMap.empty
+
+  def run(): Future[Unit] =
+    given RequestHeader = emptyRequestHeader
     logger.info("Running risking started ...")
 
     for
-      fileContent <- riskingFileService.buildRiskingFile
+      applicationsReadyForRisking: Seq[ApplicationForRisking] <- riskingFileService.getApplicationsReadyForRisking
+      fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
+      _ <- sdesProxyService.notifySdesFileReady(objectSummary)
+      _ <- riskingFileService.setAllStatusSubmittedForRisking(applicationsReadyForRisking)
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
     yield ()

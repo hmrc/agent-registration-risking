@@ -19,16 +19,17 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import com.google.inject.Inject
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
-import uk.gov.hmrc.agentregistrationrisking.services.ResultsFileService
+import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
-  resultsFileService: ResultsFileService
+  sdesProxyService: SdesProxyService
 )(using ExecutionContext)
 extends BackendController(cc):
 
@@ -39,7 +40,7 @@ extends BackendController(cc):
           request.body match
             case n: FileReady =>
               logger.info(s"File ready notification received for ${n.filename} from SDES [${n.correlationID}]")
-              resultsFileService.retrieveAndProcessResultsFiles.map(_ => Ok)
+              sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok)
             case n: FileReceived =>
               logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
               Future.successful(Ok)
