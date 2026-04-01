@@ -61,5 +61,6 @@ final case class ApplicationForRisking(
 )
 
 object ApplicationForRisking:
+
   given credentialsFormat: OFormat[Credentials] = Json.format[Credentials]
   given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
