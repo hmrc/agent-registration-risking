@@ -25,7 +25,9 @@ import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
-import uk.gov.hmrc.objectstore.client.ObjectListing
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.passRecordArrayFile
+
+import java.net.URI
 
 object ObjectStoreStubs:
 
@@ -115,3 +117,21 @@ object ObjectStoreStubs:
     responseStatus = 200,
     responseBody = Json.prettyPrint(TdAll.tdAll.listObjectsResponse(processedFileNames))
   )
+
+  def stubDownloadMinervaFile(fileDownloadUrl: String): StubMapping =
+    val path = new URI(fileDownloadUrl).getPath
+    StubMaker.make(
+      httpMethod = StubMaker.HttpMethod.GET,
+      urlPattern = wm.urlPathEqualTo(path),
+      responseStatus = 200,
+      responseBody = Json.stringify(passRecordArrayFile)
+    )
+
+  def stubDownloadMinervaFileFailure(fileDownloadUrl: String): StubMapping =
+    val path = new URI(fileDownloadUrl).getPath
+    StubMaker.make(
+      httpMethod = StubMaker.HttpMethod.GET,
+      urlPattern = wm.urlPathEqualTo(path),
+      responseStatus = 500,
+      responseBody = Json.stringify(Json.obj("error" -> "Error when downloading file"))
+    )

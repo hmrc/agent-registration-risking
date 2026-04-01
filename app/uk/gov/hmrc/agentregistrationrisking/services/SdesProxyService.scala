@@ -19,10 +19,14 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingRecord
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
@@ -36,6 +40,8 @@ import scala.concurrent.Future
 @Singleton
 class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
+  riskingResultsConnector: RiskingResultsConnector,
+  objectStoreService: ObjectStoreService
   appConfig: AppConfig,
   correlationIdGenerator: CorrelationIdGenerator,
   objectStoreService: ObjectStoreService,
@@ -89,6 +95,11 @@ extends RequestAwareLogging:
       uploadResult <- objectStoreService.uploadFromUrl(downloadUrl = downloadUri, fileName = fileName)
       _ = logger.info(s"Uploaded file to object store: $fileName")
     yield uploadResult
+
+  def downloadAndParseRecords(file: AvailableFile)(using request: RequestHeader): Future[List[RiskingRecord]] = {
+    logger.info(s"Attempting to downloading ${file.filename}")
+    riskingResultsConnector.getRiskingFile(availableFile = file)
+  }
 
   private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[AvailableFile]] =
     for

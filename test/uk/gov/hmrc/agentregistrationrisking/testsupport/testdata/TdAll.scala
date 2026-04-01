@@ -20,6 +20,7 @@ import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.testdata.TdGrsBusinessDetails
 import uk.gov.hmrc.agentregistration.shared.testdata.providedetails.individual.TdIndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.testdata.agentapplication.TdAgentApplicationLlp
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes.TdRiskingRecords
 
 object TdAll:
 
@@ -42,3 +43,4 @@ with TdAgentApplication
 with sdes.TdSdesData
 with TdIndividualProvidedDetails
 with TdSdesProxy
+with TdRiskingRecords
