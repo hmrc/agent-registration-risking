@@ -34,6 +34,8 @@ class AppConfig @Inject() (
   config: Configuration
 ):
 
+  def getConfString(key: String): String = servicesConfig.getConfString(key, throw new RuntimeException(s"config '$key' not found"))
+
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
 
@@ -49,8 +51,12 @@ class AppConfig @Inject() (
   object SdesProxy:
 
     val baseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
-    val inboundInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.inbound.information-type"))
-    val outboundInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.outbound.information-type"))
-    val inboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.inbound.server-token"))
-    val outboundServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.outbound.server-token"))
-    val srn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))
+    val inboundInformationType: SdesInformationType = SdesInformationType(
+      getConfString("secure-data-exchange-proxy.inbound.information-type")
+    )
+    val outboundInformationType: SdesInformationType = SdesInformationType(
+      getConfString("secure-data-exchange-proxy.outbound.information-type")
+    )
+    val inboundServerToken: SdesServerToken = SdesServerToken(getConfString("secure-data-exchange-proxy.inbound.server-token"))
+    val outboundServerToken: SdesServerToken = SdesServerToken(getConfString("secure-data-exchange-proxy.outbound.server-token"))
+    val srn: SdesSrn = SdesSrn(getConfString("secure-data-exchange-proxy.srn"))
