@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesServerToken
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.LocalTime
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
@@ -39,6 +40,11 @@ class AppConfig @Inject() (
   val sdesInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.information-type"))
   val sdesServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.server-token"))
   val sdesSrn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))
+
+  object Scheduler:
+
+    val enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
+    val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
 
   object ApplicationForRiskingRepo:
 
