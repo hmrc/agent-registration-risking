@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 
 import java.time.Clock
 import javax.inject.Inject
@@ -38,7 +39,8 @@ class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   appConfig: AppConfig,
   correlationIdGenerator: CorrelationIdGenerator,
-  objectStoreService: ObjectStoreService
+  objectStoreService: ObjectStoreService,
+  objectStoreClientConfig: ObjectStoreClientConfig
 )(using
   ExecutionContext,
   Clock
@@ -52,12 +54,15 @@ extends RequestAwareLogging:
   private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
     val informationType: SdesInformationType = appConfig.SdesProxy.outboundInformationType
     val serviceReferenceNumber: SdesSrn = appConfig.SdesProxy.srn
+    // I'm really not sure the best way to handle this url, it seems to come from the object store config
+    // which is set automatically, is there a cleaner way to do this?
+    val location = s"${objectStoreClientConfig.baseUrl}/object-store/object/${objectStoreClientConfig.owner}/${objectSummaryWithMd5.location.directory.asUri}"
     NotifySdesFileReadyRequest(
       informationType = informationType,
       file = NotifySdesFile(
         recipientOrSender = Some(serviceReferenceNumber),
         name = objectSummaryWithMd5.location.fileName,
-        location = Some(objectSummaryWithMd5.location.asUri),
+        location = Some(location),
         checksum = NotifySdesFileReadyChecksum(
           algorithm = SdesChecksumAlgorithm.md5,
           value = objectSummaryWithMd5.contentMd5.value
