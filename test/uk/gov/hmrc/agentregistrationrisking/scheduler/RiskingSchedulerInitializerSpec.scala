@@ -57,7 +57,9 @@ extends UnitSpec,
     "secure-data-exchange-proxy-config.srn" -> "test",
     "mongodb.application-for-risking-ttl" -> "1 day",
     "microservice.services.secure-data-exchange-proxy.host" -> "localhost",
-    "microservice.services.secure-data-exchange-proxy.port" -> "8765"
+    "microservice.services.secure-data-exchange-proxy.port" -> "8765",
+    "microservice.services.hip.host" -> "localhost",
+    "microservice.services.hip.port" -> "9009"
   )
 
   private def appConfigWith(entries: (String, Any)*): AppConfig =
