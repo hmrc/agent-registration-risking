@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec

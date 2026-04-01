@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.agentregistrationrisking.runner
 
-import play.api.Logging
 import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import play.api.mvc.request.RemoteConnection
 import play.api.mvc.request.RequestTarget
-import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
+import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import play.api.libs.typedmap.TypedMap
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
