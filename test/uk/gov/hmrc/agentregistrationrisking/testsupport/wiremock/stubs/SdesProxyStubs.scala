@@ -19,12 +19,10 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs
 import com.github.tomakehurst.wiremock.client.WireMock as wm
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
-import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object SdesProxyStubs:
@@ -33,14 +31,14 @@ object SdesProxyStubs:
     response: Seq[AvailableFile]
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlEqualTo(s"/files-available/list/1111111"),
+    urlPattern = wm.urlEqualTo(s"/files-available/list/test-inbound-information-type"),
     responseStatus = 200,
     responseBody = Json.toJson(response).toString()
   )
 
   def stubFindAvailableFilesFailure: StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlEqualTo(s"/files-available/list/1111111"),
+    urlPattern = wm.urlEqualTo(s"/files-available/list/test-inbound-information-type"),
     responseStatus = 500,
     responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
   )
@@ -50,7 +48,7 @@ object SdesProxyStubs:
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
     responseStatus = 200,
     requestHeaders = Seq(
-      "x-client-id" -> wm.equalTo("outbound-token")
+      "x-client-id" -> wm.equalTo("test-outbound-server-token")
     ),
     requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(body))))
   )
@@ -60,7 +58,7 @@ object SdesProxyStubs:
     urlPattern = wm.urlEqualTo(s"/notification/fileready"),
     responseStatus = 500,
     requestHeaders = Seq(
-      "x-client-id" -> wm.equalTo("outbound-token")
+      "x-client-id" -> wm.equalTo("test-outbound-server-token")
     ),
     requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(body))))
   )

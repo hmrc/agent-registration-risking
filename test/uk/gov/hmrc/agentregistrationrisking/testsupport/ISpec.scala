@@ -74,11 +74,7 @@ extends AnyFreeSpecLike,
       "microservice.services.auth.port" -> WireMockSupport.port,
       "mongodb.uri" -> mongoUri,
       "microservice.services.object-store.port" -> WireMockSupport.port,
-      "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
-      "secure-data-exchange-proxy-config.srn" -> "srn",
-      "secure-data-exchange-proxy-config.inbound.information-type" -> "1111111",
-      "secure-data-exchange-proxy-config.outbound.information-type" -> "2222222",
-      "secure-data-exchange-proxy-config.outbound.server-token" -> "outbound-token"
+      "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port
     ) ++ configOverrides
 
   protected def configOverrides: Map[String, Any] = Map[String, Any]()

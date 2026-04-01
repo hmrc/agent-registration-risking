@@ -51,9 +51,9 @@ trait TdSdesProxy { dependencies: TdBase =>
   )
 
   def notifySdesFileReadyRequest: NotifySdesFileReadyRequest = NotifySdesFileReadyRequest(
-    informationType = SdesInformationType("2222222"),
+    informationType = SdesInformationType("test-outbound-information-type"),
     file = NotifySdesFile(
-      recipientOrSender = Some(SdesSrn("srn")),
+      recipientOrSender = Some(SdesSrn("test-srn")),
       name = objectSummaryWithMd5.location.fileName,
       location = Some(objectSummaryWithMd5.location.asUri),
       checksum = NotifySdesFileReadyChecksum(
