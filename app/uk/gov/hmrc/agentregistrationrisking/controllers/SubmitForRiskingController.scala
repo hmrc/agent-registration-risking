@@ -92,6 +92,7 @@ extends BackendController(cc):
         createdAt = Instant.now(),
         uploadedAt = None,
         fileName = None,
+        agentDetails = application.getAgentDetails,
         applicantCredentials = application.applicantCredentials,
         applicantName = application.getApplicantContactDetails.applicantName,
         applicantPhone = application.getApplicantContactDetails.telephoneNumber,

@@ -31,20 +31,29 @@ import uk.gov.hmrc.agentregistration.shared.SaUtr
 import uk.gov.hmrc.agentregistration.shared.SafeId
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.Utr
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddress
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentVerifiedEmailAddress
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Provided
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReferenceGenerator
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReferenceGenerator
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
+import uk.gov.hmrc.agentregistrationrisking.services.SubscribeAgentService
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -54,6 +63,7 @@ import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Random
 
 @Singleton()
@@ -65,7 +75,8 @@ class TestRiskingController @Inject() (
   personReferenceGenerator: PersonReferenceGenerator,
   riskingFileService: RiskingFileService,
   riskingRunner: RiskingRunner,
-  sdesProxyService: SdesProxyService
+  sdesProxyService: SdesProxyService,
+  subscribeAgentService: SubscribeAgentService
 )
 extends BackendController(cc)
 with Logging:
@@ -97,12 +108,48 @@ with Logging:
       implicit request =>
         sdesProxyService.retrieveAndProcessResultsFiles.map(result => Ok(result.toString()))
 
+  def subscribeToAgentApplication(applicationReference: ApplicationReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        applicationForRiskingRepo
+          .findByApplicationReference(applicationReference)
+          .flatMap:
+            case Some(applicationForRisking) =>
+              subscribeAgentService.subscribeAgent(applicationForRisking).map: arn =>
+                Ok(s"subscribed ok with arn: ${arn.value}")
+            case None => Future.successful(NotFound(s"No application found for reference: ${applicationReference.value}"))
+
   private def makeApplicationForRisking(numberOfIndividuals: Int): ApplicationForRisking = ApplicationForRisking(
     applicationReference = agentReferenceGenerator.nextApplicationReference(),
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     createdAt = Instant.now(),
     uploadedAt = None,
     fileName = None,
+    agentDetails = AgentDetails(
+      businessName = AgentBusinessName(
+        agentBusinessName = generateRandomName(),
+        otherAgentBusinessName = None
+      ),
+      telephoneNumber = Some(AgentTelephoneNumber(
+        agentTelephoneNumber = "1234658979",
+        otherAgentTelephoneNumber = None
+      )),
+      agentEmailAddress = Some(AgentVerifiedEmailAddress(
+        emailAddress = AgentEmailAddress(
+          agentEmailAddress = "agent@example.com",
+          otherAgentEmailAddress = None
+        ),
+        isVerified = true
+      )),
+      agentCorrespondenceAddress = Some(
+        AgentCorrespondenceAddress(
+          addressLine1 = "23 Great Portland Street",
+          addressLine2 = Some("London"),
+          postalCode = Some("W1 8LT"),
+          countryCode = "GB"
+        )
+      )
+    ),
     applicantCredentials = Credentials(
       providerId = "test-provider-id",
       providerType = "test-provider-type"

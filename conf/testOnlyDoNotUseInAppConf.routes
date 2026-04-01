@@ -15,3 +15,5 @@ GET        /agent-registration-risking/test-only/create-application-for-risking/
 GET        /agent-registration-risking/test-only/view-next-file-contents                                 uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.viewNextRiskingFileContents
 GET        /agent-registration-risking/test-only/create-and-send-risking-file                            uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.createAndSendRiskingFile
 GET        /agent-registration-risking/test-only/download-available-results-files                        uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.downloadAvailableResultsFiles
+# to test subscription of agent, provide the application reference of an application for risking record
+GET        /agent-registration-risking/test-only/subscribe-agent/:applicationReference                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.subscribeToAgentApplication(applicationReference: ApplicationReference)
