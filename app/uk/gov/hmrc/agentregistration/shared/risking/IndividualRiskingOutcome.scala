@@ -24,8 +24,8 @@ enum IndividualRiskingOutcome:
 
 object IndividualRiskingOutcome:
 
-  extension (failures: Seq[IndividualFailure])
-    def outcome: IndividualRiskingOutcome =
+  extension (failures: List[IndividualFailure])
+    def outcome(): IndividualRiskingOutcome =
       def hasNonFixableFailures: Boolean = failures.exists:
         case _: IndividualFailure.NonFixable => true
         case _: IndividualFailure.Fixable => false

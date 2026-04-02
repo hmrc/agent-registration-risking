@@ -74,31 +74,31 @@ object EntityFailure:
   object _5:
 
     /** 5.1: One or more overdue SA liabilities */
-    final case class _1(value: String)
+    final case class _1(value: Double)
     extends EntityFailure.Fixable
 
     /** 5.2: One or more overdue CoTax liabilities */
-    final case class _2(value: String)
+    final case class _2(value: Double)
     extends EntityFailure.Fixable
 
     /** 5.3: One or more overdue VAT liabilities */
-    final case class _3(value: String)
+    final case class _3(value: Double)
     extends EntityFailure.Fixable
 
     /** 5.4: One or more overdue PAYE liabilities */
-    final case class _4(value: String)
+    final case class _4(value: Double)
     extends EntityFailure.Fixable
 
     /** 5.5: One or more overdue civil penalties */
-    final case class _5(value: String)
+    final case class _5(value: Double)
     extends EntityFailure.Fixable
 
     /** 5.6: One or more overdue Stamp Duty liabilities */
-    final case class _6(value: String)
+    final case class _6(value: Double)
     extends EntityFailure.Fixable
 
     /** 5.7: One or more overdue Capital Gains Tax liabilities */
-    final case class _7(value: String)
+    final case class _7(value: Double)
     extends EntityFailure.Fixable
 
   /** 7: Insolvent */
@@ -131,7 +131,6 @@ object EntityFailure:
 object EntityFailureFormats:
 
   import play.api.libs.json.*
-  import play.api.libs.functional.syntax.*
   import uk.gov.hmrc.agentregistration.shared.util.JsonConfig
 
   private given JsonConfiguration = JsonConfig.jsonConfiguration

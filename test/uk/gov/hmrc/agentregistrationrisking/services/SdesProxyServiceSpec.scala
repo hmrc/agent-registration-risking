@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingRecord
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
@@ -62,17 +62,17 @@ extends ISpec:
     exception shouldBe a[Throwable]
     SdesProxyStubs.verifySdesFileReady()
 
-  "retrieveAndProcessResultsFile retrieves all unprocessed results files and processes accordingly" in:
+  "retrieveAndProcessResultsFile retrieves an unprocessed successful results file and processes accordingly" in:
 
     given RequestHeader = FakeRequest()
 
     repo.upsert(
-      (tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("1234")))
+      (tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("ABC123456")))
     ).futureValue shouldBe () withClue "ensure there is an application for risking in mongo before http request"
 
     val existingApplication =
       repo.findByApplicationReference(
-        ApplicationReference("1234")
+        ApplicationReference("ABC123456")
       ).futureValue.value
     val existingIndividual = existingApplication.individuals.headOption.value
 
@@ -80,6 +80,7 @@ extends ISpec:
     existingIndividual.failures shouldBe None
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
+    ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
     ObjectStoreStubs.stubObjectStoreListObjects()
     ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
 
@@ -91,13 +92,13 @@ extends ISpec:
 
     val updatedApplication =
       repo.findByApplicationReference(
-        ApplicationReference("1234")
+        ApplicationReference("ABC123456")
       ).futureValue.value
     val updatedIndividual = updatedApplication.individuals.headOption.value
 
-    updatedApplication.failures.value.size shouldBe 1
+    updatedApplication.failures.value.size shouldBe 0
     updatedIndividual.failures.value.size shouldBe 0
-    updatedIndividual.failures.value.outcome shouldBe IndividualRiskingOutcome.Approved
+    updatedIndividual.failures.value.outcome() shouldBe IndividualRiskingOutcome.Approved
     updatedIndividual.status shouldBe ApplicationForRiskingStatus.Approved
 
   "retrieveAndProcessResultsFile does not upload to object store if the file was not processed successfully" in:
@@ -111,8 +112,8 @@ extends ISpec:
     given RequestHeader = FakeRequest()
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
 
-    val result: Future[List[RiskingRecord]] = service.downloadAndParseRecords(testAvailableFile)
-    val expected: List[RiskingRecord] = List(passRecord1, passRecord2)
+    val result: Future[List[RiskingResultRecord]] = service.downloadAndParseRecords(testAvailableFile)
+    val expected: List[RiskingResultRecord] = List(passRecord1, passRecord2)
 
     result.futureValue shouldBe expected
 
@@ -120,7 +121,7 @@ extends ISpec:
     given RequestHeader = FakeRequest()
     ObjectStoreStubs.stubDownloadMinervaFileFailure(testAvailableFile.downloadURL)
 
-    val result: Future[List[RiskingRecord]] = service.downloadAndParseRecords(testAvailableFile)
+    val result: Future[List[RiskingResultRecord]] = service.downloadAndParseRecords(testAvailableFile)
     val exception: UpstreamErrorResponse = recoverToExceptionIf[UpstreamErrorResponse](result).futureValue
 
     exception.statusCode shouldBe 500

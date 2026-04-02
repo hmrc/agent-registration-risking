@@ -42,6 +42,7 @@ extends ControllerSpec:
     val SDESNotification: JsObject = fileReadyNotification
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
+    ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
     ObjectStoreStubs.stubObjectStoreListObjects()
     ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
 

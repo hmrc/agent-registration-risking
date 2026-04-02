@@ -17,11 +17,11 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 
-//TODO: move this to the risking project, close to the connector (Marjan)
 final case class Failure(
   reasonCode: String,
   reasonDescription: String,
@@ -92,10 +92,10 @@ object FailureParser:
       case failure:Failure => throw new IllegalArgumentException(s"Unsupported EntityFailure $failure")
   // format: on
 
-final case class AdditionalInfo(value: String)
+final case class AdditionalInfo(value: Double)
 
 object AdditionalInfo:
-  given reads: Reads[AdditionalInfo] = Json.reads[AdditionalInfo]
+  given OFormat[AdditionalInfo] = Json.format[AdditionalInfo]
 
 object Failure:
   given reads: Reads[Failure] = Json.reads[Failure]

@@ -55,7 +55,7 @@ extends RequestAwareLogging:
   def buildRiskingFileFrom(applicationsReadyForRisking: Seq[ApplicationForRisking]): String =
     val dataRecordString = applicationsReadyForRisking.map(buildDataRecords).mkString("\n")
     val totalRecords = applicationsReadyForRisking.map(i => 1 + i.individuals.length).sum
-    s"$headerRow\n$dataRecordString\n$footerRowPrefix$totalRecords"
+    s"$headerRow\n$dataRecordString\n$footerRowPrefix$totalRecords\n"
 
   private def buildDataRecords(applicationForRisking: ApplicationForRisking): String =
     val records =

@@ -17,9 +17,12 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes
 
 import play.api.libs.json.*
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.RecordType.*
+import uk.gov.hmrc.agentregistrationrisking.model.AdditionalInfo
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingRecord
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 
 trait TdRiskingRecords:
@@ -42,7 +45,7 @@ trait TdRiskingRecords:
     ),
     Json.obj(
       "recordType" -> Individual,
-      "personReference" -> "paiu-9076-gi97",
+      "personReference" -> "1234567890",
       "failures" -> Json.arr()
     )
   )
@@ -50,7 +53,7 @@ trait TdRiskingRecords:
   val failRecordArrayFile: JsArray = Json.arr(
     Json.obj(
       "recordType" -> Entity,
-      "applicationReference" -> "personReference_001",
+      "applicationReference" -> "applicationReference",
       "failures" -> Json.arr(
         Json.obj(
           "reasonCode" -> "3.2",
@@ -98,10 +101,10 @@ trait TdRiskingRecords:
     )
   )
 
-  val failRecord1 = RiskingRecord(
+  val failRecord1 = RiskingResultRecord(
     "Entity",
-    Some("personReference_001"),
-    List(
+    Some(ApplicationReference("applicationReference")),
+    Some(List(
       Failure(
         "3.2",
         "AML check failed due to suspicious activity",
@@ -114,16 +117,16 @@ trait TdRiskingRecords:
         "Outstanding returns overdue",
         "4",
         "Overdue returns",
-        Some(Json.obj("value" -> 12500.75))
+        Some(AdditionalInfo(12500.75))
       )
-    ),
+    )),
     None
   )
 
-  val failRecord2 = RiskingRecord(
+  val failRecord2 = RiskingResultRecord(
     "Individual",
     None,
-    List(
+    Some(List(
       Failure(
         "5.3",
         "Credit score below acceptable threshold",
@@ -131,35 +134,35 @@ trait TdRiskingRecords:
         "Credit Risk Assessment",
         None
       )
-    ),
-    Some("personReference_002")
+    )),
+    Some(PersonReference("personReference_002"))
   )
 
-  val failRecord3 = RiskingRecord(
+  val failRecord3 = RiskingResultRecord(
     "Individual",
     None,
-    List(
+    Some(List(
       Failure(
         "4.2",
         "Multiple overdue payments detected",
         "4",
         "Overdue returns",
-        Some(Json.obj("value" -> 3200))
+        Some(AdditionalInfo(3200))
       )
-    ),
-    Some("personReference_003")
+    )),
+    Some(PersonReference("personReference_003"))
   )
 
-  val passRecord1 = RiskingRecord(
+  val passRecord1 = RiskingResultRecord(
     recordType = "Entity",
-    applicationReference = Some("ABC123456"),
-    failures = List(),
+    applicationReference = Some(ApplicationReference("ABC123456")),
+    failures = Some(List.empty),
     personReference = None
   )
 
-  val passRecord2 = RiskingRecord(
+  val passRecord2 = RiskingResultRecord(
     recordType = "Individual",
     applicationReference = None,
-    failures = List(),
-    personReference = Some("paiu-9076-gi97")
+    failures = Some(List.empty),
+    personReference = Some(PersonReference("1234567890"))
   )

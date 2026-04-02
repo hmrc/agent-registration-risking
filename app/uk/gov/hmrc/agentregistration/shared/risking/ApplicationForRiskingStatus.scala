@@ -23,7 +23,7 @@ enum ApplicationForRiskingStatus:
 
   case ReadyForSubmission
   case SubmittedForRisking
-  // TODO: discuss statuses and aggregation into RiskingFile
+  // TODO: discuss statuses and aggregatioon into RiskingFile
   // Below statuses can be derived base on the List of failures
   case Approved
   case FailedNonFixable

@@ -30,10 +30,9 @@ import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.FailureParser
-import uk.gov.hmrc.agentregistrationrisking.model.Result
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingRecord
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client
 import uk.gov.hmrc.objectstore.client.ObjectListing
@@ -93,38 +92,21 @@ extends RequestAwareLogging:
     for
       unprocessedFileList <- getUnprocessedAvailableFiles()
       _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
-      // TODO: Add file processing logic here
-      results: List[Result] = List(
-        Result(
-          "Entity",
-          "1234",
-          List(Failure(
-            "3.1",
-            "some-message",
-            "3",
-            "some-date",
-            None
-          ))
-        ),
-        Result(
-          "Individual",
-          "1234567890",
-          List.empty
-//          List(Failure(
-//            "4.1",
-//            "some-message",
-//            "4",
-//            "some-date",
-//            None
-//          ))
-        )
-      )
-      _ <- processResults(results)
-      uploadUnprocessedFiles = unprocessedFileList.map(uploadAndLogResultFile)
-      uploadResults <- Future.sequence(uploadUnprocessedFiles)
+      uploadResults <-
+        unprocessedFileList.foldLeft(Future.successful(Seq.empty[ObjectSummaryWithMd5])):
+          (
+            processedFiles,
+            resultsFile
+          ) =>
+            processedFiles.flatMap: completed =>
+              for
+                records <- downloadAndParseRecords(resultsFile)
+                _ <- processResults(records)
+                uploadResult <- uploadAndLogResultFile(resultsFile)
+              yield completed :+ uploadResult
     yield uploadResults
 
-  private def processResults(results: Seq[Result])(using request: RequestHeader): Future[Unit] =
+  private def processResults(results: List[RiskingResultRecord])(using request: RequestHeader): Future[Unit] =
     // Process in order so repeated updates to the same application do not race.
     results.foldLeft(Future.unit): (acc, result) =>
       acc.flatMap(_ => processResult(result))
@@ -137,7 +119,7 @@ extends RequestAwareLogging:
       _ = logger.info(s"Uploaded file to object store: $fileName")
     yield uploadResult
 
-  def downloadAndParseRecords(file: AvailableFile)(using request: RequestHeader): Future[List[RiskingRecord]] = {
+  def downloadAndParseRecords(file: AvailableFile)(using request: RequestHeader): Future[List[RiskingResultRecord]] = {
     logger.info(s"Attempting to downloading ${file.filename}")
     riskingResultsConnector.getRiskingFile(availableFile = file)
   }
@@ -152,7 +134,7 @@ extends RequestAwareLogging:
       unprocessedAvailableFiles = availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
     yield unprocessedAvailableFiles
 
-  private def processResult(result: Result)(using request: RequestHeader): Future[Unit] =
+  private def processResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
     result.recordType match
       case "Entity" => updateEntityWithResult(result)
       case "Individual" => updateIndividualWithResult(result)
@@ -160,42 +142,50 @@ extends RequestAwareLogging:
         logger.error(s"Skipping unsupported result record type: $other")
         Future.unit
 
-  private def updateEntityWithResult(result: Result)(using request: RequestHeader): Future[Unit] =
-    val applicationReference = ApplicationReference(result.reference)
-    applicationForRiskingRepo.findById(applicationReference).flatMap:
+  private def updateEntityWithResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
+    result.applicationReference match
       case None =>
-        logger.error(s"No application found for application reference: ${applicationReference.value}")
+        logger.error("Entity result record missing application reference, cannot update application")
         Future.unit
-      case Some(applicationForRisking) =>
-        val updatedApplication = applicationForRisking.copy(
-          failures = Some(result.failures.map(FailureParser.parseEntityFailure))
-        )
-        logger.info(s"Updated Application: $updatedApplication")
-        applicationForRiskingRepo.upsert(updatedApplication)
-
-  private def updateIndividualWithResult(result: Result)(using request: RequestHeader): Future[Unit] =
-    val personReference = PersonReference(result.reference)
-    applicationForRiskingRepo.findByPersonReference(personReference).flatMap:
-      case None =>
-        logger.error(s"No individual found for person reference: ${personReference.value}")
-        Future.unit
-      case Some(applicationForRisking) =>
-        val individualFailures: List[IndividualFailure] = result.failures.map(FailureParser.parseIndividualFailure)
-        val updatedIndividuals = applicationForRisking.individuals.map:
-          case individual if individual.personReference.value === personReference.value =>
-            individual.copy(
-              failures = Some(individualFailures),
-              status = individualOutcomeAsStatus(individualFailures)
+      case Some(applicationReference) =>
+        applicationForRiskingRepo.findById(applicationReference).flatMap:
+          case None =>
+            logger.error(s"No application found for application reference: ${applicationReference.value}")
+            Future.unit
+          case Some(applicationForRisking) =>
+            val updatedApplication = applicationForRisking.copy(
+              failures = Some(result.failures.getOrElse(List.empty).map(FailureParser.parseEntityFailure))
             )
-          case individual => individual
+            logger.info(s"Updated Application: $updatedApplication")
+            applicationForRiskingRepo.upsert(updatedApplication)
 
-        val updated = applicationForRisking.copy(
-          individuals = updatedIndividuals
-        )
-        applicationForRiskingRepo.upsert(updated)
+  private def updateIndividualWithResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
+    result.personReference match
+      case None =>
+        logger.error("Individual result record missing person reference, cannot update application")
+        Future.unit
+      case Some(personReference) =>
+        applicationForRiskingRepo.findByPersonReference(personReference).flatMap:
+          case None =>
+            logger.error(s"No individual found for person reference: ${personReference.value}")
+            Future.unit
+          case Some(applicationForRisking) =>
+            val individualFailures = result.failures.getOrElse(List.empty).map(FailureParser.parseIndividualFailure)
+            val updatedIndividuals = applicationForRisking.individuals.map:
+              case individual if individual.personReference.value === personReference.value =>
+                individual.copy(
+                  failures = Some(individualFailures),
+                  status = individualOutcomeAsStatus(individualFailures)
+                )
+              case individual => individual
+
+            val updated = applicationForRisking.copy(
+              individuals = updatedIndividuals
+            )
+            applicationForRiskingRepo.upsert(updated)
 
   private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
-    individualFailures.outcome match {
+    individualFailures.outcome() match {
       case FailedFixable => ApplicationForRiskingStatus.FailedFixable
       case FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
       case Approved => ApplicationForRiskingStatus.Approved

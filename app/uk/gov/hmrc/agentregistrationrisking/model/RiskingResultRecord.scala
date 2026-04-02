@@ -17,24 +17,15 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.*
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 
-final case class RiskingRecord(
+final case class RiskingResultRecord(
   recordType: String,
-  applicationReference: Option[String],
-  failures: List[Failure],
-  personReference: Option[String]
+  applicationReference: Option[ApplicationReference],
+  failures: Option[List[Failure]],
+  personReference: Option[PersonReference]
 )
 
-final case class Failure(
-  reasonCode: String,
-  reasonDescription: String,
-  checkId: String,
-  checkDescription: String,
-  additionalInfo: Option[JsObject]
-)
-
-object Failure:
-  given reader: Reads[Failure] = Json.reads[Failure]
-
-object RiskingRecord:
-  given reader: Reads[RiskingRecord] = Json.reads[RiskingRecord]
+object RiskingResultRecord:
+  given reader: Reads[RiskingResultRecord] = Json.reads[RiskingResultRecord]
