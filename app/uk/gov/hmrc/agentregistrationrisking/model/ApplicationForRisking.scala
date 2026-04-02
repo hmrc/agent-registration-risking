@@ -27,6 +27,7 @@ import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.SafeId
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.Utr
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
@@ -42,6 +43,7 @@ final case class ApplicationForRisking(
   createdAt: Instant,
   uploadedAt: Option[Instant],
   fileName: Option[String],
+  agentDetails: AgentDetails,
   applicantCredentials: Credentials,
   applicantName: ApplicantName,
   applicantPhone: Option[TelephoneNumber],

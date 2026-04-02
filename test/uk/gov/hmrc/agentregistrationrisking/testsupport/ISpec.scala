@@ -18,29 +18,21 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport
 
 import com.google.inject.AbstractModule
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.freespec.AnyFreeSpecLike
-import org.scalatest.time.Millis
-import org.scalatest.time.Seconds
-import org.scalatest.time.Span
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
-import play.api.Logging
 import play.api.Mode
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.guice.GuiceableModule
-import play.api.mvc.RequestHeader
 import play.api.test.DefaultTestServerFactory
 import play.api.test.TestServerFactory
 import play.core.server.ServerConfig
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers
+import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.mongo.test.MongoSupport
 
 import java.time.Clock
@@ -74,7 +66,9 @@ extends AnyFreeSpecLike,
       "microservice.services.auth.port" -> WireMockSupport.port,
       "mongodb.uri" -> mongoUri,
       "microservice.services.object-store.port" -> WireMockSupport.port,
-      "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port
+      "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
+      "microservice.services.hip.port" -> WireMockSupport.port,
+      "microservice.services.hip.authorization-token" -> "test-hip-auth-token"
     ) ++ configOverrides
 
   protected def configOverrides: Map[String, Any] = Map[String, Any]()
