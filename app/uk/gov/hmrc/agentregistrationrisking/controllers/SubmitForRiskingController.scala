@@ -93,6 +93,7 @@ extends BackendController(cc):
         uploadedAt = None,
         fileName = None,
         agentDetails = application.getAgentDetails,
+        applicantGroupId = application.groupId,
         applicantCredentials = application.applicantCredentials,
         applicantName = application.getApplicantContactDetails.applicantName,
         applicantPhone = application.getApplicantContactDetails.telephoneNumber,

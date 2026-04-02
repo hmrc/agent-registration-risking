@@ -42,6 +42,7 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
     createdAt = createdAt,
     uploadedAt = None,
     fileName = None,
+    applicantGroupId = groupId,
     applicantCredentials = credentials,
     agentDetails = completeAgentDetails,
     applicantName = applicantName,
