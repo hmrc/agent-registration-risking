@@ -55,12 +55,11 @@ extends Connector:
     "X-Transmitting-System" -> transmittingSystem
   )
 
-  /**
-   * Subscribes an agent to Agent Services in HIP, which creates and returns the agent's ARN.
-   *
-   * API specification:
-   * https://admin.tax.service.gov.uk/integration-hub/apis/view-specification/ed3bdeb8-6db7-4c20-91c9-8b144aa1736b/test#tag/Agent-Subscription
-   */
+  /** Subscribes an agent to Agent Services in HIP, which creates and returns the agent's ARN.
+    *
+    * API specification:
+    * https://admin.tax.service.gov.uk/integration-hub/apis/view-specification/ed3bdeb8-6db7-4c20-91c9-8b144aa1736b/test#tag/Agent-Subscription
+    */
   def subscribeToAgentServices(
     safeId: SafeId,
     subscribeAgentRequest: SubscribeAgentRequest

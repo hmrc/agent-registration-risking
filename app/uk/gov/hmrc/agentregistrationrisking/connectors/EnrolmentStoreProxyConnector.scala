@@ -64,7 +64,7 @@ extends Connector:
       .andLogOnFailure(s"Failed query for EnrolmentsAllocatedToGroup for $groupId")
 
   /** ES6: Add KnownFacts for an enrolment https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES6+-+Upsert+a+known+fact+record
-   */
+    */
   def addKnownFacts(
     enrolmentKey: String,
     knownFactsRequest: EnrolmentStoreProxyConnector.KnownFactsRequest
@@ -86,7 +86,7 @@ extends Connector:
             )
       .andLogOnFailure(s"Failed to add KnownFacts for enrolment $enrolmentKey")
 
-  /** ES8: Allocate an enrolment to a group https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES8+-+Allocate+an+enrolment+to+a+group  */
+  /** ES8: Allocate an enrolment to a group https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES8+-+Allocate+an+enrolment+to+a+group */
   def allocateEnrolmentToGroup(
     groupId: GroupId,
     enrolmentKey: String,
@@ -99,7 +99,7 @@ extends Connector:
       .execute[HttpResponse]
       .map: response =>
         response.status match
-          case Status.NO_CONTENT => ()
+          case Status.CREATED => ()
           case status =>
             Errors.throwUpstreamErrorResponse(
               httpMethod = "POST",
@@ -108,27 +108,6 @@ extends Connector:
               response = response
             )
       .andLogOnFailure(s"Failed to allocate enrolment $enrolmentKey to group $groupId")
-
-  /** ES11: Give a user the right to act upon an enrolment.  */
-  def allocateEnrolmentToAdmin(
-    userId: String,
-    enrolmentKey: String
-                              )(using RequestHeader): Future[Unit] =
-    val url: URL = url"$baseUrl/users/$userId/enrolments/$enrolmentKey"
-    httpClient
-      .post(url)
-      .execute[HttpResponse]
-      .map: response =>
-        response.status match
-          case Status.NO_CONTENT => ()
-          case status =>
-            Errors.throwUpstreamErrorResponse(
-              httpMethod = "POST",
-              url = url,
-              status = status,
-              response = response
-            )
-      .andLogOnFailure(s"Failed to allocate enrolment $enrolmentKey to admin user $userId")
 
   private val baseUrl: String = appConfig.enrolmentStoreProxyBaseUrl + "/enrolment-store-proxy/enrolment-store"
 
@@ -162,11 +141,11 @@ object EnrolmentStoreProxyConnector:
     given OFormat[KnownFact] = Json.format[KnownFact]
 
   final case class EnrolmentRequest(
-     userId: String,
-     `type`: String,
-     friendlyName: String,
-     verifiers: Seq[KnownFact]
-   )
+    userId: String,
+    `type`: String,
+    friendlyName: String,
+    verifiers: Seq[KnownFact]
+  )
 
   object EnrolmentRequest:
     given OFormat[EnrolmentRequest] = Json.format[EnrolmentRequest]
