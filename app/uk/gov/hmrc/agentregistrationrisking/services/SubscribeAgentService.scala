@@ -17,19 +17,24 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFactsRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.HipConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
-import java.time.Clock
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class SubscribeAgentService @Inject() (
-  hipConnector: HipConnector
+  hipConnector: HipConnector,
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -54,7 +59,31 @@ extends RequestAwareLogging:
       reriskStatus = "ACCEPTED"
     )
 
-    hipConnector.subscribeToAgentServices(
-      safeId = applicationForRisking.entitySafeId,
-      subscribeAgentRequest = subscribeAgentRequest
+    val knownFacts: Seq[KnownFact] = Seq(
+      KnownFact(
+        key = "AgencyPostcode",
+        value = subscribeAgentRequest.postcode.getOrThrowExpectedDataMissing("postcode is required for UK subscriptions")
+      )
     )
+
+    for
+      arn <- hipConnector.subscribeToAgentServices(
+        safeId = applicationForRisking.entitySafeId,
+        subscribeAgentRequest = subscribeAgentRequest
+      )
+      enrolmentKey = s"HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}"
+      _ <- enrolmentStoreProxyConnector.addKnownFacts(
+        enrolmentKey = enrolmentKey,
+        knownFactsRequest = KnownFactsRequest(verifiers = knownFacts)
+      )
+      _ <- enrolmentStoreProxyConnector.allocateEnrolmentToGroup(
+        enrolmentKey = enrolmentKey,
+        groupId = applicationForRisking.applicantGroupId,
+        enrolmentRequest = EnrolmentRequest(
+          userId = applicationForRisking.applicantCredentials.providerId,
+          `type` = "principal",
+          friendlyName = subscribeAgentRequest.name,
+          verifiers = knownFacts
+        )
+      )
+    yield arn

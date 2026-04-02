@@ -21,14 +21,15 @@ import play.api.libs.json.*
 import uk.gov.hmrc.agentregistration.shared.SafeId
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
+import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit.SECONDS
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -36,27 +37,29 @@ import scala.concurrent.ExecutionContext
 @Singleton
 class HipConnector @Inject() (
   appConfig: AppConfig,
+  correlationIdGenerator: CorrelationIdGenerator,
   http: HttpClientV2
 )(using ExecutionContext)
 extends Connector:
 
-  private val baseUrl = appConfig.hipBaseUrl
-  private val hipAuthToken = appConfig.hipAuthToken
-  private val originatingSystem = "MDTP-ASA"
-  private val transmittingSystem = "HIP"
+  private val baseUrl: String = appConfig.hipBaseUrl
+  private val hipAuthToken: HipAuthToken = appConfig.hipAuthToken
+  private val originatingSystem: String = "MDTP-ASA"
+  private val transmittingSystem: String = "HIP"
 
   private val hipHeaders: Seq[(String, String)] = Seq(
     "Authorization" -> s"Basic ${hipAuthToken.value}",
-    "correlationid" -> UUID.randomUUID().toString,
+    "correlationid" -> correlationIdGenerator.nextCorrelationId.value,
     "X-Originating-System" -> originatingSystem,
     "X-Receipt-Date" -> Instant.now().truncatedTo(SECONDS).toString,
     "X-Transmitting-System" -> transmittingSystem
   )
 
-  // call to subscribe Agent to Agent Services in HIP, which will create an ARN for the agent and return it in the response
-  // API specification:
-  // https://admin.tax.service.gov.uk/integration-hub/apis/view-specification/ed3bdeb8-6db7-4c20-91c9-8b144aa1736b/test#tag/Agent-Subscription
-
+  /** Subscribes an agent to Agent Services in HIP, which creates and returns the agent's ARN.
+    *
+    * API specification:
+    * https://admin.tax.service.gov.uk/integration-hub/apis/view-specification/ed3bdeb8-6db7-4c20-91c9-8b144aa1736b/test#tag/Agent-Subscription
+    */
   def subscribeToAgentServices(
     safeId: SafeId,
     subscribeAgentRequest: SubscribeAgentRequest
