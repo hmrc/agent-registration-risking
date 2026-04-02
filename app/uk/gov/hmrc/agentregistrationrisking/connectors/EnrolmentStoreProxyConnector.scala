@@ -16,12 +16,10 @@
 
 package uk.gov.hmrc.agentregistrationrisking.connectors
 
-import play.api.libs.functional.syntax.*
 import play.api.libs.json.JsMacroImpl
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
-import play.api.libs.json.__
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
@@ -40,28 +38,6 @@ class EnrolmentStoreProxyConnector @Inject() (
   ExecutionContext
 )
 extends Connector:
-
-  /** ES3: Query Enrolments allocated to a group https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES3+-+Query+Enrolments+allocated+to+a+group
-    */
-  def queryEnrolmentsAllocatedToGroup(
-    groupId: GroupId
-  )(using RequestHeader): Future[List[EnrolmentStoreProxyConnector.Enrolment]] =
-    val url: URL = url"$baseUrl/groups/${groupId.value}/enrolments"
-    httpClient
-      .get(url)
-      .execute[HttpResponse]
-      .map: response =>
-        response.status match
-          case Status.OK => (response.json \ "enrolments").as[List[EnrolmentStoreProxyConnector.Enrolment]]
-          case Status.NO_CONTENT => List[EnrolmentStoreProxyConnector.Enrolment]()
-          case status =>
-            Errors.throwUpstreamErrorResponse(
-              httpMethod = "GET",
-              url = url,
-              status = status,
-              response = response
-            )
-      .andLogOnFailure(s"Failed query for EnrolmentsAllocatedToGroup for $groupId")
 
   /** ES6: Add KnownFacts for an enrolment https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES6+-+Upsert+a+known+fact+record
     */
@@ -112,18 +88,6 @@ extends Connector:
   private val baseUrl: String = appConfig.enrolmentStoreProxyBaseUrl + "/enrolment-store-proxy/enrolment-store"
 
 object EnrolmentStoreProxyConnector:
-
-  final case class Enrolment(
-    service: String,
-    state: String
-  )
-
-  object Enrolment:
-    given Reads[Enrolment] =
-      (
-        (__ \ "service").read[String] and
-          (__ \ "state").read[String]
-      )(Enrolment.apply)
 
   final case class KnownFactsRequest(
     verifiers: Seq[KnownFact]
