@@ -71,6 +71,7 @@ extends ISpec:
       )
     )
 
+    // TODO fix this
     val result: String = service.buildRiskingFileFrom(applicationsReadyForRisking)
     result shouldBe
       s"""00|ARR|SAS|20591125|163351
@@ -78,7 +79,7 @@ extends ISpec:
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
-         |99|4"""
+         |99|4\n"""
         .stripMargin
 
   "setAllStatusSubmittedForRisking updates all supplied applications to SubmittedForRisking" in:
