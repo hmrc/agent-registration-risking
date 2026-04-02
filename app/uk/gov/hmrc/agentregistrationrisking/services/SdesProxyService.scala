@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
@@ -35,6 +36,7 @@ import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
 
 import java.time.Clock
 import javax.inject.Inject
@@ -49,7 +51,6 @@ class SdesProxyService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   appConfig: AppConfig,
   correlationIdGenerator: CorrelationIdGenerator,
-  objectStoreService: ObjectStoreService,
   objectStoreClientConfig: ObjectStoreClientConfig
 )(using
   ExecutionContext,
@@ -104,13 +105,14 @@ extends RequestAwareLogging:
         Result(
           "Individual",
           "1234567890",
-          List(Failure(
-            "4.1",
-            "some-message",
-            "4",
-            "some-date",
-            None
-          ))
+          List.empty
+//          List(Failure(
+//            "4.1",
+//            "some-message",
+//            "4",
+//            "some-date",
+//            None
+//          ))
         )
       )
       _ <- processResults(results)
@@ -142,7 +144,6 @@ extends RequestAwareLogging:
     yield unprocessedAvailableFiles
 
   private def processResult(result: Result)(using request: RequestHeader): Future[Unit] =
-    logger.info(s"Processing result: $result")
     result.recordType match
       case "Entity" => updateEntityWithResult(result)
       case "Individual" => updateIndividualWithResult(result)
@@ -157,7 +158,6 @@ extends RequestAwareLogging:
         logger.error(s"No application found for application reference: ${applicationReference.value}")
         Future.unit
       case Some(applicationForRisking) =>
-        logger.info(s"Application found: $applicationForRisking")
         val updatedApplication = applicationForRisking.copy(
           failures = Some(result.failures.map(FailureParser.parseEntityFailure))
         )
@@ -171,12 +171,23 @@ extends RequestAwareLogging:
         logger.error(s"No individual found for person reference: ${personReference.value}")
         Future.unit
       case Some(applicationForRisking) =>
-        val failures: List[IndividualFailure] = result.failures.map(FailureParser.parseIndividualFailure)
+        val individualFailures: List[IndividualFailure] = result.failures.map(FailureParser.parseIndividualFailure)
         val updatedIndividuals = applicationForRisking.individuals.map:
-          case individual if individual.personReference.value === personReference.value => individual.copy(failures = Some(failures))
+          case individual if individual.personReference.value === personReference.value =>
+            individual.copy(
+              failures = Some(individualFailures),
+              status = individualOutcomeAsStatus(individualFailures)
+            )
           case individual => individual
 
         val updated = applicationForRisking.copy(
           individuals = updatedIndividuals
         )
         applicationForRiskingRepo.upsert(updated)
+
+  private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
+    individualFailures.outcome match {
+      case FailedFixable => ApplicationForRiskingStatus.FailedFixable
+      case FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
+      case Approved => ApplicationForRiskingStatus.Approved
+    }

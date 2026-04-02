@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -31,7 +32,6 @@ extends ISpec:
 
   val service: SdesProxyService = app.injector.instanceOf[SdesProxyService]
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-
 
   "notifySdesFileReady sends the expected request to SDES" in:
 
@@ -89,8 +89,9 @@ extends ISpec:
     val updatedIndividual = updatedApplication.individuals.headOption.value
 
     updatedApplication.failures.value.size shouldBe 1
-    updatedIndividual.failures.value.size shouldBe 1
-    updatedIndividual.failures.value.outcome shouldBe IndividualRiskingOutcome.FailedFixable
+    updatedIndividual.failures.value.size shouldBe 0
+    updatedIndividual.failures.value.outcome shouldBe IndividualRiskingOutcome.Approved
+    updatedIndividual.status shouldBe ApplicationForRiskingStatus.Approved
 
   "retrieveAndProcessResultsFile does not upload to object store if the file was not processed successfully" in:
 
