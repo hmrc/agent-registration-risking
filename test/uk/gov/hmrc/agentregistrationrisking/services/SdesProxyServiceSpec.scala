@@ -16,16 +16,23 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingRecord
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
+import uk.gov.hmrc.http.UpstreamErrorResponse
+
+import scala.concurrent.Future
 
 class SdesProxyServiceSpec
 extends ISpec:
@@ -94,9 +101,28 @@ extends ISpec:
     updatedIndividual.status shouldBe ApplicationForRiskingStatus.Approved
 
   "retrieveAndProcessResultsFile does not upload to object store if the file was not processed successfully" in:
-
     given RequestHeader = FakeRequest()
 
     SdesProxyStubs.stubFindAvailableFilesFailure
     val result = service.retrieveAndProcessResultsFiles
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl(count = 0)
+
+  "downloadAndParseResultFile should successfully download and parse the result file" in:
+    given RequestHeader = FakeRequest()
+    ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
+
+    val result: Future[List[RiskingRecord]] = service.downloadAndParseRecords(testAvailableFile)
+    val expected: List[RiskingRecord] = List(passRecord1, passRecord2)
+
+    result.futureValue shouldBe expected
+
+  "downloadAndParseResultFile should handle download failures correctly" in:
+    given RequestHeader = FakeRequest()
+    ObjectStoreStubs.stubDownloadMinervaFileFailure(testAvailableFile.downloadURL)
+
+    val result: Future[List[RiskingRecord]] = service.downloadAndParseRecords(testAvailableFile)
+    val exception: UpstreamErrorResponse = recoverToExceptionIf[UpstreamErrorResponse](result).futureValue
+
+    exception.statusCode shouldBe 500
+    exception.message should include("Error when downloading file")
+    exception.message should include(s"failure when retrieving file at ${testAvailableFile.downloadURL}")

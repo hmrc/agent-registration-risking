@@ -48,7 +48,6 @@ class AppConfig @Inject() (
     val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
 
   object ApplicationForRiskingRepo:
-
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
 
   object SdesProxy:
