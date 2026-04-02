@@ -37,7 +37,11 @@ extends UnitSpec:
     val testRecordArray: JsValue = failRecordArrayFile
 
     val result: List[RiskingRecord] = testRecordArray.validate[List[RiskingRecord]].get
-    val expected = List(failRecord1, failRecord2, failRecord3)
+    val expected = List(
+      failRecord1,
+      failRecord2,
+      failRecord3
+    )
 
     result shouldBe expected
   }

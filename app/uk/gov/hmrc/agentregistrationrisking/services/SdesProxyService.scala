@@ -41,11 +41,10 @@ import scala.concurrent.Future
 class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   riskingResultsConnector: RiskingResultsConnector,
-  objectStoreService: ObjectStoreService
-  appConfig: AppConfig,
-  correlationIdGenerator: CorrelationIdGenerator,
   objectStoreService: ObjectStoreService,
-  objectStoreClientConfig: ObjectStoreClientConfig
+  appConfig: AppConfig,
+  objectStoreClientConfig: ObjectStoreClientConfig,
+  correlationIdGenerator: CorrelationIdGenerator
 )(using
   ExecutionContext,
   Clock

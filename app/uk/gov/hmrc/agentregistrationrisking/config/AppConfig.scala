@@ -39,11 +39,6 @@ class AppConfig @Inject() (
 
   val appName: String = config.get[String]("appName")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
-  val sdesProxyBaseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
-  val objectStoreUrl: String = servicesConfig.baseUrl("object-store")
-  val sdesInformationType: SdesInformationType = SdesInformationType(config.get[String]("secure-data-exchange-proxy-config.information-type"))
-  val sdesServerToken: SdesServerToken = SdesServerToken(config.get[String]("secure-data-exchange-proxy-config.server-token"))
-  val sdesSrn: SdesSrn = SdesSrn(config.get[String]("secure-data-exchange-proxy-config.srn"))
   val hipBaseUrl: String = servicesConfig.baseUrl("hip")
   val hipAuthToken: HipAuthToken = HipAuthToken(config.get[String]("microservice.services.hip.authorization-token"))
 
@@ -53,7 +48,6 @@ class AppConfig @Inject() (
     val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
 
   object ApplicationForRiskingRepo:
-
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
 
   object SdesProxy:
