@@ -37,6 +37,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.correlationId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.objectSummaryWithMd5
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.testAvailableFile
 
 import java.time.Instant
 
@@ -45,7 +46,7 @@ trait TdSdesProxy { dependencies: TdBase =>
   private val createdAt: Instant = dependencies.nowAsInstant
 
   def sdesFileData(fileName: String): AvailableFile = AvailableFile(
-    downloadURL = "https://some.sdes.domain?token=abc123",
+    downloadURL = testAvailableFile.downloadURL,
     filename = fileName,
     fileSize = 1024
   )

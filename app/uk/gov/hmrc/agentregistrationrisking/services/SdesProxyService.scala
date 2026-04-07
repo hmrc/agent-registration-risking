@@ -18,14 +18,27 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.model.Failure
+import uk.gov.hmrc.agentregistrationrisking.model.FailureParser
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
 
 import java.time.Clock
 import javax.inject.Inject
@@ -36,10 +49,12 @@ import scala.concurrent.Future
 @Singleton
 class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
-  appConfig: AppConfig,
-  correlationIdGenerator: CorrelationIdGenerator,
   objectStoreService: ObjectStoreService,
-  objectStoreClientConfig: ObjectStoreClientConfig
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  appConfig: AppConfig,
+  objectStoreClientConfig: ObjectStoreClientConfig,
+  riskingResultsConnector: RiskingResultsConnector,
+  correlationIdGenerator: CorrelationIdGenerator
 )(using
   ExecutionContext,
   Clock
@@ -75,12 +90,26 @@ extends RequestAwareLogging:
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")
     for
-      unprocessedFileList <- getUnprocessedAvailableFiles
+      unprocessedFileList <- getUnprocessedAvailableFiles()
       _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
-      // TODO: Add file processing logic here
-      uploadUnprocessedFiles = unprocessedFileList.map(uploadAndLogResultFile)
-      uploadResults <- Future.sequence(uploadUnprocessedFiles)
+      uploadResults <-
+        unprocessedFileList.foldLeft(Future.successful(Seq.empty[ObjectSummaryWithMd5])):
+          (
+            processedFiles,
+            resultsFile
+          ) =>
+            processedFiles.flatMap: completed =>
+              for
+                records <- downloadAndParseRecords(resultsFile)
+                _ <- processResults(records)
+                uploadResult <- uploadAndLogResultFile(resultsFile)
+              yield completed :+ uploadResult
     yield uploadResults
+
+  private def processResults(results: List[RiskingResultRecord])(using request: RequestHeader): Future[Unit] =
+    // Process in order so repeated updates to the same application do not race.
+    results.foldLeft(Future.unit): (acc, result) =>
+      acc.flatMap(_ => processResult(result))
 
   private def uploadAndLogResultFile(file: AvailableFile)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
     val downloadUri = Uri(file.downloadURL).toJavaUri.toURL
@@ -90,12 +119,74 @@ extends RequestAwareLogging:
       _ = logger.info(s"Uploaded file to object store: $fileName")
     yield uploadResult
 
-  private def getUnprocessedAvailableFiles(using request: RequestHeader): Future[Seq[AvailableFile]] =
+  def downloadAndParseRecords(file: AvailableFile)(using request: RequestHeader): Future[List[RiskingResultRecord]] = {
+    logger.info(s"Attempting to downloading ${file.filename}")
+    riskingResultsConnector.getRiskingFile(availableFile = file)
+  }
+
+  private def getUnprocessedAvailableFiles()(using request: RequestHeader): Future[Seq[AvailableFile]] =
     for
       availableFiles: Seq[AvailableFile] <- sdesProxyConnector.listAvailableFiles
       filesAlreadyProcessed: ObjectListing <- objectStoreService.listObjects
-      _ = logger.info(s"Files already processed: ${filesAlreadyProcessed.objectSummaries.size.toString}")
+      _ = logger.info(s"Files already processed: ${filesAlreadyProcessed.objectSummaries.size}")
       fileNamesAlreadyProcessed = filesAlreadyProcessed.objectSummaries.map(_.location.fileName).toSet
       _ = logger.info(s"File Names already processed: ${fileNamesAlreadyProcessed.toString}")
       unprocessedAvailableFiles = availableFiles.filterNot(f => fileNamesAlreadyProcessed.contains(f.filename))
     yield unprocessedAvailableFiles
+
+  private def processResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
+    result.recordType match
+      case "Entity" => updateEntityWithResult(result)
+      case "Individual" => updateIndividualWithResult(result)
+      case other =>
+        logger.error(s"Skipping unsupported result record type: $other")
+        Future.unit
+
+  private def updateEntityWithResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
+    result.applicationReference match
+      case None =>
+        logger.error("Entity result record missing application reference, cannot update application")
+        Future.unit
+      case Some(applicationReference) =>
+        applicationForRiskingRepo.findById(applicationReference).flatMap:
+          case None =>
+            logger.error(s"No application found for application reference: ${applicationReference.value}")
+            Future.unit
+          case Some(applicationForRisking) =>
+            val updatedApplication = applicationForRisking.copy(
+              failures = Some(result.failures.getOrElse(List.empty).map(FailureParser.parseEntityFailure))
+            )
+            logger.info(s"Updated Application: $updatedApplication")
+            applicationForRiskingRepo.upsert(updatedApplication)
+
+  private def updateIndividualWithResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
+    result.personReference match
+      case None =>
+        logger.error("Individual result record missing person reference, cannot update application")
+        Future.unit
+      case Some(personReference) =>
+        applicationForRiskingRepo.findByPersonReference(personReference).flatMap:
+          case None =>
+            logger.error(s"No individual found for person reference: ${personReference.value}")
+            Future.unit
+          case Some(applicationForRisking) =>
+            val individualFailures = result.failures.getOrElse(List.empty).map(FailureParser.parseIndividualFailure)
+            val updatedIndividuals = applicationForRisking.individuals.map:
+              case individual if individual.personReference.value === personReference.value =>
+                individual.copy(
+                  failures = Some(individualFailures),
+                  status = individualOutcomeAsStatus(individualFailures)
+                )
+              case individual => individual
+
+            val updated = applicationForRisking.copy(
+              individuals = updatedIndividuals
+            )
+            applicationForRiskingRepo.upsert(updated)
+
+  private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
+    individualFailures.outcome() match {
+      case FailedFixable => ApplicationForRiskingStatus.FailedFixable
+      case FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
+      case Approved => ApplicationForRiskingStatus.Approved
+    }

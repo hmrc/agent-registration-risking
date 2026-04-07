@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.*
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 
-final case class Failure(
-  reasonCode: String,
-  reasonDescription: String,
-  checkId: String,
-  checkDescription: String,
-  additionalInfo: Option[String]
-) {}
+final case class RiskingResultRecord(
+  recordType: String,
+  applicationReference: Option[ApplicationReference],
+  failures: Option[List[Failure]],
+  personReference: Option[PersonReference]
+)
 
-object Failure {
-  implicit val format: OFormat[Failure] = Json.format[Failure]
-}
+object RiskingResultRecord:
+  given reader: Reads[RiskingResultRecord] = Json.reads[RiskingResultRecord]

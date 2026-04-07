@@ -32,7 +32,7 @@ import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.Failure
+import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 
 import java.time.Instant
@@ -61,7 +61,7 @@ final case class ApplicationForRisking(
   amlExpiryDate: Option[LocalDate],
   amlEvidence: Option[AmlsEvidence],
   individuals: List[IndividualForRisking],
-  failures: Option[List[Failure]]
+  failures: Option[List[EntityFailure]]
 )
 
 object ApplicationForRisking:
