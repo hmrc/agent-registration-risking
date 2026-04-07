@@ -59,5 +59,12 @@ trait TdIndividualForRisking { dependencies: TdBase =>
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     failures = None
   )
+  
+  def approvedIndividual(
+    personReference: PersonReference
+                        ): IndividualForRisking = 
+    readyForSubmissionIndividual(Some(personReference)).copy(
+      status = ApplicationForRiskingStatus.Approved
+    )
 
 }

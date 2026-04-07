@@ -17,7 +17,9 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -26,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.HipConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import javax.inject.Inject
@@ -34,11 +37,16 @@ import scala.concurrent.Future
 
 class SubscribeAgentService @Inject() (
   hipConnector: HipConnector,
-  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  applicationForRiskingRepo: ApplicationForRiskingRepo
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
   def subscribeAgent(applicationForRisking: ApplicationForRisking)(using RequestHeader): Future[Arn] =
+    require(
+      requirement = applicationForRisking.status === ApplicationForRiskingStatus.Approved,
+      message = "Application must have the Approved status to subscribe to agent services"
+    )
     val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(
       name = applicationForRisking.agentDetails.businessName.getAgentBusinessName,
       addr1 = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.addressLine1,
@@ -86,4 +94,14 @@ extends RequestAwareLogging:
           verifiers = knownFacts
         )
       )
+      _ <- updateApplicationStatusToSubscribedAndEnrolled(applicationForRisking)
     yield arn
+
+  private def updateApplicationStatusToSubscribedAndEnrolled(
+    applicationForRisking: ApplicationForRisking
+  ): Future[Unit] = applicationForRiskingRepo
+    .updateStatusByApplicationReferences(
+      applicationReferences = Seq(applicationForRisking.applicationReference),
+      status = ApplicationForRiskingStatus.SubscribedAndEnrolled
+    )
+    .map(_ => ())
