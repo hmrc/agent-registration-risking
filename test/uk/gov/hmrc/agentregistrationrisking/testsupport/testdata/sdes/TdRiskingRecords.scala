@@ -37,6 +37,24 @@ trait TdRiskingRecords:
     testFileSize
   )
 
+  val passRecordArrayFileWithNonExistentApp: JsArray = Json.arr(
+    Json.obj(
+      "recordType" -> Entity,
+      "applicationReference" -> "ABC123456",
+      "failures" -> Json.arr()
+    ),
+    Json.obj(
+      "recordType" -> Individual,
+      "personReference" -> "1234567890",
+      "failures" -> Json.arr()
+    ),
+    Json.obj(
+      "recordType" -> Entity,
+      "applicationReference" -> "NON_EXISTENT",
+      "failures" -> Json.arr()
+    )
+  )
+
   val passRecordArrayFile: JsArray = Json.arr(
     Json.obj(
       "recordType" -> Entity,
@@ -47,6 +65,33 @@ trait TdRiskingRecords:
       "recordType" -> Individual,
       "personReference" -> "1234567890",
       "failures" -> Json.arr()
+    )
+  )
+
+  val failRecordArrayFileMatchingApp: JsArray = Json.arr(
+    Json.obj(
+      "recordType" -> Entity,
+      "applicationReference" -> "ABC123456",
+      "failures" -> Json.arr(
+        Json.obj(
+          "reasonCode" -> "3.2",
+          "reasonDescription" -> "AML check failed due to suspicious activity",
+          "checkId" -> "3",
+          "checkDescription" -> "AMLS"
+        )
+      )
+    ),
+    Json.obj(
+      "recordType" -> Individual,
+      "personReference" -> "1234567890",
+      "failures" -> Json.arr(
+        Json.obj(
+          "reasonCode" -> "4.1",
+          "reasonDescription" -> "Outstanding returns overdue",
+          "checkId" -> "4",
+          "checkDescription" -> "Overdue returns"
+        )
+      )
     )
   )
 

@@ -18,27 +18,34 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
+import uk.gov.hmrc.agentregistration.shared.risking
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
+import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.CompletedApplicationRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.FailureParser
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
+import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome.*
 
 import java.time.Clock
 import javax.inject.Inject
@@ -51,6 +58,7 @@ class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   objectStoreService: ObjectStoreService,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
+  subscribeAgentService: SubscribeAgentService,
   appConfig: AppConfig,
   objectStoreClientConfig: ObjectStoreClientConfig,
   riskingResultsConnector: RiskingResultsConnector,
@@ -87,6 +95,8 @@ extends RequestAwareLogging:
       audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
     )
 
+  // TODO 1. Decide when to return status. Now is after all processing but that can take time and what if something fail. 
+  // TODO 2. Now there is no recovery for processResults so if one record fail whole processing will stop and no status will be returned. This is not ideal.  need more discussion on how to handle this.
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")
     for
@@ -103,6 +113,9 @@ extends RequestAwareLogging:
                 records <- downloadAndParseRecords(resultsFile)
                 _ <- processResults(records)
                 uploadResult <- uploadAndLogResultFile(resultsFile)
+                completedOutcomes <- updateApplicationStatuses(records)
+                approvedOutcomes = completedOutcomes.filter(_.applicationStatus === ApplicationForRiskingStatus.Approved)
+                _ <- subscribeApprovedApplications(approvedOutcomes)
               yield completed :+ uploadResult
     yield uploadResults
 
@@ -184,9 +197,73 @@ extends RequestAwareLogging:
             )
             applicationForRiskingRepo.upsert(updated)
 
+  def updateApplicationStatuses(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[CompletedApplicationRiskingOutcome]] =
+    for
+      applications <- getProcessedApplications(results)
+      completedOutcomes = applications.flatMap(getCompletedApplicationRiskingOutcome)
+      _ <- updateApplicationStatuses(completedOutcomes)
+    yield completedOutcomes
+
+  private def subscribeApprovedApplications(
+    outcomes: Set[CompletedApplicationRiskingOutcome]
+  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes): outcome =>
+    subscribeAgentService.subscribeAgent(outcome.application).flatMap: _ =>
+      applicationForRiskingRepo.upsert(outcome.application.copy(status = ApplicationForRiskingStatus.SubscribedAndEnrolled))
+    .recover:
+      case ex: Throwable => logger.error(s"Failed to subscribe application ${outcome.applicationReference.value}: ${ex.getMessage}")
+  .map(_ => ())
+
   private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
     individualFailures.outcome() match {
-      case FailedFixable => ApplicationForRiskingStatus.FailedFixable
-      case FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
-      case Approved => ApplicationForRiskingStatus.Approved
+      case IndividualRiskingOutcome.FailedFixable => ApplicationForRiskingStatus.FailedFixable
+      case IndividualRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
+      case IndividualRiskingOutcome.Approved => ApplicationForRiskingStatus.Approved
     }
+
+  private def getProcessedApplications(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationForRisking]] =
+    val (entityResults, individualResults) = results.partition(_.recordType === "Entity")
+    val entityAppsFuture: Future[Set[ApplicationForRisking]] = Future.traverse(entityResults.flatMap(_.applicationReference).toSet): appRef =>
+      applicationForRiskingRepo.findById(appRef)
+        .recover:
+          case ex: Throwable =>
+            logger.error(s"Failed to find application for reference ${appRef.value}: ${ex.getMessage}")
+            None
+    .map(_.flatten)
+    val individualAppsFuture: Future[Set[ApplicationForRisking]] = Future.traverse(individualResults.flatMap(_.personReference).toSet): personReference =>
+      applicationForRiskingRepo.findByPersonReference(personReference)
+        .recover:
+          case ex: Throwable =>
+            logger.error(s"Failed to find application for person reference ${personReference.value}: ${ex.getMessage}")
+            None
+    .map(_.flatten)
+    for
+      entityApps <- entityAppsFuture
+      individualApps <- individualAppsFuture
+    yield entityApps ++ individualApps
+
+  private def getCompletedApplicationRiskingOutcome(application: ApplicationForRisking): Option[CompletedApplicationRiskingOutcome] =
+    val allIndividualsCompleted = application.individuals.map(_.status).forall:
+      case _: ApplicationForRiskingStatus.RiskingCompletedStatus => true
+      case _ => false
+
+    application.failures match
+      case Some(entityFailures) if allIndividualsCompleted =>
+        Some(CompletedApplicationRiskingOutcome(
+          application = application,
+          entityStatus = entityOutcomeAsStatus(entityFailures)
+        ))
+      case _ => None
+
+  private def entityOutcomeAsStatus(entityFailures: List[EntityFailure]): ApplicationForRiskingStatus.RiskingCompletedStatus =
+    entityFailures.outcome() match
+      case EntityRiskingOutcome.FailedFixable => ApplicationForRiskingStatus.FailedFixable
+      case EntityRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
+      case EntityRiskingOutcome.Approved => ApplicationForRiskingStatus.Approved
+
+  private def updateApplicationStatuses(
+    outcomes: Set[CompletedApplicationRiskingOutcome]
+  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes): outcome =>
+    applicationForRiskingRepo.upsert(outcome.application.copy(status = outcome.applicationStatus))
+      .recover:
+        case ex: Throwable => logger.error(s"Failed to update application status for ${outcome.applicationReference.value}: ${ex.getMessage}")
+  .map(_ => ())
