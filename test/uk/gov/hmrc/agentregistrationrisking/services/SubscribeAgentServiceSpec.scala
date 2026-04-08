@@ -21,6 +21,8 @@ import play.api.mvc.Request
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
@@ -28,6 +30,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.HipStubs
 
 class SubscribeAgentServiceSpec
@@ -57,7 +60,7 @@ extends ISpec:
 
   "subscribeAgent call should return an Arn and update the status to SubscribedAndEnrolled when the application status is Approved" in :
     
-    val expectedArn = Arn("ARN1234567")
+    val expectedArn: Arn = Arn("ARN1234567")
     val approvedApplication: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(
       applicationReference = ApplicationReference(randomId),
       status = ApplicationForRiskingStatus.Approved,
@@ -65,9 +68,20 @@ extends ISpec:
         tdAll.approvedIndividual(PersonReference("personReference"))
       )
     )
+    val knownFact: KnownFact = KnownFact("AgencyPostcode", approvedApplication.agentDetails.getAgentCorrespondenceAddress.postalCode.getOrElse(""))
 
     repo.upsert(approvedApplication).futureValue
     
+    EnrolmentStoreProxyStubs.stubAllocateEnrolmentToGroup(
+      groupId = tdAll.groupId,
+      enrolmentKey = s"HMRC-AS-AGENT~AgentReferenceNumber~${expectedArn.value}",
+      enrolmentRequest = EnrolmentRequest(
+        userId = approvedApplication.applicantCredentials.providerId,
+        `type` = "HMRC-AS-AGENT",
+        friendlyName = approvedApplication.agentDetails.businessName.getAgentBusinessName,
+        verifiers = Seq(knownFact)
+      )
+    )
     HipStubs.stubSubscribeAgent(
       safeId = approvedApplication.entitySafeId,
       subscribeAgentRequest = SubscribeAgentRequest(

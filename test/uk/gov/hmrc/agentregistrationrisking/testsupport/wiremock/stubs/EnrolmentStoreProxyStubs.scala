@@ -22,16 +22,27 @@ import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.GroupId
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object EnrolmentStoreProxyStubs:
 
+  def stubAddKnownFacts(
+                         enrolmentKey: String,
+                         knownFactsRequest: EnrolmentStoreProxyConnector.KnownFactsRequest
+                       ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.PUT,
+    urlPattern = wm.urlEqualTo(s"/enrolment-store-proxy/enrolments/$enrolmentKey"),
+    responseStatus = 204,
+    requestBody = Some(equalToJson(Json.toJson(knownFactsRequest).toString()))
+  )
+
   def stubAllocateEnrolmentToGroup(
-                          groupId: GroupId,
-                          enrolmentKey: String,
-                          enrolmentRequest: EnrolmentRequest
-                        ): StubMapping = StubMaker.make(
+    groupId: GroupId,
+    enrolmentKey: String,
+    enrolmentRequest: EnrolmentRequest
+  ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments/$enrolmentKey"),
     responseStatus = 201,
@@ -39,10 +50,10 @@ object EnrolmentStoreProxyStubs:
   )
 
   def verifyAllocateEnrolmentToGroup(
-                                      groupId: GroupId,
-                                      enrolmentKey: String,
-                            count: Int = 1
-                          ): Unit = StubMaker.verify(
+    groupId: GroupId,
+    enrolmentKey: String,
+    count: Int = 1
+  ): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments/$enrolmentKey"),
     count = count
