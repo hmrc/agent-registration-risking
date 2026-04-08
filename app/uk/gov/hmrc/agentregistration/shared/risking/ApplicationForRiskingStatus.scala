@@ -29,9 +29,10 @@ enum ApplicationForRiskingStatus:
   case FailedNonFixable
   case FailedFixable
   case ReadyForResubmission
+  case SubscribedAndEnrolled
 
 object ApplicationForRiskingStatus:
 
   given Format[ApplicationForRiskingStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationForRiskingStatus]
 
-  type CompletedStatus = Approved.type | FailedNonFixable.type | FailedFixable.type
+  type RiskingCompletedStatus = Approved.type | FailedNonFixable.type | FailedFixable.type

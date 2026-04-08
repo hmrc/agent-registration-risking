@@ -26,8 +26,15 @@ extends UnitSpec:
 
   val appRef = ApplicationReference("TEST-REF")
 
-  def outcome(entityStatus: CompletedStatus, individualStatuses: List[CompletedStatus]): CompletedStatus =
-    CompletedApplicationRiskingOutcome(appRef, entityStatus, individualStatuses).applicationStatus
+  def outcome(
+    entityStatus: RiskingCompletedStatus,
+    individualStatuses: List[RiskingCompletedStatus]
+  ): RiskingCompletedStatus =
+    CompletedApplicationRiskingOutcome(
+      appRef,
+      entityStatus,
+      individualStatuses
+    ).applicationStatus
 
   "applicationStatus" - {
 
@@ -36,7 +43,14 @@ extends UnitSpec:
     }
 
     "returns Approved when entity and multiple individuals all approved" in {
-      outcome(Approved, List(Approved, Approved, Approved)) shouldBe Approved
+      outcome(
+        Approved,
+        List(
+          Approved,
+          Approved,
+          Approved
+        )
+      ) shouldBe Approved
     }
 
     "returns FailedNonFixable when entity has non-fixable failures" in {

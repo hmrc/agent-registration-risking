@@ -17,15 +17,15 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus.CompletedStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus.RiskingCompletedStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 final case class CompletedApplicationRiskingOutcome(
   applicationReference: ApplicationReference,
-  entityStatus: CompletedStatus,
-  individualStatuses: List[CompletedStatus]
+  entityStatus: RiskingCompletedStatus,
+  individualStatuses: List[RiskingCompletedStatus]
 ):
 
-  def applicationStatus: CompletedStatus =
+  def applicationStatus: RiskingCompletedStatus =
     val allStatuses = entityStatus :: individualStatuses
     if allStatuses.contains(ApplicationForRiskingStatus.FailedNonFixable) then
       ApplicationForRiskingStatus.FailedNonFixable

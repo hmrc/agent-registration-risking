@@ -37,6 +37,24 @@ trait TdRiskingRecords:
     testFileSize
   )
 
+  val passRecordArrayFileWithNonExistentApp: JsArray = Json.arr(
+    Json.obj(
+      "recordType" -> Entity,
+      "applicationReference" -> "ABC123456",
+      "failures" -> Json.arr()
+    ),
+    Json.obj(
+      "recordType" -> Individual,
+      "personReference" -> "1234567890",
+      "failures" -> Json.arr()
+    ),
+    Json.obj(
+      "recordType" -> Entity,
+      "applicationReference" -> "NON_EXISTENT",
+      "failures" -> Json.arr()
+    )
+  )
+
   val passRecordArrayFile: JsArray = Json.arr(
     Json.obj(
       "recordType" -> Entity,
