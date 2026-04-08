@@ -17,7 +17,9 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -39,6 +41,10 @@ class SubscribeAgentService @Inject() (
 extends RequestAwareLogging:
 
   def subscribeAgent(applicationForRisking: ApplicationForRisking)(using RequestHeader): Future[Arn] =
+    require(
+      requirement = applicationForRisking.status === ApplicationForRiskingStatus.Approved,
+      message = "Application must have the Approved status to subscribe to agent services"
+    )
     val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(
       name = applicationForRisking.agentDetails.businessName.getAgentBusinessName,
       addr1 = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.addressLine1,
