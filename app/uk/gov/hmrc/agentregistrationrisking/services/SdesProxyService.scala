@@ -18,27 +18,33 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
+import uk.gov.hmrc.agentregistration.shared.risking
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
+import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.CompletedApplicationRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.FailureParser
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
+import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome.*
 
 import java.time.Clock
 import javax.inject.Inject
@@ -102,6 +108,7 @@ extends RequestAwareLogging:
               for
                 records <- downloadAndParseRecords(resultsFile)
                 _ <- processResults(records)
+                completedOutcomes <- syncApplicationStatuses(records)
                 uploadResult <- uploadAndLogResultFile(resultsFile)
               yield completed :+ uploadResult
     yield uploadResults
@@ -184,9 +191,65 @@ extends RequestAwareLogging:
             )
             applicationForRiskingRepo.upsert(updated)
 
+  def syncApplicationStatuses(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[CompletedApplicationRiskingOutcome]] =
+    for
+      applicationReferences <- getProcessedApplicationReferences(results)
+      completedOutcomes <- getCompletedCompletedApplicationRiskingOutcomes(applicationReferences)
+      _ <- updateApplicationStatuses(completedOutcomes)
+    yield (completedOutcomes)
+
   private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
     individualFailures.outcome() match {
-      case FailedFixable => ApplicationForRiskingStatus.FailedFixable
-      case FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
-      case Approved => ApplicationForRiskingStatus.Approved
+      case IndividualRiskingOutcome.FailedFixable => ApplicationForRiskingStatus.FailedFixable
+      case IndividualRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
+      case IndividualRiskingOutcome.Approved => ApplicationForRiskingStatus.Approved
     }
+
+  private def getProcessedApplicationReferences(results: List[RiskingResultRecord]): Future[Set[ApplicationReference]] =
+    val (entityResults, individualResults) = results.partition(_.recordType === "Entity")
+    val entityRefs: Set[ApplicationReference] = entityResults.flatMap(_.applicationReference).toSet
+    val individualRefsFuture: Future[Set[ApplicationReference]] = Future.traverse(individualResults.flatMap(_.personReference)): personReference =>
+      applicationForRiskingRepo.findByPersonReference(personReference).map(_.map(_.applicationReference))
+    .map(_.flatten.toSet)
+    individualRefsFuture.map(entityRefs ++ _)
+
+  private def getCompletedCompletedApplicationRiskingOutcomes(applicationReferences: Set[ApplicationReference]): Future[
+    Set[CompletedApplicationRiskingOutcome]
+  ] = Future.traverse(applicationReferences)(getCompletedCompletedApplicationRiskingOutcome).map(_.flatten)
+
+  private def getCompletedCompletedApplicationRiskingOutcome(applicationReference: ApplicationReference): Future[Option[CompletedApplicationRiskingOutcome]] =
+    applicationForRiskingRepo.findById(applicationReference).map:
+      _.flatMap: application =>
+        val completedIndividualStatuses = application.individuals.map(_.status).map(asCompleted)
+
+        Option.when(completedIndividualStatuses.forall(_.isDefined))(application.failures).flatten.map: entityFailures =>
+          CompletedApplicationRiskingOutcome(
+            applicationReference = applicationReference,
+            entityStatus = entityOutcomeAsStatus(entityFailures),
+            individualStatuses = completedIndividualStatuses.flatten
+          )
+
+  private def entityOutcomeAsStatus(entityFailures: List[EntityFailure]): ApplicationForRiskingStatus.CompletedStatus =
+    entityFailures.outcome() match
+      case EntityRiskingOutcome.FailedFixable => ApplicationForRiskingStatus.FailedFixable
+      case EntityRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
+      case EntityRiskingOutcome.Approved => ApplicationForRiskingStatus.Approved
+
+  private def updateApplicationStatuses(
+    outcomes: Set[CompletedApplicationRiskingOutcome]
+  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes)(updateApplicationStatus).map(_ => ())
+
+  private def updateApplicationStatus(
+    outcome: CompletedApplicationRiskingOutcome
+  )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.findById(outcome.applicationReference).flatMap:
+    case None =>
+      logger.error(s"No application found for application reference: ${outcome.applicationReference.value}")
+      Future.unit
+    case Some(applicationForRisking) =>
+      val updatedApplication = applicationForRisking.copy(status = outcome.applicationStatus)
+      applicationForRiskingRepo.upsert(updatedApplication)
+
+  private def asCompleted(status: ApplicationForRiskingStatus): Option[ApplicationForRiskingStatus.CompletedStatus] =
+    status match
+      case s @ (ApplicationForRiskingStatus.Approved | ApplicationForRiskingStatus.FailedNonFixable | ApplicationForRiskingStatus.FailedFixable) => Some(s)
+      case _ => None

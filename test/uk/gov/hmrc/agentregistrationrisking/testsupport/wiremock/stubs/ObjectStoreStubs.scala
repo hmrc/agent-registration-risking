@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs
 import com.github.tomakehurst.wiremock.client.WireMock as wm
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
@@ -118,13 +119,18 @@ object ObjectStoreStubs:
     responseBody = Json.prettyPrint(TdAll.tdAll.listObjectsResponse(processedFileNames))
   )
 
-  def stubDownloadMinervaFile(fileDownloadUrl: String): StubMapping =
+  def stubDownloadMinervaFile(fileDownloadUrl: String): StubMapping = stubDownloadMinervaFile(fileDownloadUrl, passRecordArrayFile)
+
+  def stubDownloadMinervaFile(
+    fileDownloadUrl: String,
+    responseData: JsArray
+  ): StubMapping =
     val path = new URI(fileDownloadUrl).getPath
     StubMaker.make(
       httpMethod = StubMaker.HttpMethod.GET,
       urlPattern = wm.urlPathEqualTo(path),
       responseStatus = 200,
-      responseBody = Json.stringify(passRecordArrayFile)
+      responseBody = Json.stringify(responseData)
     )
 
   def stubDownloadMinervaFileFailure(fileDownloadUrl: String): StubMapping =
