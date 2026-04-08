@@ -18,22 +18,27 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus.*
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 
 class CompletedApplicationRiskingOutcomeSpec
 extends UnitSpec:
 
-  val appRef = ApplicationReference("TEST-REF")
+  val tdAll = TdAll()
+
+  def applicationWithIndividualStatuses(statuses: List[ApplicationForRiskingStatus]): ApplicationForRisking = tdAll.llpApplicationForRisking.copy(
+    individuals = statuses.zipWithIndex.map: (status, i) =>
+      tdAll.readyForSubmissionIndividual(Some(PersonReference(s"person-$i"))).copy(status = status)
+  )
 
   def outcome(
     entityStatus: RiskingCompletedStatus,
     individualStatuses: List[RiskingCompletedStatus]
   ): RiskingCompletedStatus =
     CompletedApplicationRiskingOutcome(
-      appRef,
-      entityStatus,
-      individualStatuses
+      application = applicationWithIndividualStatuses(individualStatuses),
+      entityStatus = entityStatus
     ).applicationStatus
 
   "applicationStatus" - {

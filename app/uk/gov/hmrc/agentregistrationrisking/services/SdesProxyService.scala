@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedApplicationRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
@@ -196,26 +197,18 @@ extends RequestAwareLogging:
 
   def updateApplicationStatuses(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[CompletedApplicationRiskingOutcome]] =
     for
-      applicationReferences <- getProcessedApplicationReferences(results)
-      completedOutcomes <- getCompletedApplicationRiskingOutcomes(applicationReferences)
+      applications <- getProcessedApplications(results)
+      completedOutcomes = applications.flatMap(getCompletedApplicationRiskingOutcome)
       _ <- updateApplicationStatuses(completedOutcomes)
-    yield (completedOutcomes)
+    yield completedOutcomes
 
   private def subscribeApprovedApplications(
     outcomes: Set[CompletedApplicationRiskingOutcome]
-  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes.map(_.applicationReference)): applicationReference =>
-    applicationForRiskingRepo.findById(applicationReference).flatMap:
-      case None =>
-        logger.error(s"No application found for application reference: ${applicationReference.value}")
-        Future.unit
-      case Some(application) if application.status === ApplicationForRiskingStatus.Approved =>
-        subscribeAgentService.subscribeAgent(application).flatMap: _ =>
-          applicationForRiskingRepo.upsert(application.copy(status = ApplicationForRiskingStatus.SubscribedAndEnrolled))
-        .recover:
-          case ex: Throwable => logger.error(s"Failed to subscribe application ${applicationReference.value}: ${ex.getMessage}")
-      case Some(application) =>
-        logger.warn(s"Application ${applicationReference.value} has status ${application.status}, skipping subscription")
-        Future.unit
+  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes): outcome =>
+    subscribeAgentService.subscribeAgent(outcome.application).flatMap: _ =>
+      applicationForRiskingRepo.upsert(outcome.application.copy(status = ApplicationForRiskingStatus.SubscribedAndEnrolled))
+    .recover:
+      case ex: Throwable => logger.error(s"Failed to subscribe application ${outcome.applicationReference.value}: ${ex.getMessage}")
   .map(_ => ())
 
   private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
@@ -225,40 +218,39 @@ extends RequestAwareLogging:
       case IndividualRiskingOutcome.Approved => ApplicationForRiskingStatus.Approved
     }
 
-  private def getProcessedApplicationReferences(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationReference]] =
+  private def getProcessedApplications(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationForRisking]] =
     val (entityResults, individualResults) = results.partition(_.recordType === "Entity")
-    val entityRefs: Set[ApplicationReference] = entityResults.flatMap(_.applicationReference).toSet
-    val individualRefsFuture: Future[Set[ApplicationReference]] = Future.traverse(individualResults.flatMap(_.personReference)): personReference =>
-      applicationForRiskingRepo.findByPersonReference(personReference).map(_.map(_.applicationReference))
+    val entityAppsFuture: Future[Set[ApplicationForRisking]] = Future.traverse(entityResults.flatMap(_.applicationReference).toSet): appRef =>
+      applicationForRiskingRepo.findById(appRef)
+        .recover:
+          case ex: Throwable =>
+            logger.error(s"Failed to find application for reference ${appRef.value}: ${ex.getMessage}")
+            None
+    .map(_.flatten)
+    val individualAppsFuture: Future[Set[ApplicationForRisking]] = Future.traverse(individualResults.flatMap(_.personReference).toSet): personReference =>
+      applicationForRiskingRepo.findByPersonReference(personReference)
         .recover:
           case ex: Throwable =>
             logger.error(s"Failed to find application for person reference ${personReference.value}: ${ex.getMessage}")
             None
-    .map(_.flatten.toSet)
-    individualRefsFuture.map(entityRefs ++ _)
+    .map(_.flatten)
+    for
+      entityApps <- entityAppsFuture
+      individualApps <- individualAppsFuture
+    yield entityApps ++ individualApps
 
-  private def getCompletedApplicationRiskingOutcomes(applicationReferences: Set[ApplicationReference])(using
-    RequestHeader
-  ): Future[
-    Set[CompletedApplicationRiskingOutcome]
-  ] = Future.traverse(applicationReferences)(getCompletedApplicationRiskingOutcome).map(_.flatten)
+  private def getCompletedApplicationRiskingOutcome(application: ApplicationForRisking): Option[CompletedApplicationRiskingOutcome] =
+    val allIndividualsCompleted = application.individuals.map(_.status).forall:
+      case _: ApplicationForRiskingStatus.RiskingCompletedStatus => true
+      case _ => false
 
-  private def getCompletedApplicationRiskingOutcome(applicationReference: ApplicationReference)(using
-    RequestHeader
-  ): Future[Option[CompletedApplicationRiskingOutcome]] = applicationForRiskingRepo.findById(applicationReference).map:
-    _.flatMap: application =>
-      val completedIndividualStatuses = application.individuals.map(_.status).map(asCompleted)
-
-      Option.when(completedIndividualStatuses.forall(_.isDefined))(application.failures).flatten.map: entityFailures =>
-        CompletedApplicationRiskingOutcome(
-          applicationReference = applicationReference,
-          entityStatus = entityOutcomeAsStatus(entityFailures),
-          individualStatuses = completedIndividualStatuses.flatten
-        )
-  .recover:
-    case ex: Throwable =>
-      logger.error(s"Failed to get risking outcome for application ${applicationReference.value}: ${ex.getMessage}")
-      None
+    application.failures match
+      case Some(entityFailures) if allIndividualsCompleted =>
+        Some(CompletedApplicationRiskingOutcome(
+          application = application,
+          entityStatus = entityOutcomeAsStatus(entityFailures)
+        ))
+      case _ => None
 
   private def entityOutcomeAsStatus(entityFailures: List[EntityFailure]): ApplicationForRiskingStatus.RiskingCompletedStatus =
     entityFailures.outcome() match
@@ -268,21 +260,8 @@ extends RequestAwareLogging:
 
   private def updateApplicationStatuses(
     outcomes: Set[CompletedApplicationRiskingOutcome]
-  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes)(updateApplicationStatus).map(_ => ())
-
-  private def updateApplicationStatus(
-    outcome: CompletedApplicationRiskingOutcome
-  )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.findById(outcome.applicationReference).flatMap:
-    case None =>
-      logger.error(s"No application found for application reference: ${outcome.applicationReference.value}")
-      Future.unit
-    case Some(applicationForRisking) =>
-      val updatedApplication = applicationForRisking.copy(status = outcome.applicationStatus)
-      applicationForRiskingRepo.upsert(updatedApplication)
-  .recover:
-    case ex: Throwable => logger.error(s"Failed to update application status for ${outcome.applicationReference.value}: ${ex.getMessage}")
-
-  private def asCompleted(status: ApplicationForRiskingStatus): Option[ApplicationForRiskingStatus.RiskingCompletedStatus] =
-    status match
-      case s @ (ApplicationForRiskingStatus.Approved | ApplicationForRiskingStatus.FailedNonFixable | ApplicationForRiskingStatus.FailedFixable) => Some(s)
-      case _ => None
+  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes): outcome =>
+    applicationForRiskingRepo.upsert(outcome.application.copy(status = outcome.applicationStatus))
+      .recover:
+        case ex: Throwable => logger.error(s"Failed to update application status for ${outcome.applicationReference.value}: ${ex.getMessage}")
+  .map(_ => ())
