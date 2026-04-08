@@ -95,6 +95,8 @@ extends RequestAwareLogging:
       audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
     )
 
+  // TODO 1. Decide when to return status. Now is after all processing but that can take time and what if something fail. 
+  // TODO 2. Now there is no recovery for processResults so if one record fail whole processing will stop and no status will be returned. This is not ideal.  need more discussion on how to handle this.
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")
     for
