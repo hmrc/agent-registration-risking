@@ -38,13 +38,19 @@ object EnrolmentStoreProxyStubs:
     responseBody = Json.stringify(Json.obj("error" -> "Internal Server Error"))
   )
 
-  def stubAllocateEnrolmentToGroup(groupId: String, enrolmentKey: String): StubMapping = StubMaker.make(
+  def stubAllocateEnrolmentToGroup(
+    groupId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"$basePath/groups/$groupId/enrolments/$enrolmentKey"),
     responseStatus = 201
   )
 
-  def stubAllocateEnrolmentToGroupFailure(groupId: String, enrolmentKey: String): StubMapping = StubMaker.make(
+  def stubAllocateEnrolmentToGroupFailure(
+    groupId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"$basePath/groups/$groupId/enrolments/$enrolmentKey"),
     responseStatus = 500,

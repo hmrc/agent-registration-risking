@@ -24,7 +24,10 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object HipStubs:
 
-  def stubSubscribeToAgentServices(safeId: SafeId, arn: String): StubMapping = StubMaker.make(
+  def stubSubscribeToAgentServices(
+    safeId: SafeId,
+    arn: String
+  ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${safeId.value}"),
     responseStatus = 201,

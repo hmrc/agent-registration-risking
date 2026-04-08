@@ -330,7 +330,7 @@ extends ISpec:
         individualFailures = Some(List.empty)
       )).futureValue
 
-      service.syncApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
       updated.status shouldBe ApplicationForRiskingStatus.Approved
@@ -343,7 +343,7 @@ extends ISpec:
         individualFailures = Some(List.empty)
       )).futureValue
 
-      service.syncApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
       updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
@@ -356,7 +356,7 @@ extends ISpec:
         individualFailures = Some(List(IndividualFailure._9))
       )).futureValue
 
-      service.syncApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
       updated.status shouldBe ApplicationForRiskingStatus.FailedNonFixable
@@ -369,7 +369,7 @@ extends ISpec:
         individualFailures = Some(List(IndividualFailure._4._1))
       )).futureValue
 
-      service.syncApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
       updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
@@ -382,7 +382,7 @@ extends ISpec:
         individualFailures = Some(List(IndividualFailure._8._1))
       )).futureValue
 
-      service.syncApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
       updated.status shouldBe ApplicationForRiskingStatus.FailedNonFixable
@@ -395,7 +395,7 @@ extends ISpec:
         individualFailures = Some(List.empty)
       )).futureValue
 
-      service.syncApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
       updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
@@ -408,7 +408,7 @@ extends ISpec:
         individualFailures = None
       )).futureValue
 
-      service.syncApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
       updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
@@ -438,7 +438,7 @@ extends ISpec:
         )
       )).futureValue
 
-      service.syncApplicationStatuses(List(
+      service.updateApplicationStatuses(List(
         passRecord1,
         passRecord2,
         passRecord2ndIndividual
@@ -465,7 +465,7 @@ extends ISpec:
         )
       )).futureValue
 
-      service.syncApplicationStatuses(List(
+      service.updateApplicationStatuses(List(
         passRecord1,
         passRecord2,
         passRecord2ndIndividual
@@ -492,7 +492,7 @@ extends ISpec:
         )
       )).futureValue
 
-      service.syncApplicationStatuses(List(
+      service.updateApplicationStatuses(List(
         passRecord1,
         passRecord2,
         passRecord2ndIndividual
@@ -526,7 +526,7 @@ extends ISpec:
         individualFailures = Some(List.empty)
       )).futureValue
 
-      service.syncApplicationStatuses(List(
+      service.updateApplicationStatuses(List(
         passRecord1,
         passRecord2,
         entityRecordForNonExistentApp
@@ -543,7 +543,7 @@ extends ISpec:
         individualFailures = Some(List.empty)
       )).futureValue
 
-      service.syncApplicationStatuses(List(
+      service.updateApplicationStatuses(List(
         passRecord1,
         passRecord2,
         individualRecordForNonExistentPerson
