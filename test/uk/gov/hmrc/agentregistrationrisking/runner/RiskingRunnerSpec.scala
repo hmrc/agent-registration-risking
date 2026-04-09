@@ -72,7 +72,7 @@ extends ISpec:
            |    "size":12345
            |  },
            |  "audit":{
-           |    "correlationId":"testCorrelationId"
+           |    "correlationID":"testCorrelationId"
            |  }
            |}""".stripMargin
       ))
