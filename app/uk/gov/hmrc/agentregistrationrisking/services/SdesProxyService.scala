@@ -113,9 +113,9 @@ extends RequestAwareLogging:
                 records <- downloadAndParseRecords(resultsFile)
                 _ <- processResults(records)
                 uploadResult <- uploadAndLogResultFile(resultsFile)
-                completedOutcomes <- updateApplicationStatuses(records)
-                approvedOutcomes = completedOutcomes.filter(_.applicationStatus === ApplicationForRiskingStatus.Approved)
-                _ <- subscribeApprovedApplications(approvedOutcomes)
+                updatedApplications <- updateApplicationStatuses(records)
+                approvedApplications = updatedApplications.filter(_.status === ApplicationForRiskingStatus.Approved)
+                _ <- subscribeApprovedApplications(approvedApplications)
               yield completed :+ uploadResult
     yield uploadResults
 
@@ -197,20 +197,20 @@ extends RequestAwareLogging:
             )
             applicationForRiskingRepo.upsert(updated)
 
-  def updateApplicationStatuses(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[CompletedApplicationRiskingOutcome]] =
+  def updateApplicationStatuses(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationForRisking]] =
     for
       applications <- getProcessedApplications(results)
       completedOutcomes = applications.flatMap(getCompletedApplicationRiskingOutcome)
-      _ <- updateApplicationStatuses(completedOutcomes)
-    yield completedOutcomes
+      updatedApplications <- updateApplicationStatuses(completedOutcomes)
+    yield updatedApplications
 
   private def subscribeApprovedApplications(
-    outcomes: Set[CompletedApplicationRiskingOutcome]
-  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes): outcome =>
-    subscribeAgentService.subscribeAgent(outcome.application).flatMap: _ =>
-      applicationForRiskingRepo.upsert(outcome.application.copy(status = ApplicationForRiskingStatus.SubscribedAndEnrolled))
+    approvedApplications: Set[ApplicationForRisking]
+  )(using RequestHeader): Future[Unit] = Future.traverse(approvedApplications): application =>
+    subscribeAgentService.subscribeAgent(application).flatMap: _ =>
+      applicationForRiskingRepo.upsert(application.copy(status = ApplicationForRiskingStatus.SubscribedAndEnrolled))
     .recover:
-      case ex: Throwable => logger.error(s"Failed to subscribe application ${outcome.applicationReference.value}: ${ex.getMessage}")
+      case ex: Throwable => logger.error(s"Failed to subscribe application ${application.applicationReference.value}: ${ex.getMessage}")
   .map(_ => ())
 
   private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
@@ -262,8 +262,10 @@ extends RequestAwareLogging:
 
   private def updateApplicationStatuses(
     outcomes: Set[CompletedApplicationRiskingOutcome]
-  )(using RequestHeader): Future[Unit] = Future.traverse(outcomes): outcome =>
-    applicationForRiskingRepo.upsert(outcome.application.copy(status = outcome.applicationStatus))
-      .recover:
-        case ex: Throwable => logger.error(s"Failed to update application status for ${outcome.applicationReference.value}: ${ex.getMessage}")
-  .map(_ => ())
+  )(using RequestHeader): Future[Set[ApplicationForRisking]] =
+    val updatedApplications = outcomes.map(a => a.application.copy(status = a.applicationStatus))
+    Future.traverse(updatedApplications): application =>
+      applicationForRiskingRepo.upsert(application)
+        .recover:
+          case ex: Throwable => logger.error(s"Failed to update application status for ${application.applicationReference.value}: ${ex.getMessage}")
+    .map(_ => updatedApplications)
