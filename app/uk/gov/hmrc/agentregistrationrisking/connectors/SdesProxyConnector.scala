@@ -71,7 +71,7 @@ extends Connector:
     .map: response =>
       response.status match
         case status if is2xx(status) =>
-          logger.info(s"Successfully sent notification to SDES, correlationId: ${notifySdesFileReadyRequest.audit.correlationId}")
+          logger.info(s"Successfully sent notification to SDES, correlationId: ${notifySdesFileReadyRequest.audit.correlationID}")
           ()
         case status =>
           Errors.throwUpstreamErrorResponse(
@@ -80,4 +80,4 @@ extends Connector:
             status = status,
             response = response
           )
-    .andLogOnFailure(s"Failed to send SDES notification, correlationId: ${notifySdesFileReadyRequest.audit.correlationId}")
+    .andLogOnFailure(s"Failed to send SDES notification, correlationId: ${notifySdesFileReadyRequest.audit.correlationID}")
