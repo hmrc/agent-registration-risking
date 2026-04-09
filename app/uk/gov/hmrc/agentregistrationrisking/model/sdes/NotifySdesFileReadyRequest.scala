@@ -71,7 +71,7 @@ object SdesProxyProperty:
   given Writes[SdesProxyProperty] = Json.writes[SdesProxyProperty]
 
 final case class NotifySdesAudit(
-  correlationId: CorrelationId
+  correlationID: CorrelationId // case sensitive as SDES expects "correlationID" in the JSON payload
 )
 
 object NotifySdesAudit:

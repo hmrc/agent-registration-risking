@@ -64,7 +64,7 @@ trait TdSdesProxy { dependencies: TdBase =>
       size = objectSummaryWithMd5.contentLength.toInt,
       properties = None
     ),
-    audit = NotifySdesAudit(correlationId = correlationId)
+    audit = NotifySdesAudit(correlationID = correlationId)
   )
 
 }
