@@ -45,9 +45,9 @@ extends BackendController(cc):
               logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
               Future.successful(Ok)
             case n: FileProcessed =>
-              logger.info(s"File processed notification received for ${n.filename} from SDES")
+              logger.info(s"File processed notification received for ${n.filename} from SDES [${n.correlationID}]")
               Future.successful(Ok)
             case n: FileProcessingFailure =>
-              logger.warn(s"File processing failure notification received for ${n.filename} from SDES. " +
+              logger.warn(s"File processing failure notification received for ${n.filename} from SDES [${n.correlationID}]. " +
                 s"Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
               Future.successful(Ok)
