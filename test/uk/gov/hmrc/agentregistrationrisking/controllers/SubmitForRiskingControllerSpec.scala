@@ -51,7 +51,7 @@ extends ControllerSpec:
     val response =
       httpClient
         .post(url"$baseUrl/agent-registration-risking/submit-for-risking")
-        .withBody(Json.toJson(SubmitForRiskingRequest(tdAll.agentApplicationLlp.afterSentForRisking, List(tdAll.individualProvidedDetailsFinished))))
+        .withBody(Json.toJson(SubmitForRiskingRequest(tdAll.agentApplicationLlp.afterSentForRisking, List(tdAll.providedDetails.afterFinished))))
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.CREATED
