@@ -58,7 +58,11 @@ extends RequestAwareLogging:
   private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
     val informationType: SdesInformationType = appConfig.SdesProxy.outboundInformationType
     val serviceReferenceNumber: SdesSrn = appConfig.SdesProxy.srn
-    val location = s"${objectStoreClientConfig.baseUrl}/object-store/object/${objectStoreClientConfig.owner}/${objectSummaryWithMd5.location.directory.asUri}"
+    /* SDES do not access our object store directly, instead we provide a location that they can access that proxies to
+    ** our object store from outside the platform
+     */
+    val location = s"${appConfig.SdesProxy.objectStoreLocationPrefix}/${objectStoreClientConfig.owner}/${objectSummaryWithMd5.location.directory.asUri}"
+
     NotifySdesFileReadyRequest(
       informationType = informationType,
       file = NotifySdesFile(

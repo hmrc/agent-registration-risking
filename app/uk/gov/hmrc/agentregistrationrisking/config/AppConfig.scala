@@ -63,3 +63,4 @@ class AppConfig @Inject() (
     val inboundServerToken: SdesServerToken = SdesServerToken(getConfString("secure-data-exchange-proxy.inbound.server-token"))
     val outboundServerToken: SdesServerToken = SdesServerToken(getConfString("secure-data-exchange-proxy.outbound.server-token"))
     val srn: SdesSrn = SdesSrn(getConfString("secure-data-exchange-proxy.srn"))
+    val objectStoreLocationPrefix: String = getConfString("secure-data-exchange-proxy.object-store-location-prefix")
