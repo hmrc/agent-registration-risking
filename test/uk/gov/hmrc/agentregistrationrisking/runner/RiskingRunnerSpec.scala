@@ -64,7 +64,7 @@ extends ISpec:
            |  "file":{
            |    "recipientOrSender":"test-srn",
            |    "name":"$fileName",
-           |    "location":"/agent-registration-risking/agent-registration-risking/applications-for-risking/",
+           |    "location":"/agent-registration-risking/applications-for-risking/",
            |    "checksum":{
            |      "algorithm":"md5",
            |      "value":"a3c2f1e38701bd2c7b54ebd7b1cd0dbc"
