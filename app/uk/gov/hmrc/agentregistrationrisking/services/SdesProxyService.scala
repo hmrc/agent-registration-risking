@@ -61,7 +61,7 @@ extends RequestAwareLogging:
     /* SDES do not access our object store directly, instead we provide a location that they can access that proxies to
     ** our object store from outside the platform
      */
-    val location = s"${appConfig.SdesProxy.objectStoreLocationPrefix}/${objectStoreClientConfig.owner}/${objectSummaryWithMd5.location.directory.asUri}"
+    val location = s"${appConfig.SdesProxy.objectStoreLocationPrefix}/${objectSummaryWithMd5.location.directory.asUri}"
 
     NotifySdesFileReadyRequest(
       informationType = informationType,
