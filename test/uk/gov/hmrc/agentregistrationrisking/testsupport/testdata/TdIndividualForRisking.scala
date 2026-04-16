@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Pro
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 

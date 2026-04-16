@@ -19,4 +19,4 @@ package uk.gov.hmrc.agentregistrationrisking
 object RoutesExports:
 
   export uk.gov.hmrc.agentregistration.shared.ApplicationReference
-  export uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+  export uk.gov.hmrc.agentregistration.shared.PersonReference
