@@ -35,6 +35,7 @@ import java.time.Instant
 sealed trait AgentApplication:
 
   def _id: AgentApplicationId
+  def applicationReference: ApplicationReference
   def internalUserId: InternalUserId
   def applicantCredentials: Credentials
   def linkId: LinkId
@@ -51,6 +52,9 @@ sealed trait AgentApplication:
   def hmrcStandardForAgentsAgreed: StateOfAgreement
   def numberOfIndividuals: Option[NumberOfIndividuals] // all applications require this, sole traders will have a list of one
   def hasOtherRelevantIndividuals: Option[Boolean]
+  /* vrns and payeRefs can have three states: None (we haven't called the API yet), Some(List.empty) (we called the API but there were no vrns/ payeRefs)
+   and Some(List(...)) (we called the api and got back a list of vrns/ payeRefs)
+   */
   def vrns: Option[List[Vrn]]
   def payeRefs: Option[List[PayeRef]]
 
@@ -143,6 +147,7 @@ sealed trait AgentApplication:
   */
 final case class AgentApplicationSoleTrader(
   override val _id: AgentApplicationId,
+  override val applicationReference: ApplicationReference,
   override val internalUserId: InternalUserId,
   override val applicantCredentials: Credentials,
   override val linkId: LinkId,
@@ -176,6 +181,7 @@ object AgentApplicationSoleTrader:
   */
 final case class AgentApplicationLlp(
   override val _id: AgentApplicationId,
+  override val applicationReference: ApplicationReference,
   override val internalUserId: InternalUserId,
   override val applicantCredentials: Credentials,
   override val linkId: LinkId,
@@ -207,6 +213,7 @@ extends AgentApplication:
   */
 final case class AgentApplicationLimitedCompany(
   override val _id: AgentApplicationId,
+  override val applicationReference: ApplicationReference,
   override val internalUserId: InternalUserId,
   override val applicantCredentials: Credentials,
   override val linkId: LinkId,
@@ -238,6 +245,7 @@ extends AgentApplication:
   */
 final case class AgentApplicationGeneralPartnership(
   override val _id: AgentApplicationId,
+  override val applicationReference: ApplicationReference,
   override val internalUserId: InternalUserId,
   override val applicantCredentials: Credentials,
   override val linkId: LinkId,
@@ -267,6 +275,7 @@ extends AgentApplication:
   */
 final case class AgentApplicationLimitedPartnership(
   override val _id: AgentApplicationId,
+  override val applicationReference: ApplicationReference,
   override val internalUserId: InternalUserId,
   override val applicantCredentials: Credentials,
   override val linkId: LinkId,
@@ -296,6 +305,7 @@ extends AgentApplication:
 
 final case class AgentApplicationScottishLimitedPartnership(
   override val _id: AgentApplicationId,
+  override val applicationReference: ApplicationReference,
   override val internalUserId: InternalUserId,
   override val applicantCredentials: Credentials,
   override val linkId: LinkId,
@@ -325,6 +335,7 @@ extends AgentApplication:
 
 final case class AgentApplicationScottishPartnership(
   override val _id: AgentApplicationId,
+  override val applicationReference: ApplicationReference,
   override val internalUserId: InternalUserId,
   override val applicantCredentials: Credentials,
   override val linkId: LinkId,

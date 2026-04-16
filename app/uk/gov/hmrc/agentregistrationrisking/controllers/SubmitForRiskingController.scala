@@ -26,8 +26,8 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplicationScottishLimitedPartn
 import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
@@ -62,7 +62,7 @@ extends BackendController(cc):
 
   extension (individual: IndividualProvidedDetails)
     def toIndividualsForRisking: IndividualForRisking = IndividualForRisking(
-      personReference = PersonReference(individual._id.value),
+      personReference = individual.personReference,
       status = ApplicationForRiskingStatus.ReadyForSubmission,
       vrns = transformToCommaSeparatedString(individual.vrns.map(_.map(_.value))),
       payeRefs = transformToCommaSeparatedString(individual.payeRefs.map(_.map(_.value))),

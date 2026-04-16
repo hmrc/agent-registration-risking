@@ -37,6 +37,7 @@ trait TdIndividualProvidedDetails { dependencies: TdBase =>
 
     val precreated: IndividualProvidedDetails = IndividualProvidedDetails(
       _id = dependencies.individualProvidedDetailsId,
+      personReference = dependencies.personReference,
       internalUserId = None,
       individualName = dependencies.individualName,
       createdAt = dependencies.nowAsInstant,
@@ -48,6 +49,7 @@ trait TdIndividualProvidedDetails { dependencies: TdBase =>
 
     val afterAccessConfirmed: IndividualProvidedDetails = IndividualProvidedDetails(
       _id = dependencies.individualProvidedDetailsId,
+      personReference = dependencies.personReference,
       internalUserId = None,
       individualName = dependencies.individualName,
       createdAt = dependencies.nowAsInstant,
@@ -59,6 +61,7 @@ trait TdIndividualProvidedDetails { dependencies: TdBase =>
 
     val afterStarted: IndividualProvidedDetails = IndividualProvidedDetails(
       _id = dependencies.individualProvidedDetailsId,
+      personReference = dependencies.personReference,
       internalUserId = Some(dependencies.internalUserId),
       individualName = dependencies.individualName,
       createdAt = dependencies.nowAsInstant,
@@ -128,11 +131,23 @@ trait TdIndividualProvidedDetails { dependencies: TdBase =>
         .modify(_.individualSaUtr)
         .setTo(Some(IndividualSaUtr.NotProvided))
 
-    val afterApproveAgentApplication: IndividualProvidedDetails = AfterSaUtr.afterSaUtrProvided
+    val afterUcrProvided: IndividualProvidedDetails = AfterSaUtr.afterSaUtrProvided
+      .copy(
+        vrns = Some(List(dependencies.vrn)),
+        payeRefs = Some(List(dependencies.payeRef))
+      )
+
+    val afterUcrProvidedNotProvide: IndividualProvidedDetails = AfterSaUtr.afterSaUtrProvided
+      .copy(
+        vrns = Some(List.empty),
+        payeRefs = Some(List.empty)
+      )
+
+    val afterApproveAgentApplication: IndividualProvidedDetails = afterUcrProvided
       .modify(_.hasApprovedApplication)
       .setTo(Some(true))
 
-    val afterDoNotApproveAgentApplication: IndividualProvidedDetails = AfterSaUtr.afterSaUtrProvided
+    val afterDoNotApproveAgentApplication: IndividualProvidedDetails = afterUcrProvided
       .modify(_.hasApprovedApplication)
       .setTo(Some(false))
 
@@ -148,6 +163,7 @@ trait TdIndividualProvidedDetails { dependencies: TdBase =>
 
       val soleTraderAutopopulatedDetails: IndividualProvidedDetails = IndividualProvidedDetails(
         _id = individualProvidedDetailsId,
+        personReference = dependencies.personReference,
         internalUserId = None,
         createdAt = nowAsInstant,
         agentApplicationId = agentApplicationId,

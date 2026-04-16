@@ -44,9 +44,9 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReferenceGenerator
-import uk.gov.hmrc.agentregistration.shared.risking.PersonReferenceGenerator
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.ApplicationReferenceGenerator
+import uk.gov.hmrc.agentregistration.shared.PersonReferenceGenerator
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.runner
 import play.api.libs.json.Json
 import play.api.mvc.AnyContent
 import play.api.mvc.Request
-import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
