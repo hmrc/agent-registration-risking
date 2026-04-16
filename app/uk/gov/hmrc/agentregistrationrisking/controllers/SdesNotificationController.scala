@@ -40,7 +40,7 @@ extends BackendController(cc):
           request.body match
             case n: FileReady =>
               logger.info(s"File ready notification received for ${n.filename} from SDES [${n.correlationID}]")
-              sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok)
+              sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok) // TODO: what if few notifications received in the same time during the processing of one notificaion
             case n: FileReceived =>
               logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
               Future.successful(Ok)

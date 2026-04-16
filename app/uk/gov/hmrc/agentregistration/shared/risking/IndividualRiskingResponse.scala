@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.PersonReference
 
 final case class IndividualRiskingResponse(
   personReference: PersonReference,
-  status: ApplicationForRiskingStatus,
+  status: ApplicationForRiskingStatusOld,
   failures: Option[List[IndividualFailure]]
 )
 

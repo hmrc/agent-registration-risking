@@ -69,3 +69,79 @@ sbt> clean test
 
 This code is open source software licensed under
 the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
+
+* use RiskingResultParser and parse RiskingResultRecord -> RiskingResult immediately after received from connector
+* upload risking results to object store as the last step (currently named as uploadAndLogResultFile)
+
+* remodel domain:
+  * decouple IndividualsForRisking from ApplicationForRisking and store them in separate collections
+  * add isSubscribed: Boolean flag to ApplicationForRisking to reflect entity was subscribed
+  * introduce new entity: RiskingFile, which will aggregate all ApplicationForRisking sent for risking. Fields: riskingFileId, riskingFileName, sentToMinervaDateTime. That assumes adding optional riskingFileId to the ApplicationForRisking
+  * remove ApplicationForRiskingStatus
+  * use EntityRiskingOutcome, and IndividualRiskingOutcome instead of `ApplicationForRiskingStatus.CompletedApplicationRiskingOutcome`
+  * change the logic for subscription to search for all applications in db which have isSubscribed=false and outcome=succeeded
+  * update docs
+
+ * out of scope for now, we'll address it later:
+  * processing risking results asynchronously 
+  * discarding invalid data and processing only good - needs discussions with BAs and Architect
+  * lock mechanism: only one instance of processing risking results file can happen at a time
+  * during subscription step, if subscription fails, just log error and carry on (don't update isSubscribed to true). Succeeded applications will be retried auomatically next time (self healing)
+
+* make nice meaningful names for methods, and general code organisation
+
+AvailbleFiles:
+F1
+F2
+F3
+F4
+
+OurObjectStore:
+F1
+F2
+F3
+F4
+
+CurrentlyProcessing:
+unprocessedAvailableFiles=[]
+
+
+
+AgentApplicatoinForRisking
+- applicationRef
+- riskingFileId: Option[RiskingFileId]
+
+IndividualForRisking
+
+
+RiskingFile
+- riskingFileId
+- timestamp
+- fileName
+- isSent: Boolean
+
+
+
+
+
+
+
+
+
+
+
+
+- Use `RiskingResultParser` to parse `RiskingResultRecord` → `RiskingResult` immediately after receiving it from the connector.
+- Remodel the domain:
+    - Decouple `IndividualsForRisking` from `ApplicationForRisking` and store them in separate collections.
+    - Add an `isSubscribed: Boolean` flag to `ApplicationForRisking` to indicate that the entity has been subscribed.
+    - Introduce a new entity `RiskingFile` to aggregate all `ApplicationForRisking` records sent for risking. Fields: `riskingFileId`, `riskingFileName`, `sentToMinervaDateTime`. This requires adding an optional `riskingFileId` to `ApplicationForRisking`.
+    - Remove `ApplicationForRiskingStatus`.
+    - Use `EntityRiskingOutcome` and `IndividualRiskingOutcome` instead of `ApplicationForRiskingStatus.CompletedApplicationRiskingOutcome`.
+    - Change the subscription logic to search for all applications in the database where `isSubscribed = false` and `outcome = succeeded`.
+    - Update the documentation.
+- **Out of scope** (to be addressed later):
+    - Processing risking results asynchronously.
+    - Discarding invalid data and processing only valid records (requires discussion with BAs and Architect).
+    - Lock mechanism: ensure only one instance processes a risking results file at a time.
+    - During the subscription step, if subscription fails, log the error and continue (do not set `isSubscribed = true`). Successfully processed applications will be automatically retried on the next run (self-healing).

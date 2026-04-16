@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
@@ -45,7 +45,7 @@ extends ISpec:
 
     def individualWith(
       ref: PersonReference = personRef,
-      status: ApplicationForRiskingStatus = ApplicationForRiskingStatus.Approved,
+      status: ApplicationForRiskingStatusOld = ApplicationForRiskingStatusOld.Approved,
       failures: Option[List[IndividualFailure]] = Some(List.empty)
     ) = tdAll.readyForSubmissionIndividual(Some(ref)).copy(
       status = status,
@@ -54,11 +54,11 @@ extends ISpec:
 
     def applicationWith(
       entityFailures: Option[List[EntityFailure]],
-      individualStatus: ApplicationForRiskingStatus,
+      individualStatus: ApplicationForRiskingStatusOld,
       individualFailures: Option[List[IndividualFailure]]
     ) = tdAll.llpApplicationForRisking.copy(
       applicationReference = appRef,
-      status = ApplicationForRiskingStatus.SubmittedForRisking,
+      status = ApplicationForRiskingStatusOld.SubmittedForRisking,
       failures = entityFailures,
       individuals = List(
         individualWith(
@@ -74,7 +74,7 @@ extends ISpec:
       individuals: List[IndividualForRisking]
     ) = tdAll.llpApplicationForRisking.copy(
       applicationReference = appRef,
-      status = ApplicationForRiskingStatus.SubmittedForRisking,
+      status = ApplicationForRiskingStatusOld.SubmittedForRisking,
       failures = entityFailures,
       individuals = individuals
     )
@@ -82,92 +82,92 @@ extends ISpec:
     "updates application status to Approved when entity and all individuals are approved" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.Approved,
+        individualStatus = ApplicationForRiskingStatusOld.Approved,
         individualFailures = Some(List.empty)
       )).futureValue
 
       service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+      updated.status shouldBe ApplicationForRiskingStatusOld.Approved
     }
 
     "updates application status to FailedFixable when entity has fixable failures" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List(EntityFailure._3._2)),
-        individualStatus = ApplicationForRiskingStatus.Approved,
+        individualStatus = ApplicationForRiskingStatusOld.Approved,
         individualFailures = Some(List.empty)
       )).futureValue
 
       service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
+      updated.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
     }
 
     "updates application status to FailedNonFixable when any status is FailedNonFixable" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.FailedNonFixable,
+        individualStatus = ApplicationForRiskingStatusOld.FailedNonFixable,
         individualFailures = Some(List(IndividualFailure._9))
       )).futureValue
 
       service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedNonFixable
+      updated.status shouldBe ApplicationForRiskingStatusOld.FailedNonFixable
     }
 
     "updates application status to FailedFixable when individual has fixable failures" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.FailedFixable,
+        individualStatus = ApplicationForRiskingStatusOld.FailedFixable,
         individualFailures = Some(List(IndividualFailure._4._1))
       )).futureValue
 
       service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
+      updated.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
     }
 
     "updates application status to FailedNonFixable when individual has non-fixable failures even if entity is approved" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.FailedNonFixable,
+        individualStatus = ApplicationForRiskingStatusOld.FailedNonFixable,
         individualFailures = Some(List(IndividualFailure._8._1))
       )).futureValue
 
       service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedNonFixable
+      updated.status shouldBe ApplicationForRiskingStatusOld.FailedNonFixable
     }
 
     "does not update application status when entity failures are not yet available" in {
       repo.upsert(applicationWith(
         entityFailures = None,
-        individualStatus = ApplicationForRiskingStatus.Approved,
+        individualStatus = ApplicationForRiskingStatusOld.Approved,
         individualFailures = Some(List.empty)
       )).futureValue
 
       service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
+      updated.status shouldBe ApplicationForRiskingStatusOld.SubmittedForRisking
     }
 
     "does not update application status when individual status is not yet completed" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.ReadyForSubmission,
+        individualStatus = ApplicationForRiskingStatusOld.ReadyForSubmission,
         individualFailures = None
       )).futureValue
 
       service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
+      updated.status shouldBe ApplicationForRiskingStatusOld.SubmittedForRisking
     }
 
     val passRecord2ndIndividual = RiskingResultRecord(
@@ -183,12 +183,12 @@ extends ISpec:
         individuals = List(
           individualWith(
             ref = personRef,
-            status = ApplicationForRiskingStatus.Approved,
+            status = ApplicationForRiskingStatusOld.Approved,
             failures = Some(List.empty)
           ),
           individualWith(
             ref = personRef2,
-            status = ApplicationForRiskingStatus.ReadyForSubmission,
+            status = ApplicationForRiskingStatusOld.ReadyForSubmission,
             failures = None
           )
         )
@@ -201,7 +201,7 @@ extends ISpec:
       )).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
+      updated.status shouldBe ApplicationForRiskingStatusOld.SubmittedForRisking
     }
 
     "updates application status when all multiple individuals are completed" in {
@@ -210,12 +210,12 @@ extends ISpec:
         individuals = List(
           individualWith(
             ref = personRef,
-            status = ApplicationForRiskingStatus.Approved,
+            status = ApplicationForRiskingStatusOld.Approved,
             failures = Some(List.empty)
           ),
           individualWith(
             ref = personRef2,
-            status = ApplicationForRiskingStatus.Approved,
+            status = ApplicationForRiskingStatusOld.Approved,
             failures = Some(List.empty)
           )
         )
@@ -228,7 +228,7 @@ extends ISpec:
       )).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+      updated.status shouldBe ApplicationForRiskingStatusOld.Approved
     }
 
     "updates application status to FailedFixable when multiple individuals have mixed outcomes" in {
@@ -237,12 +237,12 @@ extends ISpec:
         individuals = List(
           individualWith(
             ref = personRef,
-            status = ApplicationForRiskingStatus.Approved,
+            status = ApplicationForRiskingStatusOld.Approved,
             failures = Some(List.empty)
           ),
           individualWith(
             ref = personRef2,
-            status = ApplicationForRiskingStatus.FailedFixable,
+            status = ApplicationForRiskingStatusOld.FailedFixable,
             failures = Some(List(IndividualFailure._4._1))
           )
         )
@@ -255,7 +255,7 @@ extends ISpec:
       )).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
+      updated.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
     }
 
     val nonExistentAppRef = ApplicationReference("NON_EXISTENT")
@@ -278,7 +278,7 @@ extends ISpec:
     "still updates existing application when another application reference is not found in repo" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.Approved,
+        individualStatus = ApplicationForRiskingStatusOld.Approved,
         individualFailures = Some(List.empty)
       )).futureValue
 
@@ -289,13 +289,13 @@ extends ISpec:
       )).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+      updated.status shouldBe ApplicationForRiskingStatusOld.Approved
     }
 
     "still updates existing application when another person reference is not found in repo" in {
       repo.upsert(applicationWith(
         entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.Approved,
+        individualStatus = ApplicationForRiskingStatusOld.Approved,
         individualFailures = Some(List.empty)
       )).futureValue
 
@@ -306,6 +306,6 @@ extends ISpec:
       )).futureValue
 
       val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+      updated.status shouldBe ApplicationForRiskingStatusOld.Approved
     }
   }

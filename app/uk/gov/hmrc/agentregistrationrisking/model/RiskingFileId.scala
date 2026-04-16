@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import play.api.libs.json.Format
+import play.api.mvc.PathBindable
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
-final case class ApplicationRiskingResponse(
-  applicationReference: ApplicationReference,
-  status: ApplicationForRiskingStatusOld,
-  individuals: List[IndividualRiskingResponse],
-  failures: Option[List[EntityFailure]]
-)
+final case class RiskingFileId(value: String)
 
-object ApplicationRiskingResponse:
+object RiskingFileId:
 
-  given OFormat[ApplicationRiskingResponse] = Json.format[ApplicationRiskingResponse]
+  given format: Format[RiskingFileId] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[RiskingFileId] = ValueClassBinder.valueClassBinder[RiskingFileId](_.value)

@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
@@ -57,7 +57,7 @@ extends ControllerSpec:
     response.status shouldBe Status.CREATED
     response.body shouldBe ""
 
-    val exampleApplicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals = List(tdAll.readyForSubmissionIndividual()))
+    val exampleApplicationForRisking: ApplicationForRiskingOld = tdAll.llpApplicationForRisking.copy(individuals = List(tdAll.readyForSubmissionIndividual()))
 
     val result =
       repo.findByApplicationReference(

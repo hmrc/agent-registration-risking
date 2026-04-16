@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentregistration.shared.SafeId
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
@@ -97,10 +97,10 @@ extends ISpec:
     val updatedIndividual = updatedApplication.individuals.headOption.value
 
     updatedApplication.failures.value.size shouldBe 0
-    updatedApplication.status shouldBe ApplicationForRiskingStatus.SubscribedAndEnrolled
+    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.SubscribedAndEnrolled
     updatedIndividual.failures.value.size shouldBe 0
     updatedIndividual.failures.value.outcome() shouldBe IndividualRiskingOutcome.Approved
-    updatedIndividual.status shouldBe ApplicationForRiskingStatus.Approved
+    updatedIndividual.status shouldBe ApplicationForRiskingStatusOld.Approved
 
     HipStubs.verifySubscribeToAgentServices()
     EnrolmentStoreProxyStubs.verifyAddKnownFacts()
@@ -128,9 +128,9 @@ extends ISpec:
     val updatedIndividual = updatedApplication.individuals.headOption.value
 
     updatedApplication.failures.value.size shouldBe 1
-    updatedApplication.status shouldBe ApplicationForRiskingStatus.FailedFixable
+    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
     updatedIndividual.failures.value.size shouldBe 1
-    updatedIndividual.status shouldBe ApplicationForRiskingStatus.FailedFixable
+    updatedIndividual.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
 
     HipStubs.verifySubscribeToAgentServices(count = 0)
     EnrolmentStoreProxyStubs.verifyAddKnownFacts(count = 0)
@@ -157,7 +157,7 @@ extends ISpec:
         ApplicationReference("ABC123456")
       ).futureValue.value
 
-    updatedApplication.status shouldBe ApplicationForRiskingStatus.Approved
+    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.Approved
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()
@@ -186,7 +186,7 @@ extends ISpec:
         ApplicationReference("ABC123456")
       ).futureValue.value
 
-    updatedApplication.status shouldBe ApplicationForRiskingStatus.Approved
+    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.Approved
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
 
   "retrieveAndProcessResultsFile keeps Approved status and still uploads file when allocateEnrolmentToGroup fails" in:
@@ -212,7 +212,7 @@ extends ISpec:
         ApplicationReference("ABC123456")
       ).futureValue.value
 
-    updatedApplication.status shouldBe ApplicationForRiskingStatus.Approved
+    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.Approved
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
 
   "retrieveAndProcessResultsFile does not upload to object store if the file was not processed successfully" in:
@@ -245,6 +245,6 @@ extends ISpec:
         ApplicationReference("ABC123456")
       ).futureValue.value
 
-    updatedApplication.status shouldBe ApplicationForRiskingStatus.SubscribedAndEnrolled
+    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.SubscribedAndEnrolled
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()

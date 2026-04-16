@@ -23,7 +23,7 @@ import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking.toIndividualRiskingResponse
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -46,7 +46,7 @@ extends BackendController(cc):
           case Some(application) => Ok(Json.toJson(toApplicationRiskingResponse(application)))
           case None => NoContent
 
-  extension (applicationForRisking: ApplicationForRisking)
+  extension (applicationForRisking: ApplicationForRiskingOld)
 
     private def toApplicationRiskingResponse: ApplicationRiskingResponse = ApplicationRiskingResponse(
       applicationReference = applicationForRisking.applicationReference,

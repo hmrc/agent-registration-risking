@@ -16,24 +16,25 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import play.api.libs.json.Reads
+import play.api.libs.json.*
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 
-final case class Failure(
-  reasonCode: String,
-  reasonDescription: String,
-  checkId: String,
-  checkDescription: String,
-  additionalInfo: Option[AdditionalInfo]
+object RiskingResultRaw:
+  given reader: Reads[RiskingResultRecord] = Json.reads[RiskingResultRecord]
+
+sealed trait RiskingResult
+
+final case class IndividualRiskingResult(
+  personReference: PersonReference,
+  failures: List[IndividualFailure]
 )
+extends RiskingResult
 
-final case class AdditionalInfo(value: Double)
-
-object AdditionalInfo:
-  given OFormat[AdditionalInfo] = Json.format[AdditionalInfo]
-
-object Failure:
-  given reads: Reads[Failure] = Json.reads[Failure]
+final case class EntityRiskingResult(
+  applicationReference: ApplicationReference,
+  failures: List[EntityFailure]
+)
+extends RiskingResult

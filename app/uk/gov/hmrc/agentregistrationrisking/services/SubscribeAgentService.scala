@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnec
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFactsRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.HipConnector
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -40,9 +40,9 @@ class SubscribeAgentService @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
-  def subscribeAgent(applicationForRisking: ApplicationForRisking)(using RequestHeader): Future[Arn] =
+  def subscribeAgent(applicationForRisking: ApplicationForRiskingOld)(using RequestHeader): Future[Arn] =
     require(
-      requirement = applicationForRisking.status === ApplicationForRiskingStatus.Approved,
+      requirement = applicationForRisking.status === ApplicationForRiskingStatusOld.Approved,
       message = "Application must have the Approved status to subscribe to agent services"
     )
     val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(

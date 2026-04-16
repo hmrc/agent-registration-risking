@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus.RiskingCompletedStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld.RiskingCompletedStatus
 
 final case class CompletedApplicationRiskingOutcome(
-  application: ApplicationForRisking,
+  application: ApplicationForRiskingOld,
   entityStatus: RiskingCompletedStatus
 ):
 
@@ -30,9 +30,9 @@ final case class CompletedApplicationRiskingOutcome(
     val individualStatuses = application.individuals.map(_.status).collect:
       case s: RiskingCompletedStatus => s
     val allStatuses = entityStatus :: individualStatuses
-    if allStatuses.contains(ApplicationForRiskingStatus.FailedNonFixable) then
-      ApplicationForRiskingStatus.FailedNonFixable
-    else if allStatuses.contains(ApplicationForRiskingStatus.FailedFixable) then
-      ApplicationForRiskingStatus.FailedFixable
+    if allStatuses.contains(ApplicationForRiskingStatusOld.FailedNonFixable) then
+      ApplicationForRiskingStatusOld.FailedNonFixable
+    else if allStatuses.contains(ApplicationForRiskingStatusOld.FailedFixable) then
+      ApplicationForRiskingStatusOld.FailedFixable
     else
-      ApplicationForRiskingStatus.Approved
+      ApplicationForRiskingStatusOld.Approved

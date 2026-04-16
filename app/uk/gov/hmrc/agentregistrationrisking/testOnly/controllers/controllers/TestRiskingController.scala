@@ -43,12 +43,12 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Pro
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.ApplicationReferenceGenerator
 import uk.gov.hmrc.agentregistration.shared.PersonReferenceGenerator
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -99,7 +99,7 @@ with Logging:
   def createTestApplicationForRisking(numberOfIndividuals: Int): Action[AnyContent] = Action
     .async:
       implicit request =>
-        val applicationForRisking: ApplicationForRisking = makeApplicationForRisking(numberOfIndividuals)
+        val applicationForRisking: ApplicationForRiskingOld = makeApplicationForRisking(numberOfIndividuals)
         applicationForRiskingRepo
           .upsert(applicationForRisking)
           .map(_ => Ok(Json.obj("applicationReference" -> applicationForRisking.applicationReference.value)))
@@ -120,9 +120,9 @@ with Logging:
                 Ok(s"subscribed ok with arn: ${arn.value}")
             case None => Future.successful(NotFound(s"No application found for reference: ${applicationReference.value}"))
 
-  private def makeApplicationForRisking(numberOfIndividuals: Int): ApplicationForRisking = ApplicationForRisking(
+  private def makeApplicationForRisking(numberOfIndividuals: Int): ApplicationForRiskingOld = ApplicationForRiskingOld(
     applicationReference = agentReferenceGenerator.nextApplicationReference(),
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    status = ApplicationForRiskingStatusOld.ReadyForSubmission,
     createdAt = Instant.now(),
     uploadedAt = None,
     fileName = None,
@@ -177,7 +177,7 @@ with Logging:
 
   private def makeIndividual(): IndividualForRisking = IndividualForRisking(
     personReference = personReferenceGenerator.nextPersonReference(),
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    status = ApplicationForRiskingStatusOld.ReadyForSubmission,
     vrns = s"${generateRandomVrn()},${generateRandomVrn()}",
     payeRefs = s"${generateRandomPayeRef()},${generateRandomPayeRef()}",
     companiesHouseName = None,

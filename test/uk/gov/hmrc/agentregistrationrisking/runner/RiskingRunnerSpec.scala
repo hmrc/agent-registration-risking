@@ -20,7 +20,7 @@ import play.api.libs.json.Json
 import play.api.mvc.AnyContent
 import play.api.mvc.Request
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
@@ -40,7 +40,7 @@ extends ISpec:
     val personReference2 = PersonReference(randomId)
     val personReference3 = PersonReference(randomId)
 
-    val applicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals =
+    val applicationForRisking: ApplicationForRiskingOld = tdAll.llpApplicationForRisking.copy(individuals =
       List(
         tdAll.readyForSubmissionIndividual(Some(personReference1)),
         tdAll.readyForSubmissionIndividual(Some(personReference2)),

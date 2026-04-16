@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.AnyContent
 import play.api.mvc.Request
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 
 class SubscribeAgentServiceSpec
@@ -28,7 +28,7 @@ extends ISpec:
 
   "subscribeAgent call should throw an error when the application status is not Approved" in:
 
-    val notApprovedApplication: ApplicationForRisking = tdAll.llpApplicationForRisking
+    val notApprovedApplication: ApplicationForRiskingOld = tdAll.llpApplicationForRisking
     given request: Request[AnyContent] = tdAll.fakeBackendRequest
 
     val expectedException =

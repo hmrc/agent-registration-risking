@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
@@ -132,7 +132,7 @@ extends ISpec:
         failures = Some(List.empty),
         individuals = List(
           tdAll.readyForSubmissionIndividual(Some(PersonReference("individual-test-person-1"))).copy(
-            status = ApplicationForRiskingStatus.FailedFixable,
+            status = ApplicationForRiskingStatusOld.FailedFixable,
             failures = Some(individualFailures)
           )
         )

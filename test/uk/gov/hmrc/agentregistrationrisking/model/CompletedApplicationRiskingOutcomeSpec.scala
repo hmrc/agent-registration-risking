@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus.*
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld.*
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
@@ -27,7 +27,7 @@ extends UnitSpec:
 
   val tdAll = TdAll()
 
-  def applicationWithIndividualStatuses(statuses: List[ApplicationForRiskingStatus]): ApplicationForRisking = tdAll.llpApplicationForRisking.copy(
+  def applicationWithIndividualStatuses(statuses: List[ApplicationForRiskingStatusOld]): ApplicationForRiskingOld = tdAll.llpApplicationForRisking.copy(
     individuals = statuses.zipWithIndex.map: (status, i) =>
       tdAll.readyForSubmissionIndividual(Some(PersonReference(s"person-$i"))).copy(status = status)
   )

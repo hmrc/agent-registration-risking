@@ -20,7 +20,7 @@ import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import play.api.mvc.request.RemoteConnection
 import play.api.mvc.request.RequestTarget
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
@@ -58,12 +58,13 @@ extends RequestAwareLogging:
       )
       def attrs: TypedMap = TypedMap.empty
 
+  // outbound flow
   def run(): Future[Unit] =
     given RequestHeader = emptyRequestHeader
     logger.info("Running risking started ...")
 
     for
-      applicationsReadyForRisking: Seq[ApplicationForRisking] <- riskingFileService.getApplicationsReadyForRisking
+      applicationsReadyForRisking: Seq[ApplicationForRiskingOld] <- riskingFileService.getApplicationsReadyForRisking
       fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
       _ <- sdesProxyService.notifySdesFileReady(objectSummary)

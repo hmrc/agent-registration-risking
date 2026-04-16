@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
@@ -117,7 +117,7 @@ final case class RiskingFileDataRecord(
 
 object RiskingFileDataRecord:
 
-  def fromApplicationForRisking(applicationForRisking: ApplicationForRisking): RiskingFileDataRecord = this.apply(
+  def fromApplicationForRisking(applicationForRisking: ApplicationForRiskingOld): RiskingFileDataRecord = this.apply(
     recordType = RecordType.Entity,
     resubmission = isResubmission(applicationForRisking.status),
     applicationReference = Some(applicationForRisking.applicationReference),
@@ -175,6 +175,6 @@ object RiskingFileDataRecord:
     passedIV = Some(individualForRisking.passedIV)
   )
 
-  private def isResubmission(status: ApplicationForRiskingStatus): Boolean = status === ApplicationForRiskingStatus.ReadyForResubmission
+  private def isResubmission(status: ApplicationForRiskingStatusOld): Boolean = status === ApplicationForRiskingStatusOld.ReadyForResubmission
 
   implicit val format: OFormat[RiskingFileDataRecord] = Json.format[RiskingFileDataRecord]

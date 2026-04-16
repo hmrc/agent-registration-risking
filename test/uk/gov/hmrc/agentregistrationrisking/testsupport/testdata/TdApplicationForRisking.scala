@@ -19,13 +19,13 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.upload.UploadId
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.objectstore.client.Path.File
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 
@@ -36,9 +36,9 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
 
   private val createdAt: Instant = dependencies.nowAsInstant
 
-  val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
+  val llpApplicationForRisking: ApplicationForRiskingOld = ApplicationForRiskingOld(
     applicationReference = ApplicationReference(randomId),
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    status = ApplicationForRiskingStatusOld.ReadyForSubmission,
     createdAt = createdAt,
     uploadedAt = None,
     fileName = None,
@@ -71,10 +71,10 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
     personReference: PersonReference
   ) = ApplicationRiskingResponse(
     applicationReference = applicationReference,
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    status = ApplicationForRiskingStatusOld.ReadyForSubmission,
     individuals = List(IndividualRiskingResponse(
       personReference = personReference,
-      status = ApplicationForRiskingStatus.ReadyForSubmission,
+      status = ApplicationForRiskingStatusOld.ReadyForSubmission,
       failures = None
     )),
     failures = None

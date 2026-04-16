@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
@@ -45,7 +45,7 @@ extends ISpec:
 
     val submittedApplication = tdAll.llpApplicationForRisking.copy(
       applicationReference = ApplicationReference(randomId),
-      status = ApplicationForRiskingStatus.SubmittedForRisking,
+      status = ApplicationForRiskingStatusOld.SubmittedForRisking,
       individuals = List(
         tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference4"))),
         tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference5"))),
@@ -84,7 +84,7 @@ extends ISpec:
 
   "setAllStatusSubmittedForRisking updates all supplied applications to SubmittedForRisking" in:
 
-    val applicationsReadyForRisking: Seq[ApplicationForRisking] =
+    val applicationsReadyForRisking: Seq[ApplicationForRiskingOld] =
       Seq.fill(3):
         tdAll.llpApplicationForRisking.copy(
           applicationReference = ApplicationReference(randomId),
@@ -101,5 +101,5 @@ extends ISpec:
       repo.findByApplicationReference(application.applicationReference).futureValue
 
     updatedApplications.map(_.map(_.status)) shouldBe Seq.fill(3)(
-      Some(ApplicationForRiskingStatus.SubmittedForRisking)
+      Some(ApplicationForRiskingStatusOld.SubmittedForRisking)
     )

@@ -22,7 +22,7 @@ import play.api.libs.ws.DefaultBodyReadables.*
 import play.api.libs.ws.WSResponse
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.SafeId
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
@@ -73,7 +73,7 @@ extends ControllerSpec:
     ).futureValue
 
     val beforeProcessing = repo.findByApplicationReference(appRef).futureValue.value
-    beforeProcessing.status shouldBe ApplicationForRiskingStatus.ReadyForSubmission
+    beforeProcessing.status shouldBe ApplicationForRiskingStatusOld.ReadyForSubmission
     beforeProcessing.failures shouldBe None
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
@@ -95,8 +95,8 @@ extends ControllerSpec:
     val afterProcessing = repo.findByApplicationReference(appRef).futureValue.value
     afterProcessing.failures.value.size shouldBe 0
     afterProcessing.individuals.headOption.value.failures.value.size shouldBe 0
-    afterProcessing.individuals.headOption.value.status shouldBe ApplicationForRiskingStatus.Approved
-    afterProcessing.status shouldBe ApplicationForRiskingStatus.SubscribedAndEnrolled
+    afterProcessing.individuals.headOption.value.status shouldBe ApplicationForRiskingStatusOld.Approved
+    afterProcessing.status shouldBe ApplicationForRiskingStatusOld.SubscribedAndEnrolled
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()
@@ -125,7 +125,7 @@ extends ControllerSpec:
 
     val afterProcessing = repo.findByApplicationReference(appRef).futureValue.value
     afterProcessing.failures.value.size shouldBe 1
-    afterProcessing.status shouldBe ApplicationForRiskingStatus.FailedFixable
+    afterProcessing.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices(count = 0)
@@ -154,7 +154,7 @@ extends ControllerSpec:
     response.status shouldBe Status.OK
 
     val afterProcessing = repo.findByApplicationReference(appRef).futureValue.value
-    afterProcessing.status shouldBe ApplicationForRiskingStatus.Approved
+    afterProcessing.status shouldBe ApplicationForRiskingStatusOld.Approved
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()

@@ -17,20 +17,23 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedApplicationRiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.FailureParser
+import uk.gov.hmrc.agentregistrationrisking.model.RecordType
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome.*
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
+import uk.gov.hmrc.agentregistrationrisking.model.RecordType.Entity
+import uk.gov.hmrc.agentregistrationrisking.model.RecordType.Individual
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,7 +51,7 @@ extends RequestAwareLogging:
     results.foldLeft(Future.unit): (acc, result) =>
       acc.flatMap(_ => processResult(result))
 
-  def updateApplicationStatuses(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationForRisking]] =
+  def updateApplicationStatuses(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationForRiskingOld]] =
     for
       applications <- getProcessedApplications(results)
       completedOutcomes = applications.flatMap(getCompletedApplicationRiskingOutcome)
@@ -57,11 +60,8 @@ extends RequestAwareLogging:
 
   private def processResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
     result.recordType match
-      case "Entity" => updateEntityWithResult(result)
-      case "Individual" => updateIndividualWithResult(result)
-      case other =>
-        logger.error(s"Skipping unsupported result record type: $other")
-        Future.unit
+      case RecordType.Entity => updateEntityWithResult(result)
+      case RecordType.Individual => updateIndividualWithResult(result)
 
   private def updateEntityWithResult(result: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
     result.applicationReference match
@@ -105,16 +105,16 @@ extends RequestAwareLogging:
             )
             applicationForRiskingRepo.upsert(updated)
 
-  private def getProcessedApplications(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationForRisking]] =
-    val (entityResults, individualResults) = results.partition(_.recordType === "Entity")
-    val entityAppsFuture: Future[Set[ApplicationForRisking]] = Future.traverse(entityResults.flatMap(_.applicationReference).toSet): appRef =>
+  private def getProcessedApplications(results: List[RiskingResultRecord])(using RequestHeader): Future[Set[ApplicationForRiskingOld]] =
+    val (entityResults, individualResults) = results.partition(_.recordType === RecordType.Entity)
+    val entityAppsFuture: Future[Set[ApplicationForRiskingOld]] = Future.traverse(entityResults.flatMap(_.applicationReference).toSet): appRef =>
       applicationForRiskingRepo.findById(appRef)
         .recover:
           case ex: Throwable =>
             logger.error(s"Failed to find application for reference ${appRef.value}: ${ex.getMessage}")
             None
     .map(_.flatten)
-    val individualAppsFuture: Future[Set[ApplicationForRisking]] = Future.traverse(individualResults.flatMap(_.personReference).toSet): personReference =>
+    val individualAppsFuture: Future[Set[ApplicationForRiskingOld]] = Future.traverse(individualResults.flatMap(_.personReference).toSet): personReference =>
       applicationForRiskingRepo.findByPersonReference(personReference)
         .recover:
           case ex: Throwable =>
@@ -126,9 +126,9 @@ extends RequestAwareLogging:
       individualApps <- individualAppsFuture
     yield entityApps ++ individualApps
 
-  private def getCompletedApplicationRiskingOutcome(application: ApplicationForRisking): Option[CompletedApplicationRiskingOutcome] =
+  private def getCompletedApplicationRiskingOutcome(application: ApplicationForRiskingOld): Option[CompletedApplicationRiskingOutcome] =
     val allIndividualsCompleted = application.individuals.map(_.status).forall:
-      case _: ApplicationForRiskingStatus.RiskingCompletedStatus => true
+      case _: ApplicationForRiskingStatusOld.RiskingCompletedStatus => true
       case _ => false
 
     application.failures match
@@ -139,21 +139,21 @@ extends RequestAwareLogging:
         ))
       case _ => None
 
-  private def entityOutcomeAsStatus(entityFailures: List[EntityFailure]): ApplicationForRiskingStatus.RiskingCompletedStatus =
+  private def entityOutcomeAsStatus(entityFailures: List[EntityFailure]): ApplicationForRiskingStatusOld.RiskingCompletedStatus =
     entityFailures.outcome() match
-      case EntityRiskingOutcome.FailedFixable => ApplicationForRiskingStatus.FailedFixable
-      case EntityRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
-      case EntityRiskingOutcome.Approved => ApplicationForRiskingStatus.Approved
+      case EntityRiskingOutcome.FailedFixable => ApplicationForRiskingStatusOld.FailedFixable
+      case EntityRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatusOld.FailedNonFixable
+      case EntityRiskingOutcome.Approved => ApplicationForRiskingStatusOld.Approved
 
-  private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatus =
+  private def individualOutcomeAsStatus(individualFailures: List[IndividualFailure]): ApplicationForRiskingStatusOld =
     individualFailures.outcome() match
-      case IndividualRiskingOutcome.FailedFixable => ApplicationForRiskingStatus.FailedFixable
-      case IndividualRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatus.FailedNonFixable
-      case IndividualRiskingOutcome.Approved => ApplicationForRiskingStatus.Approved
+      case IndividualRiskingOutcome.FailedFixable => ApplicationForRiskingStatusOld.FailedFixable
+      case IndividualRiskingOutcome.FailedNonFixable => ApplicationForRiskingStatusOld.FailedNonFixable
+      case IndividualRiskingOutcome.Approved => ApplicationForRiskingStatusOld.Approved
 
   private def updateApplicationStatuses(
     outcomes: Set[CompletedApplicationRiskingOutcome]
-  )(using RequestHeader): Future[Set[ApplicationForRisking]] =
+  )(using RequestHeader): Future[Set[ApplicationForRiskingOld]] =
     val updatedApplications = outcomes.map(a => a.application.copy(status = a.applicationStatus))
     Future.traverse(updatedApplications): application =>
       applicationForRiskingRepo.upsert(application)

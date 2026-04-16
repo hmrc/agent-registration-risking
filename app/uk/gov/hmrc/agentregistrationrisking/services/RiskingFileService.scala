@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileDataRecord
 
 import javax.inject.Inject
@@ -48,16 +48,16 @@ extends RequestAwareLogging:
   private val headerRow = s"00|ARR|SAS|${convertToMinervaHeaderDateString(instant)}|${convertToMinervaHeaderTimeString(instant)}"
   private val footerRowPrefix = "99|"
 
-  def getApplicationsReadyForRisking: Future[Seq[ApplicationForRisking]] = applicationForRiskingRepo.findByStatus(
-    ApplicationForRiskingStatus.ReadyForSubmission
+  def getApplicationsReadyForRisking: Future[Seq[ApplicationForRiskingOld]] = applicationForRiskingRepo.findByStatus(
+    ApplicationForRiskingStatusOld.ReadyForSubmission
   )
 
-  def buildRiskingFileFrom(applicationsReadyForRisking: Seq[ApplicationForRisking]): String =
+  def buildRiskingFileFrom(applicationsReadyForRisking: Seq[ApplicationForRiskingOld]): String =
     val dataRecordString = applicationsReadyForRisking.map(buildDataRecords).mkString("\n")
     val totalRecords = applicationsReadyForRisking.map(i => 1 + i.individuals.length).sum
     s"$headerRow\n$dataRecordString\n$footerRowPrefix$totalRecords\n"
 
-  private def buildDataRecords(applicationForRisking: ApplicationForRisking): String =
+  private def buildDataRecords(applicationForRisking: ApplicationForRiskingOld): String =
     val records =
       RiskingFileDataRecord
         .fromApplicationForRisking(applicationForRisking)
@@ -68,8 +68,8 @@ extends RequestAwareLogging:
     records.mkString("\n")
 
   def setAllStatusSubmittedForRisking(
-    applicationsReadyForRisking: Seq[ApplicationForRisking]
+    applicationsReadyForRisking: Seq[ApplicationForRiskingOld]
   ): Future[Unit] = {
     val applicationReferences = applicationsReadyForRisking.map(_.applicationReference)
-    applicationForRiskingRepo.updateStatusByApplicationReferences(applicationReferences, ApplicationForRiskingStatus.SubmittedForRisking)
+    applicationForRiskingRepo.updateStatusByApplicationReferences(applicationReferences, ApplicationForRiskingStatusOld.SubmittedForRisking)
   }

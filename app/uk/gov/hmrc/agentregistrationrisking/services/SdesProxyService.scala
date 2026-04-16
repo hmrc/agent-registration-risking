@@ -17,11 +17,11 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -98,16 +98,16 @@ extends RequestAwareLogging:
                 _ <- applicationStatusService.processResults(records)
                 uploadResult <- resultsFileService.uploadAndLogResultFile(resultsFile)
                 updatedApplications <- applicationStatusService.updateApplicationStatuses(records)
-                approvedApplications = updatedApplications.filter(_.status === ApplicationForRiskingStatus.Approved)
+                approvedApplications = updatedApplications.filter(_.status === ApplicationForRiskingStatusOld.Approved)
                 _ <- subscribeApprovedApplications(approvedApplications)
               yield completed :+ uploadResult
     yield uploadResults
 
   private def subscribeApprovedApplications(
-    approvedApplications: Set[ApplicationForRisking]
+    approvedApplications: Set[ApplicationForRiskingOld]
   )(using RequestHeader): Future[Unit] = Future.traverse(approvedApplications): application =>
     subscribeAgentService.subscribeAgent(application).flatMap: _ =>
-      applicationForRiskingRepo.upsert(application.copy(status = ApplicationForRiskingStatus.SubscribedAndEnrolled))
+      applicationForRiskingRepo.upsert(application.copy(status = ApplicationForRiskingStatusOld.SubscribedAndEnrolled))
     .recover:
       case ex: Throwable => logger.error(s"Failed to subscribe application ${application.applicationReference.value}: ${ex.getMessage}")
   .map(_ => ())

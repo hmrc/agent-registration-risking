@@ -25,14 +25,14 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationScottishLimitedPartnership
 import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 
@@ -63,7 +63,7 @@ extends BackendController(cc):
   extension (individual: IndividualProvidedDetails)
     def toIndividualsForRisking: IndividualForRisking = IndividualForRisking(
       personReference = individual.personReference,
-      status = ApplicationForRiskingStatus.ReadyForSubmission,
+      status = ApplicationForRiskingStatusOld.ReadyForSubmission,
       vrns = transformToCommaSeparatedString(individual.vrns.map(_.map(_.value))),
       payeRefs = transformToCommaSeparatedString(individual.payeRefs.map(_.map(_.value))),
       companiesHouseName = None, // We don't currently store the name retrieved from companies house
@@ -84,11 +84,11 @@ extends BackendController(cc):
 
   extension (submitForRiskingRequest: SubmitForRiskingRequest)
 
-    def toApplicationForRisking: ApplicationForRisking =
+    def toApplicationForRisking: ApplicationForRiskingOld =
       val application = submitForRiskingRequest.agentApplication
-      ApplicationForRisking(
+      ApplicationForRiskingOld(
         applicationReference = ApplicationReference(application.agentApplicationId.value),
-        status = ApplicationForRiskingStatus.ReadyForSubmission,
+        status = ApplicationForRiskingStatusOld.ReadyForSubmission,
         createdAt = Instant.now(),
         uploadedAt = None,
         fileName = None,

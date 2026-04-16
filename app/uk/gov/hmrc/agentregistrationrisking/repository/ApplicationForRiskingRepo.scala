@@ -32,12 +32,12 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import org.mongodb.scala.result.UpdateResult
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
@@ -47,33 +47,33 @@ final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-extends Repo[ApplicationReference, ApplicationForRisking](
+extends Repo[ApplicationReference, ApplicationForRiskingOld](
   collectionName = "application-for-risking",
   mongoComponent = mongoComponent,
   indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
-  extraCodecs = Seq(Codecs.playFormatCodec(ApplicationForRisking.format)),
+  extraCodecs = Seq(Codecs.playFormatCodec(ApplicationForRiskingOld.format)),
   replaceIndexes = true
 ):
 
-  def findByApplicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRisking]] = collection
+  def findByApplicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRiskingOld]] = collection
     .find(
       filter = Filters.eq("applicationReference", applicationReference.value)
     )
     .headOption()
 
-  def findByStatus(status: ApplicationForRiskingStatus): Future[Seq[ApplicationForRisking]] = collection
+  def findByStatus(status: ApplicationForRiskingStatusOld): Future[Seq[ApplicationForRiskingOld]] = collection
     .find(
       filter = Filters.eq("status", status.toString)
     ).toFuture()
 
-  def findByPersonReference(personReference: PersonReference): Future[Option[ApplicationForRisking]] = collection
+  def findByPersonReference(personReference: PersonReference): Future[Option[ApplicationForRiskingOld]] = collection
     .find(
       filter = Filters.eq("individuals.personReference", personReference.value)
     ).headOption()
 
   def updateStatusByApplicationReferences(
     applicationReferences: Seq[ApplicationReference],
-    status: ApplicationForRiskingStatus
+    status: ApplicationForRiskingStatusOld
   ): Future[Unit] = collection
     .updateMany(
       filter = Filters.in("applicationReference", applicationReferences.map(_.value)*),
@@ -89,9 +89,9 @@ object ApplicationForRiskingRepoHelp:
     new IdString[ApplicationReference]:
       override def idString(i: ApplicationReference): String = i.value
 
-  given IdExtractor[ApplicationForRisking, ApplicationReference] =
-    new IdExtractor[ApplicationForRisking, ApplicationReference]:
-      override def id(applicationForRisking: ApplicationForRisking): ApplicationReference = applicationForRisking.applicationReference
+  given IdExtractor[ApplicationForRiskingOld, ApplicationReference] =
+    new IdExtractor[ApplicationForRiskingOld, ApplicationReference]:
+      override def id(applicationForRisking: ApplicationForRiskingOld): ApplicationReference = applicationForRisking.applicationReference
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
