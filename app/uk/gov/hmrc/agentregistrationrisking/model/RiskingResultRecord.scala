@@ -35,4 +35,4 @@ final case class RiskingResultRecord(
 )
 
 object RiskingResultRecord:
-  given format: OFormat[RiskingResultRecord] = Json.format[RiskingResultRecord]
+  given format: Reads[RiskingResultRecord] = Json.reads[RiskingResultRecord]
