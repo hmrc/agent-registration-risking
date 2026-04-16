@@ -97,6 +97,7 @@ trait TdBase:
   def companyName = "Test Company Name"
   def dateOfIncorporation: LocalDate = LocalDate.now().minusYears(10)
   def personReference: PersonReference = PersonReference("1234567890")
+  def applicationReference: ApplicationReference = ApplicationReference("APPREF123")
   def applicantName: ApplicantName = ApplicantName(authorisedPersonName)
   def agentBusinessName: AgentBusinessName = AgentBusinessName(agentBusinessName = companyName, otherAgentBusinessName = None)
   def amlsCode: AmlsCode = AmlsCode("HMRC")
