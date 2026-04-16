@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.*
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 
 final case class RiskingResultRecord(

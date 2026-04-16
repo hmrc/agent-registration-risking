@@ -41,6 +41,7 @@ trait TdAgentApplication { dependencies: TdBase =>
   // TODO - create TdAgentApplicationLlp after risking state
   val llpApplication: AgentApplicationLlp = AgentApplicationLlp(
     _id = agentApplicationId,
+    applicationReference = dependencies.applicationReference,
     internalUserId = internalUserId,
     applicantCredentials = credentials,
     linkId = linkId,
