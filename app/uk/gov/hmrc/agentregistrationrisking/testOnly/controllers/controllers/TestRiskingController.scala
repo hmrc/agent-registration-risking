@@ -47,12 +47,15 @@ import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationReferenceGenerator
 import uk.gov.hmrc.agentregistration.shared.risking.PersonReferenceGenerator
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
+import uk.gov.hmrc.agentregistrationrisking.services.ApplicationStatusService
+import uk.gov.hmrc.agentregistrationrisking.services.ResultsFileService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscribeAgentService
 import uk.gov.hmrc.auth.core.retrieve.Credentials
@@ -77,7 +80,9 @@ class TestRiskingController @Inject() (
   riskingFileService: RiskingFileService,
   riskingRunner: RiskingRunner,
   sdesProxyService: SdesProxyService,
-  subscribeAgentService: SubscribeAgentService
+  subscribeAgentService: SubscribeAgentService,
+  resultsFileService: ResultsFileService,
+  applicationStatusService: ApplicationStatusService
 )
 extends BackendController(cc)
 with Logging:
@@ -107,7 +112,26 @@ with Logging:
   def downloadAvailableResultsFiles: Action[AnyContent] = Action
     .async:
       implicit request =>
-        sdesProxyService.retrieveAndProcessResultsFiles.map(result => Ok(result.toString()))
+        // Skips the object-store upload step: the object-store stub rejects localhost download
+        // URLs with 400, but for local testing we only care about status updates, not archival.
+        for
+          unprocessedFiles <- resultsFileService.getUnprocessedAvailableFiles()
+          _ <-
+            unprocessedFiles.foldLeft(Future.unit): (acc, file) =>
+              acc.flatMap: _ =>
+                for
+                  records <- resultsFileService.downloadAndParseRecords(file)
+                  _ <- applicationStatusService.processResults(records)
+                  updatedApplications <- applicationStatusService.updateApplicationStatuses(records)
+                  approvedApplications = updatedApplications.filter(
+                    _.status === ApplicationForRiskingStatus.Approved
+                  )
+                  _ <-
+                    Future.traverse(approvedApplications): application =>
+                      subscribeAgentService.subscribeAgent(application).recover:
+                        case ex => logger.warn(s"Subscription failed for ${application.applicationReference.value}: ${ex.getMessage}")
+                yield ()
+        yield Ok("Done")
 
   def subscribeToAgentApplication(applicationReference: ApplicationReference): Action[AnyContent] = Action
     .async:

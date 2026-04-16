@@ -65,6 +65,38 @@ sbt> runTestOnly
 sbt> clean test
 ```
 
+# Local Risking Results processing Test
+
+`scripts/local-risking-test.sh` manually verifies the full results-file processing pipeline locally,
+without needing SDES or a real risking provider.
+
+### Prerequisites
+
+All of the following must be running before executing the script:
+
+| Service | How to start | Port |
+|---------|--------------|------|
+| `agent-registration-risking` | `sbt -Dapplication.router=testOnlyDoNotUseInAppConf.Routes run` | `22203` |
+| `secure-data-exchange-list-files-stubs` | `sbt -Dhttp.port=8765 run` (from that repo) | `8765` |
+| object-store stub | `sm2 --start OBJECT_STORE_STUB` | `8464` |
+| MongoDB | running locally | `27017` |
+
+Command-line tools required: `mongosh`, `python3`, `curl` — install with `brew install mongosh python`.
+
+### Running
+
+```
+./scripts/local-risking-test.sh
+```
+
+The script will seed a valid application into MongoDB, write a risking results file, serve it locally,
+trigger the service to download and process it, then verify the application status in MongoDB.
+
+To test failure scenarios, edit the `failures` array in Step 4 of the script. Valid `reasonCode`/`checkId`
+combinations are defined in `app/uk/gov/hmrc/agentregistrationrisking/model/Failure.scala` (`FailureParser`).
+
+NOTE: The script bypasses the subsequent call to the risking provider, so it does not test the full end-to-end flow. It is intended to verify the results processing logic in isolation, without needing SDES or a real risking provider.
+
 ### License
 
 This code is open source software licensed under
