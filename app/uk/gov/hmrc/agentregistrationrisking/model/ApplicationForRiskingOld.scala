@@ -1,0 +1,71 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.agentregistrationrisking.model
+
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.AmlsCode
+import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
+import uk.gov.hmrc.agentregistration.shared.BusinessType
+import uk.gov.hmrc.agentregistration.shared.Crn
+import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.GroupId
+import uk.gov.hmrc.agentregistration.shared.SafeId
+import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.Utr
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
+import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
+import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
+import uk.gov.hmrc.auth.core.retrieve.Credentials
+
+import java.time.Instant
+import java.time.LocalDate
+
+final case class ApplicationForRiskingOld(
+  applicationReference: ApplicationReference,
+  status: ApplicationForRiskingStatusOld,
+  createdAt: Instant,
+  uploadedAt: Option[Instant],
+  fileName: Option[String],
+  agentDetails: AgentDetails,
+  applicantCredentials: Credentials,
+  applicantGroupId: GroupId,
+  applicantName: ApplicantName,
+  applicantPhone: Option[TelephoneNumber],
+  applicantEmail: Option[EmailAddress],
+  entitySafeId: SafeId,
+  entityType: BusinessType,
+  entityIdentifier: Utr,
+  crn: Option[Crn],
+  vrns: String,
+  payeRefs: String,
+  amlSupervisoryBody: AmlsCode,
+  amlRegNumber: AmlsRegistrationNumber,
+  amlExpiryDate: Option[LocalDate],
+  amlEvidence: Option[AmlsEvidence],
+  individuals: List[IndividualForRisking],
+  failures: Option[List[EntityFailure]]
+)
+
+object ApplicationForRiskingOld:
+
+  given credentialsFormat: OFormat[Credentials] = Json.format[Credentials]
+  given format: OFormat[ApplicationForRiskingOld] = Json.format[ApplicationForRiskingOld]
