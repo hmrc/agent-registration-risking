@@ -35,7 +35,6 @@ import uk.gov.hmrc.agentregistration.shared.lists.SixOrMoreOfficers
 import uk.gov.hmrc.agentregistration.shared.individual.*
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.agentregistration.shared.companieshouse.CompaniesHouseOfficerRole.LlpMember
-import uk.gov.hmrc.agentregistration.shared.risking.PersonReference
 import uk.gov.hmrc.auth.core.ConfidenceLevel
 
 import java.time.*
@@ -96,8 +95,8 @@ trait TdBase:
   def crn: Crn = Crn("1234567890")
   def companyName = "Test Company Name"
   def dateOfIncorporation: LocalDate = LocalDate.now().minusYears(10)
-  def personReference: PersonReference = PersonReference("1234567890")
   def applicationReference: ApplicationReference = ApplicationReference("APPREF123")
+  def personReference: PersonReference = PersonReference("1234567890")
   def applicantName: ApplicantName = ApplicantName(authorisedPersonName)
   def agentBusinessName: AgentBusinessName = AgentBusinessName(agentBusinessName = companyName, otherAgentBusinessName = None)
   def amlsCode: AmlsCode = AmlsCode("HMRC")
