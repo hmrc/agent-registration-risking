@@ -17,14 +17,12 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
-import uk.gov.hmrc.objectstore.client.ObjectListing
-import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.RetentionPeriod
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
+import uk.gov.hmrc.objectstore.client.*
 
 import java.net.URL
 import java.time.Clock
@@ -37,7 +35,8 @@ import scala.concurrent.Future
 
 @Singleton
 class ObjectStoreService @Inject() (
-  playObjectStoreClient: PlayObjectStoreClient
+  playObjectStoreClient: PlayObjectStoreClient,
+  appConfig: AppConfig
 )(using
   ExecutionContext,
   Clock
@@ -80,3 +79,11 @@ extends RequestAwareLogging:
   )
 
   def listObjects(using request: RequestHeader): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)
+
+  def generatePreSignedDownloadUrl(
+    objectStorePath: Path.Directory,
+    objectStoreFileName: String
+  )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
+    path = objectStorePath.file(fileName = objectStoreFileName),
+    owner = appConfig.appName
+  )
