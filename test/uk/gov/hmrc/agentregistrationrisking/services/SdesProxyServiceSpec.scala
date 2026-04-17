@@ -41,6 +41,7 @@ extends ISpec:
 
     given RequestHeader = FakeRequest()
 
+    ObjectStoreStubs.stubObjectStoreGeneratePresignedUrl(tdAll.objectStoreDirectory, tdAll.fileName)
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
 
     service.notifySdesFileReady(tdAll.objectSummaryWithMd5).futureValue
@@ -52,6 +53,7 @@ extends ISpec:
     given RequestHeader = FakeRequest()
 
     val objectSummaryWithMd5 = tdAll.objectSummaryWithMd5
+    ObjectStoreStubs.stubObjectStoreGeneratePresignedUrl(tdAll.objectStoreDirectory, tdAll.fileName)
     SdesProxyStubs.stubSdesFileReadyFailure(tdAll.notifySdesFileReadyRequest)
 
     val exception = service.notifySdesFileReady(objectSummaryWithMd5).failed.futureValue
