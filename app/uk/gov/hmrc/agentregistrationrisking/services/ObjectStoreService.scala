@@ -20,9 +20,9 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
+import uk.gov.hmrc.objectstore.client.*
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
-import uk.gov.hmrc.objectstore.client.*
 
 import java.net.URL
 import java.time.Clock
@@ -84,6 +84,6 @@ extends RequestAwareLogging:
     objectStorePath: Path.Directory,
     objectStoreFileName: String
   )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
-    path = objectStorePath.file(fileName = objectStoreFileName),
+    path = Path.Directory("applications-for-risking").file(fileName = objectStoreFileName),
     owner = appConfig.appName
   )
