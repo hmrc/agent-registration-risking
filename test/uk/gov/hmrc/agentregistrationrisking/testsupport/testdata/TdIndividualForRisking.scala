@@ -56,6 +56,7 @@ trait TdIndividualForRisking { dependencies: TdBase =>
     personReference: PersonReference
   ) = IndividualRiskingResponse(
     personReference = personReference,
+    providedName = individualName,
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     failures = None
   )
