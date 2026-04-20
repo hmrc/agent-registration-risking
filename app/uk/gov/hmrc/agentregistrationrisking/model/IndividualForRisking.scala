@@ -56,6 +56,7 @@ object IndividualForRisking:
 
   def toIndividualRiskingResponse(individualForRisking: IndividualForRisking): IndividualRiskingResponse = IndividualRiskingResponse(
     personReference = individualForRisking.personReference,
+    providedName = individualForRisking.providedName,
     status = individualForRisking.status,
     failures = individualForRisking.failures
   )

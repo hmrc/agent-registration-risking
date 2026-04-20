@@ -74,6 +74,7 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     individuals = List(IndividualRiskingResponse(
       personReference = personReference,
+      providedName = individualName,
       status = ApplicationForRiskingStatus.ReadyForSubmission,
       failures = None
     )),
