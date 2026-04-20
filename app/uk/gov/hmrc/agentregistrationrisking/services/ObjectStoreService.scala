@@ -84,6 +84,5 @@ extends RequestAwareLogging:
     objectStorePath: Path.Directory,
     objectStoreFileName: String
   )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
-    path = Path.Directory("applications-for-risking").file(fileName = objectStoreFileName),
-    owner = appConfig.appName
+    path = Path.Directory("applications-for-risking").file(fileName = objectStoreFileName)
   )
