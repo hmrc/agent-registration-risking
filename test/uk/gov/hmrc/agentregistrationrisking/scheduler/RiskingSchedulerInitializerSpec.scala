@@ -48,7 +48,8 @@ extends UnitSpec,
       riskingFileService = null,
       sdesProxyService = null,
       applicationForRiskingRepo = null,
-      individualForRiskingRepo = null
+      individualForRiskingRepo = null,
+      riskingFileRepo = null
     ):
       override def run(): Future[Unit] = Future.successful(())
 
@@ -136,7 +137,8 @@ extends UnitSpec,
           riskingFileService = null,
           sdesProxyService = null,
           applicationForRiskingRepo = null,
-          individualForRiskingRepo = null
+          individualForRiskingRepo = null,
+          riskingFileRepo = null
         ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()
@@ -149,7 +151,8 @@ extends UnitSpec,
           riskingFileService = null,
           sdesProxyService = null,
           applicationForRiskingRepo = null,
-          individualForRiskingRepo = null
+          individualForRiskingRepo = null,
+          riskingFileRepo = null
         ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()

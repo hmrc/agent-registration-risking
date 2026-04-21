@@ -22,8 +22,10 @@ import play.api.mvc.Request
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
@@ -37,6 +39,7 @@ extends ISpec:
 
     val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
     val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+    val riskingFileRepo: RiskingFileRepo = app.injector.instanceOf[RiskingFileRepo]
     val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
     val personReference1 = PersonReference(randomId)
@@ -107,3 +110,6 @@ extends ISpec:
     val updatedApplication = repo.findByApplicationReference(application.agentApplication.applicationReference).futureValue.value
     updatedApplication.status shouldBe RiskingStatus.SubmittedForRisking
     updatedApplication.riskingFileId.isDefined shouldBe true
+
+    val savedRiskingFile = riskingFileRepo.findById(updatedApplication.riskingFileId.value).futureValue.value
+    savedRiskingFile.fineName shouldBe fileName

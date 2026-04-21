@@ -23,8 +23,10 @@ import play.api.mvc.request.RequestTarget
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
@@ -44,7 +46,8 @@ class RiskingRunner @Inject() (
   riskingFileService: RiskingFileService,
   sdesProxyService: SdesProxyService,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  riskingFileRepo: RiskingFileRepo
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -76,18 +79,42 @@ extends RequestAwareLogging:
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
       _ <- sdesProxyService.notifySdesFileReady(objectSummary)
       riskingFileId = RiskingFileId(objectSummary.location.fileName)
-      _ <- markAsSubmittedForRisking(applicationsWithIndividuals, riskingFileId)
+      _ <- markAsSubmittedForRisking(
+        applicationsWithIndividuals,
+        riskingFileId,
+        objectSummary.location.fileName
+      )
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
     yield ()
 
   private def markAsSubmittedForRisking(
     applicationsWithIndividuals: Seq[ApplicationWithIndividuals],
+    riskingFileId: RiskingFileId,
+    fileName: String
+  ): Future[Unit] =
+    for
+      _ <- saveRiskingFile(riskingFileId, fileName)
+      _ <- Future.traverse(applicationsWithIndividuals)(saveApplicationWithIndividuals(_, riskingFileId))
+    yield ()
+
+  private def saveRiskingFile(
+    riskingFileId: RiskingFileId,
+    fileName: String
+  ): Future[Unit] = riskingFileRepo.upsert(RiskingFile(
+    _id = riskingFileId,
+    fineName = fileName,
+    uploadedAt = java.time.Instant.now()
+  ))
+
+  private def saveApplicationWithIndividuals(
+    appWithIndividuals: ApplicationWithIndividuals,
     riskingFileId: RiskingFileId
-  ): Future[Unit] = Future.traverse(applicationsWithIndividuals): appWithIndividuals =>
+  ): Future[Unit] =
     for
       _ <- applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(riskingFileId = Some(riskingFileId)))
       _ <-
-        Future.traverse(appWithIndividuals.individuals): individual =>
+        Future.traverse(appWithIndividuals.individuals)(individual =>
           individualForRiskingRepo.upsert(individual.copy(riskingFileId = Some(riskingFileId)))
+        )
     yield ()
   .map(_ => ())
