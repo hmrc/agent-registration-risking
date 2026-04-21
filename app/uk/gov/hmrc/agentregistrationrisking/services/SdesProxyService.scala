@@ -43,6 +43,7 @@ class SdesProxyService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   appConfig: AppConfig,
   objectStoreClientConfig: ObjectStoreClientConfig,
+  objectStoreService: ObjectStoreService,
   correlationIdGenerator: CorrelationIdGenerator
 )(using
   ExecutionContext,
@@ -51,32 +52,38 @@ class SdesProxyService @Inject() (
 extends RequestAwareLogging:
 
   def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[Unit] =
-    val notifySdesFileReadyRequest: NotifySdesFileReadyRequest = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
-    sdesProxyConnector.notifySdesFileReady(notifySdesFileReadyRequest)
+    for {
+      fileReadyNotification <- makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
+      _ <- sdesProxyConnector.notifySdesFileReady(fileReadyNotification)
+    } yield ()
 
-  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
+  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[NotifySdesFileReadyRequest] = {
     val informationType: SdesInformationType = appConfig.SdesProxy.outboundInformationType
     val serviceReferenceNumber: SdesSrn = appConfig.SdesProxy.srn
-    /* SDES do not access our object store directly, instead we provide a location that they can access that proxies to
-    ** our object store from outside the platform
-     */
-    val location = s"${appConfig.SdesProxy.objectStoreLocationPrefix}/${objectSummaryWithMd5.location.directory.asUri}"
-
-    NotifySdesFileReadyRequest(
-      informationType = informationType,
-      file = NotifySdesFile(
-        recipientOrSender = Some(serviceReferenceNumber),
-        name = objectSummaryWithMd5.location.fileName,
-        location = Some(location),
-        checksum = NotifySdesFileReadyChecksum(
-          algorithm = SdesChecksumAlgorithm.md5,
-          value = objectSummaryWithMd5.contentMd5.value
+    /* SDES do not access our object store directly, instead we call object store to generate a presigned url for processing downstream */
+    for {
+      presignedUrl <- objectStoreService.generatePreSignedDownloadUrl(
+        objectSummaryWithMd5.location.directory,
+        objectSummaryWithMd5.location.fileName
+      )
+    } yield {
+      NotifySdesFileReadyRequest(
+        informationType = informationType,
+        file = NotifySdesFile(
+          recipientOrSender = Some(serviceReferenceNumber),
+          name = objectSummaryWithMd5.location.fileName,
+          location = Some(presignedUrl.downloadUrl.toString),
+          checksum = NotifySdesFileReadyChecksum(
+            algorithm = SdesChecksumAlgorithm.md5,
+            value = objectSummaryWithMd5.contentMd5.value
+          ),
+          size = objectSummaryWithMd5.contentLength.intValue,
+          properties = None
         ),
-        size = objectSummaryWithMd5.contentLength.intValue,
-        properties = None
-      ),
-      audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
-    )
+        audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
+      )
+    }
+  }
 
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")

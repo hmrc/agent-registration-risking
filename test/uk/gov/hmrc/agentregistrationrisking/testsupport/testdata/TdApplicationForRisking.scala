@@ -98,6 +98,7 @@ trait TdApplicationForRisking { dependencies: TdBase =>
     isSubscribed = false,
     individuals = List(IndividualRiskingResponse(
       personReference = personReference,
+      providedName = individualName,
       status = RiskingStatus.ReadyForSubmission,
       failures = None
     )),

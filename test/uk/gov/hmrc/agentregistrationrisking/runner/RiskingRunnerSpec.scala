@@ -66,6 +66,7 @@ extends ISpec:
 
     val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
     ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
+    ObjectStoreStubs.stubObjectStoreGeneratePresignedUrl(tdAll.objectStoreDirectory, tdAll.fileName)
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
 
     riskingRunner.run().futureValue shouldBe ()
@@ -78,7 +79,7 @@ extends ISpec:
            |  "file":{
            |    "recipientOrSender":"test-srn",
            |    "name":"$fileName",
-           |    "location":"/agent-registration-risking/applications-for-risking/",
+           |    "location":"http://presigned-url/file",
            |    "checksum":{
            |      "algorithm":"md5",
            |      "value":"a3c2f1e38701bd2c7b54ebd7b1cd0dbc"

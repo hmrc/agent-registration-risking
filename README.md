@@ -65,6 +65,85 @@ sbt> runTestOnly
 sbt> clean test
 ```
 
+# Local Risking Results processing Test
+
+`scripts/local-risking-test.sh` manually verifies the full results-file processing pipeline locally,
+without needing SDES or a real risking provider.
+
+### Prerequisites
+
+All of the following must be running before executing the script:
+
+| Service | How to start | Port |
+|---------|--------------|------|
+| `agent-registration-risking` | `sbt -Dapplication.router=testOnlyDoNotUseInAppConf.Routes run` | `22203` |
+| `secure-data-exchange-list-files-stubs` | `sbt -Dhttp.port=8765 run` (from that repo) | `8765` |
+| object-store stub | `sm2 --start OBJECT_STORE_STUB` | `8464` |
+| MongoDB | running locally | `27017` |
+
+Command-line tools required: `mongosh`, `python3`, `curl` — install with `brew install mongosh python`.
+
+### Local object-store shim (required for local script runs)
+
+The default local object-store stub rejects `upload-from-url` calls when the source URL is localhost.
+To keep production/test code unchanged and still run the local script successfully, run this small Python shim
+in a separate terminal:
+
+```python
+python3 - <<'PY'
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+
+class H(BaseHTTPRequestHandler):
+    def _send(self, code, obj):
+        b = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(b)))
+        self.end_headers()
+        self.wfile.write(b)
+
+    def do_GET(self):
+        if self.path == "/object-store/list/agent-registration-risking/processed-results-files":
+            self._send(200, {"objectSummaries": []})
+        else:
+            self._send(404, {"statusCode": 404, "message": "Not found"})
+
+    def do_POST(self):
+        if self.path == "/object-store/ops/upload-from-url":
+            self._send(200, {
+                "location": "agent-registration-risking/processed-results-files/mock.json",
+                "contentLength": 230,
+                "contentMD5": "abc123",
+                "lastModified": "2026-04-16T00:00:00Z"
+            })
+        else:
+            self._send(404, {"statusCode": 404, "message": "Not found"})
+
+HTTPServer(("127.0.0.1", 18464), H).serve_forever()
+PY
+```
+
+When using this shim, start `agent-registration-risking` with the object-store port override:
+
+```bash
+sbt -Dapplication.router=testOnlyDoNotUseInAppConf.Routes -Dmicroservice.services.object-store.port=18464 run
+```
+
+### Running
+
+```
+./scripts/local-risking-test.sh
+```
+
+The script will seed a valid application into MongoDB, write a risking results file, serve it locally,
+trigger the service to download and process it, then verify the application status in MongoDB.
+
+To test failure scenarios, edit the `failures` array in Step 4 of the script. Valid `reasonCode`/`checkId`
+combinations are defined in `app/uk/gov/hmrc/agentregistrationrisking/model/Failure.scala` (`FailureParser`).
+
+NOTE: The script bypasses the subsequent call to the risking provider, so it does not test the full end-to-end flow. It is intended to verify the results processing logic in isolation, without needing SDES or a real risking provider.
+
 ### License
 
 This code is open source software licensed under

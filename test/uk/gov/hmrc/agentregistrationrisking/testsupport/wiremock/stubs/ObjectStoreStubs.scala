@@ -23,10 +23,10 @@ import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
-import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.passRecordArrayFile
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 import java.net.URI
 
@@ -101,6 +101,22 @@ object ObjectStoreStubs:
     urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),
     responseStatus = 500,
     responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
+  )
+
+  def stubObjectStoreGeneratePresignedUrl(
+    objectStorePath: String,
+    objectStoreFileName: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/object-store/ops/presigned-url"),
+    responseStatus = 200,
+    responseBody = Json.prettyPrint(
+      Json.obj(
+        "downloadUrl" -> "http://presigned-url/file",
+        "contentLength" -> 1532,
+        "contentMD5" -> "o+btpLe7b3Vqz3SShTP+Nw=="
+      )
+    )
   )
 
   def verifyObjectStoreUploadFromUrl(count: Int = 1): Unit = StubMaker.verify(
