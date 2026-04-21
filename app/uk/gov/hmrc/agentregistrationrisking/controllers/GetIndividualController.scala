@@ -46,6 +46,7 @@ extends BackendController(cc):
 
   private def toIndividualRiskingResponse(individual: IndividualForRisking): IndividualRiskingResponse = IndividualRiskingResponse(
     personReference = individual.individualProvidedDetails.personReference,
+    providedName = individual.individualProvidedDetails.individualName,
     status = individual.status,
     failures = individual.failures
   )
