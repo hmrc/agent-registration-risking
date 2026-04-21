@@ -45,6 +45,8 @@ trait TdSdesProxy { dependencies: TdBase =>
 
   private val createdAt: Instant = dependencies.nowAsInstant
 
+  def fileDownloadLocation = s"/${objectSummaryWithMd5.location.directory.value}/${objectSummaryWithMd5.location.fileName}"
+
   def sdesFileData(fileName: String): AvailableFile = AvailableFile(
     downloadURL = testAvailableFile.downloadURL,
     filename = fileName,
@@ -56,7 +58,7 @@ trait TdSdesProxy { dependencies: TdBase =>
     file = NotifySdesFile(
       recipientOrSender = Some(SdesSrn("test-srn")),
       name = objectSummaryWithMd5.location.fileName,
-      location = Some("http://presigned-url/file"),
+      location = Some(fileDownloadLocation),
       checksum = NotifySdesFileReadyChecksum(
         algorithm = SdesChecksumAlgorithm.md5,
         value = objectSummaryWithMd5.contentMd5.value
