@@ -18,21 +18,20 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.*
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
-import uk.gov.hmrc.agentregistration.shared.PersonReference
 
-/** Ephemeral data class representing a risking result record returned from the connector.
-  *
-  * This class serves as an intermediate representation of risking data received from external sources. It is designed to be parsed and transformed into the
-  * target, clean model [[RiskingResult]].
-  */
-final case class RiskingResultRecord(
-  recordType: RecordType,
-  applicationReference: Option[ApplicationReference],
-  failures: Option[List[Failure]],
-  personReference: Option[PersonReference]
+sealed trait RiskingResultRecord
+
+final case class IndividualRiskingResultRecord(
+  personReference: PersonReference,
+  failures: List[IndividualFailure]
 )
+extends RiskingResultRecord
 
-object RiskingResultRecord:
-  given format: Reads[RiskingResultRecord] = Json.reads[RiskingResultRecord]
+final case class EntityRiskingResultRecord(
+  applicationReference: ApplicationReference,
+  failures: List[EntityFailure]
+)
+extends RiskingResultRecord
