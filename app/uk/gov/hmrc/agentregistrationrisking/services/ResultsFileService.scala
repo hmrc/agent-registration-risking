@@ -20,6 +20,7 @@ import play.api.mvc.RequestHeader
 import sttp.model.Uri
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -41,7 +42,7 @@ extends RequestAwareLogging:
 
   def downloadAndParseRecords(file: AvailableFile)(using request: RequestHeader): Future[List[RiskingResultRecord]] =
     logger.info(s"Attempting to downloading ${file.filename}")
-    riskingResultsConnector.getRiskingFile(availableFile = file)
+    riskingResultsConnector.getRiskingFile(availableFile = file).map(_.map(RiskingResultParser.parseRiskingResult))
 
   def uploadAndLogResultFile(file: AvailableFile)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
     val downloadUri = Uri(file.downloadURL).toJavaUri.toURL

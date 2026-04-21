@@ -20,7 +20,12 @@ import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import play.api.mvc.request.RemoteConnection
 import play.api.mvc.request.RequestTarget
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
@@ -37,7 +42,9 @@ import scala.concurrent.Future
 class RiskingRunner @Inject() (
   objectStoreService: ObjectStoreService,
   riskingFileService: RiskingFileService,
-  sdesProxyService: SdesProxyService
+  sdesProxyService: SdesProxyService,
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -64,10 +71,23 @@ extends RequestAwareLogging:
     logger.info("Running risking started ...")
 
     for
-      applicationsReadyForRisking: Seq[ApplicationForRiskingOld] <- riskingFileService.getApplicationsReadyForRisking
-      fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
+      applicationsWithIndividuals <- riskingFileService.getApplicationsReadyForRiskingWithIndividuals
+      fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsWithIndividuals)
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
       _ <- sdesProxyService.notifySdesFileReady(objectSummary)
-      _ <- riskingFileService.setAllStatusSubmittedForRisking(applicationsReadyForRisking)
+      riskingFileId = RiskingFileId(objectSummary.location.fileName)
+      _ <- markAsSubmittedForRisking(applicationsWithIndividuals, riskingFileId)
       _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
     yield ()
+
+  private def markAsSubmittedForRisking(
+    applicationsWithIndividuals: Seq[ApplicationWithIndividuals],
+    riskingFileId: RiskingFileId
+  ): Future[Unit] = Future.traverse(applicationsWithIndividuals): appWithIndividuals =>
+    for
+      _ <- applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(riskingFileId = Some(riskingFileId)))
+      _ <-
+        Future.traverse(appWithIndividuals.individuals): individual =>
+          individualForRiskingRepo.upsert(individual.copy(riskingFileId = Some(riskingFileId)))
+    yield ()
+  .map(_ => ())

@@ -25,10 +25,9 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.convertBooleanToStringRepresentation
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.convertToMinervaDateString
 
@@ -117,64 +116,75 @@ final case class RiskingFileDataRecord(
 
 object RiskingFileDataRecord:
 
-  def fromApplicationForRisking(applicationForRisking: ApplicationForRiskingOld): RiskingFileDataRecord = this.apply(
-    recordType = RecordType.Entity,
-    resubmission = isResubmission(applicationForRisking.status),
-    applicationReference = Some(applicationForRisking.applicationReference),
-    applicantName = Some(applicationForRisking.applicantName),
-    applicantPhone = applicationForRisking.applicantPhone,
-    applicantEmail = applicationForRisking.applicantEmail,
-    entityType = Some(applicationForRisking.entityType),
-    entityIdentifier = Some(applicationForRisking.entityIdentifier),
-    crn = applicationForRisking.crn,
-    vrns = applicationForRisking.vrns,
-    payeRefs = applicationForRisking.payeRefs,
-    amlSupervisoryBody = Some(applicationForRisking.amlSupervisoryBody),
-    amlRegNumber = Some(applicationForRisking.amlRegNumber),
-    amlExpiryDate = applicationForRisking.amlExpiryDate,
-    amlEvidence = applicationForRisking.amlEvidence,
-    personReference = None,
-    individualCompaniesHouseName = None,
-    individualCompaniesHouseDateOfBirth = None,
-    individualProvidedName = None,
-    individualProvidedDateOfBirth = None,
-    individualNino = None,
-    individualSaUtr = None,
-    individualPhoneNumber = None,
-    individualEmail = None,
-    providedByApplicant = None,
-    passedIV = None
-  )
+  def fromApplicationForRisking(applicationForRisking: ApplicationForRisking): RiskingFileDataRecord =
+    val app = applicationForRisking.agentApplication
+    val contactDetails = app.getApplicantContactDetails
+    this.apply(
+      recordType = RecordType.Entity,
+      resubmission = applicationForRisking.failures.isDefined,
+      applicationReference = Some(app.applicationReference),
+      applicantName = Some(contactDetails.applicantName),
+      applicantPhone = contactDetails.telephoneNumber,
+      applicantEmail = contactDetails.applicantEmailAddress.map(_.emailAddress),
+      entityType = Some(app.businessType),
+      entityIdentifier = Some(app.getUtr),
+      crn = getMaybeCrn(app),
+      vrns = transformToCommaSeparatedString(app.vrns.map(_.map(_.value))),
+      payeRefs = transformToCommaSeparatedString(app.payeRefs.map(_.map(_.value))),
+      amlSupervisoryBody = Some(app.getAmlsDetails.supervisoryBody),
+      amlRegNumber = Some(app.getAmlsDetails.getRegistrationNumber),
+      amlExpiryDate = app.getAmlsDetails.amlsExpiryDate,
+      amlEvidence = app.getAmlsDetails.amlsEvidence,
+      personReference = None,
+      individualCompaniesHouseName = None,
+      individualCompaniesHouseDateOfBirth = None,
+      individualProvidedName = None,
+      individualProvidedDateOfBirth = None,
+      individualNino = None,
+      individualSaUtr = None,
+      individualPhoneNumber = None,
+      individualEmail = None,
+      providedByApplicant = None,
+      passedIV = None
+    )
 
-  def fromIndividualForRisking(individualForRisking: IndividualForRisking): RiskingFileDataRecord = this.apply(
-    recordType = RecordType.Individual,
-    resubmission = isResubmission(individualForRisking.status),
-    applicationReference = None,
-    applicantName = None,
-    applicantPhone = None,
-    applicantEmail = None,
-    entityType = None,
-    entityIdentifier = None,
-    crn = None,
-    vrns = individualForRisking.vrns,
-    payeRefs = individualForRisking.payeRefs,
-    amlSupervisoryBody = None,
-    amlRegNumber = None,
-    amlExpiryDate = None,
-    amlEvidence = None,
-    personReference = Some(individualForRisking.personReference),
-    individualCompaniesHouseName = individualForRisking.companiesHouseName,
-    individualCompaniesHouseDateOfBirth = individualForRisking.companiesHouseDateOfBirth,
-    individualProvidedName = Some(individualForRisking.providedName),
-    individualProvidedDateOfBirth = Some(individualForRisking.providedDateOfBirth),
-    individualNino = individualForRisking.nino,
-    individualSaUtr = individualForRisking.saUtr,
-    individualPhoneNumber = Some(individualForRisking.phoneNumber),
-    individualEmail = Some(individualForRisking.email),
-    providedByApplicant = Some(individualForRisking.providedByApplicant),
-    passedIV = Some(individualForRisking.passedIV)
-  )
+  def fromIndividualForRisking(individualForRisking: IndividualForRisking): RiskingFileDataRecord =
+    val details = individualForRisking.individualProvidedDetails
+    this.apply(
+      recordType = RecordType.Individual,
+      resubmission = individualForRisking.failures.isDefined,
+      applicationReference = None,
+      applicantName = None,
+      applicantPhone = None,
+      applicantEmail = None,
+      entityType = None,
+      entityIdentifier = None,
+      crn = None,
+      vrns = transformToCommaSeparatedString(details.vrns.map(_.map(_.value))),
+      payeRefs = transformToCommaSeparatedString(details.payeRefs.map(_.map(_.value))),
+      amlSupervisoryBody = None,
+      amlRegNumber = None,
+      amlExpiryDate = None,
+      amlEvidence = None,
+      personReference = Some(details.personReference),
+      individualCompaniesHouseName = individualForRisking.companiesHouseName,
+      individualCompaniesHouseDateOfBirth = individualForRisking.companiesHouseDateOfBirth,
+      individualProvidedName = Some(details.individualName),
+      individualProvidedDateOfBirth = details.individualDateOfBirth,
+      individualNino = details.individualNino,
+      individualSaUtr = details.individualSaUtr,
+      individualPhoneNumber = details.telephoneNumber,
+      individualEmail = details.emailAddress.map(_.emailAddress),
+      providedByApplicant = Some(individualForRisking.providedByApplicant),
+      passedIV = details.passedIv
+    )
 
-  private def isResubmission(status: ApplicationForRiskingStatusOld): Boolean = status === ApplicationForRiskingStatusOld.ReadyForResubmission
+  private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
+    agentApplication match
+      case a: AgentApplicationLimitedCompany => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case a: AgentApplicationLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case a: AgentApplicationLlp => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
+      case _ => None
 
   implicit val format: OFormat[RiskingFileDataRecord] = Json.format[RiskingFileDataRecord]

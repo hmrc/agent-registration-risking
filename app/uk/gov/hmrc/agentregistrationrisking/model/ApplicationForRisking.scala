@@ -18,23 +18,28 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+
+import java.time.Instant
 
 final case class ApplicationForRisking(
   _id: ApplicationForRiskingId,
   agentApplication: AgentApplication,
+  createdAt: Instant,
+  lastUpdatedAt: Instant,
   riskingFileId: Option[RiskingFileId],
   failures: Option[List[EntityFailure]],
   isSubscribed: Boolean,
   isEmailSent: Boolean
 ):
 
-  def status: ApplicationForRiskingStatus =
+  def status: RiskingStatus =
     (riskingFileId, failures) match
-      case (None, _) => ApplicationForRiskingStatus.ReadyForSubmission
-      case (Some(_), None) => ApplicationForRiskingStatus.SubmittedForRisking
-      case (Some(_), Some(_)) => ApplicationForRiskingStatus.ReceivedRiskingResults
+      case (None, _) => RiskingStatus.ReadyForSubmission
+      case (Some(_), None) => RiskingStatus.SubmittedForRisking
+      case (Some(_), Some(_)) => RiskingStatus.ReceivedRiskingResults
 
 object ApplicationForRisking:
   given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]

@@ -46,7 +46,9 @@ extends UnitSpec,
     new RiskingRunner(
       objectStoreService = null,
       riskingFileService = null,
-      sdesProxyService = null
+      sdesProxyService = null,
+      applicationForRiskingRepo = null,
+      individualForRiskingRepo = null
     ):
       override def run(): Future[Unit] = Future.successful(())
 
@@ -132,7 +134,9 @@ extends UnitSpec,
         new RiskingRunner(
           objectStoreService = null,
           riskingFileService = null,
-          sdesProxyService = null
+          sdesProxyService = null,
+          applicationForRiskingRepo = null,
+          individualForRiskingRepo = null
         ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()
@@ -143,7 +147,9 @@ extends UnitSpec,
         new RiskingRunner(
           objectStoreService = null,
           riskingFileService = null,
-          sdesProxyService = null
+          sdesProxyService = null,
+          applicationForRiskingRepo = null,
+          individualForRiskingRepo = null
         ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()

@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import org.scalatest.RecoverMethods.recoverToExceptionIf
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
@@ -37,7 +38,7 @@ extends ISpec:
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
 
     val result: Future[List[RiskingResultRecord]] = service.downloadAndParseRecords(testAvailableFile)
-    val expected: List[RiskingResultRecord] = List(passRecord1, passRecord2)
+    val expected: List[RiskingResultRecord] = List(passRecord1, passRecord2).map(RiskingResultParser.parseRiskingResult)
 
     result.futureValue shouldBe expected
 

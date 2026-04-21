@@ -18,34 +18,36 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedCompany
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationLimitedPartnership
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationScottishLimitedPartnership
-import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
-import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
-import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 
+import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.util.chaining.scalaUtilChainingOps
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton()
 class SubmitForRiskingController @Inject() (
   actions: Actions,
   cc: ControllerComponents,
-  applicationForRiskingRepo: ApplicationForRiskingRepo
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
+  individualForRiskingIdGenerator: IndividualForRiskingIdGenerator
+)(using
+  ExecutionContext,
+  Clock
 )
 extends BackendController(cc):
 
@@ -54,69 +56,44 @@ extends BackendController(cc):
       .authorised
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
-          request
-            .body
-            .toApplicationForRisking
-            .pipe(applicationForRiskingRepo.upsert)
-            .map(_ => Created)
+          val now = Instant.now(summon[Clock])
+          val appId = applicationForRiskingIdGenerator.nextApplicationId()
+          val application = toApplicationForRisking(
+            request.body,
+            appId,
+            now
+          )
+          val individuals = request.body.individuals.map(toIndividualForRisking(_, appId, now))
+          for
+            _ <- applicationForRiskingRepo.upsert(application)
+            _ <- Future.traverse(individuals)(individualForRiskingRepo.upsert)
+          yield Created
 
-  extension (individual: IndividualProvidedDetails)
-    def toIndividualsForRisking: IndividualForRisking = IndividualForRisking(
-      personReference = individual.personReference,
-      status = ApplicationForRiskingStatusOld.ReadyForSubmission,
-      vrns = transformToCommaSeparatedString(individual.vrns.map(_.map(_.value))),
-      payeRefs = transformToCommaSeparatedString(individual.payeRefs.map(_.map(_.value))),
-      companiesHouseName = None, // We don't currently store the name retrieved from companies house
-      companiesHouseDateOfBirth = None, // As above
-      providedName = individual.individualName,
-      providedDateOfBirth = individual.getDateOfBirth,
-      nino = individual.individualNino,
-      saUtr = individual.individualSaUtr,
-      phoneNumber = individual.getTelephoneNumber,
-      email = individual.getEmailAddress.emailAddress,
-      providedByApplicant = false, // It's not currently possible for the applicant to provide details, only individuals can do it themselves
-      passedIV = individual.getPassedIv,
-      failures = None
-    )
+  private def toApplicationForRisking(
+    request: SubmitForRiskingRequest,
+    appId: ApplicationForRiskingId,
+    now: Instant
+  ): ApplicationForRisking = ApplicationForRisking(
+    _id = appId,
+    agentApplication = request.agentApplication,
+    createdAt = now,
+    lastUpdatedAt = now,
+    riskingFileId = None,
+    failures = None,
+    isSubscribed = false,
+    isEmailSent = false
+  )
 
-  extension (individual: IndividualProvidedDetails)
-    def getPassedIv: Boolean = individual.passedIv.getOrThrowExpectedDataMissing("Passed IV result")
-
-  extension (submitForRiskingRequest: SubmitForRiskingRequest)
-
-    def toApplicationForRisking: ApplicationForRiskingOld =
-      val application = submitForRiskingRequest.agentApplication
-      ApplicationForRiskingOld(
-        applicationReference = ApplicationReference(application.agentApplicationId.value),
-        status = ApplicationForRiskingStatusOld.ReadyForSubmission,
-        createdAt = Instant.now(),
-        uploadedAt = None,
-        fileName = None,
-        agentDetails = application.getAgentDetails,
-        applicantGroupId = application.groupId,
-        applicantCredentials = application.applicantCredentials,
-        applicantName = application.getApplicantContactDetails.applicantName,
-        applicantPhone = application.getApplicantContactDetails.telephoneNumber,
-        applicantEmail = application.getApplicantContactDetails.applicantEmailAddress.map(_.emailAddress),
-        entitySafeId = application.getSafeId,
-        entityType = application.businessType,
-        entityIdentifier = application.getUtr,
-        crn = getMaybeCrn(application),
-        vrns = transformToCommaSeparatedString(application.vrns.map(_.map(_.value))),
-        payeRefs = transformToCommaSeparatedString(application.payeRefs.map(_.map(_.value))),
-        amlSupervisoryBody = application.getAmlsDetails.supervisoryBody,
-        amlRegNumber = application.getAmlsDetails.getRegistrationNumber,
-        amlExpiryDate = application.getAmlsDetails.amlsExpiryDate,
-        amlEvidence = application.getAmlsDetails.amlsEvidence,
-        individuals = submitForRiskingRequest.individuals.map(_.toIndividualsForRisking),
-        failures = None
-      )
-
-    private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
-      agentApplication match {
-        case a: AgentApplicationLimitedCompany => Some(a.getBusinessDetails.companyProfile.companyNumber)
-        case a: AgentApplicationLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
-        case a: AgentApplicationLlp => Some(a.getBusinessDetails.companyProfile.companyNumber)
-        case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
-        case _ => None
-      }
+  private def toIndividualForRisking(
+    individual: IndividualProvidedDetails,
+    appId: ApplicationForRiskingId,
+    now: Instant
+  ): IndividualForRisking = IndividualForRisking(
+    _id = individualForRiskingIdGenerator.nextIndividualId(),
+    applicationForRiskingId = appId,
+    individualProvidedDetails = individual,
+    createdAt = now,
+    lastUpdatedAt = now,
+    riskingFileId = None,
+    failures = None
+  )

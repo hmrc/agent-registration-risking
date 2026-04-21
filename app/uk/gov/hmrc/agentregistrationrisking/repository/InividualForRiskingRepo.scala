@@ -20,7 +20,6 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
@@ -30,42 +29,41 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import ApplicationForRiskingRepoHelp.given
-import org.mongodb.scala.result.UpdateResult
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import IndividualForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
 @Singleton
-final class ApplicationForRiskingRepo @Inject() (
+final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-extends Repo[ApplicationForRiskingId, ApplicationForRisking](
-  collectionName = "application-for-risking",
+extends Repo[IndividualForRiskingId, IndividualForRisking](
+  collectionName = "individual-for-risking",
   mongoComponent = mongoComponent,
-  indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
-  extraCodecs = Seq(Codecs.playFormatCodec(ApplicationForRisking.format)),
+  indexes = IndividualForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
+  extraCodecs = Seq(Codecs.playFormatCodec(IndividualForRisking.format)),
   replaceIndexes = true
 ):
 
-  def findByApplicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRisking]] = collection
+  def findByApplicationForRiskingId(applicationForRiskingId: ApplicationForRiskingId): Future[Seq[IndividualForRisking]] = collection
     .find(
-      filter = Filters.eq("agentApplication.applicationReference", applicationReference.value)
+      filter = Filters.eq("applicationForRiskingId", applicationForRiskingId.value)
     )
-    .headOption()
+    .toFuture()
 
-//  def findByApplicationForRiskingId(applicationForRiskingId: ApplicationForRiskingId): Future[Option[ApplicationForRisking]] =
-//    findById(applicationForRiskingId)
+  def findByPersonReference(personReference: PersonReference): Future[Option[IndividualForRisking]] = collection
+    .find(
+      filter = Filters.eq("individualProvidedDetails.personReference", personReference.value)
+    ).headOption()
 
-  def findByStatus(status: RiskingStatus): Future[Seq[ApplicationForRisking]] =
+  def findByStatus(status: RiskingStatus): Future[Seq[IndividualForRisking]] =
     val filter =
       status match
         case RiskingStatus.ReadyForSubmission => Filters.exists("riskingFileId", false)
@@ -73,27 +71,15 @@ extends Repo[ApplicationForRiskingId, ApplicationForRisking](
         case RiskingStatus.ReceivedRiskingResults => Filters.and(Filters.exists("riskingFileId"), Filters.exists("failures"))
     collection.find(filter).toFuture()
 
-  def findReceivedAndNotSubscribed(): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      Filters.and(
-        Filters.exists("riskingFileId"),
-        Filters.exists("failures"),
-        Filters.eq("isSubscribed", false)
-      )
-    ).toFuture()
+object IndividualForRiskingRepoHelp:
 
-// when named ApplicationForRiskingRepo, Scala 3 compiler complains
-// about cyclic reference error during compilation ...
-//TODO WG - review indexes
-object ApplicationForRiskingRepoHelp:
+  given IdString[IndividualForRiskingId] =
+    new IdString[IndividualForRiskingId]:
+      override def idString(i: IndividualForRiskingId): String = i.value
 
-  given IdString[ApplicationForRiskingId] =
-    new IdString[ApplicationForRiskingId]:
-      override def idString(i: ApplicationForRiskingId): String = i.value
-
-  given IdExtractor[ApplicationForRisking, ApplicationForRiskingId] =
-    new IdExtractor[ApplicationForRisking, ApplicationForRiskingId]:
-      override def id(applicationForRisking: ApplicationForRisking): ApplicationForRiskingId = applicationForRisking._id
+  given IdExtractor[IndividualForRisking, IndividualForRiskingId] =
+    new IdExtractor[IndividualForRisking, IndividualForRiskingId]:
+      override def id(individualForRisking: IndividualForRisking): IndividualForRiskingId = individualForRisking._id
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
@@ -101,10 +87,20 @@ object ApplicationForRiskingRepoHelp:
       indexOptions = IndexOptions().expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS).name("lastUpdatedIdx")
     ),
     IndexModel(
-      keys = Indexes.ascending("agentApplication.applicationReference"),
+      keys = Indexes.ascending("applicationForRiskingId"),
+      IndexOptions()
+        .name("applicationForRiskingIdIdx")
+    ),
+    IndexModel(
+      keys = Indexes.ascending("individualProvidedDetails.personReference"),
+      IndexOptions()
+        .name("personReferenceIdx")
+    ),
+    IndexModel(
+      keys = Indexes.compoundIndex(Indexes.ascending("individualProvidedDetails.personReference"), Indexes.ascending("applicationForRiskingId")),
       IndexOptions()
         .unique(true)
-        .name("applicationReferenceIdx")
+        .name("personReferenceApplicationIdIdx")
     ),
     IndexModel(
       keys = Indexes.compoundIndex(Indexes.ascending("riskingFileId"), Indexes.ascending("failures")),

@@ -19,36 +19,49 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
+import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
+import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsId
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Provided
+import uk.gov.hmrc.agentregistration.shared.individual.IndividualVerifiedEmailAddress
+import uk.gov.hmrc.agentregistration.shared.individual.ProvidedDetailsState
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
-
-import java.time.Instant
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
 
 trait TdIndividualForRisking { dependencies: TdBase =>
 
-  private val createdAt: Instant = dependencies.nowAsInstant
-
-  def readyForSubmissionIndividual(personReference: Option[PersonReference] = None): IndividualForRisking = IndividualForRisking(
-    personReference = personReference.getOrElse(PersonReference(randomId)),
-    status = ApplicationForRiskingStatusOld.ReadyForSubmission,
-    vrns = s"${vrn.value},${vrn.value}",
-    payeRefs = s"${payeRef.value},${payeRef.value}",
-    companiesHouseName = None,
-    companiesHouseDateOfBirth = None,
-    providedName = individualName,
-    providedDateOfBirth = Provided(individualDateOfBirth),
-    nino = Some(IndividualNino.Provided(nino)),
-    saUtr = Some(saUtrProvided),
-    phoneNumber = telephoneNumber,
-    email = individualEmailAddress,
-    providedByApplicant = true,
-    passedIV = true,
+  def readyForSubmissionIndividual(
+    applicationForRiskingId: ApplicationForRiskingId = ApplicationForRiskingId("default-app-id")
+  ): IndividualForRisking = IndividualForRisking(
+    _id = IndividualForRiskingId(randomId),
+    applicationForRiskingId = applicationForRiskingId,
+    individualProvidedDetails = IndividualProvidedDetails(
+      _id = IndividualProvidedDetailsId(randomId),
+      personReference = dependencies.personReference,
+      individualName = dependencies.individualName,
+      isPersonOfControl = true,
+      internalUserId = None,
+      createdAt = dependencies.nowAsInstant,
+      providedDetailsState = ProvidedDetailsState.Finished,
+      agentApplicationId = dependencies.agentApplicationId,
+      individualDateOfBirth = Some(IndividualDateOfBirth.Provided(dependencies.individualDateOfBirth)),
+      telephoneNumber = Some(dependencies.telephoneNumber),
+      emailAddress = Some(IndividualVerifiedEmailAddress(dependencies.individualEmailAddress, isVerified = true)),
+      individualNino = Some(IndividualNino.Provided(dependencies.nino)),
+      individualSaUtr = Some(dependencies.saUtrProvided),
+      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
+      hasApprovedApplication = Some(true),
+      vrns = Some(List(dependencies.vrn, dependencies.vrn)),
+      payeRefs = Some(List(dependencies.payeRef, dependencies.payeRef)),
+      passedIv = Some(true)
+    ),
+    createdAt = dependencies.nowAsInstant,
+    lastUpdatedAt = dependencies.nowAsInstant,
+    riskingFileId = None,
     failures = None
   )
 
@@ -56,7 +69,7 @@ trait TdIndividualForRisking { dependencies: TdBase =>
     personReference: PersonReference
   ) = IndividualRiskingResponse(
     personReference = personReference,
-    status = ApplicationForRiskingStatusOld.ReadyForSubmission,
+    status = RiskingStatus.ReadyForSubmission,
     failures = None
   )
 

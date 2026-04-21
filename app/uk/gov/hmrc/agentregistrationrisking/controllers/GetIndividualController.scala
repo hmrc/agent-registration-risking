@@ -22,27 +22,30 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking.toIndividualRiskingResponse
-import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 
 import javax.inject.Inject
 
 class GetIndividualController @Inject() (
   actions: Actions,
   cc: ControllerComponents,
-  applicationForRiskingRepo: ApplicationForRiskingRepo
+  individualForRiskingRepo: IndividualForRiskingRepo
 )
 extends BackendController(cc):
 
   def getIndividualRiskingResponse(personReference: PersonReference): Action[AnyContent] = actions
     .authorised
     .async:
-      applicationForRiskingRepo
+      individualForRiskingRepo
         .findByPersonReference(personReference)
-        .map(_.flatMap(_.individuals.find(_.personReference === personReference)))
         .map:
           case Some(individual) => Ok(Json.toJson(toIndividualRiskingResponse(individual)))
           case None => NoContent
+
+  private def toIndividualRiskingResponse(individual: IndividualForRisking): IndividualRiskingResponse = IndividualRiskingResponse(
+    personReference = individual.individualProvidedDetails.personReference,
+    status = individual.status,
+    failures = individual.failures
+  )

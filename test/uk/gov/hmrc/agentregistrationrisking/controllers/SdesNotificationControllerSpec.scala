@@ -22,9 +22,12 @@ import play.api.libs.ws.DefaultBodyReadables.*
 import play.api.libs.ws.WSResponse
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.SafeId
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EnrolmentStoreProxyStubs
@@ -37,6 +40,21 @@ extends ControllerSpec:
 
   val path: String = s"/agent-registration-risking/receive-sdes-notifications"
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+
+  val appRef = ApplicationReference("ABC123456")
+
+  private def setupApplicationWithIndividual() =
+    val application = tdAll.llpApplicationForRisking.copy(
+      _id = ApplicationForRiskingId("test-app"),
+      riskingFileId = Some(RiskingFileId("submitted-file"))
+    )
+    val individual = tdAll.readyForSubmissionIndividual(application._id).copy(
+      _id = IndividualForRiskingId("test-ind"),
+      riskingFileId = Some(RiskingFileId("submitted-file"))
+    )
+    repo.upsert(application).futureValue
+    individualRepo.upsert(individual).futureValue
 
   "SDES Notification controller should have the correct route" in:
     val call: Call = routes.SdesNotificationController.receiveSdesNotification
@@ -66,15 +84,7 @@ extends ControllerSpec:
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup(count = 0)
 
   "receiveNotification should process approved application end-to-end: file processing, status update, subscribe, and enrol" in:
-    val appRef = ApplicationReference("ABC123456")
-
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = appRef)
-    ).futureValue
-
-    val beforeProcessing = repo.findByApplicationReference(appRef).futureValue.value
-    beforeProcessing.status shouldBe ApplicationForRiskingStatusOld.ReadyForSubmission
-    beforeProcessing.failures shouldBe None
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
@@ -94,9 +104,10 @@ extends ControllerSpec:
 
     val afterProcessing = repo.findByApplicationReference(appRef).futureValue.value
     afterProcessing.failures.value.size shouldBe 0
-    afterProcessing.individuals.headOption.value.failures.value.size shouldBe 0
-    afterProcessing.individuals.headOption.value.status shouldBe ApplicationForRiskingStatusOld.Approved
-    afterProcessing.status shouldBe ApplicationForRiskingStatusOld.SubscribedAndEnrolled
+    afterProcessing.isSubscribed shouldBe true
+
+    val updatedIndividual = individualRepo.findByPersonReference(tdAll.personReference).futureValue.value
+    updatedIndividual.failures.value.size shouldBe 0
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()
@@ -104,11 +115,7 @@ extends ControllerSpec:
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup()
 
   "receiveNotification should process failed application end-to-end: file processing, status update, no subscribe" in:
-    val appRef = ApplicationReference("ABC123456")
-
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = appRef)
-    ).futureValue
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL, tdAll.failRecordArrayFileMatchingApp)
@@ -125,7 +132,7 @@ extends ControllerSpec:
 
     val afterProcessing = repo.findByApplicationReference(appRef).futureValue.value
     afterProcessing.failures.value.size shouldBe 1
-    afterProcessing.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
+    afterProcessing.isSubscribed shouldBe false
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices(count = 0)
@@ -133,11 +140,7 @@ extends ControllerSpec:
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup(count = 0)
 
   "receiveNotification should return OK even when HIP subscribe fails" in:
-    val appRef = ApplicationReference("ABC123456")
-
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = appRef)
-    ).futureValue
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
@@ -154,7 +157,7 @@ extends ControllerSpec:
     response.status shouldBe Status.OK
 
     val afterProcessing = repo.findByApplicationReference(appRef).futureValue.value
-    afterProcessing.status shouldBe ApplicationForRiskingStatusOld.Approved
+    afterProcessing.isSubscribed shouldBe false
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()

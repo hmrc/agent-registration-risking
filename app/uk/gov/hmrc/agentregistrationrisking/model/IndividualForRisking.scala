@@ -25,41 +25,36 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
+import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
+import java.time.Instant
 import java.time.LocalDate
 
-final case class IndividualForRiskingNew(
-  individualProvidedDetails: IndividualProvidedDetails
-)
 final case class IndividualForRisking(
-  personReference: PersonReference,
-  status: ApplicationForRiskingStatusOld,
-  vrns: String,
-  payeRefs: String,
-  companiesHouseName: Option[String],
-  companiesHouseDateOfBirth: Option[LocalDate],
-  providedName: IndividualName,
-  providedDateOfBirth: IndividualDateOfBirth,
-  nino: Option[IndividualNino],
-  saUtr: Option[IndividualSaUtr],
-  phoneNumber: TelephoneNumber,
-  email: EmailAddress,
-  providedByApplicant: Boolean,
-  passedIV: Boolean,
+  _id: IndividualForRiskingId,
+  applicationForRiskingId: ApplicationForRiskingId,
+  individualProvidedDetails: IndividualProvidedDetails,
+  createdAt: Instant,
+  lastUpdatedAt: Instant,
+  riskingFileId: Option[RiskingFileId],
   failures: Option[List[IndividualFailure]]
-)
+):
+
+  def status: RiskingStatus =
+    (riskingFileId, failures) match
+      case (None, _) => RiskingStatus.ReadyForSubmission
+      case (Some(_), None) => RiskingStatus.SubmittedForRisking
+      case (Some(_), Some(_)) => RiskingStatus.ReceivedRiskingResults
+
+  // values that we do not store at the moment
+  def providedByApplicant: Boolean = false
+  def companiesHouseName = None
+  def companiesHouseDateOfBirth = None
 
 object IndividualForRisking:
-
-  given OFormat[IndividualForRisking] = Json.format[IndividualForRisking]
-
-  def toIndividualRiskingResponse(individualForRisking: IndividualForRisking): IndividualRiskingResponse = IndividualRiskingResponse(
-    personReference = individualForRisking.personReference,
-    status = individualForRisking.status,
-    failures = individualForRisking.failures
-  )
+  given format: OFormat[IndividualForRisking] = Json.format[IndividualForRisking]

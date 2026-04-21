@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-enum ApplicationForRiskingStatus:
-
-  case ReadyForSubmission
-  case SubmittedForRisking
-  case ReceivedRiskingResults
+final case class ApplicationWithIndividuals(
+  application: ApplicationForRisking,
+  individuals: Seq[IndividualForRisking]
+)

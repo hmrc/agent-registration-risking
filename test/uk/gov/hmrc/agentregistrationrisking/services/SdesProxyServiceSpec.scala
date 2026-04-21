@@ -18,12 +18,14 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentregistration.shared.SafeId
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.*
+import uk.gov.hmrc.agentregistration.shared.SafeId
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EnrolmentStoreProxyStubs
@@ -36,6 +38,22 @@ extends ISpec:
 
   val service: SdesProxyService = app.injector.instanceOf[SdesProxyService]
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+
+  val appRef = ApplicationReference("ABC123456")
+
+  private def setupApplicationWithIndividual() =
+    val application = tdAll.llpApplicationForRisking.copy(
+      _id = ApplicationForRiskingId("test-app"),
+      riskingFileId = Some(RiskingFileId("submitted-file"))
+    )
+    val individual = tdAll.readyForSubmissionIndividual(application._id).copy(
+      _id = IndividualForRiskingId("test-ind"),
+      riskingFileId = Some(RiskingFileId("submitted-file"))
+    )
+    repo.upsert(application).futureValue
+    individualRepo.upsert(individual).futureValue
+    (application, individual)
 
   "notifySdesFileReady sends the expected request to SDES" in:
 
@@ -63,18 +81,9 @@ extends ISpec:
 
     given RequestHeader = FakeRequest()
 
-    repo.upsert(
-      (tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("ABC123456")))
-    ).futureValue shouldBe () withClue "ensure there is an application for risking in mongo before http request"
+    val (application, individual) = setupApplicationWithIndividual()
 
-    val existingApplication =
-      repo.findByApplicationReference(
-        ApplicationReference("ABC123456")
-      ).futureValue.value
-    val existingIndividual = existingApplication.individuals.headOption.value
-
-    existingApplication.failures shouldBe None
-    existingIndividual.failures shouldBe None
+    application.failures shouldBe None
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
@@ -90,29 +99,22 @@ extends ISpec:
     result.headOption.value.location.fileName shouldBe "resultsFile02.txt"
     result.headOption.value.location.directory.value shouldBe "agent-registration-risking/received-results-files"
 
-    val updatedApplication =
-      repo.findByApplicationReference(
-        ApplicationReference("ABC123456")
-      ).futureValue.value
-    val updatedIndividual = updatedApplication.individuals.headOption.value
-
+    val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
     updatedApplication.failures.value.size shouldBe 0
-    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.SubscribedAndEnrolled
+    updatedApplication.isSubscribed shouldBe true
+
+    val updatedIndividual = individualRepo.findByPersonReference(tdAll.personReference).futureValue.value
     updatedIndividual.failures.value.size shouldBe 0
-    updatedIndividual.failures.value.outcome() shouldBe IndividualRiskingOutcome.Approved
-    updatedIndividual.status shouldBe ApplicationForRiskingStatusOld.Approved
 
     HipStubs.verifySubscribeToAgentServices()
     EnrolmentStoreProxyStubs.verifyAddKnownFacts()
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup()
 
-  "retrieveAndProcessResultsFile syncs application status to FailedFixable when results contain fixable failures" in:
+  "retrieveAndProcessResultsFile updates failures when results contain fixable failures and does not subscribe" in:
 
     given RequestHeader = FakeRequest()
 
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("ABC123456"))
-    ).futureValue shouldBe () withClue "ensure there is an application for risking in mongo before http request"
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL, tdAll.failRecordArrayFileMatchingApp)
@@ -121,28 +123,19 @@ extends ISpec:
 
     service.retrieveAndProcessResultsFiles.futureValue
 
-    val updatedApplication =
-      repo.findByApplicationReference(
-        ApplicationReference("ABC123456")
-      ).futureValue.value
-    val updatedIndividual = updatedApplication.individuals.headOption.value
-
+    val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
     updatedApplication.failures.value.size shouldBe 1
-    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
-    updatedIndividual.failures.value.size shouldBe 1
-    updatedIndividual.status shouldBe ApplicationForRiskingStatusOld.FailedFixable
+    updatedApplication.isSubscribed shouldBe false
 
     HipStubs.verifySubscribeToAgentServices(count = 0)
     EnrolmentStoreProxyStubs.verifyAddKnownFacts(count = 0)
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup(count = 0)
 
-  "retrieveAndProcessResultsFile keeps Approved status and still uploads file when HIP subscribe fails" in:
+  "retrieveAndProcessResultsFile still uploads file when HIP subscribe fails" in:
 
     given RequestHeader = FakeRequest()
 
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("ABC123456"))
-    ).futureValue
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
@@ -152,25 +145,19 @@ extends ISpec:
 
     service.retrieveAndProcessResultsFiles.futureValue
 
-    val updatedApplication =
-      repo.findByApplicationReference(
-        ApplicationReference("ABC123456")
-      ).futureValue.value
-
-    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.Approved
+    val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
+    updatedApplication.isSubscribed shouldBe false
 
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()
     EnrolmentStoreProxyStubs.verifyAddKnownFacts(count = 0)
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup(count = 0)
 
-  "retrieveAndProcessResultsFile keeps Approved status and still uploads file when addKnownFacts fails" in:
+  "retrieveAndProcessResultsFile still uploads file when addKnownFacts fails" in:
 
     given RequestHeader = FakeRequest()
 
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("ABC123456"))
-    ).futureValue
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
@@ -181,21 +168,15 @@ extends ISpec:
 
     service.retrieveAndProcessResultsFiles.futureValue
 
-    val updatedApplication =
-      repo.findByApplicationReference(
-        ApplicationReference("ABC123456")
-      ).futureValue.value
-
-    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.Approved
+    val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
+    updatedApplication.isSubscribed shouldBe false
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
 
-  "retrieveAndProcessResultsFile keeps Approved status and still uploads file when allocateEnrolmentToGroup fails" in:
+  "retrieveAndProcessResultsFile still uploads file when allocateEnrolmentToGroup fails" in:
 
     given RequestHeader = FakeRequest()
 
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("ABC123456"))
-    ).futureValue
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
@@ -207,12 +188,8 @@ extends ISpec:
 
     service.retrieveAndProcessResultsFiles.futureValue
 
-    val updatedApplication =
-      repo.findByApplicationReference(
-        ApplicationReference("ABC123456")
-      ).futureValue.value
-
-    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.Approved
+    val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
+    updatedApplication.isSubscribed shouldBe false
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
 
   "retrieveAndProcessResultsFile does not upload to object store if the file was not processed successfully" in:
@@ -226,9 +203,7 @@ extends ISpec:
 
     given RequestHeader = FakeRequest()
 
-    repo.upsert(
-      tdAll.llpApplicationForRisking.copy(applicationReference = ApplicationReference("ABC123456"))
-    ).futureValue
+    setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL, tdAll.passRecordArrayFileWithNonExistentApp)
@@ -240,11 +215,7 @@ extends ISpec:
 
     service.retrieveAndProcessResultsFiles.futureValue
 
-    val updatedApplication =
-      repo.findByApplicationReference(
-        ApplicationReference("ABC123456")
-      ).futureValue.value
-
-    updatedApplication.status shouldBe ApplicationForRiskingStatusOld.SubscribedAndEnrolled
+    val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
+    updatedApplication.isSubscribed shouldBe true
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     HipStubs.verifySubscribeToAgentServices()

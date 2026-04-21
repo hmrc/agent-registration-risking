@@ -16,24 +16,27 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatusOld
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingOld
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileDataRecord
-
-import javax.inject.Inject
-import javax.inject.Singleton
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import java.time.Clock
 import java.time.Instant
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
 class RiskingFileService @Inject() (
-  applicationForRiskingRepo: ApplicationForRiskingRepo
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo
 )(using
   ExecutionContext,
   Clock
@@ -48,28 +51,24 @@ extends RequestAwareLogging:
   private val headerRow = s"00|ARR|SAS|${convertToMinervaHeaderDateString(instant)}|${convertToMinervaHeaderTimeString(instant)}"
   private val footerRowPrefix = "99|"
 
-  def getApplicationsReadyForRisking: Future[Seq[ApplicationForRiskingOld]] = applicationForRiskingRepo.findByStatus(
-    ApplicationForRiskingStatusOld.ReadyForSubmission
-  )
+  def getApplicationsReadyForRiskingWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
+    for
+      applications <- applicationForRiskingRepo.findByStatus(RiskingStatus.ReadyForSubmission)
+      applicationsWithIndividuals <-
+        Future.traverse(applications): application =>
+          individualForRiskingRepo.findByApplicationForRiskingId(application._id)
+            .map(individuals => ApplicationWithIndividuals(application, individuals))
+    yield applicationsWithIndividuals
 
-  def buildRiskingFileFrom(applicationsReadyForRisking: Seq[ApplicationForRiskingOld]): String =
-    val dataRecordString = applicationsReadyForRisking.map(buildDataRecords).mkString("\n")
-    val totalRecords = applicationsReadyForRisking.map(i => 1 + i.individuals.length).sum
+  def buildRiskingFileFrom(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): String =
+    val dataRecordString = applicationsWithIndividuals.map(buildDataRecords).mkString("\n")
+    val totalRecords = applicationsWithIndividuals.map(a => 1 + a.individuals.length).sum
     s"$headerRow\n$dataRecordString\n$footerRowPrefix$totalRecords\n"
 
-  private def buildDataRecords(applicationForRisking: ApplicationForRiskingOld): String =
+  private def buildDataRecords(appWithIndividuals: ApplicationWithIndividuals): String =
     val records =
       RiskingFileDataRecord
-        .fromApplicationForRisking(applicationForRisking)
+        .fromApplicationForRisking(appWithIndividuals.application)
         .asPipe
-        +: applicationForRisking.individuals.map { i =>
-          RiskingFileDataRecord.fromIndividualForRisking(i).asPipe
-        }
+        +: appWithIndividuals.individuals.map(i => RiskingFileDataRecord.fromIndividualForRisking(i).asPipe)
     records.mkString("\n")
-
-  def setAllStatusSubmittedForRisking(
-    applicationsReadyForRisking: Seq[ApplicationForRiskingOld]
-  ): Future[Unit] = {
-    val applicationReferences = applicationsReadyForRisking.map(_.applicationReference)
-    applicationForRiskingRepo.updateStatusByApplicationReferences(applicationReferences, ApplicationForRiskingStatusOld.SubmittedForRisking)
-  }
