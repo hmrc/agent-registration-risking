@@ -16,10 +16,17 @@
 
 package uk.gov.hmrc.agentregistration.shared
 
-import org.bson.types.ObjectId
 import javax.inject.Singleton
+import scala.util.Random
 
 @Singleton
 class ApplicationReferenceGenerator:
-  // TODO: change format to conform apb-10394
-  def nextApplicationReference(): ApplicationReference = ApplicationReference(ObjectId.get().toHexString)
+
+  private def randomChar(chars: List[Char]): Char =
+    val rnd = Random.nextInt(chars.length)
+    chars.iterator.drop(rnd).next()
+
+  def generateApplicationReference(): ApplicationReference = {
+    val reference = List.fill(ApplicationReference.validLength)(randomChar(ApplicationReference.validCharacters)).mkString("")
+    ApplicationReference(reference)
+  }

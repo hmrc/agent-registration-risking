@@ -121,7 +121,7 @@ with Logging:
             case None => Future.successful(NotFound(s"No application found for reference: ${applicationReference.value}"))
 
   private def makeApplicationForRisking(numberOfIndividuals: Int): ApplicationForRisking = ApplicationForRisking(
-    applicationReference = agentReferenceGenerator.nextApplicationReference(),
+    applicationReference = agentReferenceGenerator.generateApplicationReference(),
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     createdAt = Instant.now(),
     uploadedAt = None,
