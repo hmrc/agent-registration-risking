@@ -35,6 +35,8 @@ import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import play.api.libs.typedmap.TypedMap
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -48,7 +50,10 @@ class RiskingRunner @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
   riskingFileRepo: RiskingFileRepo
-)(using ec: ExecutionContext)
+)(using
+  ec: ExecutionContext,
+  clock: Clock
+)
 extends RequestAwareLogging:
 
   private val emptyRequestHeader: RequestHeader =
@@ -111,10 +116,13 @@ extends RequestAwareLogging:
     riskingFileId: RiskingFileId
   ): Future[Unit] =
     for
-      _ <- applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(riskingFileId = Some(riskingFileId)))
+      _ <- applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(
+        riskingFileId = Some(riskingFileId),
+        lastUpdatedAt = Instant.now(summon[Clock])
+      ))
       _ <-
         Future.traverse(appWithIndividuals.individuals)(individual =>
-          individualForRiskingRepo.upsert(individual.copy(riskingFileId = Some(riskingFileId)))
+          individualForRiskingRepo.upsert(individual.copy(riskingFileId = Some(riskingFileId), lastUpdatedAt = Instant.now(summon[Clock])))
         )
     yield ()
   .map(_ => ())

@@ -39,7 +39,7 @@ class RiskingSchedulerInitializerSpec
 extends UnitSpec,
   MongoSupport:
 
-  private val clock = Clock.systemDefaultZone()
+  private given clock: Clock = Clock.systemDefaultZone()
   private lazy val mongoLockRepository = new MongoLockRepository(mongoComponent, CurrentTimestampSupport())
 
   private val stubRunner: RiskingRunner =
