@@ -32,6 +32,8 @@ import java.net.URI
 
 object ObjectStoreStubs:
 
+  val objectStoreBucketName = "sdes"
+
   private def urlPattern(
     fileName: String,
     owner: String = "agent-registration-risking",
@@ -41,7 +43,7 @@ object ObjectStoreStubs:
   def stubObjectStoreTransfer(
     fileName: String,
     owner: String = "agent-registration-risking",
-    directory: String = "applications-for-risking",
+    directory: String = objectStoreBucketName,
     response: JsObject = TdAll.tdAll.objectStoreUploadResponse
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.PUT,
@@ -57,7 +59,7 @@ object ObjectStoreStubs:
   def verifyObjectStoreTransfer(
     fileName: String,
     owner: String = "agent-registration-risking",
-    directory: String = "applications-for-risking",
+    directory: String = objectStoreBucketName,
     count: Int = 1
   ): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.PUT,
@@ -72,7 +74,7 @@ object ObjectStoreStubs:
   def getRequestBody(
     fileName: String,
     owner: String = "agent-registration-risking",
-    directory: String = "applications-for-risking"
+    directory: String = objectStoreBucketName
   ): String =
 
     StubMaker.getEvents((x: ServeEvent) =>
@@ -101,22 +103,6 @@ object ObjectStoreStubs:
     urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),
     responseStatus = 500,
     responseBody = Json.prettyPrint(Json.obj("error" -> "Some Error"))
-  )
-
-  def stubObjectStoreGeneratePresignedUrl(
-    objectStorePath: String,
-    objectStoreFileName: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"/object-store/ops/presigned-url"),
-    responseStatus = 200,
-    responseBody = Json.prettyPrint(
-      Json.obj(
-        "downloadUrl" -> "http://presigned-url/file",
-        "contentLength" -> 1532,
-        "contentMD5" -> "o+btpLe7b3Vqz3SShTP+Nw=="
-      )
-    )
   )
 
   def verifyObjectStoreUploadFromUrl(count: Int = 1): Unit = StubMaker.verify(
