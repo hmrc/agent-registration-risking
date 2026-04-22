@@ -106,7 +106,7 @@ extends BackendController(cc):
         payeRefs = transformToCommaSeparatedString(application.payeRefs.map(_.map(_.value))),
         amlSupervisoryBody = application.getAmlsDetails.supervisoryBody,
         amlRegNumber = application.getAmlsDetails.getRegistrationNumber,
-        amlExpiryDate = application.getAmlsDetails.amlsExpiryDate,
+        amlExpiryDate = None, // we don't capture the AML expiry date in the application
         amlEvidence = application.getAmlsDetails.amlsEvidence,
         individuals = submitForRiskingRequest.individuals.map(_.toIndividualsForRisking),
         failures = None
