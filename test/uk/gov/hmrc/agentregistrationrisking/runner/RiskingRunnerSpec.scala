@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.fileDownloadLocation
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
@@ -65,7 +66,7 @@ extends ISpec:
            |  "file":{
            |    "recipientOrSender":"test-srn",
            |    "name":"$fileName",
-           |    "location":"http://presigned-url/file",
+           |    "location":"$fileDownloadLocation",
            |    "checksum":{
            |      "algorithm":"md5",
            |      "value":"a3c2f1e38701bd2c7b54ebd7b1cd0dbc"
