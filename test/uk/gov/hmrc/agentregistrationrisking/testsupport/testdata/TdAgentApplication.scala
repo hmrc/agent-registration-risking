@@ -68,7 +68,6 @@ trait TdAgentApplication { dependencies: TdBase =>
     amlsDetails = Some(AmlsDetails(
       supervisoryBody = amlsCode,
       amlsRegistrationNumber = Some(amlsRegistrationNumber),
-      amlsExpiryDate = Some(LocalDate.parse(dateString)),
       amlsEvidence = Some(AmlsEvidence(
         UploadId("evidence-reference-123"),
         "certificate.pdf",

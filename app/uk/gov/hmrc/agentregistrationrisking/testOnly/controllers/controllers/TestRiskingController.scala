@@ -167,7 +167,7 @@ with Logging:
     payeRefs = s"${generateRandomPayeRef()},${generateRandomPayeRef()}",
     amlSupervisoryBody = AmlsCode("HMRC"),
     amlRegNumber = AmlsRegistrationNumber("11223344"),
-    amlExpiryDate = Some(LocalDate.of(2030, 1, 1)),
+    amlExpiryDate = None,
     amlEvidence = None,
     individuals = createIndividualsList(numberOfIndividuals),
     failures = None
