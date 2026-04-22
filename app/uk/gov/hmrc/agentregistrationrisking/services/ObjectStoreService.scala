@@ -54,7 +54,7 @@ extends RequestAwareLogging:
     val fileName = s"asa_risking_file_version1_0_4_$timestamp.txt"
 
     playObjectStoreClient.putObject[String](
-      path = Path.Directory("applications-for-risking").file(fileName = fileName),
+      path = Path.Directory("sdes").file(fileName = fileName),
       content = fileContent,
       retentionPeriod = RetentionPeriod.SixMonths, // TODO: how long do we need to keep these files?
       contentType = Some("plain/text"),
@@ -84,5 +84,5 @@ extends RequestAwareLogging:
     objectStorePath: Path.Directory,
     objectStoreFileName: String
   )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
-    path = Path.Directory("applications-for-risking").file(fileName = objectStoreFileName)
+    path = Path.Directory("sdes").file(fileName = objectStoreFileName)
   )

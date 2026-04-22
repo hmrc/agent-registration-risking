@@ -27,7 +27,7 @@ trait TdObjectStore { dependencies: TdBase =>
 
   def fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
 
-  def objectStoreDirectory: String = "agent-registration-risking/applications-for-risking"
+  def objectStoreDirectory: String = "agent-registration-risking/sdes"
   def objectStoreLocation: String = s"$objectStoreDirectory/$fileName"
   def sizeInBytes: Long = 12345L
   def contentMd5: String = "a3c2f1e38701bd2c7b54ebd7b1cd0dbc"
