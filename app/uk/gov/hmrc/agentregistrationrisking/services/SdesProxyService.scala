@@ -29,6 +29,7 @@ import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 
 import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -110,7 +111,7 @@ extends RequestAwareLogging:
     approvedApplications: Seq[ApplicationWithIndividuals]
   )(using RequestHeader): Future[Unit] = Future.traverse(approvedApplications): appWithIndividuals =>
     subscribeAgentService.subscribeAgent(appWithIndividuals.application).flatMap: _ =>
-      applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(isSubscribed = true))
+      applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(isSubscribed = true, lastUpdatedAt = Instant.now(summon[Clock])))
     .recover:
       case ex: Throwable =>
         logger.error(s"Failed to subscribe application ${appWithIndividuals.application.agentApplication.applicationReference.value}: ${ex.getMessage}")

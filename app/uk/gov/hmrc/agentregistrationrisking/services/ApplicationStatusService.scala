@@ -31,6 +31,8 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -40,7 +42,10 @@ import scala.concurrent.Future
 class ApplicationStatusService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo
-)(using ExecutionContext)
+)(using
+  ExecutionContext,
+  Clock
+)
 extends RequestAwareLogging:
 
   def getCompletedUnsubscribedApplicationsWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
@@ -80,7 +85,8 @@ extends RequestAwareLogging:
         Future.unit
       case Some(applicationForRisking) =>
         val updatedApplication = applicationForRisking.copy(
-          failures = Some(entityRiskingResultRecord.failures)
+          failures = Some(entityRiskingResultRecord.failures),
+          lastUpdatedAt = Instant.now(summon[Clock])
         )
         logger.info(s"Updated Application: $updatedApplication")
         applicationForRiskingRepo.upsert(updatedApplication)
@@ -92,7 +98,8 @@ extends RequestAwareLogging:
         Future.unit
       case Some(individualForRisking) =>
         val updatedIndividual = individualForRisking.copy(
-          failures = Some(individualRiskingResultRecord.failures)
+          failures = Some(individualRiskingResultRecord.failures),
+          lastUpdatedAt = Instant.now(summon[Clock])
         )
         logger.info(s"Updated Individual: $updatedIndividual")
         individualForRiskingRepo.upsert(updatedIndividual)
