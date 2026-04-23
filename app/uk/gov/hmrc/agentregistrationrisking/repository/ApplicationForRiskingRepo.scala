@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
@@ -32,6 +33,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import org.mongodb.scala.result.UpdateResult
+import com.mongodb.client.model.Field
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
@@ -40,13 +42,18 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
+
+import java.time.Clock
+import java.time.Instant
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  clock: Clock
 )(using ec: ExecutionContext)
 extends Repo[ApplicationForRiskingId, ApplicationForRisking](
   collectionName = "application-for-risking",
@@ -62,22 +69,27 @@ extends Repo[ApplicationForRiskingId, ApplicationForRisking](
     )
     .headOption()
 
-//  def findByApplicationForRiskingId(applicationForRiskingId: ApplicationForRiskingId): Future[Option[ApplicationForRisking]] =
-//    findById(applicationForRiskingId)
+  def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
+    .find(Filters.exists("riskingFileId", false)) // ready for submissions don't have set riskingFileId
+    .toFuture()
 
-  def findByStatus(status: RiskingStatus): Future[Seq[ApplicationForRisking]] =
-    val filter =
-      status match
-        case RiskingStatus.ReadyForSubmission => Filters.exists("riskingFileId", false)
-        case RiskingStatus.SubmittedForRisking => Filters.and(Filters.exists("riskingFileId"), Filters.exists("failures", false))
-        case RiskingStatus.ReceivedRiskingResults => Filters.and(Filters.exists("riskingFileId"), Filters.exists("failures"))
-    collection.find(filter).toFuture()
+  // TODO needs testing?
+  def updateRiskingFileId(
+    ids: Seq[ApplicationForRiskingId],
+    riskingFileId: RiskingFileId
+  ): Future[UpdateResult] = collection
+    .updateMany(
+      Filters.in("_id", ids),
+      Updates.combine(
+        Updates.set("riskingFileId", riskingFileId),
+        Updates.set("lastUpdatedAt", Instant.now(clock))
+      )
+    ).toFuture()
 
-  def findReceivedAndNotSubscribed(): Future[Seq[ApplicationForRisking]] = collection
+  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
     .find(
       Filters.and(
-        Filters.exists("riskingFileId"),
-        Filters.exists("failures"),
+        Filters.exists("failures"), // TODO: failures == Some(EmptyList), maybe: Filters.eq("failures", Nil)
         Filters.eq("isSubscribed", false)
       )
     ).toFuture()

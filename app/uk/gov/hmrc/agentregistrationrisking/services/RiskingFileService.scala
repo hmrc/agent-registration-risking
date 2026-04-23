@@ -53,7 +53,7 @@ extends RequestAwareLogging:
 
   def getApplicationsReadyForRiskingWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
     for
-      applications <- applicationForRiskingRepo.findByStatus(RiskingStatus.ReadyForSubmission)
+      applications <- applicationForRiskingRepo.findReadyForSubmission()
       applicationsWithIndividuals <-
         Future.traverse(applications): application =>
           individualForRiskingRepo.findByApplicationForRiskingId(application._id)

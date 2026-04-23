@@ -247,7 +247,6 @@ with Logging:
       individualProvidedDetails = providedDetails,
       createdAt = now,
       lastUpdatedAt = now,
-      riskingFileId = None,
       failures = None
     )
 

@@ -31,15 +31,15 @@ final case class IndividualForRisking(
   individualProvidedDetails: IndividualProvidedDetails,
   createdAt: Instant,
   lastUpdatedAt: Instant,
-  riskingFileId: Option[RiskingFileId],
+//  riskingFileId: Option[RiskingFileId],
   failures: Option[List[IndividualFailure]]
 ):
 
-  def status: RiskingStatus =
-    (riskingFileId, failures) match
-      case (None, _) => RiskingStatus.ReadyForSubmission
-      case (Some(_), None) => RiskingStatus.SubmittedForRisking
-      case (Some(_), Some(_)) => RiskingStatus.ReceivedRiskingResults
+//  def status: RiskingStatus =
+//    (riskingFileId, failures) match
+//      case (None, _) => RiskingStatus.ReadyForSubmission
+//      case (Some(_), None) => RiskingStatus.SubmittedForRisking
+//      case (Some(_), Some(_)) => RiskingStatus.ReceivedRiskingResults
 
   // values that we do not store at the moment
   def providedByApplicant: Boolean = false

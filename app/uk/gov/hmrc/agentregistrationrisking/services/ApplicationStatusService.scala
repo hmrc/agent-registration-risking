@@ -50,7 +50,7 @@ extends RequestAwareLogging:
 
   def getCompletedUnsubscribedApplicationsWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
     for
-      applications <- applicationForRiskingRepo.findReceivedAndNotSubscribed()
+      applications <- applicationForRiskingRepo.findReadyForSubscription()
       applicationsWithIndividuals <-
         Future.traverse(applications): application =>
           individualForRiskingRepo.findByApplicationForRiskingId(application._id)
