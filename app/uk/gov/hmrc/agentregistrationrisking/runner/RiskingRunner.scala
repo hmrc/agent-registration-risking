@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
@@ -49,7 +50,8 @@ class RiskingRunner @Inject() (
   sdesProxyService: SdesProxyService,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
-  riskingFileRepo: RiskingFileRepo
+  riskingFileRepo: RiskingFileRepo,
+  riskingFileIdGenerator: RiskingFileIdGenerator
 )(using
   ec: ExecutionContext,
   clock: Clock
@@ -80,16 +82,20 @@ extends RequestAwareLogging:
 
     for
       applicationsWithIndividuals <- riskingFileService.getApplicationsReadyForRiskingWithIndividuals
+      _ = logger.info(s"Found ${applicationsWithIndividuals.size} applications ready for risking")
       fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsWithIndividuals)
+      _ = logger.info("Risking file built successfully")
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
-      _ <- sdesProxyService.notifySdesFileReady(objectSummary)
-      riskingFileId = RiskingFileId(objectSummary.location.fileName)
+      _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
+      riskingFileId = riskingFileIdGenerator.nextRiskingFileId()
       _ <- markAsSubmittedForRisking(
         applicationsWithIndividuals,
         riskingFileId,
         objectSummary.location.fileName
       )
-      _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
+      _ = logger.info(s"Marked ${applicationsWithIndividuals.size} applications as submitted for risking")
+      _ <- sdesProxyService.notifySdesFileReady(objectSummary)
+      _ = logger.info(s"SDES notification sent for file: ${objectSummary.location.fileName}")
     yield ()
 
   private def markAsSubmittedForRisking(
