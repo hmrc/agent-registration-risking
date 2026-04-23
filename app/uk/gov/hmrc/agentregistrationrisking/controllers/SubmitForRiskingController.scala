@@ -87,7 +87,7 @@ extends BackendController(cc):
     def toApplicationForRisking: ApplicationForRisking =
       val application = submitForRiskingRequest.agentApplication
       ApplicationForRisking(
-        applicationReference = ApplicationReference(application.agentApplicationId.value),
+        applicationReference = ApplicationReference(application.applicationReference.value),
         status = ApplicationForRiskingStatus.ReadyForSubmission,
         createdAt = Instant.now(),
         uploadedAt = None,
