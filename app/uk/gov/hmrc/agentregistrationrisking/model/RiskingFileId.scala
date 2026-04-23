@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
+import org.bson.types.ObjectId
 import play.api.libs.json.Format
 import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
+
+import javax.inject.Singleton
 
 final case class RiskingFileId(value: String)
 
@@ -27,3 +30,7 @@ object RiskingFileId:
 
   given format: Format[RiskingFileId] = JsonFormatsFactory.makeValueClassFormat
   given pathBindable: PathBindable[RiskingFileId] = ValueClassBinder.valueClassBinder[RiskingFileId](_.value)
+
+@Singleton
+class RiskingFileIdGenerator:
+  def nextRiskingFileId(): RiskingFileId = RiskingFileId(ObjectId.get().toHexString)
