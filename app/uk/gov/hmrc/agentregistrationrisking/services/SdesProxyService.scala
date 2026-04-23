@@ -26,8 +26,10 @@ import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
+import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 import java.time.Clock
 import javax.inject.Inject
@@ -70,7 +72,7 @@ extends RequestAwareLogging:
         location = Some(s"$objectStoreLocation$fileName"),
         checksum = NotifySdesFileReadyChecksum(
           algorithm = SdesChecksumAlgorithm.md5,
-          value = objectSummaryWithMd5.contentMd5.value
+          value = base64ToHex(objectSummaryWithMd5.contentMd5.value)
         ),
         size = objectSummaryWithMd5.contentLength.intValue,
         properties = None

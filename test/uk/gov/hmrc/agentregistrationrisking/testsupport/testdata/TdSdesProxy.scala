@@ -24,20 +24,13 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesAudit
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyChecksum
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesChecksumAlgorithm
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.correlationId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.objectSummaryWithMd5
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.testAvailableFile
+import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 import java.time.Instant
 
@@ -61,7 +54,7 @@ trait TdSdesProxy { dependencies: TdBase =>
       location = Some(fileDownloadLocation),
       checksum = NotifySdesFileReadyChecksum(
         algorithm = SdesChecksumAlgorithm.md5,
-        value = objectSummaryWithMd5.contentMd5.value
+        value = base64ToHex(objectSummaryWithMd5.contentMd5.value)
       ),
       size = objectSummaryWithMd5.contentLength.toInt,
       properties = None
