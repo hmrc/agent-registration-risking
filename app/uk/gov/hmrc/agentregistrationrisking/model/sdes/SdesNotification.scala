@@ -56,7 +56,6 @@ final case class FileProcessingFailure(
 extends SdesNotification
 
 object SdesNotification:
-
   given Reads[SdesNotification] =
     given JsonConfiguration = JsonConfiguration(
       discriminator = "notification",

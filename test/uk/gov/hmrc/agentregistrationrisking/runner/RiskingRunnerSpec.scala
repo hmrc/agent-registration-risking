@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.fil
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
+import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 class RiskingRunnerSpec
 extends ISpec:
@@ -68,7 +69,7 @@ extends ISpec:
            |    "location":"$fileDownloadLocation",
            |    "checksum":{
            |      "algorithm":"md5",
-           |      "value":"a3c2f1e38701bd2c7b54ebd7b1cd0dbc"
+           |      "value":"6b77367f57b7f3bd356ddd9cedbe7879b77b6f571dd1d6dc"
            |    },
            |    "size":12345
            |  },
