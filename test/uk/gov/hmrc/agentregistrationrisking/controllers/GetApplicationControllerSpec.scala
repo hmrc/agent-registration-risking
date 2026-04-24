@@ -94,6 +94,5 @@ extends ControllerSpec:
     parsedResponse.applicationReference shouldBe application.agentApplication.applicationReference
     parsedResponse.individuals.size shouldBe 1
     parsedResponse.individuals.headOption.value.personReference shouldBe tdAll.personReference
-    parsedResponse.individuals.headOption.value.status shouldBe RiskingStatus.ReadyForSubmission
     parsedResponse.individuals.headOption.value.failures shouldBe None
     AuthStubs.verifyAuthorise()

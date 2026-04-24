@@ -23,8 +23,7 @@ import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 
 final case class IndividualRiskingResponse(
   personReference: PersonReference,
-  providedName: IndividualName, // TODO WG -check if you need it
-  status: RiskingStatus,
+  providedName: IndividualName,
   failures: Option[List[IndividualFailure]]
 )
 

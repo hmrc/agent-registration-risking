@@ -65,6 +65,5 @@ extends ControllerSpec:
     response.status shouldBe Status.OK
     val parsedResponse = response.json.as[IndividualRiskingResponse]
     parsedResponse.personReference shouldBe personReference
-    parsedResponse.status shouldBe RiskingStatus.ReadyForSubmission
     parsedResponse.failures shouldBe None
     AuthStubs.verifyAuthorise()

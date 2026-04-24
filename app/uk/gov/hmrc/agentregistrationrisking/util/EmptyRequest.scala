@@ -40,7 +40,7 @@ import scala.concurrent.Future
 
 object EmptyRequest:
 
-  private val emptyRequestHeader: RequestHeader =
+  val emptyRequestHeader: RequestHeader =
     new RequestHeader:
       def target: RequestTarget = RequestTarget(
         uriString = "/",

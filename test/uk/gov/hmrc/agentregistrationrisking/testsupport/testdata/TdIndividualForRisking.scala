@@ -61,7 +61,6 @@ trait TdIndividualForRisking { dependencies: TdBase =>
     ),
     createdAt = dependencies.nowAsInstant,
     lastUpdatedAt = dependencies.nowAsInstant,
-    riskingFileId = None,
     failures = None
   )
 
@@ -69,8 +68,7 @@ trait TdIndividualForRisking { dependencies: TdBase =>
     personReference: PersonReference
   ) = IndividualRiskingResponse(
     personReference = personReference,
-    providedName = individualName,
-    status = RiskingStatus.ReadyForSubmission,
+    providedName = dependencies.individualName,
     failures = None
   )
 

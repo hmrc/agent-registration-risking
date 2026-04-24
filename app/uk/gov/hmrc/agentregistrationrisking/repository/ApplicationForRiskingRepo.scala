@@ -79,17 +79,25 @@ extends Repo[ApplicationForRiskingId, ApplicationForRisking](
     riskingFileId: RiskingFileId
   ): Future[UpdateResult] = collection
     .updateMany(
-      Filters.in("_id", ids),
+      Filters.in("_id", ids.map(_.value)*),
       Updates.combine(
-        Updates.set("riskingFileId", riskingFileId),
-        Updates.set("lastUpdatedAt", Instant.now(clock))
+        Updates.set("riskingFileId", riskingFileId.value),
+        Updates.set("lastUpdatedAt", Instant.now(clock).toString)
       )
     ).toFuture()
 
   def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
     .find(
       Filters.and(
-        Filters.exists("failures"), // TODO: failures == Some(EmptyList), maybe: Filters.eq("failures", Nil)
+        Filters.size("failures", 0),
+        Filters.eq("isSubscribed", false)
+      )
+    ).toFuture()
+
+  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.exists("failures"),
         Filters.eq("isSubscribed", false)
       )
     ).toFuture()

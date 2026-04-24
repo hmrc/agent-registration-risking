@@ -102,7 +102,10 @@ extends RequestAwareLogging:
                 riskingResultRecords <- resultsFileService.downloadAndParseRecords(resultsFile)
                 _ <- applicationStatusService.processResults(riskingResultRecords)
                 uploadResult <- resultsFileService.uploadAndLogResultFile(resultsFile)
-                approvedApplicationsWithIndividuals <- applicationStatusService.getApprovedApplicationsWithIndividuals
+                getAllApplicationsWithIndividualsWithResults <- applicationStatusService.getAllUnsubscribedApplicationsWithIndividualsWithResults
+                approvedApplicationsWithIndividuals = applicationStatusService.getApprovedApplicationsWithIndividuals(
+                  getAllApplicationsWithIndividualsWithResults
+                )
                 _ <- subscribeApprovedApplications(approvedApplicationsWithIndividuals)
               yield completed :+ uploadResult
     yield uploadResults

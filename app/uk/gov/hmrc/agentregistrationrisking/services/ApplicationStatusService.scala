@@ -48,25 +48,47 @@ class ApplicationStatusService @Inject() (
 )
 extends RequestAwareLogging:
 
-  def getCompletedUnsubscribedApplicationsWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
+  def getAllUnsubscribedApplicationsWithIndividualsWithResults: Future[Seq[ApplicationWithIndividuals]] =
     for
-      applications <- applicationForRiskingRepo.findReadyForSubscription()
+      applications <- applicationForRiskingRepo.findNotSubscribedWithResults()
       applicationsWithIndividuals <-
         Future.traverse(applications): application =>
           individualForRiskingRepo.findByApplicationForRiskingId(application._id)
             .map(individuals => ApplicationWithIndividuals(application, individuals))
             .map: appWithIndividuals =>
-              val allIndividualsReceived = appWithIndividuals.individuals.forall(_.status === RiskingStatus.ReceivedRiskingResults)
+              val allIndividualsReceived = appWithIndividuals.individuals.forall(_.failures.isDefined)
               if allIndividualsReceived then Some(appWithIndividuals) else None
     yield applicationsWithIndividuals.flatten
 
-  def getApprovedApplicationsWithIndividuals: Future[Seq[ApplicationWithIndividuals]] = getCompletedUnsubscribedApplicationsWithIndividuals.map:
-    applicationsWithIndividuals =>
-      applicationsWithIndividuals.filter: appWithIndividuals =>
-        val entityApproved = appWithIndividuals.application.failures.exists(_.outcome() === EntityRiskingOutcome.Approved)
-        val allIndividualsApproved = appWithIndividuals.individuals.forall: individual =>
-          individual.failures.exists(_.outcome() === IndividualRiskingOutcome.Approved)
-        entityApproved && allIndividualsApproved
+  def getApprovedApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
+    applicationsWithIndividuals.filter: appWithIndividuals =>
+      val entityApproved = appWithIndividuals.application.failures.exists(_.outcome() === EntityRiskingOutcome.Approved)
+      val allIndividualsApproved = appWithIndividuals.individuals.forall: individual =>
+        individual.failures.exists(_.outcome() === IndividualRiskingOutcome.Approved)
+      entityApproved && allIndividualsApproved
+
+  def getNonFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
+    applicationsWithIndividuals.flatMap: appWithIndividuals =>
+      val entityNonFixable = appWithIndividuals.application.failures.exists(_.outcome() === EntityRiskingOutcome.FailedNonFixable)
+      val nonFixableIndividuals = appWithIndividuals.individuals.filter: individual =>
+        individual.failures.exists(_.outcome() === IndividualRiskingOutcome.FailedNonFixable)
+      if entityNonFixable || nonFixableIndividuals.nonEmpty then
+        Some(ApplicationWithIndividuals(appWithIndividuals.application, nonFixableIndividuals))
+      else
+        None
+
+  def getFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
+    val nonFixableAppIds = getNonFixableApplicationsWithIndividuals(applicationsWithIndividuals).map(_.application._id).toSet
+    applicationsWithIndividuals
+      .filterNot(a => nonFixableAppIds.contains(a.application._id))
+      .flatMap: appWithIndividuals =>
+        val entityFixable = appWithIndividuals.application.failures.exists(_.outcome() === EntityRiskingOutcome.FailedFixable)
+        val fixableIndividuals = appWithIndividuals.individuals.filter: individual =>
+          individual.failures.exists(_.outcome() === IndividualRiskingOutcome.FailedFixable)
+        if entityFixable || fixableIndividuals.nonEmpty then
+          Some(ApplicationWithIndividuals(appWithIndividuals.application, fixableIndividuals))
+        else
+          None
 
   def processResults(riskingResultRecords: List[RiskingResultRecord])(using request: RequestHeader): Future[Unit] =
     // Process in order so repeated updates to the same application do not race.

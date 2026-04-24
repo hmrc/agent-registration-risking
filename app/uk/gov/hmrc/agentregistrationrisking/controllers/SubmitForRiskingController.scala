@@ -94,6 +94,5 @@ extends BackendController(cc):
     individualProvidedDetails = individual,
     createdAt = now,
     lastUpdatedAt = now,
-    riskingFileId = None,
     failures = None
   )

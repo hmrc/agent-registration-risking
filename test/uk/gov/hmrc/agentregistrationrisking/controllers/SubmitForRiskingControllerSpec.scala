@@ -71,7 +71,6 @@ extends ControllerSpec:
     val savedIndividuals = individualRepo.findByApplicationForRiskingId(savedApplication._id).futureValue
     savedIndividuals.size shouldBe 1
     savedIndividuals.headOption.value.individualProvidedDetails.personReference shouldBe tdAll.personReference
-    savedIndividuals.headOption.value.status shouldBe RiskingStatus.ReadyForSubmission
     savedIndividuals.headOption.value.failures shouldBe None
 
     AuthStubs.verifyAuthorise()

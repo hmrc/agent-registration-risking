@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import com.google.inject.Inject
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
@@ -53,4 +54,4 @@ extends BackendController(cc):
               Future.successful(Ok)
 
   // TODO
-  private def onFileReady(): Future[Status] = sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok) // TODO: what if few notifications received in the same time during the processing of one notificaion
+  private def onFileReady()(using RequestHeader): Future[Status] = sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok) // TODO: what if few notifications received in the same time during the processing of one notificaion

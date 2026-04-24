@@ -48,8 +48,7 @@ extends ISpec:
       riskingFileId = Some(RiskingFileId("submitted-file"))
     )
     val individual = tdAll.readyForSubmissionIndividual(application._id).copy(
-      _id = IndividualForRiskingId("test-ind"),
-      riskingFileId = Some(RiskingFileId("submitted-file"))
+      _id = IndividualForRiskingId("test-ind")
     )
     repo.upsert(application).futureValue
     individualRepo.upsert(individual).futureValue
