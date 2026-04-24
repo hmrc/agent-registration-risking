@@ -65,7 +65,6 @@ trait TdApplicationForRisking { dependencies: TdBase =>
       amlsDetails = Some(AmlsDetails(
         supervisoryBody = dependencies.amlsCode,
         amlsRegistrationNumber = Some(dependencies.amlsRegistrationNumber),
-        amlsExpiryDate = Some(LocalDate.parse(dependencies.dateString)),
         amlsEvidence = Some(AmlsEvidence(
           UploadId("evidence-reference-123"),
           "certificate.pdf",

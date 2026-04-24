@@ -133,7 +133,7 @@ object RiskingFileDataRecord:
       payeRefs = transformToCommaSeparatedString(app.payeRefs.map(_.map(_.value))),
       amlSupervisoryBody = Some(app.getAmlsDetails.supervisoryBody),
       amlRegNumber = Some(app.getAmlsDetails.getRegistrationNumber),
-      amlExpiryDate = app.getAmlsDetails.amlsExpiryDate,
+      amlExpiryDate = None, // we don't capture the AML expiry date in the application
       amlEvidence = app.getAmlsDetails.amlsEvidence,
       personReference = None,
       individualCompaniesHouseName = None,

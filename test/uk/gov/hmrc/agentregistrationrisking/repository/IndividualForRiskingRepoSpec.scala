@@ -28,7 +28,12 @@ extends ISpec:
 
   val repo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
-  private def makeIndividual(id: String, appId: String, personRef: String, failures: Option[List[IndividualFailure]] = None) =
+  private def makeIndividual(
+    id: String,
+    appId: String,
+    personRef: String,
+    failures: Option[List[IndividualFailure]] = None
+  ) =
     val base = tdAll.readyForSubmissionIndividual(ApplicationForRiskingId(appId))
     base.copy(
       _id = IndividualForRiskingId(id),
@@ -39,9 +44,21 @@ extends ISpec:
   "findByApplicationForRiskingId" - {
 
     "returns all individuals for an application" in {
-      val ind1 = makeIndividual("ind-1", "app-1", "person-1")
-      val ind2 = makeIndividual("ind-2", "app-1", "person-2")
-      val ind3 = makeIndividual("ind-3", "app-2", "person-3")
+      val ind1 = makeIndividual(
+        "ind-1",
+        "app-1",
+        "person-1"
+      )
+      val ind2 = makeIndividual(
+        "ind-2",
+        "app-1",
+        "person-2"
+      )
+      val ind3 = makeIndividual(
+        "ind-3",
+        "app-2",
+        "person-3"
+      )
       repo.upsert(ind1).futureValue
       repo.upsert(ind2).futureValue
       repo.upsert(ind3).futureValue
@@ -59,7 +76,11 @@ extends ISpec:
   "findByPersonReference" - {
 
     "returns individual when found" in {
-      val ind = makeIndividual("find-ind-1", "app-1", "find-person-1")
+      val ind = makeIndividual(
+        "find-ind-1",
+        "app-1",
+        "find-person-1"
+      )
       repo.upsert(ind).futureValue
 
       val result = repo.findByPersonReference(PersonReference("find-person-1")).futureValue

@@ -65,22 +65,22 @@ import scala.util.Random
 
 @Singleton()
 class TestRiskingController @Inject() (
-                                        cc: ControllerComponents,
-                                        actions: Actions,
-                                        applicationForRiskingRepo: ApplicationForRiskingRepo,
-                                        individualForRiskingRepo: IndividualForRiskingRepo,
-                                        applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
-                                        individualForRiskingIdGenerator: IndividualForRiskingIdGenerator,
-                                        individualProvidedDetailsIdGenerator: IndividualProvidedDetailsIdGenerator,
-                                        agentReferenceGenerator: ApplicationReferenceGenerator,
-                                        personReferenceGenerator: PersonReferenceGenerator,
-                                        riskingFileService: RiskingFileService,
-                                        riskingRunner: RiskingRunner,
-                                        sdesProxyService: SdesProxyService,
-                                        subscribeAgentService: SubscribeAgentService
-                                      )(using Clock)
-  extends BackendController(cc)
-    with Logging:
+  cc: ControllerComponents,
+  actions: Actions,
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
+  individualForRiskingIdGenerator: IndividualForRiskingIdGenerator,
+  individualProvidedDetailsIdGenerator: IndividualProvidedDetailsIdGenerator,
+  agentReferenceGenerator: ApplicationReferenceGenerator,
+  personReferenceGenerator: PersonReferenceGenerator,
+  riskingFileService: RiskingFileService,
+  riskingRunner: RiskingRunner,
+  sdesProxyService: SdesProxyService,
+  subscribeAgentService: SubscribeAgentService
+)(using Clock)
+extends BackendController(cc)
+with Logging:
 
   given ExecutionContext = controllerComponents.executionContext
 
@@ -129,12 +129,12 @@ class TestRiskingController @Inject() (
             case None => Future.successful(NotFound(s"No application found for reference: ${applicationReference.value}"))
 
   private def makeApplicationForRisking(
-                                         appId: ApplicationForRiskingId,
-                                         now: Instant
-                                       ): ApplicationForRisking =
+    appId: ApplicationForRiskingId,
+    now: Instant
+  ): ApplicationForRisking =
     val agentApplication = AgentApplicationLlp(
       _id = AgentApplicationId(appId.value),
-      applicationReference = agentReferenceGenerator.nextApplicationReference(),
+      applicationReference = agentReferenceGenerator.generateApplicationReference(),
       internalUserId = InternalUserId("test-internal-user-id"),
       applicantCredentials = Credentials(
         providerId = "test-provider-id",
@@ -164,7 +164,6 @@ class TestRiskingController @Inject() (
       amlsDetails = Some(AmlsDetails(
         supervisoryBody = AmlsCode("HMRC"),
         amlsRegistrationNumber = Some(AmlsRegistrationNumber("11223344")),
-        amlsExpiryDate = Some(LocalDate.of(2030, 1, 1)),
         amlsEvidence = None
       )),
       agentDetails = Some(AgentDetails(
@@ -212,15 +211,15 @@ class TestRiskingController @Inject() (
     )
 
   private def createIndividualsList(
-                                     numberOfIndividuals: Int,
-                                     appId: ApplicationForRiskingId,
-                                     now: Instant
-                                   ): List[IndividualForRisking] = (1 to numberOfIndividuals).map(_ => makeIndividual(appId, now)).toList
+    numberOfIndividuals: Int,
+    appId: ApplicationForRiskingId,
+    now: Instant
+  ): List[IndividualForRisking] = (1 to numberOfIndividuals).map(_ => makeIndividual(appId, now)).toList
 
   private def makeIndividual(
-                              appId: ApplicationForRiskingId,
-                              now: Instant
-                            ): IndividualForRisking =
+    appId: ApplicationForRiskingId,
+    now: Instant
+  ): IndividualForRisking =
     val providedDetails = IndividualProvidedDetails(
       _id = individualProvidedDetailsIdGenerator.nextIndividualProvidedDetailsId(),
       personReference = personReferenceGenerator.nextPersonReference(),
