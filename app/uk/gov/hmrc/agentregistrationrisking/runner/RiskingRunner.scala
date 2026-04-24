@@ -59,11 +59,10 @@ class RiskingRunner @Inject() (
 )
 extends RequestAwareLogging:
 
-  // outbound flow
   def run(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
     val riskingFileId: RiskingFileId = riskingFileIdGenerator.nextRiskingFileId()
-    logger.info(s"Running risking started: [$riskingFileId] ...")
+    logger.info(s"Sending for risking started: [$riskingFileId] ...")
 
     for
       applicationsWithIndividuals <- riskingFileService.getApplicationsReadyForRiskingWithIndividuals
@@ -81,43 +80,7 @@ extends RequestAwareLogging:
         ids = applicationsWithIndividuals.map(_.application._id),
         riskingFileId = riskingFileId
       )
-      // _ <- Future.traverse(applicationsWithIndividuals)(saveApplicationWithIndividuals(_, riskingFileId))
       _ = logger.info(s"Marked ${applicationsWithIndividuals.size} applications as submitted for risking")
       _ <- sdesProxyService.notifySdesFileReady(objectSummary)
       _ = logger.info(s"SDES notification sent for file: ${objectSummary.location.fileName}")
     yield ()
-
-//  private def markAsSubmittedForRisking(
-//    applicationsWithIndividuals: Seq[ApplicationWithIndividuals],
-//    riskingFileId: RiskingFileId,
-//    fileName: String
-//  ): Future[Unit] =
-//    for
-//      _ <- saveRiskingFile(riskingFileId, fileName)
-//      _ <- Future.traverse(applicationsWithIndividuals)(saveApplicationWithIndividuals(_, riskingFileId))
-//    yield ()
-
-//  private def saveRiskingFile(
-//    riskingFileId: RiskingFileId,
-//    fileName: String
-//  ): Future[Unit] = riskingFileRepo.upsert(RiskingFile(
-//    _id = riskingFileId,
-//    fineName = fileName,
-//    uploadedAt = java.time.Instant.now(clock)
-//  ))
-
-//  private def saveApplicationWithIndividuals(
-//    appWithIndividuals: ApplicationWithIndividuals,
-//    riskingFileId: RiskingFileId
-//  ): Future[Unit] =
-//    for
-//      _ <- applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(
-//        riskingFileId = Some(riskingFileId),
-//        lastUpdatedAt = Instant.now(summon[Clock])
-//      ))
-//      _ <-
-//        Future.traverse(appWithIndividuals.individuals)(individual =>
-//          individualForRiskingRepo.upsert(individual.copy(riskingFileId = Some(riskingFileId), lastUpdatedAt = Instant.now(summon[Clock])))
-//        )
-//    yield ()
-//  .map(_ => ())
