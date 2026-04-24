@@ -40,17 +40,17 @@ extends ISpec:
   "RiskingRunner.run prepares and uploads file to object store" in:
 
     val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
-    val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+    val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
     val riskingFileRepo: RiskingFileRepo = app.injector.instanceOf[RiskingFileRepo]
     val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
-    val personReference1 = PersonReference(randomId)
-    val personReference2 = PersonReference(randomId)
-    val personReference3 = PersonReference(randomId)
+    val personReference1 = PersonReference(randomId())
+    val personReference2 = PersonReference(randomId())
+    val personReference3 = PersonReference(randomId())
 
     val application = tdAll.llpApplicationForRisking
     given request: Request[AnyContent] = TdAll.tdAll.fakeBackendRequest
-    repo.upsert(application).futureValue
+    applicationForRiskingRepo.upsert(application).futureValue
 
     val baseIndividual = tdAll.readyForSubmissionIndividual(application._id)
     val individual1 = baseIndividual.copy(
@@ -100,7 +100,7 @@ extends ISpec:
     ObjectStoreStubs
       .getRequestBody(fileName = fileName) shouldBe
       s"""00|ARR|SAS|20591125|163351
-         |01|Entity|N|${application.agentApplication.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456|25-11-2059|evidence-reference-123|||||||||||
+         |01|Entity|N|${application.agentApplication.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456||evidence-reference-123|||||||||||
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
@@ -108,7 +108,7 @@ extends ISpec:
          |"""
         .stripMargin
 
-    val updatedApplication = repo.findByApplicationReference(application.agentApplication.applicationReference).futureValue.value
+    val updatedApplication = applicationForRiskingRepo.findByApplicationReference(application.agentApplication.applicationReference).futureValue.value
     updatedApplication.status shouldBe RiskingStatus.SubmittedForRisking
     updatedApplication.riskingFileId.isDefined shouldBe true
 

@@ -31,9 +31,9 @@ extends ISpec:
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
   val service: RiskingFileService = app.injector.instanceOf[RiskingFileService]
-  val personReference1: PersonReference = PersonReference(randomId)
-  val personReference2: PersonReference = PersonReference(randomId)
-  val personReference3: PersonReference = PersonReference(randomId)
+  val personReference1: PersonReference = PersonReference(randomId())
+  val personReference2: PersonReference = PersonReference(randomId())
+  val personReference3: PersonReference = PersonReference(randomId())
 
   "getApplicationsReadyForRiskingWithIndividuals retrieves only ready applications with their individuals" in:
 
@@ -92,7 +92,7 @@ extends ISpec:
 
     result shouldBe
       s"""00|ARR|SAS|20591125|163351
-         |01|Entity|N|${tdAll.llpApplicationForRisking.agentApplication.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456|25-11-2059|evidence-reference-123|||||||||||
+         |01|Entity|N|${tdAll.llpApplicationForRisking.agentApplication.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456||evidence-reference-123|||||||||||
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
          |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y

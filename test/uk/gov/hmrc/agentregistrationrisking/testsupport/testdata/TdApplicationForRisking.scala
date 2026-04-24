@@ -35,7 +35,7 @@ import java.time.LocalDate
 trait TdApplicationForRisking { dependencies: TdBase =>
 
   val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
-    _id = ApplicationForRiskingId(randomId),
+    _id = ApplicationForRiskingId(randomId()),
     agentApplication = AgentApplicationLlp(
       _id = dependencies.agentApplicationId,
       applicationReference = ApplicationReference("ABC123456"),

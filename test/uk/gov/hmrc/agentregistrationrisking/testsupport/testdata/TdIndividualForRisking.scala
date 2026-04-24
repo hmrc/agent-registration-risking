@@ -37,10 +37,10 @@ trait TdIndividualForRisking { dependencies: TdBase =>
   def readyForSubmissionIndividual(
     applicationForRiskingId: ApplicationForRiskingId = ApplicationForRiskingId("default-app-id")
   ): IndividualForRisking = IndividualForRisking(
-    _id = IndividualForRiskingId(randomId),
+    _id = IndividualForRiskingId(randomId()),
     applicationForRiskingId = applicationForRiskingId,
     individualProvidedDetails = IndividualProvidedDetails(
-      _id = IndividualProvidedDetailsId(randomId),
+      _id = IndividualProvidedDetailsId(randomId()),
       personReference = dependencies.personReference,
       individualName = dependencies.individualName,
       isPersonOfControl = true,
