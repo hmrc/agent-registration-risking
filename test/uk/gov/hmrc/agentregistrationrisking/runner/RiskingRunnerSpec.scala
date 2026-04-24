@@ -28,9 +28,11 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.fileDownloadLocation
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
+import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 class RiskingRunnerSpec
 extends ISpec:
@@ -69,7 +71,6 @@ extends ISpec:
 
     val fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
     ObjectStoreStubs.stubObjectStoreTransfer(fileName = fileName)
-    ObjectStoreStubs.stubObjectStoreGeneratePresignedUrl(tdAll.objectStoreDirectory, tdAll.fileName)
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
 
     riskingRunner.run().futureValue shouldBe ()
@@ -82,10 +83,10 @@ extends ISpec:
            |  "file":{
            |    "recipientOrSender":"test-srn",
            |    "name":"$fileName",
-           |    "location":"http://presigned-url/file",
+           |    "location":"$fileDownloadLocation",
            |    "checksum":{
            |      "algorithm":"md5",
-           |      "value":"a3c2f1e38701bd2c7b54ebd7b1cd0dbc"
+           |      "value":"6b77367f57b7f3bd356ddd9cedbe7879b77b6f571dd1d6dc"
            |    },
            |    "size":12345
            |  },

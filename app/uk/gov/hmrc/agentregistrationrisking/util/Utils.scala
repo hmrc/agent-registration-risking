@@ -14,19 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.util
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.PersonReference
+import java.util.Base64
 
-final case class IndividualRiskingResponse(
-  personReference: PersonReference,
-  providedName: IndividualName,
-  failures: Option[List[IndividualFailure]]
-)
-
-object IndividualRiskingResponse:
-
-  given OFormat[IndividualRiskingResponse] = Json.format[IndividualRiskingResponse]
+object Utils:
+  def base64ToHex(base64: String): String = Base64.getDecoder.decode(base64).map("%02x".format(_)).mkString

@@ -25,8 +25,10 @@ import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
+import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 import java.time.Clock
 import java.time.Instant
@@ -53,37 +55,30 @@ class SdesProxyService @Inject() (
 extends RequestAwareLogging:
 
   def notifySdesFileReady(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[Unit] =
-    for {
-      fileReadyNotification <- makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
-      _ <- sdesProxyConnector.notifySdesFileReady(fileReadyNotification)
-    } yield ()
+    val fileReadyNotification = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
+    sdesProxyConnector.notifySdesFileReady(fileReadyNotification)
 
-  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): Future[NotifySdesFileReadyRequest] = {
+  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): NotifySdesFileReadyRequest = {
     val informationType: SdesInformationType = appConfig.SdesProxy.outboundInformationType
     val serviceReferenceNumber: SdesSrn = appConfig.SdesProxy.srn
-    /* SDES do not access our object store directly, instead we call object store to generate a presigned url for processing downstream */
-    for {
-      presignedUrl <- objectStoreService.generatePreSignedDownloadUrl(
-        objectSummaryWithMd5.location.directory,
-        objectSummaryWithMd5.location.fileName
-      )
-    } yield {
-      NotifySdesFileReadyRequest(
-        informationType = informationType,
-        file = NotifySdesFile(
-          recipientOrSender = Some(serviceReferenceNumber),
-          name = objectSummaryWithMd5.location.fileName,
-          location = Some(presignedUrl.downloadUrl.toString),
-          checksum = NotifySdesFileReadyChecksum(
-            algorithm = SdesChecksumAlgorithm.md5,
-            value = objectSummaryWithMd5.contentMd5.value
-          ),
-          size = objectSummaryWithMd5.contentLength.intValue,
-          properties = None
+    val objectStoreLocation = s"${appConfig.SdesProxy.objectStoreLocationPrefix}/${objectSummaryWithMd5.location.directory.asUri}"
+    val fileName = s"${objectSummaryWithMd5.location.fileName}"
+
+    NotifySdesFileReadyRequest(
+      informationType = informationType,
+      file = NotifySdesFile(
+        recipientOrSender = Some(serviceReferenceNumber),
+        name = objectSummaryWithMd5.location.fileName,
+        location = Some(s"$objectStoreLocation$fileName"),
+        checksum = NotifySdesFileReadyChecksum(
+          algorithm = SdesChecksumAlgorithm.md5,
+          value = base64ToHex(objectSummaryWithMd5.contentMd5.value)
         ),
-        audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
-      )
-    }
+        size = objectSummaryWithMd5.contentLength.intValue,
+        properties = None
+      ),
+      audit = NotifySdesAudit(correlationIdGenerator.nextCorrelationId)
+    )
   }
 
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =

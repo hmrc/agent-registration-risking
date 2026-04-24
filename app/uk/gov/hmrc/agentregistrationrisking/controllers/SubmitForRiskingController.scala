@@ -39,17 +39,17 @@ import scala.concurrent.Future
 
 @Singleton()
 class SubmitForRiskingController @Inject() (
-  actions: Actions,
-  cc: ControllerComponents,
-  applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
-  applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
-  individualForRiskingIdGenerator: IndividualForRiskingIdGenerator
-)(using
-  ExecutionContext,
-  Clock
-)
-extends BackendController(cc):
+                                             actions: Actions,
+                                             cc: ControllerComponents,
+                                             applicationForRiskingRepo: ApplicationForRiskingRepo,
+                                             individualForRiskingRepo: IndividualForRiskingRepo,
+                                             applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
+                                             individualForRiskingIdGenerator: IndividualForRiskingIdGenerator
+                                           )(using
+                                             ExecutionContext,
+                                             Clock
+                                           )
+  extends BackendController(cc):
 
   def submitForRisking(): Action[SubmitForRiskingRequest] =
     actions
@@ -70,10 +70,10 @@ extends BackendController(cc):
           yield Created
 
   private def toApplicationForRisking(
-    request: SubmitForRiskingRequest,
-    appId: ApplicationForRiskingId,
-    now: Instant
-  ): ApplicationForRisking = ApplicationForRisking(
+                                       request: SubmitForRiskingRequest,
+                                       appId: ApplicationForRiskingId,
+                                       now: Instant
+                                     ): ApplicationForRisking = ApplicationForRisking(
     _id = appId,
     agentApplication = request.agentApplication,
     createdAt = now,
@@ -85,10 +85,10 @@ extends BackendController(cc):
   )
 
   private def toIndividualForRisking(
-    individual: IndividualProvidedDetails,
-    appId: ApplicationForRiskingId,
-    now: Instant
-  ): IndividualForRisking = IndividualForRisking(
+                                      individual: IndividualProvidedDetails,
+                                      appId: ApplicationForRiskingId,
+                                      now: Instant
+                                    ): IndividualForRisking = IndividualForRisking(
     _id = individualForRiskingIdGenerator.nextIndividualId(),
     applicationForRiskingId = appId,
     individualProvidedDetails = individual,
