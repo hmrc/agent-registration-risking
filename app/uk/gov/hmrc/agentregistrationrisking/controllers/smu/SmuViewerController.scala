@@ -27,8 +27,6 @@ import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
-import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.controllers.BackendController
@@ -36,6 +34,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.smu.SmuIndividualResponse
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.objectstore.client.PresignedDownloadUrl
 
@@ -48,6 +47,7 @@ class SmuViewerController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo,
   objectStoreService: ObjectStoreService,
   appConfig: AppConfig
 )
@@ -73,23 +73,26 @@ extends BackendController(cc):
   def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.default.async: request =>
     given RequestHeader = emptyRequestHeader
     for
-      maybeApp: Option[ApplicationForRisking] <- applicationForRiskingRepo.findByPersonReference(personReference)
-      maybeIndividual: Option[IndividualForRisking] = maybeApp.flatMap(_.individuals.find(i => i.personReference === personReference))
+      maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findByPersonReference(personReference)
+      maybeApp: Option[ApplicationForRisking] <-
+        maybeIndividual match
+          case Some(indi) => applicationForRiskingRepo.findById(indi.applicationForRiskingId)
+          case None => Future.successful(None)
       maybePresignedAmlsEvidenceUrl: Option[PresignedDownloadUrl] <-
         maybeApp match
           case Some(app) =>
-            val amlsEvidence: AmlsEvidence = app.amlEvidence.getOrThrowExpectedDataMissing("amlEvidence")
+            val amlsEvidence: AmlsEvidence = app.agentApplication.getAmlsDetails.getAmlsEvidence
             objectStoreService.generatePreSignedDownloadUrl(
               amlsEvidence.objectStoreLocation.directory,
               amlsEvidence.fileName,
               appConfig.SmuViewer.amlsEvidenceOwner
             ).map(Option(_))
           case None => Future.successful(None)
-    yield (maybeApp, maybeIndividual, maybePresignedAmlsEvidenceUrl) match
-      case (Some(app), Some(indi), Some(presignedUrl)) =>
+    yield (maybeIndividual, maybeApp, maybePresignedAmlsEvidenceUrl) match
+      case (Some(indi), Some(app), Some(presignedUrl)) =>
         Ok(Json.toJson(SmuIndividualResponse.make(
-          app,
-          indi,
+          indi.individualProvidedDetails,
+          app.agentApplication,
           presignedUrl
         )))
       case _ => NoContent
