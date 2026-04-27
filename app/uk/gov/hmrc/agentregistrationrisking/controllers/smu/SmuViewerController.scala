@@ -88,8 +88,8 @@ extends BackendController(cc):
     yield (maybeApp, maybeIndividual, maybePresignedAmlsEvidenceUrl) match
       case (Some(app), Some(indi), Some(presignedUrl)) =>
         Ok(Json.toJson(SmuIndividualResponse.make(
-          indi,
           app,
+          indi,
           presignedUrl
         )))
       case _ => NoContent

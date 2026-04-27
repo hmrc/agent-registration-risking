@@ -37,8 +37,8 @@ import java.time.LocalDate
   * This case class aggregates individual provided details and agent application details.
   */
 final case class SmuIndividualResponse(
-  individual: SmuIndividualResponse.Individual,
-  entity: SmuIndividualResponse.Entity
+  entity: SmuIndividualResponse.Entity,
+  individual: SmuIndividualResponse.Individual
 )
 
 object SmuIndividualResponse:
@@ -57,8 +57,8 @@ object SmuIndividualResponse:
     applicantName: ApplicantName,
     businessType: BusinessType,
     utr: Utr,
-    payeRefs: Option[List[PayeRef]],
-    vrns: Option[List[Vrn]],
+    payeRefs: String,
+    vrns: String,
     crn: Option[Crn],
     amlsSupervisoryBody: AmlsCode,
     amlsRegNumber: AmlsRegistrationNumber,
@@ -84,17 +84,13 @@ object SmuIndividualResponse:
       utr = app.entityIdentifier,
       payeRefs = app.payeRefs,
       vrns = app.vrns,
-      crn =
-        app match
-          case aa: IsIncorporated => Some(aa.getCrn)
-          case _ => None
-      ,
-      amlsSupervisoryBody = app.getAmlsDetails.supervisoryBody,
-      amlsRegNumber = app.getAmlsDetails.getRegistrationNumber,
-      amlsExpiryDate = None,
+      crn = app.crn,
+      amlsSupervisoryBody = app.amlSupervisoryBody,
+      amlsRegNumber = app.amlRegNumber,
+      amlsExpiryDate = app.amlExpiryDate,
       amlsEvidencePresignedDownloadUrl = Some(amlsEvidencePresignedDownloadUrl.downloadUrl.toString),
-      applicantPhone = app.applicantContactDetails.map(_.getTelephoneNumber),
-      applicantEmail = app.applicantContactDetails.map(_.getVerifiedEmail)
+      applicantPhone = app.applicantPhone,
+      applicantEmail = app.applicantEmail
     )
 
   final case class Individual(
@@ -106,8 +102,8 @@ object SmuIndividualResponse:
     individualDateOfBirth: LocalDate,
     individualNino: Option[Nino],
     individualSaUtr: Option[SaUtr],
-    payeRefs: Option[List[PayeRef]],
-    vrns: Option[List[Vrn]],
+    payeRefs: String,
+    vrns: String,
     telephoneNumber: TelephoneNumber,
     emailAddress: EmailAddress
   )
@@ -120,23 +116,23 @@ object SmuIndividualResponse:
       personReference = indi.personReference,
       // TODO update this once we have implemented resubmission flags
       resubmission = false,
-      passedIdentityVerification = indi.getPassedIv,
+      passedIdentityVerification = indi.passedIV,
       // TODO update this once we have details provided by applicant feature
       detailsProvidedByApplicant = false,
-      individualName = indi.individualName,
+      individualName = indi.providedName,
       individualDateOfBirth =
-        indi.getDateOfBirth match
+        indi.providedDateOfBirth match
           case IndividualDateOfBirth.Provided(date) => date
           case IndividualDateOfBirth.FromCitizensDetails(date) => date
       ,
       individualNino =
-        indi.individualNino match
+        indi.nino match
           case Some(IndividualNino.Provided(nino)) => Some(nino)
           case Some(IndividualNino.FromAuth(nino)) => Some(nino)
           case _ => None
       ,
       individualSaUtr =
-        indi.individualSaUtr match {
+        indi.saUtr match {
           case Some(IndividualSaUtr.Provided(saUtr)) => Some(saUtr)
           case Some(IndividualSaUtr.FromAuth(saUtr)) => Some(saUtr)
           case Some(IndividualSaUtr.FromCitizenDetails(saUtr)) => Some(saUtr)
@@ -144,6 +140,6 @@ object SmuIndividualResponse:
         },
       payeRefs = indi.payeRefs,
       vrns = indi.vrns,
-      telephoneNumber = indi.getTelephoneNumber,
-      emailAddress = indi.getEmailAddress.emailAddress
+      telephoneNumber = indi.phoneNumber,
+      emailAddress = indi.email
     )
