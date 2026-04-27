@@ -37,6 +37,7 @@ extends Connector:
     val fileLocation: URL = new URI(availableFile.downloadURL).toURL
     httpClient
       .get(fileLocation)
+      .withProxy
       .execute[HttpResponse]
       .map: response =>
         response.status match
