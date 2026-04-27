@@ -27,7 +27,7 @@ extends UnitSpec:
   "risking response reader should parse a JSON array consisting of pass records correctly" in {
     val testRecordArray: JsValue = passRecordArrayFile
 
-    val result: List[RiskingResultRecord] = testRecordArray.validate[List[RiskingResultRecord]].get
+    val result: List[RiskingResultRaw] = testRecordArray.validate[List[RiskingResultRaw]].get
     val expected = List(passRecord1, passRecord2)
 
     result shouldBe expected
@@ -36,7 +36,7 @@ extends UnitSpec:
   "risking response reader should parse a JSON array consisting of failure records correctly" in {
     val testRecordArray: JsValue = failRecordArrayFile
 
-    val result: List[RiskingResultRecord] = testRecordArray.validate[List[RiskingResultRecord]].get
+    val result: List[RiskingResultRaw] = testRecordArray.validate[List[RiskingResultRaw]].get
     val expected = List(
       failRecord1,
       failRecord2,

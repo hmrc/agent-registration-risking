@@ -17,11 +17,10 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -32,6 +31,7 @@ import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -81,8 +81,6 @@ extends RequestAwareLogging:
     )
   }
 
-  // TODO 1. Decide when to return status. Now is after all processing but that can take time and what if something fail.
-  // TODO 2. Now there is no recovery for processResults so if one record fail whole processing will stop and no status will be returned. This is not ideal.  need more discussion on how to handle this.
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")
     for
@@ -96,20 +94,23 @@ extends RequestAwareLogging:
           ) =>
             processedFiles.flatMap: completed =>
               for
-                records <- resultsFileService.downloadAndParseRecords(resultsFile)
-                _ <- applicationStatusService.processResults(records)
+                riskingResultRecords <- resultsFileService.downloadAndParseRecords(resultsFile)
+                _ <- applicationStatusService.processResults(riskingResultRecords)
                 uploadResult <- resultsFileService.uploadAndLogResultFile(resultsFile)
-                updatedApplications <- applicationStatusService.updateApplicationStatuses(records)
-                approvedApplications = updatedApplications.filter(_.status === ApplicationForRiskingStatus.Approved)
-                _ <- subscribeApprovedApplications(approvedApplications)
+                getAllApplicationsWithIndividualsWithResults <- applicationStatusService.getAllUnsubscribedApplicationsWithIndividualsWithResults
+                approvedApplicationsWithIndividuals = applicationStatusService.getApprovedApplicationsWithIndividuals(
+                  getAllApplicationsWithIndividualsWithResults
+                )
+                _ <- subscribeApprovedApplications(approvedApplicationsWithIndividuals)
               yield completed :+ uploadResult
     yield uploadResults
 
   private def subscribeApprovedApplications(
-    approvedApplications: Set[ApplicationForRisking]
-  )(using RequestHeader): Future[Unit] = Future.traverse(approvedApplications): application =>
-    subscribeAgentService.subscribeAgent(application).flatMap: _ =>
-      applicationForRiskingRepo.upsert(application.copy(status = ApplicationForRiskingStatus.SubscribedAndEnrolled))
+    approvedApplications: Seq[ApplicationWithIndividuals]
+  )(using RequestHeader): Future[Unit] = Future.traverse(approvedApplications): appWithIndividuals =>
+    subscribeAgentService.subscribeAgent(appWithIndividuals.application).flatMap: _ =>
+      applicationForRiskingRepo.upsert(appWithIndividuals.application.copy(isSubscribed = true, lastUpdatedAt = Instant.now(summon[Clock])))
     .recover:
-      case ex: Throwable => logger.error(s"Failed to subscribe application ${application.applicationReference.value}: ${ex.getMessage}")
+      case ex: Throwable =>
+        logger.error(s"Failed to subscribe application ${appWithIndividuals.application.agentApplication.applicationReference.value}: ${ex.getMessage}")
   .map(_ => ())

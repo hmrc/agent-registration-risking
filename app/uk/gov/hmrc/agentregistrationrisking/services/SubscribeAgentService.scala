@@ -17,9 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -41,23 +39,22 @@ class SubscribeAgentService @Inject() (
 extends RequestAwareLogging:
 
   def subscribeAgent(applicationForRisking: ApplicationForRisking)(using RequestHeader): Future[Arn] =
-    require(
-      requirement = applicationForRisking.status === ApplicationForRiskingStatus.Approved,
-      message = "Application must have the Approved status to subscribe to agent services"
-    )
+    val app = applicationForRisking.agentApplication
+    val agentDetails = app.getAgentDetails
+    val amlsDetails = app.getAmlsDetails
     val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(
-      name = applicationForRisking.agentDetails.businessName.getAgentBusinessName,
-      addr1 = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.addressLine1,
-      addr2 = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.addressLine2.getOrElse(""),
-      addr3 = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.addressLine3,
-      addr4 = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.addressLine4,
-      postcode = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.postalCode,
-      country = applicationForRisking.agentDetails.getAgentCorrespondenceAddress.countryCode,
-      phone = Some(applicationForRisking.agentDetails.getTelephoneNumber.agentTelephoneNumber),
-      email = applicationForRisking.agentDetails.getAgentEmailAddress.getEmailAddress,
-      supervisoryBody = Some(applicationForRisking.amlSupervisoryBody.value),
-      membershipNumber = Some(applicationForRisking.amlRegNumber.value),
-      evidenceObjectReference = None, // Evidence object reference is not required for agent subscription
+      name = agentDetails.businessName.getAgentBusinessName,
+      addr1 = agentDetails.getAgentCorrespondenceAddress.addressLine1,
+      addr2 = agentDetails.getAgentCorrespondenceAddress.addressLine2.getOrElse(""),
+      addr3 = agentDetails.getAgentCorrespondenceAddress.addressLine3,
+      addr4 = agentDetails.getAgentCorrespondenceAddress.addressLine4,
+      postcode = agentDetails.getAgentCorrespondenceAddress.postalCode,
+      country = agentDetails.getAgentCorrespondenceAddress.countryCode,
+      phone = Some(agentDetails.getTelephoneNumber.agentTelephoneNumber),
+      email = agentDetails.getAgentEmailAddress.getEmailAddress,
+      supervisoryBody = Some(amlsDetails.supervisoryBody.value),
+      membershipNumber = Some(amlsDetails.getRegistrationNumber.value),
+      evidenceObjectReference = None,
       updateDetailsStatus = "ACCEPTED",
       amlSupervisionUpdateStatus = "ACCEPTED",
       directorPartnerUpdateStatus = "ACCEPTED",
@@ -74,7 +71,7 @@ extends RequestAwareLogging:
 
     for
       arn <- hipConnector.subscribeToAgentServices(
-        safeId = applicationForRisking.entitySafeId,
+        safeId = app.getSafeId,
         subscribeAgentRequest = subscribeAgentRequest
       )
       enrolmentKey = s"HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}"
@@ -84,9 +81,9 @@ extends RequestAwareLogging:
       )
       _ <- enrolmentStoreProxyConnector.allocateEnrolmentToGroup(
         enrolmentKey = enrolmentKey,
-        groupId = applicationForRisking.applicantGroupId,
+        groupId = app.groupId,
         enrolmentRequest = EnrolmentRequest(
-          userId = applicationForRisking.applicantCredentials.providerId,
+          userId = app.applicantCredentials.providerId,
           `type` = "principal",
           friendlyName = subscribeAgentRequest.name,
           verifiers = knownFacts

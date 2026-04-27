@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import play.api.mvc.AnyContent
-import play.api.mvc.Request
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 
 class SubscribeAgentServiceSpec
@@ -26,13 +23,5 @@ extends ISpec:
 
   val service: SubscribeAgentService = app.injector.instanceOf[SubscribeAgentService]
 
-  "subscribeAgent call should throw an error when the application status is not Approved" in:
-
-    val notApprovedApplication: ApplicationForRisking = tdAll.llpApplicationForRisking
-    given request: Request[AnyContent] = tdAll.fakeBackendRequest
-
-    val expectedException =
-      the[IllegalArgumentException] thrownBy
-        service.subscribeAgent(notApprovedApplication)
-
-    expectedException.getMessage should include("Application must have the Approved status")
+  // TODO: Add integration tests for subscribeAgent with HIP and EnrolmentStoreProxy stubs
+  // Approval check is now done upstream in ApplicationStatusService.getApprovedApplicationsWithIndividuals

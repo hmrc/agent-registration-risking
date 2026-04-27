@@ -18,52 +18,74 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.businessdetails.BusinessDetailsLlp
+import uk.gov.hmrc.agentregistration.shared.businessdetails.CompanyProfile
+import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantContactDetails
+import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantEmailAddress
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
+import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.upload.UploadId
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.objectstore.client.Path.File
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 
-import java.time.Instant
 import java.time.LocalDate
 
-trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
-
-  private val createdAt: Instant = dependencies.nowAsInstant
+trait TdApplicationForRisking { dependencies: TdBase =>
 
   val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
-    applicationReference = ApplicationReference(randomId),
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
-    createdAt = createdAt,
-    uploadedAt = None,
-    fileName = None,
-    applicantGroupId = groupId,
-    applicantCredentials = credentials,
-    agentDetails = completeAgentDetails,
-    applicantName = applicantName,
-    applicantPhone = Some(telephoneNumber),
-    applicantEmail = Some(applicantEmailAddress),
-    entitySafeId = SafeId("X0_SAFE_ID_0X"),
-    entityType = BusinessType.Partnership.LimitedLiabilityPartnership,
-    entityIdentifier = saUtr.asUtr,
-    crn = Some(crn),
-    vrns = s"${vrn.value},${vrn.value}",
-    payeRefs = s"${payeRef.value},${payeRef.value}",
-    amlSupervisoryBody = amlsCode,
-    amlRegNumber = amlsRegistrationNumber,
-    amlExpiryDate = Some(LocalDate.parse(dateString)),
-    amlEvidence = Some(AmlsEvidence(
-      UploadId("evidence-reference-123"),
-      "certificate.pdf",
-      File("test.txt")
-    )),
-    individuals = List(dependencies.readyForSubmissionIndividual(Some(this.personReference))),
-    failures = None
+    _id = ApplicationForRiskingId(randomId()),
+    agentApplication = AgentApplicationLlp(
+      _id = dependencies.agentApplicationId,
+      applicationReference = ApplicationReference("ABC123456"),
+      internalUserId = dependencies.internalUserId,
+      applicantCredentials = dependencies.credentials,
+      linkId = dependencies.linkId,
+      groupId = dependencies.groupId,
+      createdAt = dependencies.nowAsInstant,
+      submittedAt = Some(dependencies.nowAsInstant),
+      applicationState = ApplicationState.SentForRisking,
+      userRole = Some(UserRole.Partner),
+      businessDetails = Some(BusinessDetailsLlp(
+        companyProfile = CompanyProfile(
+          companyNumber = dependencies.crn,
+          companyName = "Test Company Name",
+          dateOfIncorporation = Some(LocalDate.parse(dependencies.dateString)),
+          unsanitisedCHROAddress = None
+        ),
+        saUtr = dependencies.saUtr,
+        safeId = SafeId("X0_SAFE_ID_0X")
+      )),
+      applicantContactDetails = Some(ApplicantContactDetails(
+        applicantName = dependencies.applicantName,
+        telephoneNumber = Some(dependencies.telephoneNumber),
+        applicantEmailAddress = Some(ApplicantEmailAddress(dependencies.applicantEmailAddress, isVerified = true))
+      )),
+      amlsDetails = Some(AmlsDetails(
+        supervisoryBody = dependencies.amlsCode,
+        amlsRegistrationNumber = Some(dependencies.amlsRegistrationNumber),
+        amlsEvidence = Some(AmlsEvidence(
+          UploadId("evidence-reference-123"),
+          "certificate.pdf",
+          uk.gov.hmrc.objectstore.client.Path.File("test.txt")
+        ))
+      )),
+      agentDetails = Some(dependencies.completeAgentDetails),
+      refusalToDealWithCheckResult = Some(CheckResult.Pass),
+      companyStatusCheckResult = Some(CheckResult.Pass),
+      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
+      numberOfIndividuals = None,
+      hasOtherRelevantIndividuals = Some(false),
+      vrns = Some(List(dependencies.vrn, dependencies.vrn)),
+      payeRefs = Some(List(dependencies.payeRef, dependencies.payeRef))
+    ),
+    createdAt = dependencies.nowAsInstant,
+    lastUpdatedAt = dependencies.nowAsInstant,
+    riskingFileId = None,
+    failures = None,
+    isSubscribed = false,
+    isEmailSent = false
   )
 
   def applicationRiskingResponseReadyForSubmission(
@@ -71,11 +93,11 @@ trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
     personReference: PersonReference
   ) = ApplicationRiskingResponse(
     applicationReference = applicationReference,
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    status = RiskingStatus.ReadyForSubmission,
+    isSubscribed = false,
     individuals = List(IndividualRiskingResponse(
       personReference = personReference,
-      providedName = individualName,
-      status = ApplicationForRiskingStatus.ReadyForSubmission,
+      providedName = dependencies.individualName,
       failures = None
     )),
     failures = None

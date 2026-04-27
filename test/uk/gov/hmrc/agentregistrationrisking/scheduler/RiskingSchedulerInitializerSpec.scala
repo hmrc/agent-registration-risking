@@ -39,14 +39,18 @@ class RiskingSchedulerInitializerSpec
 extends UnitSpec,
   MongoSupport:
 
-  private val clock = Clock.systemDefaultZone()
+  private given clock: Clock = Clock.systemDefaultZone()
   private lazy val mongoLockRepository = new MongoLockRepository(mongoComponent, CurrentTimestampSupport())
 
   private val stubRunner: RiskingRunner =
     new RiskingRunner(
       objectStoreService = null,
       riskingFileService = null,
-      sdesProxyService = null
+      sdesProxyService = null,
+      applicationForRiskingRepo = null,
+      individualForRiskingRepo = null,
+      riskingFileRepo = null,
+      riskingFileIdGenerator = null
     ):
       override def run(): Future[Unit] = Future.successful(())
 
@@ -132,7 +136,11 @@ extends UnitSpec,
         new RiskingRunner(
           objectStoreService = null,
           riskingFileService = null,
-          sdesProxyService = null
+          sdesProxyService = null,
+          applicationForRiskingRepo = null,
+          individualForRiskingRepo = null,
+          riskingFileRepo = null,
+          riskingFileIdGenerator = null
         ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()
@@ -143,7 +151,11 @@ extends UnitSpec,
         new RiskingRunner(
           objectStoreService = null,
           riskingFileService = null,
-          sdesProxyService = null
+          sdesProxyService = null,
+          applicationForRiskingRepo = null,
+          individualForRiskingRepo = null,
+          riskingFileRepo = null,
+          riskingFileIdGenerator = null
         ):
           override def run(): Future[Unit] =
             executionCount.incrementAndGet()

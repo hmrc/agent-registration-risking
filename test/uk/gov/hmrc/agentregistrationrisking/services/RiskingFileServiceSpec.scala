@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.randomId
 
@@ -28,78 +29,73 @@ class RiskingFileServiceSpec
 extends ISpec:
 
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
   val service: RiskingFileService = app.injector.instanceOf[RiskingFileService]
-  val personReference1: PersonReference = PersonReference(randomId)
-  val personReference2: PersonReference = PersonReference(randomId)
-  val personReference3: PersonReference = PersonReference(randomId)
+  val personReference1: PersonReference = PersonReference(randomId())
+  val personReference2: PersonReference = PersonReference(randomId())
+  val personReference3: PersonReference = PersonReference(randomId())
 
-  "getApplicationsReadyForRisking retrieves all applications ready for risking" in:
+  "getApplicationsReadyForRiskingWithIndividuals retrieves only ready applications with their individuals" in:
 
-    val readyForSubmissionApplication = tdAll.llpApplicationForRisking.copy(
-      individuals = List(
-        tdAll.readyForSubmissionIndividual(Some(personReference1)),
-        tdAll.readyForSubmissionIndividual(Some(personReference2)),
-        tdAll.readyForSubmissionIndividual(Some(personReference3))
-      )
+    val readyApplication = tdAll.llpApplicationForRisking.copy(
+      _id = ApplicationForRiskingId("ready-app")
+    )
+    val readyIndividual = tdAll.readyForSubmissionIndividual(readyApplication._id).copy(
+      _id = IndividualForRiskingId("ready-ind")
     )
 
     val submittedApplication = tdAll.llpApplicationForRisking.copy(
-      applicationReference = ApplicationReference(randomId),
-      status = ApplicationForRiskingStatus.SubmittedForRisking,
-      individuals = List(
-        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference4"))),
-        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference5"))),
-        tdAll.readyForSubmissionIndividual(Some(PersonReference("personReference6")))
-      )
+      _id = ApplicationForRiskingId("submitted-app"),
+      riskingFileId = Some(RiskingFileId("some-file-id"))
     )
 
-    repo.upsert(readyForSubmissionApplication).futureValue
+    repo.upsert(readyApplication).futureValue
     repo.upsert(submittedApplication).futureValue
+    individualRepo.upsert(readyIndividual).futureValue
 
-    service.getApplicationsReadyForRisking.futureValue shouldBe Seq(readyForSubmissionApplication) withClue
-      "only readyForSubmission applications are returned"
+    val result = service.getApplicationsReadyForRiskingWithIndividuals.futureValue
+    result.size shouldBe 1
+    result.headOption.value.application._id shouldBe readyApplication._id
+    result.headOption.value.individuals.size shouldBe 1
+    result.headOption.value.individuals.headOption.value._id shouldBe readyIndividual._id
 
   "buildRiskingFileFrom creates risking file in correct format from supplied applications" in:
 
-    val applicationsReadyForRisking = Seq(
-      tdAll.llpApplicationForRisking.copy(individuals =
-        List(
-          tdAll.readyForSubmissionIndividual(Some(personReference1)),
-          tdAll.readyForSubmissionIndividual(Some(personReference2)),
-          tdAll.readyForSubmissionIndividual(Some(personReference3))
-        )
-      )
+    val application = tdAll.llpApplicationForRisking
+
+    val baseIndividual = tdAll.readyForSubmissionIndividual(application._id)
+    val individual1 = baseIndividual.copy(
+      _id = IndividualForRiskingId("ind-1"),
+      individualProvidedDetails = baseIndividual.individualProvidedDetails.copy(personReference = personReference1)
+    )
+    val individual2 = baseIndividual.copy(
+      _id = IndividualForRiskingId("ind-2"),
+      individualProvidedDetails = baseIndividual.individualProvidedDetails.copy(personReference = personReference2)
+    )
+    val individual3 = baseIndividual.copy(
+      _id = IndividualForRiskingId("ind-3"),
+      individualProvidedDetails = baseIndividual.individualProvidedDetails.copy(personReference = personReference3)
     )
 
-    val result: String = service.buildRiskingFileFrom(applicationsReadyForRisking)
+    import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+
+    val result: String = service.buildRiskingFileFrom(Seq(
+      ApplicationWithIndividuals(
+        application,
+        Seq(
+          individual1,
+          individual2,
+          individual3
+        )
+      )
+    ))
+
     result shouldBe
       s"""00|ARR|SAS|20591125|163351
-         |01|Entity|N|${tdAll.llpApplicationForRisking.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456|25-11-2059|evidence-reference-123|||||||||||
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
-         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|Y|Y
+         |01|Entity|N|${tdAll.llpApplicationForRisking.agentApplication.applicationReference.value}|Alice Smith|(+44) 10794554342|user@test.com|LimitedLiabilityPartnership|1234567895|1234567890|123456789,123456789|123/AB12345,123/AB12345|HMRC|XAML00000123456||evidence-reference-123|||||||||||
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference1.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference2.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
+         |01|Individual|N||||||||123456789,123456789|123/AB12345,123/AB12345|||||${personReference3.value}|||Test Name|01-01-1980|AB123456C|1234567895|(+44) 10794554342|member@test.com|N|Y
          |99|4
          |"""
         .stripMargin
-
-  "setAllStatusSubmittedForRisking updates all supplied applications to SubmittedForRisking" in:
-
-    val applicationsReadyForRisking: Seq[ApplicationForRisking] =
-      Seq.fill(3):
-        tdAll.llpApplicationForRisking.copy(
-          applicationReference = ApplicationReference(randomId),
-          individuals = List(
-            tdAll.readyForSubmissionIndividual(Some(PersonReference(randomId)))
-          )
-        )
-
-    applicationsReadyForRisking.foreach(app => repo.upsert(app).futureValue)
-
-    service.setAllStatusSubmittedForRisking(applicationsReadyForRisking).futureValue
-
-    val updatedApplications = applicationsReadyForRisking.map: application =>
-      repo.findByApplicationReference(application.applicationReference).futureValue
-
-    updatedApplications.map(_.map(_.status)) shouldBe Seq.fill(3)(
-      Some(ApplicationForRiskingStatus.SubmittedForRisking)
-    )

@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import play.api.mvc.RequestHeader
-import play.api.test.FakeRequest
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
-import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 
@@ -34,278 +34,297 @@ extends ISpec:
 
   val service: ApplicationStatusService = app.injector.instanceOf[ApplicationStatusService]
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
-  "updateApplicationStatuses" - {
+  private def makeApp(
+    id: String,
+    failures: Option[List[EntityFailure]],
+    isSubscribed: Boolean = false
+  ): ApplicationForRisking = tdAll.llpApplicationForRisking.copy(
+    _id = ApplicationForRiskingId(id),
+    failures = failures,
+    isSubscribed = isSubscribed
+  )
 
-    given RequestHeader = FakeRequest()
-
-    val appRef = ApplicationReference("ABC123456")
-    val personRef = PersonReference("1234567890")
-    val personRef2 = PersonReference("9876543210")
-
-    def individualWith(
-      ref: PersonReference = personRef,
-      status: ApplicationForRiskingStatus = ApplicationForRiskingStatus.Approved,
-      failures: Option[List[IndividualFailure]] = Some(List.empty)
-    ) = tdAll.readyForSubmissionIndividual(Some(ref)).copy(
-      status = status,
+  private def makeIndividual(
+    appId: ApplicationForRiskingId,
+    id: String,
+    failures: Option[List[IndividualFailure]]
+  ): IndividualForRisking =
+    val base = tdAll.readyForSubmissionIndividual(appId)
+    base.copy(
+      _id = IndividualForRiskingId(id),
+      individualProvidedDetails = base.individualProvidedDetails.copy(personReference = PersonReference(id)),
       failures = failures
     )
 
-    def applicationWith(
-      entityFailures: Option[List[EntityFailure]],
-      individualStatus: ApplicationForRiskingStatus,
-      individualFailures: Option[List[IndividualFailure]]
-    ) = tdAll.llpApplicationForRisking.copy(
-      applicationReference = appRef,
-      status = ApplicationForRiskingStatus.SubmittedForRisking,
-      failures = entityFailures,
-      individuals = List(
-        individualWith(
-          ref = personRef,
-          status = individualStatus,
-          failures = individualFailures
-        )
+  private def makeAppWithIndividuals(
+    appId: String,
+    entityFailures: Option[List[EntityFailure]],
+    individualFailures: List[Option[List[IndividualFailure]]]
+  ): ApplicationWithIndividuals =
+    val app = makeApp(appId, entityFailures)
+    val individuals = individualFailures.zipWithIndex.map: (failures, i) =>
+      makeIndividual(
+        app._id,
+        s"$appId-ind-$i",
+        failures
       )
-    )
+    ApplicationWithIndividuals(app, individuals)
 
-    def applicationWithMultipleIndividuals(
-      entityFailures: Option[List[EntityFailure]],
-      individuals: List[IndividualForRisking]
-    ) = tdAll.llpApplicationForRisking.copy(
-      applicationReference = appRef,
-      status = ApplicationForRiskingStatus.SubmittedForRisking,
-      failures = entityFailures,
-      individuals = individuals
-    )
+  "getAllUnsubscribedApplicationsWithIndividualsWithResults" - {
 
-    "updates application status to Approved when entity and all individuals are approved" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.Approved,
-        individualFailures = Some(List.empty)
-      )).futureValue
+    "returns application when entity and all individuals have results" in {
+      val app = makeApp("all-results", failures = Some(List.empty))
+      val ind = makeIndividual(
+        app._id,
+        "all-results-ind",
+        failures = Some(List.empty)
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
 
-      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      result.size shouldBe 1
+      result.headOption.value.application._id shouldBe app._id
     }
 
-    "updates application status to FailedFixable when entity has fixable failures" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List(EntityFailure._3._2)),
-        individualStatus = ApplicationForRiskingStatus.Approved,
-        individualFailures = Some(List.empty)
-      )).futureValue
+    "does not return application when entity has no failures yet" in {
+      val app = makeApp("no-entity-failures", failures = None)
+      val ind = makeIndividual(
+        app._id,
+        "no-entity-ind",
+        failures = Some(List.empty)
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
 
-      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
+      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      result.size shouldBe 0
     }
 
-    "updates application status to FailedNonFixable when any status is FailedNonFixable" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.FailedNonFixable,
-        individualFailures = Some(List(IndividualFailure._9))
-      )).futureValue
+    "does not return application when individual has no failures yet" in {
+      val app = makeApp("partial-results", failures = Some(List.empty))
+      val ind = makeIndividual(
+        app._id,
+        "partial-ind",
+        failures = None
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
 
-      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedNonFixable
+      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      result.size shouldBe 0
     }
 
-    "updates application status to FailedFixable when individual has fixable failures" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.FailedFixable,
-        individualFailures = Some(List(IndividualFailure._4._1))
-      )).futureValue
+    "does not return already subscribed application" in {
+      val app = makeApp(
+        "subscribed",
+        failures = Some(List.empty),
+        isSubscribed = true
+      )
+      val ind = makeIndividual(
+        app._id,
+        "subscribed-ind",
+        failures = Some(List.empty)
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
 
-      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
+      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      result.size shouldBe 0
+    }
+  }
 
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
+  "getApprovedApplicationsWithIndividuals" - {
+
+    "returns application when entity and all individuals approved" in {
+      val appWithInds = makeAppWithIndividuals(
+        "approved",
+        Some(List.empty),
+        List(Some(List.empty))
+      )
+      val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 1
     }
 
-    "updates application status to FailedNonFixable when individual has non-fixable failures even if entity is approved" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.FailedNonFixable,
-        individualFailures = Some(List(IndividualFailure._8._1))
-      )).futureValue
-
-      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedNonFixable
+    "does not return when entity has fixable failures" in {
+      val appWithInds = makeAppWithIndividuals(
+        "entity-fixable",
+        Some(List(EntityFailure._3._2)),
+        List(Some(List.empty))
+      )
+      val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
     }
 
-    "does not update application status when entity failures are not yet available" in {
-      repo.upsert(applicationWith(
-        entityFailures = None,
-        individualStatus = ApplicationForRiskingStatus.Approved,
-        individualFailures = Some(List.empty)
-      )).futureValue
-
-      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
+    "does not return when entity has non-fixable failures" in {
+      val appWithInds = makeAppWithIndividuals(
+        "entity-nonfixable",
+        Some(List(EntityFailure._8._1)),
+        List(Some(List.empty))
+      )
+      val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
     }
 
-    "does not update application status when individual status is not yet completed" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.ReadyForSubmission,
-        individualFailures = None
-      )).futureValue
-
-      service.updateApplicationStatuses(List(passRecord1, passRecord2)).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
+    "does not return when individual has fixable failures" in {
+      val appWithInds = makeAppWithIndividuals(
+        "ind-fixable",
+        Some(List.empty),
+        List(Some(List(IndividualFailure._4._1)))
+      )
+      val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
     }
 
-    val passRecord2ndIndividual = RiskingResultRecord(
-      recordType = "Individual",
-      applicationReference = None,
-      failures = Some(List.empty),
-      personReference = Some(personRef2)
-    )
+    "does not return when individual has non-fixable failures" in {
+      val appWithInds = makeAppWithIndividuals(
+        "ind-nonfixable",
+        Some(List.empty),
+        List(Some(List(IndividualFailure._9)))
+      )
+      val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
+    }
+  }
 
-    "does not update application status when one of multiple individuals is not yet completed" in {
-      repo.upsert(applicationWithMultipleIndividuals(
-        entityFailures = Some(List.empty),
-        individuals = List(
-          individualWith(
-            ref = personRef,
-            status = ApplicationForRiskingStatus.Approved,
-            failures = Some(List.empty)
-          ),
-          individualWith(
-            ref = personRef2,
-            status = ApplicationForRiskingStatus.ReadyForSubmission,
-            failures = None
-          )
-        )
-      )).futureValue
+  "getNonFixableApplicationsWithIndividuals" - {
 
-      service.updateApplicationStatuses(List(
-        passRecord1,
-        passRecord2,
-        passRecord2ndIndividual
-      )).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.SubmittedForRisking
+    "returns application with non-fixable entity failure and no individuals" in {
+      val appWithInds = makeAppWithIndividuals(
+        "nf-entity",
+        Some(List(EntityFailure._8._1)),
+        List(Some(List.empty))
+      )
+      val result = service.getNonFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 1
+      result.headOption.value.individuals shouldBe empty
     }
 
-    "updates application status when all multiple individuals are completed" in {
-      repo.upsert(applicationWithMultipleIndividuals(
-        entityFailures = Some(List.empty),
-        individuals = List(
-          individualWith(
-            ref = personRef,
-            status = ApplicationForRiskingStatus.Approved,
-            failures = Some(List.empty)
-          ),
-          individualWith(
-            ref = personRef2,
-            status = ApplicationForRiskingStatus.Approved,
-            failures = Some(List.empty)
-          )
-        )
-      )).futureValue
+    "returns application with non-fixable individual and only that individual" in {
+      val app = makeApp("nf-ind-only", Some(List.empty))
+      val indApproved = makeIndividual(
+        app._id,
+        "nf-ind-ok",
+        Some(List.empty)
+      )
+      val indNonFixable = makeIndividual(
+        app._id,
+        "nf-ind-bad",
+        Some(List(IndividualFailure._9))
+      )
+      val appWithInds = ApplicationWithIndividuals(app, Seq(indApproved, indNonFixable))
 
-      service.updateApplicationStatuses(List(
-        passRecord1,
-        passRecord2,
-        passRecord2ndIndividual
-      )).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+      val result = service.getNonFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 1
+      result.headOption.value.individuals.size shouldBe 1
+      result.headOption.value.individuals.headOption.value._id shouldBe indNonFixable._id
     }
 
-    "updates application status to FailedFixable when multiple individuals have mixed outcomes" in {
-      repo.upsert(applicationWithMultipleIndividuals(
-        entityFailures = Some(List.empty),
-        individuals = List(
-          individualWith(
-            ref = personRef,
-            status = ApplicationForRiskingStatus.Approved,
-            failures = Some(List.empty)
-          ),
-          individualWith(
-            ref = personRef2,
-            status = ApplicationForRiskingStatus.FailedFixable,
-            failures = Some(List(IndividualFailure._4._1))
-          )
-        )
-      )).futureValue
+    "returns application when both entity and individual are non-fixable" in {
+      val app = makeApp("nf-both", Some(List(EntityFailure._8._4)))
+      val indNonFixable = makeIndividual(
+        app._id,
+        "nf-both-ind",
+        Some(List(IndividualFailure._9))
+      )
+      val appWithInds = ApplicationWithIndividuals(app, Seq(indNonFixable))
 
-      service.updateApplicationStatuses(List(
-        passRecord1,
-        passRecord2,
-        passRecord2ndIndividual
-      )).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.FailedFixable
+      val result = service.getNonFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 1
+      result.headOption.value.individuals.size shouldBe 1
     }
 
-    val nonExistentAppRef = ApplicationReference("NON_EXISTENT")
-    val nonExistentPersonRef = PersonReference("0000000000")
-
-    val entityRecordForNonExistentApp = RiskingResultRecord(
-      recordType = "Entity",
-      applicationReference = Some(nonExistentAppRef),
-      failures = Some(List.empty),
-      personReference = None
-    )
-
-    val individualRecordForNonExistentPerson = RiskingResultRecord(
-      recordType = "Individual",
-      applicationReference = None,
-      failures = Some(List.empty),
-      personReference = Some(nonExistentPersonRef)
-    )
-
-    "still updates existing application when another application reference is not found in repo" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.Approved,
-        individualFailures = Some(List.empty)
-      )).futureValue
-
-      service.updateApplicationStatuses(List(
-        passRecord1,
-        passRecord2,
-        entityRecordForNonExistentApp
-      )).futureValue
-
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+    "does not return application when all approved" in {
+      val appWithInds = makeAppWithIndividuals(
+        "nf-none",
+        Some(List.empty),
+        List(Some(List.empty))
+      )
+      val result = service.getNonFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
     }
 
-    "still updates existing application when another person reference is not found in repo" in {
-      repo.upsert(applicationWith(
-        entityFailures = Some(List.empty),
-        individualStatus = ApplicationForRiskingStatus.Approved,
-        individualFailures = Some(List.empty)
-      )).futureValue
+    "does not return application when only fixable failures" in {
+      val appWithInds = makeAppWithIndividuals(
+        "nf-fixable-only",
+        Some(List(EntityFailure._3._2)),
+        List(Some(List(IndividualFailure._4._1)))
+      )
+      val result = service.getNonFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
+    }
+  }
 
-      service.updateApplicationStatuses(List(
-        passRecord1,
-        passRecord2,
-        individualRecordForNonExistentPerson
-      )).futureValue
+  "getFixableApplicationsWithIndividuals" - {
 
-      val updated = repo.findByApplicationReference(appRef).futureValue.value
-      updated.status shouldBe ApplicationForRiskingStatus.Approved
+    "returns application with fixable entity failure" in {
+      val appWithInds = makeAppWithIndividuals(
+        "fix-entity",
+        Some(List(EntityFailure._3._2)),
+        List(Some(List.empty))
+      )
+      val result = service.getFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 1
+      result.headOption.value.individuals shouldBe empty
+    }
+
+    "returns application with fixable individual and only that individual" in {
+      val app = makeApp("fix-ind-only", Some(List.empty))
+      val indApproved = makeIndividual(
+        app._id,
+        "fix-ind-ok",
+        Some(List.empty)
+      )
+      val indFixable = makeIndividual(
+        app._id,
+        "fix-ind-bad",
+        Some(List(IndividualFailure._4._1))
+      )
+      val appWithInds = ApplicationWithIndividuals(app, Seq(indApproved, indFixable))
+
+      val result = service.getFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 1
+      result.headOption.value.individuals.size shouldBe 1
+      result.headOption.value.individuals.headOption.value._id shouldBe indFixable._id
+    }
+
+    "does not return application when entity has non-fixable failures" in {
+      val appWithInds = makeAppWithIndividuals(
+        "fix-nonfixable-entity",
+        Some(List(EntityFailure._8._1)),
+        List(Some(List(IndividualFailure._4._1)))
+      )
+      val result = service.getFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
+    }
+
+    "does not return application when any individual has non-fixable failures" in {
+      val app = makeApp("fix-nonfixable-ind", Some(List(EntityFailure._3._2)))
+      val indFixable = makeIndividual(
+        app._id,
+        "fix-mix-ok",
+        Some(List(IndividualFailure._4._1))
+      )
+      val indNonFixable = makeIndividual(
+        app._id,
+        "fix-mix-bad",
+        Some(List(IndividualFailure._9))
+      )
+      val appWithInds = ApplicationWithIndividuals(app, Seq(indFixable, indNonFixable))
+
+      val result = service.getFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
+    }
+
+    "does not return application when all approved" in {
+      val appWithInds = makeAppWithIndividuals(
+        "fix-approved",
+        Some(List.empty),
+        List(Some(List.empty))
+      )
+      val result = service.getFixableApplicationsWithIndividuals(Seq(appWithInds))
+      result.size shouldBe 0
     }
   }

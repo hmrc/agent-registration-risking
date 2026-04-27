@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.*
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
+import org.bson.types.ObjectId
+import play.api.libs.json.Format
+import play.api.mvc.PathBindable
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
-sealed trait RiskingResultRecord
+import javax.inject.Singleton
 
-final case class IndividualRiskingResultRecord(
-  personReference: PersonReference,
-  failures: List[IndividualFailure]
-)
-extends RiskingResultRecord
+final case class RiskingFileId(value: String)
 
-final case class EntityRiskingResultRecord(
-  applicationReference: ApplicationReference,
-  failures: List[EntityFailure]
-)
-extends RiskingResultRecord
+object RiskingFileId:
+
+  given format: Format[RiskingFileId] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[RiskingFileId] = ValueClassBinder.valueClassBinder[RiskingFileId](_.value)
+
+@Singleton
+class RiskingFileIdGenerator:
+  def nextRiskingFileId(): RiskingFileId = RiskingFileId(ObjectId.get().toHexString)

@@ -20,7 +20,6 @@ import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
@@ -51,7 +50,7 @@ extends ControllerSpec:
 
     val response =
       httpClient
-        .get(url"$baseUrl/agent-registration-risking/application-status/${tdAll.llpApplicationForRisking.applicationReference.value}")
+        .get(url"$baseUrl/agent-registration-risking/application-status/${tdAll.llpApplicationForRisking.agentApplication.applicationReference.value}")
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.OK

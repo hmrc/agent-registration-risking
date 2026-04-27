@@ -22,19 +22,23 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking.toIndividualRiskingResponse
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 
 import javax.inject.Inject
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class GetApplicationController @Inject() (
   actions: Actions,
   cc: ControllerComponents,
-  applicationForRiskingRepo: ApplicationForRiskingRepo
-)
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo
+)(using ExecutionContext)
 extends BackendController(cc):
 
   def getApplicationRiskingResponse(applicationReference: ApplicationReference): Action[AnyContent] = actions
@@ -42,15 +46,27 @@ extends BackendController(cc):
     .async:
       applicationForRiskingRepo
         .findByApplicationReference(applicationReference)
-        .map:
-          case Some(application) => Ok(Json.toJson(toApplicationRiskingResponse(application)))
-          case None => NoContent
+        .flatMap:
+          case None => Future.successful(NoContent)
+          case Some(application) =>
+            individualForRiskingRepo
+              .findByApplicationForRiskingId(application._id)
+              .map: individuals =>
+                Ok(Json.toJson(toApplicationRiskingResponse(application, individuals)))
 
-  extension (applicationForRisking: ApplicationForRisking)
+  private def toApplicationRiskingResponse(
+    application: ApplicationForRisking,
+    individuals: Seq[IndividualForRisking]
+  ): ApplicationRiskingResponse = ApplicationRiskingResponse(
+    applicationReference = application.agentApplication.applicationReference,
+    status = application.status,
+    isSubscribed = application.isSubscribed,
+    individuals = individuals.toList.map(toIndividualRiskingResponse),
+    failures = application.failures
+  )
 
-    private def toApplicationRiskingResponse: ApplicationRiskingResponse = ApplicationRiskingResponse(
-      applicationReference = applicationForRisking.applicationReference,
-      status = applicationForRisking.status,
-      individuals = applicationForRisking.individuals.map(toIndividualRiskingResponse),
-      failures = applicationForRisking.failures
-    )
+  private def toIndividualRiskingResponse(individual: IndividualForRisking): IndividualRiskingResponse = IndividualRiskingResponse(
+    personReference = individual.individualProvidedDetails.personReference,
+    providedName = individual.individualProvidedDetails.individualName,
+    failures = individual.failures
+  )

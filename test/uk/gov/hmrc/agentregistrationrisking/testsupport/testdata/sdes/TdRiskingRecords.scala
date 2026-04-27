@@ -19,10 +19,11 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes
 import play.api.libs.json.*
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistrationrisking.model.RecordType
 import uk.gov.hmrc.agentregistrationrisking.model.RecordType.*
 import uk.gov.hmrc.agentregistrationrisking.model.AdditionalInfo
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRaw
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 
 trait TdRiskingRecords:
@@ -146,8 +147,8 @@ trait TdRiskingRecords:
     )
   )
 
-  val failRecord1 = RiskingResultRecord(
-    "Entity",
+  val failRecord1 = RiskingResultRaw(
+    RecordType.Entity,
     Some(ApplicationReference("applicationReference")),
     Some(List(
       Failure(
@@ -168,8 +169,8 @@ trait TdRiskingRecords:
     None
   )
 
-  val failRecord2 = RiskingResultRecord(
-    "Individual",
+  val failRecord2 = RiskingResultRaw(
+    RecordType.Individual,
     None,
     Some(List(
       Failure(
@@ -183,8 +184,8 @@ trait TdRiskingRecords:
     Some(PersonReference("personReference_002"))
   )
 
-  val failRecord3 = RiskingResultRecord(
-    "Individual",
+  val failRecord3 = RiskingResultRaw(
+    RecordType.Individual,
     None,
     Some(List(
       Failure(
@@ -198,15 +199,15 @@ trait TdRiskingRecords:
     Some(PersonReference("personReference_003"))
   )
 
-  val passRecord1 = RiskingResultRecord(
-    recordType = "Entity",
+  val passRecord1 = RiskingResultRaw(
+    recordType = RecordType.Entity,
     applicationReference = Some(ApplicationReference("ABC123456")),
     failures = Some(List.empty),
     personReference = None
   )
 
-  val passRecord2 = RiskingResultRecord(
-    recordType = "Individual",
+  val passRecord2 = RiskingResultRaw(
+    recordType = RecordType.Individual,
     applicationReference = None,
     failures = Some(List.empty),
     personReference = Some(PersonReference("1234567890"))

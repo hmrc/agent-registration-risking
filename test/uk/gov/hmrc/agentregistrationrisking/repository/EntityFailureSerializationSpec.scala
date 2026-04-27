@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
-import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 
@@ -28,11 +27,11 @@ class EntityFailureSerializationSpec
 extends ISpec:
 
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
   "EntityFailure serialization round-trip through MongoDB" - {
 
     "case objects (no value) should survive round-trip" in {
-      val appRef = ApplicationReference("ENTITY-FAILURE-TEST-1")
       val entityFailures = List(
         EntityFailure._3._1,
         EntityFailure._3._2,
@@ -43,21 +42,16 @@ extends ISpec:
       )
 
       val application = tdAll.llpApplicationForRisking.copy(
-        applicationReference = appRef,
-        failures = Some(entityFailures),
-        individuals = List(
-          tdAll.readyForSubmissionIndividual(Some(PersonReference("entity-test-person-1")))
-        )
+        _id = ApplicationForRiskingId("entity-test-1"),
+        failures = Some(entityFailures)
       )
-
       repo.upsert(application).futureValue
 
-      val retrieved = repo.findByApplicationReference(appRef).futureValue.value
+      val retrieved = repo.findById(application._id).futureValue.value
       retrieved.failures.value should contain theSameElementsAs entityFailures
     }
 
     "case classes with value field should survive round-trip" in {
-      val appRef = ApplicationReference("ENTITY-FAILURE-TEST-2")
       val entityFailures = List(
         EntityFailure._5._1(1234.56),
         EntityFailure._5._2(500.00),
@@ -65,21 +59,16 @@ extends ISpec:
       )
 
       val application = tdAll.llpApplicationForRisking.copy(
-        applicationReference = appRef,
-        failures = Some(entityFailures),
-        individuals = List(
-          tdAll.readyForSubmissionIndividual(Some(PersonReference("entity-test-person-2")))
-        )
+        _id = ApplicationForRiskingId("entity-test-2"),
+        failures = Some(entityFailures)
       )
-
       repo.upsert(application).futureValue
 
-      val retrieved = repo.findByApplicationReference(appRef).futureValue.value
+      val retrieved = repo.findById(application._id).futureValue.value
       retrieved.failures.value should contain theSameElementsAs entityFailures
     }
 
     "mixed fixable and non-fixable failures should survive round-trip" in {
-      val appRef = ApplicationReference("ENTITY-FAILURE-TEST-3")
       val entityFailures: List[EntityFailure] = List(
         EntityFailure._3._2,
         EntityFailure._5._1(2500.00),
@@ -88,38 +77,27 @@ extends ISpec:
       )
 
       val application = tdAll.llpApplicationForRisking.copy(
-        applicationReference = appRef,
-        failures = Some(entityFailures),
-        individuals = List(
-          tdAll.readyForSubmissionIndividual(Some(PersonReference("entity-test-person-3")))
-        )
+        _id = ApplicationForRiskingId("entity-test-3"),
+        failures = Some(entityFailures)
       )
-
       repo.upsert(application).futureValue
 
-      val retrieved = repo.findByApplicationReference(appRef).futureValue.value
+      val retrieved = repo.findById(application._id).futureValue.value
       retrieved.failures.value should contain theSameElementsAs entityFailures
     }
 
     "empty failures list should survive round-trip" in {
-      val appRef = ApplicationReference("ENTITY-FAILURE-TEST-4")
-
       val application = tdAll.llpApplicationForRisking.copy(
-        applicationReference = appRef,
-        failures = Some(List.empty),
-        individuals = List(
-          tdAll.readyForSubmissionIndividual(Some(PersonReference("entity-test-person-4")))
-        )
+        _id = ApplicationForRiskingId("entity-test-4"),
+        failures = Some(List.empty)
       )
-
       repo.upsert(application).futureValue
 
-      val retrieved = repo.findByApplicationReference(appRef).futureValue.value
+      val retrieved = repo.findById(application._id).futureValue.value
       retrieved.failures.value shouldBe List.empty
     }
 
     "IndividualFailure should survive round-trip" in {
-      val appRef = ApplicationReference("INDIVIDUAL-FAILURE-TEST-1")
       val individualFailures = List(
         IndividualFailure._4._1,
         IndividualFailure._4._3,
@@ -127,21 +105,13 @@ extends ISpec:
         IndividualFailure._9
       )
 
-      val application = tdAll.llpApplicationForRisking.copy(
-        applicationReference = appRef,
-        failures = Some(List.empty),
-        individuals = List(
-          tdAll.readyForSubmissionIndividual(Some(PersonReference("individual-test-person-1"))).copy(
-            status = ApplicationForRiskingStatus.FailedFixable,
-            failures = Some(individualFailures)
-          )
-        )
+      val individual = tdAll.readyForSubmissionIndividual(ApplicationForRiskingId("ind-test-app")).copy(
+        _id = IndividualForRiskingId("ind-test-1"),
+        failures = Some(individualFailures)
       )
+      individualRepo.upsert(individual).futureValue
 
-      repo.upsert(application).futureValue
-
-      val retrieved = repo.findByApplicationReference(appRef).futureValue.value
-      val retrievedIndividual = retrieved.individuals.headOption.value
-      retrievedIndividual.failures.value should contain theSameElementsAs individualFailures
+      val retrieved = individualRepo.findById(individual._id).futureValue.value
+      retrieved.failures.value should contain theSameElementsAs individualFailures
     }
   }

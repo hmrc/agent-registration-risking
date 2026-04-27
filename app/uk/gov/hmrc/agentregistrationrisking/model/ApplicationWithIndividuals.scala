@@ -14,19 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-
-final case class IndividualRiskingResponse(
-  personReference: PersonReference,
-  providedName: IndividualName,
-  failures: Option[List[IndividualFailure]]
+final case class ApplicationWithIndividuals(
+  application: ApplicationForRisking,
+  individuals: Seq[IndividualForRisking]
 )
-
-object IndividualRiskingResponse:
-
-  given OFormat[IndividualRiskingResponse] = Json.format[IndividualRiskingResponse]

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
@@ -32,22 +33,29 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import org.mongodb.scala.result.UpdateResult
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import com.mongodb.client.model.Field
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
+
+import java.time.Clock
+import java.time.Instant
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  clock: Clock
 )(using ec: ExecutionContext)
-extends Repo[ApplicationReference, ApplicationForRisking](
+extends Repo[ApplicationForRiskingId, ApplicationForRisking](
   collectionName = "application-for-risking",
   mongoComponent = mongoComponent,
   indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
@@ -57,41 +65,55 @@ extends Repo[ApplicationReference, ApplicationForRisking](
 
   def findByApplicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRisking]] = collection
     .find(
-      filter = Filters.eq("applicationReference", applicationReference.value)
+      filter = Filters.eq("agentApplication.applicationReference", applicationReference.value)
     )
     .headOption()
 
-  def findByStatus(status: ApplicationForRiskingStatus): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      filter = Filters.eq("status", status.toString)
-    ).toFuture()
+  def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
+    .find(Filters.exists("riskingFileId", false)) // ready for submissions don't have set riskingFileId
+    .toFuture()
 
-  def findByPersonReference(personReference: PersonReference): Future[Option[ApplicationForRisking]] = collection
-    .find(
-      filter = Filters.eq("individuals.personReference", personReference.value)
-    ).headOption()
-
-  def updateStatusByApplicationReferences(
-    applicationReferences: Seq[ApplicationReference],
-    status: ApplicationForRiskingStatus
-  ): Future[Unit] = collection
+  // TODO needs testing?
+  def updateRiskingFileId(
+    ids: Seq[ApplicationForRiskingId],
+    riskingFileId: RiskingFileId
+  ): Future[UpdateResult] = collection
     .updateMany(
-      filter = Filters.in("applicationReference", applicationReferences.map(_.value)*),
-      update = Updates.set("status", status.toString)
+      Filters.in("_id", ids.map(_.value)*),
+      Updates.combine(
+        Updates.set("riskingFileId", riskingFileId.value),
+        Updates.set("lastUpdatedAt", Instant.now(clock).toString)
+      )
     ).toFuture()
-    .map(_ => ())
+
+  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.size("failures", 0),
+        Filters.eq("isSubscribed", false)
+      )
+    ).toFuture()
+
+  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.exists("failures"),
+        Filters.eq("isSubscribed", false)
+      )
+    ).toFuture()
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
+//TODO WG - review indexes
 object ApplicationForRiskingRepoHelp:
 
-  given IdString[ApplicationReference] =
-    new IdString[ApplicationReference]:
-      override def idString(i: ApplicationReference): String = i.value
+  given IdString[ApplicationForRiskingId] =
+    new IdString[ApplicationForRiskingId]:
+      override def idString(i: ApplicationForRiskingId): String = i.value
 
-  given IdExtractor[ApplicationForRisking, ApplicationReference] =
-    new IdExtractor[ApplicationForRisking, ApplicationReference]:
-      override def id(applicationForRisking: ApplicationForRisking): ApplicationReference = applicationForRisking.applicationReference
+  given IdExtractor[ApplicationForRisking, ApplicationForRiskingId] =
+    new IdExtractor[ApplicationForRisking, ApplicationForRiskingId]:
+      override def id(applicationForRisking: ApplicationForRisking): ApplicationForRiskingId = applicationForRisking._id
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
@@ -99,15 +121,14 @@ object ApplicationForRiskingRepoHelp:
       indexOptions = IndexOptions().expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS).name("lastUpdatedIdx")
     ),
     IndexModel(
-      keys = Indexes.ascending("applicationReference"),
+      keys = Indexes.ascending("agentApplication.applicationReference"),
       IndexOptions()
         .unique(true)
-        .name("applicationReference")
+        .name("applicationReferenceIdx")
     ),
     IndexModel(
-      keys = Indexes.ascending("individuals.personReference"),
+      keys = Indexes.compoundIndex(Indexes.ascending("riskingFileId"), Indexes.ascending("failures")),
       IndexOptions()
-        .unique(true)
-        .name("personReference")
+        .name("riskingStatusIdx")
     )
   )

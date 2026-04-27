@@ -17,19 +17,18 @@
 package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import play.api.mvc.Call
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
-
-import scala.concurrent.Future
 
 class SubmitForRiskingControllerSpec
 extends ControllerSpec:
 
-  val agentApplicationId: AgentApplicationId = tdAll.agentApplicationId
+  val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
   val path: String = s"/agent-registration-risking/submit-for-risking"
 
   "routes should have correct paths and methods" in:
@@ -39,31 +38,39 @@ extends ControllerSpec:
       url = path
     )
 
-  "upsert application upserts application to mongo and returns OK" in:
+  "upsert application upserts application and individuals to mongo and returns CREATED" in:
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
-    val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
 
-    repo.findByApplicationReference(
-      (tdAll.llpApplicationForRisking.applicationReference)
-    ).futureValue shouldBe None withClue "assuming initially there is no records in mongo "
+    val submitRequest = SubmitForRiskingRequest(
+      tdAll.agentApplicationLlp.afterSentForRisking,
+      List(tdAll.providedDetails.afterFinished)
+    )
+
+    val applicationReference = submitRequest.agentApplication.applicationReference
+
+    repo.findByApplicationReference(applicationReference).futureValue shouldBe None withClue
+      "assuming initially there are no records in mongo"
 
     val response =
       httpClient
         .post(url"$baseUrl/agent-registration-risking/submit-for-risking")
-        .withBody(Json.toJson(SubmitForRiskingRequest(tdAll.agentApplicationLlp.afterSentForRisking, List(tdAll.providedDetails.afterFinished))))
+        .withBody(Json.toJson(submitRequest))
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.CREATED
     response.body shouldBe ""
 
-    val exampleApplicationForRisking: ApplicationForRisking = tdAll.llpApplicationForRisking.copy(individuals = List(tdAll.readyForSubmissionIndividual()))
+    val savedApplication = repo.findByApplicationReference(applicationReference).futureValue.value
+    savedApplication.agentApplication.applicationReference shouldBe applicationReference
+    savedApplication.status shouldBe RiskingStatus.ReadyForSubmission
+    savedApplication.failures shouldBe None
+    savedApplication.isSubscribed shouldBe false
+    savedApplication.isEmailSent shouldBe false
 
-    val result =
-      repo.findByApplicationReference(
-        tdAll.llpApplicationForRisking.applicationReference
-      ).futureValue
+    val savedIndividuals = individualRepo.findByApplicationForRiskingId(savedApplication._id).futureValue
+    savedIndividuals.size shouldBe 1
+    savedIndividuals.headOption.value.individualProvidedDetails.personReference shouldBe tdAll.personReference
+    savedIndividuals.headOption.value.failures shouldBe None
 
-    // TODO: This has started failing again because the find is happening too quickly and the record is not yet in mongo.
-    // result.value shouldBe exampleApplicationForRisking.copy(createdAt = result.createdAt) withClue "after http request there should be records in mongo"
     AuthStubs.verifyAuthorise()

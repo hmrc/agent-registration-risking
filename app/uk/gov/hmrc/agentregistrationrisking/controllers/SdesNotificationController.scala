@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import com.google.inject.Inject
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
@@ -40,7 +41,7 @@ extends BackendController(cc):
           request.body match
             case n: FileReady =>
               logger.info(s"File ready notification received for ${n.filename} from SDES [${n.correlationID}]")
-              sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok)
+              onFileReady()
             case n: FileReceived =>
               logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
               Future.successful(Ok)
@@ -51,3 +52,6 @@ extends BackendController(cc):
               logger.warn(s"File processing failure notification received for ${n.filename} from SDES [${n.correlationID}]. " +
                 s"Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
               Future.successful(Ok)
+
+  // TODO
+  private def onFileReady()(using RequestHeader): Future[Status] = sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok) // TODO: what if few notifications received in the same time during the processing of one notificaion
