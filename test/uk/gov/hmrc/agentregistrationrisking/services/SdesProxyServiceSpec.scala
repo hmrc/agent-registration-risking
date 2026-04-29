@@ -92,7 +92,7 @@ extends ISpec:
     EnrolmentStoreProxyStubs.stubAddKnownFacts("HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
     EnrolmentStoreProxyStubs.stubAllocateEnrolmentToGroup("group-id-12345", "HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
 
-    val result = service.retrieveAndProcessResultsFiles.futureValue
+    val result = service.processResultsFiles.futureValue
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl()
     result.size shouldBe 1
     result.headOption.value.location.fileName shouldBe "resultsFile02.txt"
@@ -120,7 +120,7 @@ extends ISpec:
     ObjectStoreStubs.stubObjectStoreListObjects()
     ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
 
-    service.retrieveAndProcessResultsFiles.futureValue
+    service.processResultsFiles.futureValue
 
     val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
     updatedApplication.failures.value.size shouldBe 1
@@ -142,7 +142,7 @@ extends ISpec:
     ObjectStoreStubs.stubObjectStoreUploadFromUrl(uploadedFilePath = "agent-registration-risking/received-results-files/resultsFile02.txt")
     HipStubs.stubSubscribeToAgentServicesFailure(SafeId("X0_SAFE_ID_0X"))
 
-    service.retrieveAndProcessResultsFiles.futureValue
+    service.processResultsFiles.futureValue
 
     val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
     updatedApplication.isSubscribed shouldBe false
@@ -165,7 +165,7 @@ extends ISpec:
     HipStubs.stubSubscribeToAgentServices(SafeId("X0_SAFE_ID_0X"), "AARN0001234")
     EnrolmentStoreProxyStubs.stubAddKnownFactsFailure("HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
 
-    service.retrieveAndProcessResultsFiles.futureValue
+    service.processResultsFiles.futureValue
 
     val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
     updatedApplication.isSubscribed shouldBe false
@@ -185,7 +185,7 @@ extends ISpec:
     EnrolmentStoreProxyStubs.stubAddKnownFacts("HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
     EnrolmentStoreProxyStubs.stubAllocateEnrolmentToGroupFailure("group-id-12345", "HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
 
-    service.retrieveAndProcessResultsFiles.futureValue
+    service.processResultsFiles.futureValue
 
     val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
     updatedApplication.isSubscribed shouldBe false
@@ -195,7 +195,7 @@ extends ISpec:
     given RequestHeader = FakeRequest()
 
     SdesProxyStubs.stubFindAvailableFilesFailure
-    val result = service.retrieveAndProcessResultsFiles
+    val result = service.processResultsFiles
     ObjectStoreStubs.verifyObjectStoreUploadFromUrl(count = 0)
 
   "retrieveAndProcessResultsFile still subscribes valid application when results contain a non-existent application reference" in:
@@ -212,7 +212,7 @@ extends ISpec:
     EnrolmentStoreProxyStubs.stubAddKnownFacts("HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
     EnrolmentStoreProxyStubs.stubAllocateEnrolmentToGroup("group-id-12345", "HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
 
-    service.retrieveAndProcessResultsFiles.futureValue
+    service.processResultsFiles.futureValue
 
     val updatedApplication = repo.findByApplicationReference(appRef).futureValue.value
     updatedApplication.isSubscribed shouldBe true

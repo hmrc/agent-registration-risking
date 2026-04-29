@@ -16,7 +16,22 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+
 final case class ApplicationWithIndividuals(
   application: ApplicationForRisking,
   individuals: Seq[IndividualForRisking]
 )
+
+object ApplicationWithIndividuals:
+
+  def merge(
+    applications: Seq[ApplicationForRisking],
+    individuals: Seq[IndividualForRisking]
+  ): Seq[ApplicationWithIndividuals] =
+    val map: Map[ApplicationReference, Seq[IndividualForRisking]] = individuals.groupBy(_.applicationReference)
+    applications.map: app =>
+      ApplicationWithIndividuals(
+        application = app,
+        individuals = map.getOrElse(app.applicationReference, Seq.empty)
+      )

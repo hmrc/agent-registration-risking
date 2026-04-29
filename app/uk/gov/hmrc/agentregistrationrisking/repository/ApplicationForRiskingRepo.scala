@@ -69,16 +69,14 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def updateRiskingFileId(
     applicationReferences: Seq[ApplicationReference],
     riskingFileName: RiskingFileName
-  ): Future[UpdateResult] = {
-    collection
-      .updateMany(
-        Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value)*),
-        Updates.combine(
-          Updates.set(FieldNames.riskingFileName, riskingFileName.value),
-          Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
-        )
-      ).toFuture()
-  }
+  ): Future[UpdateResult] = collection
+    .updateMany(
+      Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value)*),
+      Updates.combine(
+        Updates.set(FieldNames.riskingFileName, riskingFileName.value),
+        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
+      )
+    ).toFuture()
 
 //  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
 //    .find(

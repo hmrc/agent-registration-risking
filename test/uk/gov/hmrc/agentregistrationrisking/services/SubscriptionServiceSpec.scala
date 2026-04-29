@@ -29,10 +29,10 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 
-class ApplicationStatusServiceSpec
+class SubscriptionServiceSpec
 extends ISpec:
 
-  val service: ApplicationStatusService = app.injector.instanceOf[ApplicationStatusService]
+  val service: SubscriptionService = app.injector.instanceOf[SubscriptionService]
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
@@ -84,7 +84,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 1
       result.headOption.value.application._id shouldBe app._id
     }
@@ -99,7 +99,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 0
     }
 
@@ -113,7 +113,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 0
     }
 
@@ -131,7 +131,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 0
     }
   }

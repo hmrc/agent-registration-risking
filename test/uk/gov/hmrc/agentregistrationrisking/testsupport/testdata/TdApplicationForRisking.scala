@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.businessdetails.BusinessDetailsLlp
 import uk.gov.hmrc.agentregistration.shared.businessdetails.CompanyProfile
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantContactDetails
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantEmailAddress
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgressForApplicant
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
@@ -91,7 +91,7 @@ trait TdApplicationForRisking { dependencies: TdBase =>
   def applicationRiskingResponseReadyForSubmission(
     applicationReference: ApplicationReference,
     personReference: PersonReference
-  ) = RiskingProgressForApplicant(
+  ) = RiskingProgress(
     applicationReference = applicationReference,
     status = RiskingStatus.ReadyForSubmission,
     isSubscribed = false,

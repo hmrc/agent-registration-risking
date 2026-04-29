@@ -24,11 +24,12 @@ import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.risking.RiskedEntity
 import uk.gov.hmrc.agentregistration.shared.risking.RiskedIndividual
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgressForApplicant
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgressForApplicant.ReceivedRiskingResultsForApplicant
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress.ReceivedRiskingResults
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.=!=
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
@@ -39,6 +40,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationForRiskingService
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.*
 
 import java.time.LocalDate
@@ -92,37 +94,52 @@ object RiskingProgressController:
   def toRiskingProgress(
     applicationWithIndividuals: ApplicationWithIndividuals,
     riskingCompletedDate: LocalDate
-  ): RiskingProgressForApplicant =
+  ): RiskingProgress =
     val maybeRiskingFileName: Option[RiskingFileName] = applicationWithIndividuals.application.riskingFileName
-    val maybeReceivedRiskingResults: Option[ReceivedRiskingResultsForApplicant] = receivedRiskingResults(applicationWithIndividuals, riskingCompletedDate)
+    val maybeReceivedRiskingResults: Option[ReceivedRiskingResults] = receivedRiskingResults(applicationWithIndividuals, riskingCompletedDate)
 
     (maybeRiskingFileName, maybeReceivedRiskingResults) match
       // format: off
-      case (None,    _                           ) => RiskingProgressForApplicant.ReadyForSubmission
-      case (Some(_), None                        ) => RiskingProgressForApplicant.SubmittedForRiskingForApplicant
+      case (None,    _                           ) => RiskingProgress.ReadyForSubmission
+      case (Some(_), None                        ) => RiskingProgress.SubmittedForRiskingForApplicant
       case (Some(_), Some(receivedRiskingResults)) => receivedRiskingResults
       // format: on
 
   private def receivedRiskingResults(
     applicationWithIndividuals: ApplicationWithIndividuals,
     riskingCompletedDate: LocalDate
-  ): Option[ReceivedRiskingResultsForApplicant] =
+  ): Option[ReceivedRiskingResults] =
+    import cats.implicits._
     for
-      riskedEntity: RiskedEntity <- maybeRiskedEntity(applicationWithIndividuals)
-      riskedIndividuals: Seq[RiskedIndividual] <- maybeRiskedIndividuals(applicationWithIndividuals)
-      entityOutcome: RiskingOutcome = riskedEntity.failures.outcomeForEntity
-      individualsOutcome: Seq[RiskingOutcome] = riskedIndividuals.map(_.failures.outcome)
-      outcome: RiskingOutcome = individualsOutcome.foldLeft(entityOutcome)(foldOutcomes)
+      outcome: RiskingOutcome <- RiskingOutcomeHelper.computeRiskingOutcome(applicationWithIndividuals)
+      riskedEntity: RiskedEntity <- applicationWithIndividuals
+        .application
+        .failures.map: failures =>
+          RiskedEntity(
+            applicationReference = applicationWithIndividuals.application.applicationReference,
+            failures = failures
+          )
+      riskedIndividuals: Seq[RiskedIndividual] <-
+        applicationWithIndividuals
+          .individuals
+          .map: individual =>
+            individual.failures.map: (failures: Seq[IndividualFailure]) =>
+              RiskedIndividual(
+                personReference = individual.personReference,
+                individualName = individual.individualProvidedDetails.individualName,
+                failures = failures
+              )
+          .sequence
     yield outcome match
-      case Approved => RiskingProgressForApplicant.Approved
+      case Approved => RiskingProgress.Approved
       case FailedFixable =>
-        RiskingProgressForApplicant.FailedFixable(
+        RiskingProgress.FailedFixable(
           riskedEntity = riskedEntity,
           riskedIndividuals = riskedIndividuals,
           riskingCompletedDate = riskingCompletedDate
         )
       case FailedNonFixable =>
-        RiskingProgressForApplicant.FailedNonFixable(
+        RiskingProgress.FailedNonFixable(
           riskedEntity = riskedEntity,
           riskedIndividuals = riskedIndividuals,
           riskingCompletedDate = riskingCompletedDate

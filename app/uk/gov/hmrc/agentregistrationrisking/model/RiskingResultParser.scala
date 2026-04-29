@@ -21,25 +21,25 @@ import uk.gov.hmrc.agentregistration.shared.PersonReference
 
 object RiskingResultParser:
 
-  def parseRiskingResult(riskingResultRecord: RiskingResultRaw): RiskingResultRecord =
+  def parseRiskingResult(riskingResultRecord: RiskingResultRecord): RiskingResult =
     riskingResultRecord match
-      case RiskingResultRaw(
+      case RiskingResultRecord(
             RecordType.Entity,
             Some(applicationReference: ApplicationReference),
             failures,
             None
           ) =>
-        EntityRiskingResultRecord(
+        RiskingResult.ForEntity(
           applicationReference = applicationReference,
           failures = failures.getOrElse(Nil).map(FailureParser.parseEntityFailure)
         )
-      case RiskingResultRaw(
+      case RiskingResultRecord(
             RecordType.Individual,
             None,
             failures,
             Some(personReference: PersonReference)
           ) =>
-        IndividualRiskingResultRecord(
+        RiskingResult.ForIndividual(
           personReference = personReference,
           failures = failures.getOrElse(Nil).map(FailureParser.parseIndividualFailure)
         )

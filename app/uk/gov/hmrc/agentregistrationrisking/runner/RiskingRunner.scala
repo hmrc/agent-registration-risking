@@ -60,7 +60,7 @@ extends RequestAwareLogging:
 
   def run(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
-    logger.info(s"Building risking file and sending to minerva started ...")
+    logger.info(s"Building risking file and sending it to minerva started ...")
     val instant: Instant = Instant.now(clock)
     for
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForSubmission()
@@ -69,20 +69,21 @@ extends RequestAwareLogging:
       individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
       _ = logger.info(s"Found ${individuals.size} corresponding individuals")
       riskingFileWithContent: RiskingFileWithContent = RiskingFileService.buildRiskingFileWithContent(
-        applications,
-        individuals,
-        instant
+        applications = applications,
+        individuals = individuals,
+        instant = instant
       )
-      _ = logger.info(s"Generated risking file: ${riskingFileWithContent.riskingFile.riskingFileName}, ${riskingFileWithContent.numberOfRecords} records")
+      riskingFileName: RiskingFileName = riskingFileWithContent.riskingFile.riskingFileName
+      _ = logger.info(s"Generated risking file: $riskingFileName, ${riskingFileWithContent.numberOfRecords} records")
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.uploadRiskingFile(riskingFileWithContent)
       _ = logger.info(s"Uploaded risking file to object store: ${objectSummary.location}")
       _ <- riskingFileRepo.upsert(riskingFileWithContent.riskingFile)
       _ = logger.info(s"Persisted risking file: ${riskingFileWithContent.riskingFile}")
       _ <- applicationForRiskingRepo.updateRiskingFileId(
         applicationReferences = applicationReferences,
-        riskingFileName = riskingFileWithContent.riskingFile.riskingFileName
+        riskingFileName = riskingFileName
       )
-      _ = logger.info(s"Updated applications as submitted for risking in ${riskingFileWithContent.riskingFile}")
+      _ = logger.info(s"Updated applications as submitted for risking in $riskingFileName")
       _ <- sdesProxyService.notifySdesFileReady(objectSummary)
       _ = logger.info(s"Sent notification to SDES")
       _ = logger.info(

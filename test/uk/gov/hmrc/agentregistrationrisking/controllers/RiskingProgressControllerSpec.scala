@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgressForApplicant
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
 
-class RiskingProgressForApplicantControllerSpec
+class RiskingProgressControllerSpec
 extends ControllerSpec:
 
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
@@ -66,7 +66,7 @@ extends ControllerSpec:
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.OK
-    val parsedResponse = response.json.as[RiskingProgressForApplicant]
+    val parsedResponse = response.json.as[RiskingProgress]
     parsedResponse.applicationReference shouldBe application.agentApplication.applicationReference
     parsedResponse.status shouldBe RiskingStatus.ReadyForSubmission
     parsedResponse.isSubscribed shouldBe false
@@ -90,7 +90,7 @@ extends ControllerSpec:
         .execute[HttpResponse]
         .futureValue
     response.status shouldBe Status.OK
-    val parsedResponse = response.json.as[RiskingProgressForApplicant]
+    val parsedResponse = response.json.as[RiskingProgress]
     parsedResponse.applicationReference shouldBe application.agentApplication.applicationReference
     parsedResponse.individuals.size shouldBe 1
     parsedResponse.individuals.headOption.value.personReference shouldBe tdAll.personReference
