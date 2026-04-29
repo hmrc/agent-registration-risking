@@ -21,6 +21,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -31,7 +32,7 @@ with RequestAwareLogging:
   "find individual by person reference returns Ok and SmuIndividualResponse as Json body" in:
 
     given Request[?] = tdAll.backendRequest
-
+    AuthStubs.stubAuthorise()
     val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
     val individualForRisking: IndividualForRisking = tdAll.readyForSubmissionIndividual()
     individualForRiskingRepo.upsert(individualForRisking).futureValue

@@ -70,7 +70,7 @@ extends BackendController(cc):
       )
       def attrs: TypedMap = TypedMap.empty
 
-  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.default.async: request =>
+  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.authorised.async: request =>
     given RequestHeader = emptyRequestHeader
     for
       maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findByPersonReference(personReference)
