@@ -176,7 +176,7 @@ with Logging:
   private def createIndividualsList(numberOfIndividuals: Int): List[IndividualForRisking] = (1 to numberOfIndividuals).map(_ => makeIndividual()).toList
 
   private def makeIndividual(): IndividualForRisking = IndividualForRisking(
-    personReference = personReferenceGenerator.nextPersonReference(),
+    personReference = personReferenceGenerator.generatePersonReference(),
     status = ApplicationForRiskingStatus.ReadyForSubmission,
     vrns = s"${generateRandomVrn()},${generateRandomVrn()}",
     payeRefs = s"${generateRandomPayeRef()},${generateRandomPayeRef()}",
