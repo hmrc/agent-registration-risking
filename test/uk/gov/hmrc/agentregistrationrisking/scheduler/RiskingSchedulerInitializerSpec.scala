@@ -122,7 +122,7 @@ extends UnitSpec,
 
       // schedule for 02:00 with clock at 01:59:59 — fires in ~1 second
       val appConfig = appConfigWith("scheduler.risking.enabled" -> true, "scheduler.risking.time" -> "02:00")
-      val zoneId = ZoneId.of("Europe/London")
+      val zoneId = AppConfig.zoneId
       val nearScheduleTime = Clock.fixed(
         LocalDate.now().atTime(1, 59, 59).atZone(zoneId).toInstant,
         zoneId

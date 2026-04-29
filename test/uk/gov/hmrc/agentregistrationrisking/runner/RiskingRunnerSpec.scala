@@ -22,7 +22,7 @@ import play.api.mvc.Request
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
@@ -113,4 +113,4 @@ extends ISpec:
     updatedApplication.riskingFileId.isDefined shouldBe true
 
     val savedRiskingFile = riskingFileRepo.findById(updatedApplication.riskingFileId.value).futureValue.value
-    savedRiskingFile.fineName shouldBe fileName
+    savedRiskingFile.riskingFileName shouldBe fileName

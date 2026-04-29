@@ -34,15 +34,13 @@ import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import org.mongodb.scala.result.UpdateResult
 import com.mongodb.client.model.Field
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
@@ -55,7 +53,7 @@ final class ApplicationForRiskingRepo @Inject() (
   appConfig: AppConfig,
   clock: Clock
 )(using ec: ExecutionContext)
-extends Repo[ApplicationForRiskingId, ApplicationForRisking](
+extends Repo[ApplicationReference, ApplicationForRisking](
   collectionName = "application-for-risking",
   mongoComponent = mongoComponent,
   indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
@@ -63,72 +61,73 @@ extends Repo[ApplicationForRiskingId, ApplicationForRisking](
   replaceIndexes = true
 ):
 
-  def findByApplicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRisking]] = collection
-    .find(
-      filter = Filters.eq("agentApplication.applicationReference", applicationReference.value)
-    )
-    .headOption()
-
   def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
-    .find(Filters.exists("riskingFileId", false)) // ready for submissions don't have set riskingFileId
+    .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
     .toFuture()
 
   // TODO needs testing?
   def updateRiskingFileId(
-    ids: Seq[ApplicationForRiskingId],
-    riskingFileId: RiskingFileId
-  ): Future[UpdateResult] = collection
-    .updateMany(
-      Filters.in("_id", ids.map(_.value)*),
-      Updates.combine(
-        Updates.set("riskingFileId", riskingFileId.value),
-        Updates.set("lastUpdatedAt", Instant.now(clock).toString)
-      )
-    ).toFuture()
+    applicationReferences: Seq[ApplicationReference],
+    riskingFileName: RiskingFileName
+  ): Future[UpdateResult] = {
+    collection
+      .updateMany(
+        Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value)*),
+        Updates.combine(
+          Updates.set(FieldNames.riskingFileName, riskingFileName.value),
+          Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
+        )
+      ).toFuture()
+  }
 
-  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      Filters.and(
-        Filters.size("failures", 0),
-        Filters.eq("isSubscribed", false)
-      )
-    ).toFuture()
+//  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
+//    .find(
+//      Filters.and(
+//        Filters.size("failures", 0),
+//        Filters.eq("isSubscribed", false)
+//      )
+//    ).toFuture()
 
-  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      Filters.and(
-        Filters.exists("failures"),
-        Filters.eq("isSubscribed", false)
-      )
-    ).toFuture()
+  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
+    collection
+      .find(
+        Filters.and(
+          Filters.exists(FieldNames.failures),
+          Filters.eq(FieldNames.isSubscribed, false)
+        )
+      ).toFuture()
+  }
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
-//TODO WG - review indexes
 object ApplicationForRiskingRepoHelp:
 
-  given IdString[ApplicationForRiskingId] =
-    new IdString[ApplicationForRiskingId]:
-      override def idString(i: ApplicationForRiskingId): String = i.value
+  given IdString[ApplicationReference] =
+    new IdString[ApplicationReference]:
+      override def idString(id: ApplicationReference): String = id.value
+      override def idField: String = FieldNames.applicationReference
 
-  given IdExtractor[ApplicationForRisking, ApplicationForRiskingId] =
-    new IdExtractor[ApplicationForRisking, ApplicationForRiskingId]:
-      override def id(applicationForRisking: ApplicationForRisking): ApplicationForRiskingId = applicationForRisking._id
+  given IdExtractor[ApplicationForRisking, ApplicationReference] =
+    new IdExtractor[ApplicationForRisking, ApplicationReference]:
+      override def id(applicationForRisking: ApplicationForRisking): ApplicationReference = applicationForRisking.applicationReference
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
-      keys = Indexes.ascending("lastUpdated"),
-      indexOptions = IndexOptions().expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS).name("lastUpdatedIdx")
-    ),
-    IndexModel(
-      keys = Indexes.ascending("agentApplication.applicationReference"),
-      IndexOptions()
+      keys = Indexes.ascending(FieldNames.applicationReference),
+      indexOptions = IndexOptions()
+        .name(FieldNames.applicationReferenceIndex)
         .unique(true)
-        .name("applicationReferenceIdx")
     ),
     IndexModel(
-      keys = Indexes.compoundIndex(Indexes.ascending("riskingFileId"), Indexes.ascending("failures")),
-      IndexOptions()
-        .name("riskingStatusIdx")
+      keys = Indexes.ascending(FieldNames.riskingFileName),
+      indexOptions = IndexOptions()
+        .name(FieldNames.riskingFileNameIndex)
+        .unique(false)
+    ),
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.lastUpdatedAt),
+      indexOptions = IndexOptions()
+        .expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS)
+        .name(FieldNames.lastUpdatedAtIndex)
     )
   )

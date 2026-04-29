@@ -56,7 +56,7 @@ extends AnyFreeSpecLike,
 
   lazy val tdAll: TdAll = TdAll()
   lazy val frozenInstant: Instant = tdAll.nowAsInstant
-  lazy val clock: Clock = Clock.fixed(frozenInstant, ZoneId.of("UTC"))
+  lazy val clock: Clock = Clock.fixed(frozenInstant, AppConfig.zoneId)
 
   protected def configMap: Map[String, Any] =
     Map[String, Any](

@@ -10,7 +10,8 @@ object AppDependencies {
     "uk.gov.hmrc" %% "bootstrap-backend-play-30" % bootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-30" % hmrcMongoVersion,
     "uk.gov.hmrc.objectstore" %% "object-store-client-play-30" % "2.5.0",
-    "com.softwaremill.quicklens" %% "quicklens" % "1.9.12"
+    "com.softwaremill.quicklens" %% "quicklens" % "1.9.12",
+    "org.typelevel" %% "cats-core" % "2.13.0"
   )
 
   val test: Seq[ModuleID] = Seq(

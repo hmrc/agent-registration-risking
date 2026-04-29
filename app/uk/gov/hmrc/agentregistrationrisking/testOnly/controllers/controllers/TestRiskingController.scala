@@ -43,8 +43,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
@@ -53,6 +51,8 @@ import uk.gov.hmrc.agentregistrationrisking.services.SubscribeAgentService
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent.RiskingFileContent
 
 import java.time.Clock
 import java.time.Instant
@@ -70,15 +70,14 @@ class TestRiskingController @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
   applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
-  individualForRiskingIdGenerator: IndividualForRiskingIdGenerator,
-  individualProvidedDetailsIdGenerator: IndividualProvidedDetailsIdGenerator,
+//  individualForRiskingIdGenerator: IndividualForRiskingIdGenerator,
+//  individualProvidedDetailsIdGenerator: IndividualProvidedDetailsIdGenerator,
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
-  riskingFileService: RiskingFileService,
   riskingRunner: RiskingRunner,
   sdesProxyService: SdesProxyService,
   subscribeAgentService: SubscribeAgentService
-)(using Clock)
+)(using clock: Clock)
 extends BackendController(cc)
 with Logging:
 
@@ -92,25 +91,37 @@ with Logging:
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
       implicit request =>
-        riskingFileService.getApplicationsReadyForRiskingWithIndividuals.map: applicationsWithIndividuals =>
-          val riskingFile: String = riskingFileService.buildRiskingFileFrom(applicationsWithIndividuals)
-          Ok(riskingFile)
-
-  def createTestApplicationForRisking(numberOfIndividuals: Int): Action[AnyContent] = Action
-    .async:
-      implicit request =>
-        val now = Instant.now(summon[Clock])
-        val appId = applicationForRiskingIdGenerator.nextApplicationId()
-        val applicationForRisking = makeApplicationForRisking(appId, now)
-        val individuals = createIndividualsList(
-          numberOfIndividuals,
-          appId,
-          now
-        )
+        val instant: Instant = Instant.now(clock)
         for
-          _ <- applicationForRiskingRepo.upsert(applicationForRisking)
-          _ <- Future.traverse(individuals)(individualForRiskingRepo.upsert)
-        yield Ok(Json.obj("applicationForRiskingId" -> appId.value))
+          // Dangerous copy/pasted code from RiskingRunner.run() ... TODO: this should be removed as it is easy to forget to maintain this code
+          applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForSubmission()
+          _ = logger.info(s"Found ${applications.size} applications ready for submission")
+          applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
+          individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
+          _ = logger.info(s"Found ${individuals.size} corresponding individuals")
+          riskingFileWithContent: RiskingFileWithContent = RiskingFileService.buildRiskingFileWithContent(
+            applications,
+            individuals,
+            instant
+          )
+          _ = logger.info(s"Generated risking file: ${riskingFileWithContent.riskingFile.riskingFileName}, ${riskingFileWithContent.numberOfRecords} records")
+          s: String = riskingFileWithContent.riskingFileContent
+        yield Ok(s)
+
+//  def createTestApplicationForRisking(numberOfIndividuals: Int): Action[AnyContent] = Action
+//    .async:
+//      implicit request =>
+//        val now = Instant.now(summon[Clock])
+//        val applicationForRisking = makeApplicationForRisking(appId, now)
+//        val individuals = createIndividualsList(
+//          numberOfIndividuals,
+//          appId,
+//          now
+//        )
+//        for
+//          _ <- applicationForRiskingRepo.upsert(applicationForRisking)
+//          _ <- Future.traverse(individuals)(individualForRiskingRepo.upsert)
+//        yield Ok(Json.obj("applicationReference" -> appId.value))
 
   def downloadAvailableResultsFiles: Action[AnyContent] = Action
     .async:
@@ -121,133 +132,131 @@ with Logging:
     .async:
       implicit request =>
         applicationForRiskingRepo
-          .findByApplicationReference(applicationReference)
+          .findById(applicationReference)
           .flatMap:
             case Some(applicationForRisking) =>
               subscribeAgentService.subscribeAgent(applicationForRisking).map: arn =>
                 Ok(s"subscribed ok with arn: ${arn.value}")
             case None => Future.successful(NotFound(s"No application found for reference: ${applicationReference.value}"))
 
-  private def makeApplicationForRisking(
-    appId: ApplicationForRiskingId,
-    now: Instant
-  ): ApplicationForRisking =
-    val agentApplication = AgentApplicationLlp(
-      _id = AgentApplicationId(appId.value),
-      applicationReference = agentReferenceGenerator.generateApplicationReference(),
-      internalUserId = InternalUserId("test-internal-user-id"),
-      applicantCredentials = Credentials(
-        providerId = "test-provider-id",
-        providerType = "test-provider-type"
-      ),
-      linkId = LinkId("test-link-id"),
-      groupId = GroupId("test-group-id"),
-      createdAt = now,
-      submittedAt = Some(now),
-      applicationState = ApplicationState.SentForRisking,
-      userRole = Some(UserRole.Partner),
-      businessDetails = Some(BusinessDetailsLlp(
-        companyProfile = CompanyProfile(
-          companyNumber = Crn("12345566"),
-          companyName = "Test LLP",
-          dateOfIncorporation = Some(LocalDate.now()),
-          unsanitisedCHROAddress = None
-        ),
-        saUtr = SaUtr("12345566"),
-        safeId = SafeId("X0TESTSAFEID0X")
-      )),
-      applicantContactDetails = Some(ApplicantContactDetails(
-        applicantName = ApplicantName(generateRandomName()),
-        telephoneNumber = Some(TelephoneNumber("1234658979")),
-        applicantEmailAddress = Some(ApplicantEmailAddress(EmailAddress("user@test.com"), isVerified = true))
-      )),
-      amlsDetails = Some(AmlsDetails(
-        supervisoryBody = AmlsCode("HMRC"),
-        amlsRegistrationNumber = Some(AmlsRegistrationNumber("11223344")),
-        amlsEvidence = None
-      )),
-      agentDetails = Some(AgentDetails(
-        businessName = AgentBusinessName(
-          agentBusinessName = generateRandomName(),
-          otherAgentBusinessName = None
-        ),
-        telephoneNumber = Some(AgentTelephoneNumber(
-          agentTelephoneNumber = "1234658979",
-          otherAgentTelephoneNumber = None
-        )),
-        agentEmailAddress = Some(AgentVerifiedEmailAddress(
-          emailAddress = AgentEmailAddress(
-            agentEmailAddress = "agent@example.com",
-            otherAgentEmailAddress = None
-          ),
-          isVerified = true
-        )),
-        agentCorrespondenceAddress = Some(
-          AgentCorrespondenceAddress(
-            addressLine1 = "23 Great Portland Street",
-            addressLine2 = Some("London"),
-            postalCode = Some("W1 8LT"),
-            countryCode = "GB"
-          )
-        )
-      )),
-      refusalToDealWithCheckResult = Some(CheckResult.Pass),
-      companyStatusCheckResult = Some(CheckResult.Pass),
-      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
-      numberOfIndividuals = None,
-      hasOtherRelevantIndividuals = Some(false),
-      vrns = Some(List(Vrn(generateRandomVrn()), Vrn(generateRandomVrn()))),
-      payeRefs = Some(List(PayeRef(generateRandomPayeRef()), PayeRef(generateRandomPayeRef())))
-    )
-    ApplicationForRisking(
-      _id = appId,
-      agentApplication = agentApplication,
-      createdAt = now,
-      lastUpdatedAt = now,
-      riskingFileId = None,
-      failures = None,
-      isSubscribed = false,
-      isEmailSent = false
-    )
+//  private def makeApplicationForRisking(
+//    now: Instant
+//  ): ApplicationForRisking =
+//    val agentApplication = AgentApplicationLlp(
+//      applicationReference = agentReferenceGenerator.generateApplicationReference(),
+//      internalUserId = InternalUserId("test-internal-user-id"),
+//      applicantCredentials = Credentials(
+//        providerId = "test-provider-id",
+//        providerType = "test-provider-type"
+//      ),
+//      linkId = LinkId("test-link-id"),
+//      groupId = GroupId("test-group-id"),
+//      createdAt = now,
+//      submittedAt = Some(now),
+//      applicationState = ApplicationState.SentForRisking,
+//      userRole = Some(UserRole.Partner),
+//      businessDetails = Some(BusinessDetailsLlp(
+//        companyProfile = CompanyProfile(
+//          companyNumber = Crn("12345566"),
+//          companyName = "Test LLP",
+//          dateOfIncorporation = Some(LocalDate.now()),
+//          unsanitisedCHROAddress = None
+//        ),
+//        saUtr = SaUtr("12345566"),
+//        safeId = SafeId("X0TESTSAFEID0X")
+//      )),
+//      applicantContactDetails = Some(ApplicantContactDetails(
+//        applicantName = ApplicantName(generateRandomName()),
+//        telephoneNumber = Some(TelephoneNumber("1234658979")),
+//        applicantEmailAddress = Some(ApplicantEmailAddress(EmailAddress("user@test.com"), isVerified = true))
+//      )),
+//      amlsDetails = Some(AmlsDetails(
+//        supervisoryBody = AmlsCode("HMRC"),
+//        amlsRegistrationNumber = Some(AmlsRegistrationNumber("11223344")),
+//        amlsEvidence = None
+//      )),
+//      agentDetails = Some(AgentDetails(
+//        businessName = AgentBusinessName(
+//          agentBusinessName = generateRandomName(),
+//          otherAgentBusinessName = None
+//        ),
+//        telephoneNumber = Some(AgentTelephoneNumber(
+//          agentTelephoneNumber = "1234658979",
+//          otherAgentTelephoneNumber = None
+//        )),
+//        agentEmailAddress = Some(AgentVerifiedEmailAddress(
+//          emailAddress = AgentEmailAddress(
+//            agentEmailAddress = "agent@example.com",
+//            otherAgentEmailAddress = None
+//          ),
+//          isVerified = true
+//        )),
+//        agentCorrespondenceAddress = Some(
+//          AgentCorrespondenceAddress(
+//            addressLine1 = "23 Great Portland Street",
+//            addressLine2 = Some("London"),
+//            postalCode = Some("W1 8LT"),
+//            countryCode = "GB"
+//          )
+//        )
+//      )),
+//      refusalToDealWithCheckResult = Some(CheckResult.Pass),
+//      companyStatusCheckResult = Some(CheckResult.Pass),
+//      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
+//      numberOfIndividuals = None,
+//      hasOtherRelevantIndividuals = Some(false),
+//      vrns = Some(List(Vrn(generateRandomVrn()), Vrn(generateRandomVrn()))),
+//      payeRefs = Some(List(PayeRef(generateRandomPayeRef()), PayeRef(generateRandomPayeRef())))
+//    )
+//    ApplicationForRisking(
+//      _id = appId,
+//      agentApplication = agentApplication,
+//      createdAt = now,
+//      lastUpdatedAt = now,
+//      riskingFileName = None,
+//      failures = None,
+//      isSubscribed = false,
+//      isEmailSent = false
+//    )
 
-  private def createIndividualsList(
-    numberOfIndividuals: Int,
-    appId: ApplicationForRiskingId,
-    now: Instant
-  ): List[IndividualForRisking] = (1 to numberOfIndividuals).map(_ => makeIndividual(appId, now)).toList
+//  private def createIndividualsList(
+//    numberOfIndividuals: Int,
+//    appId: ApplicationForRiskingId,
+//    now: Instant
+//  ): List[IndividualForRisking] = (1 to numberOfIndividuals).map(_ => makeIndividual(appId, now)).toList
 
-  private def makeIndividual(
-    appId: ApplicationForRiskingId,
-    now: Instant
-  ): IndividualForRisking =
-    val providedDetails = IndividualProvidedDetails(
-      _id = individualProvidedDetailsIdGenerator.nextIndividualProvidedDetailsId(),
-      personReference = personReferenceGenerator.nextPersonReference(),
-      individualName = IndividualName(generateRandomName()),
-      isPersonOfControl = true,
-      internalUserId = None,
-      createdAt = now,
-      providedDetailsState = ProvidedDetailsState.Finished,
-      agentApplicationId = AgentApplicationId(appId.value),
-      individualDateOfBirth = Some(Provided(generateRandomDateOfBirth())),
-      telephoneNumber = Some(TelephoneNumber("01234567890")),
-      emailAddress = None,
-      individualNino = Some(IndividualNino.Provided(generateRandomNino())),
-      individualSaUtr = Some(IndividualSaUtr.Provided(generateRandomSaUtr())),
-      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
-      hasApprovedApplication = Some(true),
-      vrns = Some(List(Vrn(generateRandomVrn()), Vrn(generateRandomVrn()))),
-      payeRefs = Some(List(PayeRef(generateRandomPayeRef()), PayeRef(generateRandomPayeRef()))),
-      passedIv = Some(true)
-    )
-    IndividualForRisking(
-      _id = individualForRiskingIdGenerator.nextIndividualId(),
-      applicationForRiskingId = appId,
-      individualProvidedDetails = providedDetails,
-      createdAt = now,
-      lastUpdatedAt = now,
-      failures = None
-    )
+//  private def makeIndividual(
+//    appId: ApplicationForRiskingId,
+//    now: Instant
+//  ): IndividualForRisking =
+//    val providedDetails = IndividualProvidedDetails(
+//      _id = individualProvidedDetailsIdGenerator.nextIndividualProvidedDetailsId(),
+//      personReference = personReferenceGenerator.nextPersonReference(),
+//      individualName = IndividualName(generateRandomName()),
+//      isPersonOfControl = true,
+//      internalUserId = None,
+//      createdAt = now,
+//      providedDetailsState = ProvidedDetailsState.Finished,
+//      agentApplicationId = AgentApplicationId(appId.value),
+//      individualDateOfBirth = Some(Provided(generateRandomDateOfBirth())),
+//      telephoneNumber = Some(TelephoneNumber("01234567890")),
+//      emailAddress = None,
+//      individualNino = Some(IndividualNino.Provided(generateRandomNino())),
+//      individualSaUtr = Some(IndividualSaUtr.Provided(generateRandomSaUtr())),
+//      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
+//      hasApprovedApplication = Some(true),
+//      vrns = Some(List(Vrn(generateRandomVrn()), Vrn(generateRandomVrn()))),
+//      payeRefs = Some(List(PayeRef(generateRandomPayeRef()), PayeRef(generateRandomPayeRef()))),
+//      passedIv = Some(true)
+//    )
+//    IndividualForRisking(
+//      _id = individualForRiskingIdGenerator.nextIndividualId(),
+//      applicationForRiskingId = appId,
+//      individualProvidedDetails = providedDetails,
+//      createdAt = now,
+//      lastUpdatedAt = now,
+//      failures = None
+//    )
 
   private def generateRandomName(): String =
     val firstNames = List(

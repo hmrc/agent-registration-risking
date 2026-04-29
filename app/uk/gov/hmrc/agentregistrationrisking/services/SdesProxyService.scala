@@ -84,23 +84,22 @@ extends RequestAwareLogging:
   def retrieveAndProcessResultsFiles(using request: RequestHeader): Future[Seq[ObjectSummaryWithMd5]] =
     logger.info(s"Results file retrieval started...")
     for
-      unprocessedFileList <- resultsFileService.getUnprocessedAvailableFiles()
-      _ = logger.info(s"Unprocessed files found: ${unprocessedFileList.size}")
+      unprocessedAvailableFiles: Seq[AvailableFile] <- resultsFileService.getUnprocessedAvailableFiles()
+      _ = logger.info(s"Found ${unprocessedAvailableFiles.size} unprocessed available results file(s) to process")
       uploadResults <-
-        unprocessedFileList.foldLeft(Future.successful(Seq.empty[ObjectSummaryWithMd5])):
+        unprocessedAvailableFiles.foldLeft(Future.successful(Seq.empty[ObjectSummaryWithMd5])):
           (
-            processedFiles,
-            resultsFile
+            processedFiles: Future[Seq[ObjectSummaryWithMd5]],
+            availableFile: AvailableFile
           ) =>
-            processedFiles.flatMap: completed =>
+            processedFiles.flatMap: (completed: Seq[ObjectSummaryWithMd5]) =>
               for
-                riskingResultRecords <- resultsFileService.downloadAndParseRecords(resultsFile)
+                riskingResultRecords <- resultsFileService.downloadAndParseRecords(availableFile)
                 _ <- applicationStatusService.processResults(riskingResultRecords)
-                uploadResult <- resultsFileService.uploadAndLogResultFile(resultsFile)
-                getAllApplicationsWithIndividualsWithResults <- applicationStatusService.getAllUnsubscribedApplicationsWithIndividualsWithResults
-                approvedApplicationsWithIndividuals = applicationStatusService.getApprovedApplicationsWithIndividuals(
-                  getAllApplicationsWithIndividualsWithResults
-                )
+                uploadResult: ObjectSummaryWithMd5 <- resultsFileService.uploadAndLogResultFile(availableFile)
+                applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <-
+                  applicationStatusService.getAllUnsubscribedApplicationsWithIndividualsWithResults
+                approvedApplicationsWithIndividuals = applicationStatusService.getApprovedApplicationsWithIndividuals(applicationsWithIndividuals)
                 _ <- subscribeApprovedApplications(approvedApplicationsWithIndividuals)
               yield completed :+ uploadResult
     yield uploadResults

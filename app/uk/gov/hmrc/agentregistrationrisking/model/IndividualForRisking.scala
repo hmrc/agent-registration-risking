@@ -19,15 +19,16 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
+import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
 import java.time.Instant
 
 final case class IndividualForRisking(
-  _id: IndividualForRiskingId,
-  applicationForRiskingId: ApplicationForRiskingId,
+  personReference: PersonReference, // primary Key
+  applicationReference: ApplicationReference, // foreign Key to ApplicationForRisking
   individualProvidedDetails: IndividualProvidedDetails,
   createdAt: Instant,
   lastUpdatedAt: Instant,

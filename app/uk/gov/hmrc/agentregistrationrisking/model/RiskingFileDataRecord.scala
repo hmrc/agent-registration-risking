@@ -29,7 +29,7 @@ import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.convertBooleanToStringRepresentation
-import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.convertToMinervaDateString
+import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asMinervaDate
 
 import java.time.LocalDate
 
@@ -78,7 +78,7 @@ final case class RiskingFileDataRecord(
       payeRefs,
       amlSupervisoryBody.map(_.value).getOrElse(""),
       amlRegNumber.map(_.value).getOrElse(""),
-      amlExpiryDate.map(convertToMinervaDateString).getOrElse(""),
+      amlExpiryDate.map(asMinervaDate).getOrElse(""),
       amlEvidence.map(_.uploadId.value).getOrElse(""),
       personReference.map(_.value).getOrElse(""),
       individualCompaniesHouseName.getOrElse(""),
@@ -95,8 +95,8 @@ final case class RiskingFileDataRecord(
     fields.mkString("|")
 
   private def getDobString: String = individualProvidedDateOfBirth.map {
-    case IndividualDateOfBirth.Provided(dob) => convertToMinervaDateString(dob)
-    case IndividualDateOfBirth.FromCitizensDetails(dob) => convertToMinervaDateString(dob)
+    case IndividualDateOfBirth.Provided(dob) => asMinervaDate(dob)
+    case IndividualDateOfBirth.FromCitizensDetails(dob) => asMinervaDate(dob)
   }.getOrElse("")
 
   private def getNinoString: String = individualNino.map {

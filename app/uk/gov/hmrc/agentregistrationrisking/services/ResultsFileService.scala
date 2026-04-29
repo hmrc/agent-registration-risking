@@ -48,7 +48,7 @@ extends RequestAwareLogging:
     val downloadUri = Uri(file.downloadURL).toJavaUri.toURL
     val fileName = file.filename
     for
-      uploadResult <- objectStoreService.uploadFromUrl(downloadUrl = downloadUri, fileName = fileName)
+      uploadResult <- objectStoreService.uploadRiskingResultsFileFromUrl(downloadUrl = downloadUri, fileName = fileName)
       _ = logger.info(s"Uploaded file to object store: $fileName")
     yield uploadResult
 

@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.util
 
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+
 import java.time.format.DateTimeFormatter
 import java.time.Instant
 import java.time.LocalDate
@@ -25,13 +27,14 @@ import java.time.format.DateTimeFormatter.ofPattern
 object MinervaDateFormats:
 
   extension (d: LocalDate)
-
-    inline def convertToMinervaDateString: String = d.format(ofPattern("dd-MM-yyyy"))
+    inline def asMinervaDate: String = d.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
 
   extension (i: Instant)
 
-    inline def convertToMinervaHeaderDateString: String = DateTimeFormatter.ofPattern("yyyyMMdd")
-      .withZone(ZoneId.systemDefault()).format(i)
+    inline def asRiskingFileTimeStamp: String = riskingFileTimestampFormatter.format(i)
+    inline def asMinervaHeaderDate: String = minervaHeaderFormatter.format(i)
+    inline def asMinervaHeaderTime: String = minervaHeaderTimeFormatter.format(i)
 
-    inline def convertToMinervaHeaderTimeString: String = DateTimeFormatter.ofPattern("HHmmss")
-      .withZone(ZoneId.systemDefault()).format(i)
+  private val riskingFileTimestampFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(AppConfig.zoneId)
+  private val minervaHeaderFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(AppConfig.zoneId)
+  private val minervaHeaderTimeFormatter = DateTimeFormatter.ofPattern("HHmmss").withZone(AppConfig.zoneId)

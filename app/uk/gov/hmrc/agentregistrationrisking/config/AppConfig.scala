@@ -27,7 +27,11 @@ import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.time.LocalTime
+import java.time.ZoneId
 import scala.concurrent.duration.FiniteDuration
+
+object AppConfig:
+  val zoneId: ZoneId = ZoneId.of("UTC")
 
 @Singleton
 class AppConfig @Inject() (
