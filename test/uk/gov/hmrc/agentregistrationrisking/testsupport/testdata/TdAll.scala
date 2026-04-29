@@ -36,6 +36,7 @@ with TdBase
 with TdRequest
 with TdObjectStore
 with TdApplicationForRisking
+with TdEmail
 with TdIndividualForRisking
 with TdGrsBusinessDetails
 with TdAgentApplicationLlp

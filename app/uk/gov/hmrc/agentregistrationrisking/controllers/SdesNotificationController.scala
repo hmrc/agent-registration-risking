@@ -25,12 +25,14 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.services.EmailService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
-  sdesProxyService: SdesProxyService
+  sdesProxyService: SdesProxyService,
+  emailService: EmailService
 )(using ExecutionContext)
 extends BackendController(cc):
 
@@ -53,5 +55,9 @@ extends BackendController(cc):
                 s"Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
               Future.successful(Ok)
 
-  // TODO
-  private def onFileReady()(using RequestHeader): Future[Status] = sdesProxyService.retrieveAndProcessResultsFiles.map(_ => Ok) // TODO: what if few notifications received in the same time during the processing of one notificaion
+  // TODO: what if few notifications received in the same time during the processing of one notificaion
+  private def onFileReady()(using RequestHeader): Future[Status] =
+    for
+      _ <- sdesProxyService.retrieveAndProcessResultsFiles
+      _ <- emailService.findAndSendRegisteredEmail()
+    yield Ok

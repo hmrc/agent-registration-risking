@@ -157,3 +157,65 @@ extends ISpec:
       result.size shouldBe 0
     }
   }
+
+  "findSubscribedReadyForSuccessEmail" - {
+
+    "returns applications that are subscribed and have not had a success email sent" in {
+      val readyForEmail = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("email-ready-1"),
+        isSubscribed = true,
+        isEmailSent = false
+      )
+      repo.upsert(readyForEmail).futureValue
+
+      val result = repo.findSubscribedReadyForSuccessEmail().futureValue
+      result.size shouldBe 1
+      result.headOption.value._id shouldBe readyForEmail._id
+    }
+
+    "does not return applications that are not subscribed" in {
+      val notSubscribed = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("email-not-sub-1"),
+        isSubscribed = false,
+        isEmailSent = false
+      )
+      repo.upsert(notSubscribed).futureValue
+
+      val result = repo.findSubscribedReadyForSuccessEmail().futureValue
+      result.size shouldBe 0
+    }
+
+    "does not return applications whose success email has already been sent" in {
+      val alreadyEmailed = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("email-sent-1"),
+        isSubscribed = true,
+        isEmailSent = true
+      )
+      repo.upsert(alreadyEmailed).futureValue
+
+      val result = repo.findSubscribedReadyForSuccessEmail().futureValue
+      result.size shouldBe 0
+    }
+  }
+
+  "updateEmailSent" - {
+
+    "marks the application's isEmailSent flag as true" in {
+      val notEmailed = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("update-email-1"),
+        isSubscribed = true,
+        isEmailSent = false
+      )
+      repo.upsert(notEmailed).futureValue
+
+      val updateResult = repo.updateEmailSent(notEmailed._id).futureValue
+      updateResult.getModifiedCount shouldBe 1L
+
+      repo.findSubscribedReadyForSuccessEmail().futureValue.size shouldBe 0
+    }
+
+    "is a no-op when the application id does not exist" in {
+      val updateResult = repo.updateEmailSent(ApplicationForRiskingId("missing-id")).futureValue
+      updateResult.getMatchedCount shouldBe 0L
+    }
+  }

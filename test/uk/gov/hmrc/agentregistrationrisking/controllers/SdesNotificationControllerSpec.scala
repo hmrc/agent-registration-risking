@@ -30,6 +30,9 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
+import uk.gov.hmrc.agentregistrationrisking.model.EmailInformation
+import uk.gov.hmrc.agentregistrationrisking.services.EmailService
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EmailStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.HipStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
@@ -82,7 +85,7 @@ extends ControllerSpec:
     EnrolmentStoreProxyStubs.verifyAddKnownFacts(count = 0)
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup(count = 0)
 
-  "receiveNotification should process approved application end-to-end: file processing, status update, subscribe, and enrol" in:
+  "receiveNotification should process approved application end-to-end: file processing, status update, subscribe, enrol, and send registration success email" in:
     setupApplicationWithIndividual()
 
     SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.sdesFileData("resultsFile01.txt"), tdAll.sdesFileData("resultsFile02.txt")))
@@ -92,6 +95,15 @@ extends ControllerSpec:
     HipStubs.stubSubscribeToAgentServices(SafeId("X0_SAFE_ID_0X"), "AARN0001234")
     EnrolmentStoreProxyStubs.stubAddKnownFacts("HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
     EnrolmentStoreProxyStubs.stubAllocateEnrolmentToGroup("group-id-12345", "HMRC-AS-AGENT~AgentReferenceNumber~AARN0001234")
+    EmailStubs.stubSendEmail(EmailInformation(
+      to = Seq("user@test.com"),
+      templateId = EmailService.registrationSuccessTemplateId,
+      parameters = Map(
+        "agentName" -> "Alice Smith",
+        "applicationRef" -> "ABC123456",
+        "businessName" -> "Test Company Name"
+      )
+    ))
 
     val response: WSResponse =
       wsClient
@@ -104,6 +116,7 @@ extends ControllerSpec:
     val afterProcessing = repo.findByApplicationReference(appRef).futureValue.value
     afterProcessing.failures.value.size shouldBe 0
     afterProcessing.isSubscribed shouldBe true
+    afterProcessing.isEmailSent shouldBe true
 
     val updatedIndividual = individualRepo.findByPersonReference(tdAll.personReference).futureValue.value
     updatedIndividual.failures.value.size shouldBe 0
@@ -112,6 +125,7 @@ extends ControllerSpec:
     HipStubs.verifySubscribeToAgentServices()
     EnrolmentStoreProxyStubs.verifyAddKnownFacts()
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup()
+    EmailStubs.verifySendEmail()
 
   "receiveNotification should process failed application end-to-end: file processing, status update, no subscribe" in:
     setupApplicationWithIndividual()

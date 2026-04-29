@@ -102,6 +102,23 @@ extends Repo[ApplicationForRiskingId, ApplicationForRisking](
       )
     ).toFuture()
 
+  def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.eq("isSubscribed", true),
+        Filters.eq("isEmailSent", false)
+      )
+    ).toFuture()
+
+  def updateEmailSent(id: ApplicationForRiskingId): Future[UpdateResult] = collection
+    .updateOne(
+      Filters.eq("_id", id.value),
+      Updates.combine(
+        Updates.set("isEmailSent", true),
+        Updates.set("lastUpdatedAt", Instant.now(clock).toString)
+      )
+    ).toFuture()
+
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
 //TODO WG - review indexes
