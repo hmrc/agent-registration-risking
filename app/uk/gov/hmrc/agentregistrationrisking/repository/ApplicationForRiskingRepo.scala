@@ -110,6 +110,15 @@ extends Repo[ApplicationForRiskingId, ApplicationForRisking](
       )
     ).toFuture()
 
+  def findApplicationsReadyForFailureEmailCheck(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.exists("failures"),
+        Filters.eq("isSubscribed", false),
+        Filters.eq("isEmailSent", false)
+      )
+    ).toFuture()
+
   def updateEmailSent(id: ApplicationForRiskingId): Future[UpdateResult] = collection
     .updateOne(
       Filters.eq("_id", id.value),

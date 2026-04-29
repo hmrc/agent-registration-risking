@@ -198,6 +198,76 @@ extends ISpec:
     }
   }
 
+  "findApplicationsReadyForFailureEmailCheck" - {
+
+    "returns applications with failures present, not subscribed and not yet emailed" in {
+      val candidate = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("failure-candidate-1"),
+        failures = Some(List(EntityFailure._3._2)),
+        isSubscribed = false,
+        isEmailSent = false
+      )
+      repo.upsert(candidate).futureValue
+
+      val result = repo.findApplicationsReadyForFailureEmailCheck().futureValue
+      result.size shouldBe 1
+      result.headOption.value._id shouldBe candidate._id
+    }
+
+    "returns approved-but-not-subscribed applications too (Scala-side classification will skip them)" in {
+      val approvedNotSubscribed = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("failure-candidate-approved-1"),
+        failures = Some(List.empty),
+        isSubscribed = false,
+        isEmailSent = false
+      )
+      repo.upsert(approvedNotSubscribed).futureValue
+
+      val result = repo.findApplicationsReadyForFailureEmailCheck().futureValue
+      result.size shouldBe 1
+      result.headOption.value._id shouldBe approvedNotSubscribed._id
+    }
+
+    "does not return applications without results yet" in {
+      val noResults = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("failure-no-results-1"),
+        failures = None,
+        isSubscribed = false,
+        isEmailSent = false
+      )
+      repo.upsert(noResults).futureValue
+
+      val result = repo.findApplicationsReadyForFailureEmailCheck().futureValue
+      result.size shouldBe 0
+    }
+
+    "does not return already-subscribed applications" in {
+      val subscribed = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("failure-subscribed-1"),
+        failures = Some(List.empty),
+        isSubscribed = true,
+        isEmailSent = false
+      )
+      repo.upsert(subscribed).futureValue
+
+      val result = repo.findApplicationsReadyForFailureEmailCheck().futureValue
+      result.size shouldBe 0
+    }
+
+    "does not return applications that have already been emailed" in {
+      val alreadyEmailed = tdAll.llpApplicationForRisking.copy(
+        _id = ApplicationForRiskingId("failure-emailed-1"),
+        failures = Some(List(EntityFailure._3._2)),
+        isSubscribed = false,
+        isEmailSent = true
+      )
+      repo.upsert(alreadyEmailed).futureValue
+
+      val result = repo.findApplicationsReadyForFailureEmailCheck().futureValue
+      result.size shouldBe 0
+    }
+  }
+
   "updateEmailSent" - {
 
     "marks the application's isEmailSent flag as true" in {

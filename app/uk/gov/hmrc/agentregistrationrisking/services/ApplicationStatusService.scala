@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome.outcome
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.outcome
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResultRecord
@@ -49,16 +50,20 @@ class ApplicationStatusService @Inject() (
 extends RequestAwareLogging:
 
   def getAllUnsubscribedApplicationsWithIndividualsWithResults: Future[Seq[ApplicationWithIndividuals]] =
-    for
-      applications <- applicationForRiskingRepo.findNotSubscribedWithResults()
-      applicationsWithIndividuals <-
-        Future.traverse(applications): application =>
-          individualForRiskingRepo.findByApplicationForRiskingId(application._id)
-            .map(individuals => ApplicationWithIndividuals(application, individuals))
-            .map: appWithIndividuals =>
-              val allIndividualsReceived = appWithIndividuals.individuals.forall(_.failures.isDefined)
-              if allIndividualsReceived then Some(appWithIndividuals) else None
-    yield applicationsWithIndividuals.flatten
+    applicationForRiskingRepo.findNotSubscribedWithResults().flatMap(withCompleteIndividuals)
+
+  def getApplicationsReadyForFailureEmailCheckWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
+    applicationForRiskingRepo.findApplicationsReadyForFailureEmailCheck().flatMap(withCompleteIndividuals)
+
+  private def withCompleteIndividuals(
+    applications: Seq[ApplicationForRisking]
+  ): Future[Seq[ApplicationWithIndividuals]] = Future.traverse(applications): application =>
+    individualForRiskingRepo.findByApplicationForRiskingId(application._id)
+      .map(individuals => ApplicationWithIndividuals(application, individuals))
+      .map: appWithIndividuals =>
+        val allIndividualsReceived = appWithIndividuals.individuals.forall(_.failures.isDefined)
+        if allIndividualsReceived then Some(appWithIndividuals) else None
+  .map(_.flatten)
 
   def getApprovedApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
     applicationsWithIndividuals.filter: appWithIndividuals =>

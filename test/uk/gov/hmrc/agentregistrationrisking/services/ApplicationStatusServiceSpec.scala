@@ -136,6 +136,93 @@ extends ISpec:
     }
   }
 
+  "getApplicationsReadyForFailureEmailCheckWithIndividuals" - {
+
+    "returns application when not subscribed, not yet emailed, results received for entity and all individuals" in {
+      val app = makeApp(
+        "fail-check-1",
+        failures = Some(List(EntityFailure._3._2))
+      )
+      val ind = makeIndividual(
+        app._id,
+        "fail-check-1-ind",
+        failures = Some(List.empty)
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
+
+      val result = service.getApplicationsReadyForFailureEmailCheckWithIndividuals.futureValue
+      result.size shouldBe 1
+      result.headOption.value.application._id shouldBe app._id
+    }
+
+    "does not return application when entity has no results yet" in {
+      val app = makeApp("fail-check-no-entity", failures = None)
+      val ind = makeIndividual(
+        app._id,
+        "fail-check-no-entity-ind",
+        failures = Some(List.empty)
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
+
+      val result = service.getApplicationsReadyForFailureEmailCheckWithIndividuals.futureValue
+      result.size shouldBe 0
+    }
+
+    "does not return application when an individual has no results yet" in {
+      val app = makeApp(
+        "fail-check-partial",
+        failures = Some(List(EntityFailure._3._2))
+      )
+      val ind = makeIndividual(
+        app._id,
+        "fail-check-partial-ind",
+        failures = None
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
+
+      val result = service.getApplicationsReadyForFailureEmailCheckWithIndividuals.futureValue
+      result.size shouldBe 0
+    }
+
+    "does not return already subscribed application" in {
+      val app = makeApp(
+        "fail-check-subscribed",
+        failures = Some(List.empty),
+        isSubscribed = true
+      )
+      val ind = makeIndividual(
+        app._id,
+        "fail-check-subscribed-ind",
+        failures = Some(List.empty)
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
+
+      val result = service.getApplicationsReadyForFailureEmailCheckWithIndividuals.futureValue
+      result.size shouldBe 0
+    }
+
+    "does not return application that has already been emailed" in {
+      val app = makeApp(
+        "fail-check-emailed",
+        failures = Some(List(EntityFailure._3._2))
+      ).copy(isEmailSent = true)
+      val ind = makeIndividual(
+        app._id,
+        "fail-check-emailed-ind",
+        failures = Some(List.empty)
+      )
+      repo.upsert(app).futureValue
+      individualRepo.upsert(ind).futureValue
+
+      val result = service.getApplicationsReadyForFailureEmailCheckWithIndividuals.futureValue
+      result.size shouldBe 0
+    }
+  }
+
   "getApprovedApplicationsWithIndividuals" - {
 
     "returns application when entity and all individuals approved" in {

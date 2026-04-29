@@ -60,4 +60,5 @@ extends BackendController(cc):
     for
       _ <- sdesProxyService.retrieveAndProcessResultsFiles
       _ <- emailService.findAndSendRegisteredEmail()
+      _ <- emailService.findAndSendNonFixableFailureEmails()
     yield Ok

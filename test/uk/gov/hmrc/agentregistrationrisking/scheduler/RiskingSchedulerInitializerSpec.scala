@@ -66,7 +66,9 @@ extends UnitSpec,
     "microservice.services.hip.port" -> "9009",
     "microservice.services.hip.authorization-token" -> "test-hip-auth-token",
     "microservice.services.enrolment-store-proxy.host" -> "localhost",
-    "microservice.services.enrolment-store-proxy.port" -> "7775"
+    "microservice.services.enrolment-store-proxy.port" -> "7775",
+    "microservice.services.email.host" -> "localhost",
+    "microservice.services.email.port" -> "8300"
   )
 
   private def appConfigWith(entries: (String, Any)*): AppConfig =
