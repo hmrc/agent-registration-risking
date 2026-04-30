@@ -76,7 +76,7 @@ extends BackendController(cc):
       maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findByPersonReference(personReference)
       maybeApp: Option[ApplicationForRisking] <-
         maybeIndividual match
-          case Some(indi) => applicationForRiskingRepo.findById(indi.applicationForRiskingId)
+          case Some(indi) => applicationForRiskingRepo.findById(indi.applicationReference)
           case None => Future.successful(None)
       maybePresignedAmlsEvidenceUrl: Option[PresignedDownloadUrl] <-
         maybeApp match

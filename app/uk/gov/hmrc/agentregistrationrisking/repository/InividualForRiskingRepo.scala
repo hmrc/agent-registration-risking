@@ -64,6 +64,11 @@ extends Repo[PersonReference, IndividualForRisking](
     )
     .toFuture()
 
+  def findByPersonReference(personReference: PersonReference): Future[Option[IndividualForRisking]] = collection
+    .find(
+      filter = Filters.eq(FieldNames.personReference, personReference.value)
+    ).headOption()
+
 object IndividualForRiskingRepoHelp:
 
   given IdString[PersonReference] =
