@@ -81,18 +81,20 @@ extends BackendController(cc):
       maybePresignedAmlsEvidenceUrl: Option[PresignedDownloadUrl] <-
         maybeApp match
           case Some(app) =>
-            val amlsEvidence: AmlsEvidence = app.agentApplication.getAmlsDetails.getAmlsEvidence
-            objectStoreService.generatePreSignedDownloadUrl(
-              amlsEvidence.objectStoreLocation.directory,
-              amlsEvidence.fileName,
-              appConfig.SmuViewer.amlsEvidenceOwner
-            ).map(Option(_))
+            if app.agentApplication.getAmlsDetails.isHmrc then Future.successful(None)
+            else
+              val amlsEvidence: AmlsEvidence = app.agentApplication.getAmlsDetails.getAmlsEvidence
+              objectStoreService.generatePreSignedDownloadUrl(
+                amlsEvidence.objectStoreLocation.directory,
+                amlsEvidence.fileName,
+                appConfig.SmuViewer.amlsEvidenceOwner
+              ).map(Option(_))
           case None => Future.successful(None)
     yield (maybeIndividual, maybeApp, maybePresignedAmlsEvidenceUrl) match
-      case (Some(indi), Some(app), Some(presignedUrl)) =>
+      case (Some(indi), Some(app), _) =>
         Ok(Json.toJson(SmuIndividualResponse.make(
           indi.individualProvidedDetails,
           app.agentApplication,
-          presignedUrl
+          maybePresignedAmlsEvidenceUrl
         )))
       case _ => NoContent

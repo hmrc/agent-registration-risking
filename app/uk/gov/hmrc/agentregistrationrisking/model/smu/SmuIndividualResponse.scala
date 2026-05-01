@@ -44,7 +44,7 @@ object SmuIndividualResponse:
   def make(
     ipd: IndividualProvidedDetails,
     aa: AgentApplication,
-    amlsEvidencePresignedDownloadUrl: PresignedDownloadUrl
+    amlsEvidencePresignedDownloadUrl: Option[PresignedDownloadUrl]
   ) = SmuIndividualResponse(Individual.make(ipd), Entity.make(aa, amlsEvidencePresignedDownloadUrl))
 
   final case class Individual(
@@ -121,7 +121,7 @@ object SmuIndividualResponse:
 
     private[SmuIndividualResponse] def make(
       aa: AgentApplication,
-      amlsEvidencePresignedDownloadUrl: PresignedDownloadUrl
+      amlsEvidencePresignedDownloadUrl: Option[PresignedDownloadUrl]
     ): Entity = Entity(
       applicationReference = aa.applicationReference,
       // TODO update this once we have implemented resubmission flags
@@ -139,7 +139,7 @@ object SmuIndividualResponse:
       amlsSupervisoryBody = aa.getAmlsDetails.supervisoryBody,
       amlsRegNumber = aa.getAmlsDetails.getRegistrationNumber,
       amlsExpiryDate = None,
-      amlsEvidencePresignedDownloadUrl = Some(amlsEvidencePresignedDownloadUrl.downloadUrl.toString),
+      amlsEvidencePresignedDownloadUrl = amlsEvidencePresignedDownloadUrl.map(_.downloadUrl.toString),
       applicantPhone = aa.applicantContactDetails.map(_.getTelephoneNumber),
       applicantEmail = aa.applicantContactDetails.map(_.getVerifiedEmail)
     )
