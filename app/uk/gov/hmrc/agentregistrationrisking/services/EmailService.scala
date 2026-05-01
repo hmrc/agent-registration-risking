@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.BusinessType
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
@@ -81,11 +82,9 @@ extends RequestAwareLogging:
 
   private def sendNonFixableFailureEmailsForApplication(appWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application = appWithIndividuals.application
-    // Sole trader edge case: the (single) individual is the applicant, who already received the applicant email,
-    // so skip the individual email to avoid duplicates.
     val individuals: Seq[IndividualForRisking] =
       application.agentApplication.businessType match
-        case BusinessType.SoleTrader => Nil
+        case BusinessType.SoleTrader => appWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => appWithIndividuals.individuals
     // TODO: introduce a retry cap. For now we always mark isEmailSent=true after one round of attempts to avoid
     // unbounded retries. Failed sends are visible in WARN logs.
@@ -101,6 +100,17 @@ extends RequestAwareLogging:
                 logger.warn(s"Failed to send individual failure email for individual ${individual._id.value} (application ${application._id.value})", ex)
       _ <- applicationForRiskingRepo.updateEmailSent(application._id)
     yield ()
+
+  private def isIndividualTheApplicant(
+    individual: IndividualForRisking,
+    application: ApplicationForRisking
+  ): Boolean =
+    val applicantEmail = application.agentApplication.applicantContactDetails
+      .flatMap(_.applicantEmailAddress)
+      .map(_.emailAddress.value)
+    val individualEmail = individual.individualProvidedDetails.emailAddress
+      .map(_.emailAddress.value)
+    applicantEmail.isDefined && applicantEmail === individualEmail
 
   private def applicantSuccessEmailInformation(application: ApplicationForRisking): EmailInformation =
     val agentApplication = application.agentApplication
