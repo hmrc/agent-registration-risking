@@ -81,7 +81,7 @@ extends BackendController(cc):
         .getApplicationWithIndividuals(applicationReference)
         .map:
           case None => NoContent
-          case Some(applicationWithIndividuals) =>
+          case Some(applicationWithIndividuals: ApplicationWithIndividuals) =>
             Ok(Json.toJson(
               RiskingProgressController.toRiskingProgress(
                 applicationWithIndividuals = applicationWithIndividuals,
