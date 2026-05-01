@@ -30,7 +30,7 @@ import scala.concurrent.duration.FiniteDuration
 import RiskingFileRepoHelp.given
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
@@ -39,7 +39,7 @@ final class RiskingFileRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-extends Repo[RiskingFileId, RiskingFile](
+extends Repo[RiskingFileName, RiskingFile](
   collectionName = "risking-file",
   mongoComponent = mongoComponent,
   indexes = RiskingFileRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
@@ -49,17 +49,26 @@ extends Repo[RiskingFileId, RiskingFile](
 
 object RiskingFileRepoHelp:
 
-  given IdString[RiskingFileId] =
-    new IdString[RiskingFileId]:
-      override def idString(i: RiskingFileId): String = i.value
+  given IdString[RiskingFileName] =
+    new IdString[RiskingFileName]:
+      override def idString(id: RiskingFileName): String = id.value
+      override def idField: String = FieldNames.riskingFileName
 
-  given IdExtractor[RiskingFile, RiskingFileId] =
-    new IdExtractor[RiskingFile, RiskingFileId]:
-      override def id(riskingFile: RiskingFile): RiskingFileId = riskingFile._id
+  given IdExtractor[RiskingFile, RiskingFileName] =
+    new IdExtractor[RiskingFile, RiskingFileName]:
+      override def id(riskingFile: RiskingFile): RiskingFileName = riskingFile.riskingFileName
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
-      keys = Indexes.ascending("lastUpdated"),
-      indexOptions = IndexOptions().expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS).name("lastUpdatedIdx")
+      keys = Indexes.ascending(FieldNames.riskingFileName),
+      indexOptions = IndexOptions()
+        .name(FieldNames.riskingFileNameIndex)
+        .unique(true)
+    ),
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.uploadedAt),
+      indexOptions = IndexOptions()
+        .expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS)
+        .name(FieldNames.uploadedAtIndex)
     )
   )

@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 
@@ -49,7 +49,7 @@ extends ISpec:
       val ready = tdAll.llpApplicationForRisking.copy(_id = ApplicationForRiskingId("ready-1"))
       val submitted = tdAll.llpApplicationForRisking.copy(
         _id = ApplicationForRiskingId("submitted-1"),
-        riskingFileId = Some(RiskingFileId("file-1"))
+        riskingFileName = Some(RiskingFileName("file-1"))
       )
       repo.upsert(ready).futureValue
       repo.upsert(submitted).futureValue

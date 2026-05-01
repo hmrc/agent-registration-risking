@@ -20,7 +20,7 @@ import org.scalatest.RecoverMethods.recoverToExceptionIf
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
@@ -37,8 +37,8 @@ extends ISpec:
     given RequestHeader = FakeRequest()
     ObjectStoreStubs.stubDownloadMinervaFile(testAvailableFile.downloadURL)
 
-    val result: Future[List[RiskingResultRecord]] = service.downloadAndParseRecords(testAvailableFile)
-    val expected: List[RiskingResultRecord] = List(passRecord1, passRecord2).map(RiskingResultParser.parseRiskingResult)
+    val result: Future[List[RiskingResult]] = service.downloadAndParseRecords(testAvailableFile)
+    val expected: List[RiskingResult] = List(passRecord1, passRecord2).map(RiskingResultParser.parseRiskingResult)
 
     result.futureValue shouldBe expected
 
@@ -46,7 +46,7 @@ extends ISpec:
     given RequestHeader = FakeRequest()
     ObjectStoreStubs.stubDownloadMinervaFileFailure(testAvailableFile.downloadURL)
 
-    val result: Future[List[RiskingResultRecord]] = service.downloadAndParseRecords(testAvailableFile)
+    val result: Future[List[RiskingResult]] = service.downloadAndParseRecords(testAvailableFile)
     val exception: UpstreamErrorResponse = recoverToExceptionIf[UpstreamErrorResponse](result).futureValue
 
     exception.statusCode shouldBe 500

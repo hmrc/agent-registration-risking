@@ -25,40 +25,41 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
-import uk.gov.hmrc.agentregistrationrisking.services.EmailService
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
+import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
+import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
-  sdesProxyService: SdesProxyService,
-  emailService: EmailService
+  riskingResultsService: RiskingResultsService,
+  subscriptionService: SubscriptionService
 )(using ExecutionContext)
 extends BackendController(cc):
 
   def receiveSdesNotification: Action[SdesNotification] =
-    Action
-      .async(parse.json[SdesNotification]):
+    actions
+      .default
+      .apply(parse.json[SdesNotification]):
         implicit request =>
           request.body match
             case n: FileReady =>
               logger.info(s"File ready notification received for ${n.filename} from SDES [${n.correlationID}]")
+              // run it in background and respond immediately
               onFileReady()
-            case n: FileReceived =>
-              logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
-              Future.successful(Ok)
-            case n: FileProcessed =>
-              logger.info(s"File processed notification received for ${n.filename} from SDES [${n.correlationID}]")
-              Future.successful(Ok)
+            case n: FileReceived => logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
+            case n: FileProcessed => logger.info(s"File processed notification received for ${n.filename} from SDES [${n.correlationID}]")
             case n: FileProcessingFailure =>
-              logger.warn(s"File processing failure notification received for ${n.filename} from SDES [${n.correlationID}]. " +
-                s"Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
-              Future.successful(Ok)
+              logger.warn(s"File processing failure notification received for ${n.filename} from SDES [${n.correlationID}]. Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
+          Ok
 
-  // TODO: what if few notifications received in the same time during the processing of one notificaion
-  private def onFileReady()(using RequestHeader): Future[Status] =
+  // TODO: what if few notifications received in the same time during the processing of one notification
+  private def onFileReady()(using RequestHeader): Future[Unit] =
     for
-      _ <- sdesProxyService.retrieveAndProcessResultsFiles
+      _ <- riskingResultsService.processResultsFiles()
+      _ <- subscriptionService.subscribeApprovedApplications()
       _ <- emailService.findAndSendRegisteredEmail()
       _ <- emailService.findAndSendNonFixableFailureEmails()
-    yield Ok
+
+    yield ()

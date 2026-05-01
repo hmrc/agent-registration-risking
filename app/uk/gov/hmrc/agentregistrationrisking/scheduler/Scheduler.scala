@@ -34,6 +34,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 
 @Singleton
 class Scheduler @Inject() (
@@ -42,10 +43,9 @@ class Scheduler @Inject() (
 )(using ec: ExecutionContext)
 extends Logging:
 
-  private val schedulerZoneId = ZoneId.of("Europe/London")
   private val executor = Executors.newScheduledThreadPool(1)
 
-  private def now(): ZonedDateTime = ZonedDateTime.now(clock.withZone(schedulerZoneId))
+  private def now(): ZonedDateTime = ZonedDateTime.now(clock.withZone(AppConfig.zoneId))
 
   private def lockServiceFor(name: String): LockService =
     new LockService:

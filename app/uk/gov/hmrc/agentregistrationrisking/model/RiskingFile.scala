@@ -22,8 +22,7 @@ import play.api.libs.json.OFormat
 import java.time.Instant
 
 final case class RiskingFile(
-  _id: RiskingFileId,
-  fineName: String,
+  riskingFileName: RiskingFileName,
   uploadedAt: Instant
 )
 

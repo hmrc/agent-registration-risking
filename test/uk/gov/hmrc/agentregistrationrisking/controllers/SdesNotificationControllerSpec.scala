@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentregistration.shared.SafeId
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
@@ -50,7 +50,7 @@ extends ControllerSpec:
   private def setupApplicationWithIndividual() =
     val application = tdAll.llpApplicationForRisking.copy(
       _id = ApplicationForRiskingId("test-app"),
-      riskingFileId = Some(RiskingFileId("submitted-file"))
+      riskingFileName = Some(RiskingFileName("submitted-file"))
     )
     val individual = tdAll.readyForSubmissionIndividual(application._id).copy(
       _id = IndividualForRiskingId("test-ind")

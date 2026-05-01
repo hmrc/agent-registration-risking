@@ -1,8 +1,7 @@
 # microservice specific routes
 
-POST        /submit-for-risking                       uk.gov.hmrc.agentregistrationrisking.controllers.SubmitForRiskingController.submitForRisking()
-GET         /application/:applicationReference        uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationController.getApplicationRiskingResponse(applicationReference: ApplicationReference)
-GET         /individual/:personReference              uk.gov.hmrc.agentregistrationrisking.controllers.GetIndividualController.getIndividualRiskingResponse(personReference: PersonReference)
-GET         /application-status/:applicationReference uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationStatusController.getApplicationStatus(applicationReference: ApplicationReference)
+POST        /submit-for-risking                                          uk.gov.hmrc.agentregistrationrisking.controllers.SubmitForRiskingController.submitForRisking()
+GET         /risking-progress/for-applicant/:applicationReference        uk.gov.hmrc.agentregistrationrisking.controllers.RiskingProgressController.getRiskingProgressForApplicant(applicationReference: ApplicationReference)
+GET         /risking-progress/for-individual/:personReference            uk.gov.hmrc.agentregistrationrisking.controllers.RiskingProgressController.getRiskingProgressForIndividual(personReference: PersonReference)
 
-POST        /receive-sdes-notifications               uk.gov.hmrc.agentregistrationrisking.controllers.SdesNotificationController.receiveSdesNotification
+POST        /receive-sdes-notifications                                  uk.gov.hmrc.agentregistrationrisking.controllers.SdesNotificationController.receiveSdesNotification

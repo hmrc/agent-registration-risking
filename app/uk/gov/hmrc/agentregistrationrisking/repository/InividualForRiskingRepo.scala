@@ -30,12 +30,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import IndividualForRiskingRepoHelp.given
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
@@ -44,7 +42,7 @@ final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-extends Repo[IndividualForRiskingId, IndividualForRisking](
+extends Repo[PersonReference, IndividualForRisking](
   collectionName = "individual-for-risking",
   mongoComponent = mongoComponent,
   indexes = IndividualForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
@@ -52,59 +50,48 @@ extends Repo[IndividualForRiskingId, IndividualForRisking](
   replaceIndexes = true
 ):
 
-  def findByApplicationForRiskingId(applicationForRiskingId: ApplicationForRiskingId): Future[Seq[IndividualForRisking]] = collection
+  def insertMany(individualForRiskingList: List[IndividualForRisking]): Future[Unit] = collection.insertMany(individualForRiskingList).toFuture().map(_ => ())
+
+  def findByApplicationReference(applicationReference: ApplicationReference): Future[Seq[IndividualForRisking]] = collection
     .find(
-      filter = Filters.eq("applicationForRiskingId", applicationForRiskingId.value)
+      filter = Filters.eq(FieldNames.applicationReference, applicationReference.value)
     )
     .toFuture()
 
-  def findByPersonReference(personReference: PersonReference): Future[Option[IndividualForRisking]] = collection
+  def findByApplicationReferences(applicationReferences: Seq[ApplicationReference]): Future[Seq[IndividualForRisking]] = collection
     .find(
-      filter = Filters.eq("individualProvidedDetails.personReference", personReference.value)
-    ).headOption()
-
-  def findByStatus(status: RiskingStatus): Future[Seq[IndividualForRisking]] =
-    val filter =
-      status match
-        case RiskingStatus.ReadyForSubmission => Filters.exists("riskingFileId", false)
-        case RiskingStatus.SubmittedForRisking => Filters.and(Filters.exists("riskingFileId"), Filters.exists("failures", false))
-        case RiskingStatus.ReceivedRiskingResults => Filters.and(Filters.exists("riskingFileId"), Filters.exists("failures"))
-    collection.find(filter).toFuture()
+      filter = Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value))
+    )
+    .toFuture()
 
 object IndividualForRiskingRepoHelp:
 
-  given IdString[IndividualForRiskingId] =
-    new IdString[IndividualForRiskingId]:
-      override def idString(i: IndividualForRiskingId): String = i.value
+  given IdString[PersonReference] =
+    new IdString[PersonReference]:
+      override def idString(id: PersonReference): String = id.value
+      override def idField: String = FieldNames.personReference
 
-  given IdExtractor[IndividualForRisking, IndividualForRiskingId] =
-    new IdExtractor[IndividualForRisking, IndividualForRiskingId]:
-      override def id(individualForRisking: IndividualForRisking): IndividualForRiskingId = individualForRisking._id
+  given IdExtractor[IndividualForRisking, PersonReference] =
+    new IdExtractor[IndividualForRisking, PersonReference]:
+      override def id(individualForRisking: IndividualForRisking): PersonReference = individualForRisking.personReference
 
-  def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
+  def indexes(ttl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
-      keys = Indexes.ascending("lastUpdated"),
-      indexOptions = IndexOptions().expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS).name("lastUpdatedIdx")
-    ),
-    IndexModel(
-      keys = Indexes.ascending("applicationForRiskingId"),
-      IndexOptions()
-        .name("applicationForRiskingIdIdx")
-    ),
-    IndexModel(
-      keys = Indexes.ascending("individualProvidedDetails.personReference"),
-      IndexOptions()
-        .name("personReferenceIdx")
-    ),
-    IndexModel(
-      keys = Indexes.compoundIndex(Indexes.ascending("individualProvidedDetails.personReference"), Indexes.ascending("applicationForRiskingId")),
-      IndexOptions()
+      keys = Indexes.ascending(FieldNames.personReference),
+      indexOptions = IndexOptions()
+        .name(FieldNames.personReferenceIndex)
         .unique(true)
-        .name("personReferenceApplicationIdIdx")
     ),
     IndexModel(
-      keys = Indexes.compoundIndex(Indexes.ascending("riskingFileId"), Indexes.ascending("failures")),
-      IndexOptions()
-        .name("riskingStatusIdx")
+      keys = Indexes.ascending(FieldNames.applicationReference),
+      indexOptions = IndexOptions()
+        .name(FieldNames.applicationReferenceIndex)
+        .unique(false)
+    ),
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.lastUpdatedAt),
+      indexOptions = IndexOptions()
+        .expireAfter(ttl.toSeconds, TimeUnit.SECONDS)
+        .name(FieldNames.lastUpdatedAtIndex)
     )
   )

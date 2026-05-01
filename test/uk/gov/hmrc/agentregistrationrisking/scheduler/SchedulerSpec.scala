@@ -34,7 +34,7 @@ class SchedulerSpec
 extends UnitSpec,
   MongoSupport:
 
-  private val zoneId = ZoneId.of("Europe/London")
+  private val zoneId = AppConfig.zoneId
 
   private lazy val mongoLockRepository = new MongoLockRepository(mongoComponent, new uk.gov.hmrc.mongo.CurrentTimestampSupport())
 

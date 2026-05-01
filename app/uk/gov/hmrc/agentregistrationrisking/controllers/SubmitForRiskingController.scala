@@ -18,15 +18,13 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 
@@ -42,9 +40,7 @@ class SubmitForRiskingController @Inject() (
   actions: Actions,
   cc: ControllerComponents,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
-  applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
-  individualForRiskingIdGenerator: IndividualForRiskingIdGenerator
+  individualForRiskingRepo: IndividualForRiskingRepo
 )(using
   ExecutionContext,
   Clock
@@ -57,42 +53,45 @@ extends BackendController(cc):
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
           val now = Instant.now(summon[Clock])
-          val appId = applicationForRiskingIdGenerator.nextApplicationId()
-          val application = toApplicationForRisking(
-            request.body,
-            appId,
-            now
-          )
-          val individuals = request.body.individuals.map(toIndividualForRisking(_, appId, now))
           for
-            _ <- applicationForRiskingRepo.upsert(application)
-            _ <- Future.traverse(individuals)(individualForRiskingRepo.upsert)
+            _ <- applicationForRiskingRepo.upsert(makeApplicationForRisking(request.body, now))
+            _ <- individualForRiskingRepo.insertMany(makeIndividualForRiskingList(request.body, now))
           yield Created
 
-  private def toApplicationForRisking(
-    request: SubmitForRiskingRequest,
-    appId: ApplicationForRiskingId,
-    now: Instant
+  private def makeApplicationForRisking(
+    submitForRiskingRequest: SubmitForRiskingRequest,
+    createdAt: Instant
   ): ApplicationForRisking = ApplicationForRisking(
-    _id = appId,
-    agentApplication = request.agentApplication,
-    createdAt = now,
-    lastUpdatedAt = now,
-    riskingFileId = None,
+    applicationReference = submitForRiskingRequest.agentApplication.applicationReference,
+    riskingFileName = None,
+    agentApplication = submitForRiskingRequest.agentApplication,
+    createdAt = createdAt,
+    lastUpdatedAt = createdAt,
     failures = None,
     isSubscribed = false,
     isEmailSent = false
   )
 
-  private def toIndividualForRisking(
-    individual: IndividualProvidedDetails,
-    appId: ApplicationForRiskingId,
-    now: Instant
+  private def makeIndividualForRiskingList(
+    submitForRiskingRequest: SubmitForRiskingRequest,
+    createdAt: Instant
+  ) = submitForRiskingRequest.individuals.map(individualProvidedDetails =>
+    makeIndividualForRisking(
+      applicationReference = submitForRiskingRequest.agentApplication.applicationReference,
+      individualProvidedDetails = individualProvidedDetails,
+      createdAt = createdAt
+    )
+  )
+
+  private def makeIndividualForRisking(
+    applicationReference: ApplicationReference,
+    individualProvidedDetails: IndividualProvidedDetails,
+    createdAt: Instant
   ): IndividualForRisking = IndividualForRisking(
-    _id = individualForRiskingIdGenerator.nextIndividualId(),
-    applicationForRiskingId = appId,
-    individualProvidedDetails = individual,
-    createdAt = now,
-    lastUpdatedAt = now,
+    personReference = individualProvidedDetails.personReference,
+    applicationReference = applicationReference,
+    individualProvidedDetails = individualProvidedDetails,
+    createdAt = createdAt,
+    lastUpdatedAt = createdAt,
     failures = None
   )

@@ -21,17 +21,16 @@ import play.api.libs.json.Format
 import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
+import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asRiskingFileTimeStamp
 
+import java.time.Instant
 import javax.inject.Singleton
 
-/** Individual Identifier, which is unique for an individual
-  */
-final case class IndividualForRiskingId(value: String)
+final case class RiskingFileName(value: String)
 
-object IndividualForRiskingId:
+object RiskingFileName:
 
-  given format: Format[IndividualForRiskingId] = JsonFormatsFactory.makeValueClassFormat
+  def make(timestamp: Instant): RiskingFileName = RiskingFileName(s"asa_risking_file_version1_0_4_${timestamp.asRiskingFileTimeStamp}.txt")
 
-@Singleton
-class IndividualForRiskingIdGenerator:
-  def nextIndividualId(): IndividualForRiskingId = IndividualForRiskingId(ObjectId.get().toHexString)
+  given format: Format[RiskingFileName] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[RiskingFileName] = ValueClassBinder.valueClassBinder[RiskingFileName](_.value)

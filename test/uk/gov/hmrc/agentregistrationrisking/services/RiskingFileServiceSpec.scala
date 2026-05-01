@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
@@ -46,7 +46,7 @@ extends ISpec:
 
     val submittedApplication = tdAll.llpApplicationForRisking.copy(
       _id = ApplicationForRiskingId("submitted-app"),
-      riskingFileId = Some(RiskingFileId("some-file-id"))
+      riskingFileName = Some(RiskingFileName("some-file-id"))
     )
 
     repo.upsert(readyApplication).futureValue

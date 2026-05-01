@@ -29,10 +29,10 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
 
-class ApplicationStatusServiceSpec
+class SubscriptionServiceSpec
 extends ISpec:
 
-  val service: ApplicationStatusService = app.injector.instanceOf[ApplicationStatusService]
+  val service: SubscriptionService = app.injector.instanceOf[SubscriptionService]
   val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
@@ -84,7 +84,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 1
       result.headOption.value.application._id shouldBe app._id
     }
@@ -99,7 +99,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 0
     }
 
@@ -113,7 +113,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 0
     }
 
@@ -131,7 +131,7 @@ extends ISpec:
       repo.upsert(app).futureValue
       individualRepo.upsert(ind).futureValue
 
-      val result = service.getAllUnsubscribedApplicationsWithIndividualsWithResults.futureValue
+      val result = service.findApprovedReadyToSubscribe.futureValue
       result.size shouldBe 0
     }
   }
@@ -227,9 +227,9 @@ extends ISpec:
 
     "returns application when entity and all individuals approved" in {
       val appWithInds = makeAppWithIndividuals(
-        "approved",
-        Some(List.empty),
-        List(Some(List.empty))
+        appId = "approved",
+        entityFailures = Some(List.empty),
+        individualFailures = List(Some(List.empty))
       )
       val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
       result.size shouldBe 1
@@ -238,7 +238,7 @@ extends ISpec:
     "does not return when entity has fixable failures" in {
       val appWithInds = makeAppWithIndividuals(
         "entity-fixable",
-        Some(List(EntityFailure._3._2)),
+        Some(List(EntityFailure._3._2)), // fixable
         List(Some(List.empty))
       )
       val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
@@ -248,7 +248,7 @@ extends ISpec:
     "does not return when entity has non-fixable failures" in {
       val appWithInds = makeAppWithIndividuals(
         "entity-nonfixable",
-        Some(List(EntityFailure._8._1)),
+        Some(List(EntityFailure._8._1)), // non-fixable
         List(Some(List.empty))
       )
       val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
@@ -259,7 +259,7 @@ extends ISpec:
       val appWithInds = makeAppWithIndividuals(
         "ind-fixable",
         Some(List.empty),
-        List(Some(List(IndividualFailure._4._1)))
+        List(Some(List(IndividualFailure._4._1))) // fixable
       )
       val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
       result.size shouldBe 0
@@ -269,7 +269,7 @@ extends ISpec:
       val appWithInds = makeAppWithIndividuals(
         "ind-nonfixable",
         Some(List.empty),
-        List(Some(List(IndividualFailure._9)))
+        List(Some(List(IndividualFailure._9))) // NonFixable
       )
       val result = service.getApprovedApplicationsWithIndividuals(Seq(appWithInds))
       result.size shouldBe 0
@@ -281,7 +281,7 @@ extends ISpec:
     "returns application with non-fixable entity failure and no individuals" in {
       val appWithInds = makeAppWithIndividuals(
         "nf-entity",
-        Some(List(EntityFailure._8._1)),
+        Some(List(EntityFailure._8._1)), // NonFixable
         List(Some(List.empty))
       )
       val result = service.getNonFixableApplicationsWithIndividuals(Seq(appWithInds))
@@ -299,7 +299,7 @@ extends ISpec:
       val indNonFixable = makeIndividual(
         app._id,
         "nf-ind-bad",
-        Some(List(IndividualFailure._9))
+        Some(List(IndividualFailure._9)) // NonFixable
       )
       val appWithInds = ApplicationWithIndividuals(app, Seq(indApproved, indNonFixable))
 
@@ -310,11 +310,11 @@ extends ISpec:
     }
 
     "returns application when both entity and individual are non-fixable" in {
-      val app = makeApp("nf-both", Some(List(EntityFailure._8._4)))
+      val app = makeApp("nf-both", Some(List(EntityFailure._8._4))) // NonFixable
       val indNonFixable = makeIndividual(
         app._id,
         "nf-both-ind",
-        Some(List(IndividualFailure._9))
+        Some(List(IndividualFailure._9)) // NonFixable
       )
       val appWithInds = ApplicationWithIndividuals(app, Seq(indNonFixable))
 
@@ -336,8 +336,8 @@ extends ISpec:
     "does not return application when only fixable failures" in {
       val appWithInds = makeAppWithIndividuals(
         "nf-fixable-only",
-        Some(List(EntityFailure._3._2)),
-        List(Some(List(IndividualFailure._4._1)))
+        Some(List(EntityFailure._3._2)), // Fixable
+        List(Some(List(IndividualFailure._4._1))) // Fixable
       )
       val result = service.getNonFixableApplicationsWithIndividuals(Seq(appWithInds))
       result.size shouldBe 0

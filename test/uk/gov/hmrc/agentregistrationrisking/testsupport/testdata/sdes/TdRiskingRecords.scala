@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.RecordType
 import uk.gov.hmrc.agentregistrationrisking.model.RecordType.*
 import uk.gov.hmrc.agentregistrationrisking.model.AdditionalInfo
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRaw
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 
 trait TdRiskingRecords:
@@ -147,7 +147,7 @@ trait TdRiskingRecords:
     )
   )
 
-  val failRecord1 = RiskingResultRaw(
+  val failRecord1 = RiskingResultRecord(
     RecordType.Entity,
     Some(ApplicationReference("applicationReference")),
     Some(List(
@@ -169,7 +169,7 @@ trait TdRiskingRecords:
     None
   )
 
-  val failRecord2 = RiskingResultRaw(
+  val failRecord2 = RiskingResultRecord(
     RecordType.Individual,
     None,
     Some(List(
@@ -184,7 +184,7 @@ trait TdRiskingRecords:
     Some(PersonReference("personReference_002"))
   )
 
-  val failRecord3 = RiskingResultRaw(
+  val failRecord3 = RiskingResultRecord(
     RecordType.Individual,
     None,
     Some(List(
@@ -199,14 +199,14 @@ trait TdRiskingRecords:
     Some(PersonReference("personReference_003"))
   )
 
-  val passRecord1 = RiskingResultRaw(
+  val passRecord1 = RiskingResultRecord(
     recordType = RecordType.Entity,
     applicationReference = Some(ApplicationReference("ABC123456")),
     failures = Some(List.empty),
     personReference = None
   )
 
-  val passRecord2 = RiskingResultRaw(
+  val passRecord2 = RiskingResultRecord(
     recordType = RecordType.Individual,
     applicationReference = None,
     failures = Some(List.empty),
