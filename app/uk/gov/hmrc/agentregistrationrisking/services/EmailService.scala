@@ -67,15 +67,17 @@ extends RequestAwareLogging:
           sendRegisteredEmail(application)
             .recover:
               case ex =>
-                logger.warn(s"Failed to send registered email for application ${application._id.value} - marking as sent to avoid unbounded retries", ex)
-            .flatMap(_ => applicationForRiskingRepo.updateEmailSent(application._id))
+                logger.warn(
+                  s"Failed to send registered email for application ${application.applicationReference.value} - marking as sent to avoid unbounded retries",
+                  ex
+                )
+            .flatMap(_ => applicationForRiskingRepo.updateEmailSent(application.applicationReference))
     yield ()
 
   def findAndSendNonFixableFailureEmails(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
     for
-      candidates <- applicationStatusService.getApplicationsReadyForFailureEmailCheckWithIndividuals
-      nonFixable = applicationStatusService.getNonFixableApplicationsWithIndividuals(candidates)
+      nonFixable <- applicationStatusService.findNonFixableReadyForFailureEmail()
       _ = logger.info(s"Found ${nonFixable.size} FailedNonFixable applications ready for failure emails")
       _ <- Future.traverse(nonFixable)(sendNonFixableFailureEmailsForApplication)
     yield ()
@@ -91,14 +93,17 @@ extends RequestAwareLogging:
     for
       _ <- sendApplicantNonFixableFailureEmail(application)
         .recover:
-          case ex => logger.warn(s"Failed to send applicant failure email for application ${application._id.value}", ex)
+          case ex => logger.warn(s"Failed to send applicant failure email for application ${application.applicationReference.value}", ex)
       _ <-
         Future.traverse(individuals): individual =>
           sendIndividualNonFixableFailureEmail(individual)
             .recover:
               case ex =>
-                logger.warn(s"Failed to send individual failure email for individual ${individual._id.value} (application ${application._id.value})", ex)
-      _ <- applicationForRiskingRepo.updateEmailSent(application._id)
+                logger.warn(
+                  s"Failed to send individual failure email for individual ${individual.personReference.value} (application ${application.applicationReference.value})",
+                  ex
+                )
+      _ <- applicationForRiskingRepo.updateEmailSent(application.applicationReference)
     yield ()
 
   private def isIndividualTheApplicant(

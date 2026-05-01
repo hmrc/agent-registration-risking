@@ -16,24 +16,15 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
-import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome
-import uk.gov.hmrc.agentregistration.shared.risking.EntityRiskingOutcome.outcome
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingOutcome.outcome
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResultRecord
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResultRecord
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
+import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper._
 
 import java.time.Clock
-import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -49,84 +40,45 @@ class ApplicationStatusService @Inject() (
 )
 extends RequestAwareLogging:
 
-  def getAllUnsubscribedApplicationsWithIndividualsWithResults: Future[Seq[ApplicationWithIndividuals]] =
-    applicationForRiskingRepo.findNotSubscribedWithResults().flatMap(withCompleteIndividuals)
+  def findApprovedReadyToSubscribe(): Future[Seq[ApplicationForRisking]] = getApplicationsPendingActionWithIndividuals
+    .map(filterApprovedApplicationsWithIndividuals)
+    .map(_.map(_.application))
 
-  def getApplicationsReadyForFailureEmailCheckWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
-    applicationForRiskingRepo.findApplicationsReadyForFailureEmailCheck().flatMap(withCompleteIndividuals)
+  def findNonFixableReadyForFailureEmail(): Future[Seq[ApplicationWithIndividuals]] = getApplicationsPendingActionWithIndividuals
+    .map(filterNonFixableApplicationsWithIndividuals)
 
-  private def withCompleteIndividuals(
-    applications: Seq[ApplicationForRisking]
-  ): Future[Seq[ApplicationWithIndividuals]] = Future.traverse(applications): application =>
-    individualForRiskingRepo.findByApplicationForRiskingId(application._id)
-      .map(individuals => ApplicationWithIndividuals(application, individuals))
-      .map: appWithIndividuals =>
-        val allIndividualsReceived = appWithIndividuals.individuals.forall(_.failures.isDefined)
-        if allIndividualsReceived then Some(appWithIndividuals) else None
-  .map(_.flatten)
+  private def getApplicationsPendingActionWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
+    for
+      applications <- applicationForRiskingRepo.findApplicationsPendingAction()
+      individuals <- individualForRiskingRepo.findByApplicationReferences(applications.map(_.applicationReference))
+    yield ApplicationWithIndividuals
+      .merge(applications, individuals)
+      .filter(_.individuals.forall(_.failures.isDefined))
 
-  def getApprovedApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
+  private def filterApprovedApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
     applicationsWithIndividuals.filter: appWithIndividuals =>
-      val entityApproved = appWithIndividuals.application.failures.exists(_.outcome() === EntityRiskingOutcome.Approved)
-      val allIndividualsApproved = appWithIndividuals.individuals.forall: individual =>
-        individual.failures.exists(_.outcome() === IndividualRiskingOutcome.Approved)
-      entityApproved && allIndividualsApproved
+      RiskingOutcomeHelper
+        .computeRiskingOutcome(appWithIndividuals)
+        .exists(_ === RiskingOutcome.Approved)
 
-  def getNonFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
-    applicationsWithIndividuals.flatMap: appWithIndividuals =>
-      val entityNonFixable = appWithIndividuals.application.failures.exists(_.outcome() === EntityRiskingOutcome.FailedNonFixable)
-      val nonFixableIndividuals = appWithIndividuals.individuals.filter: individual =>
-        individual.failures.exists(_.outcome() === IndividualRiskingOutcome.FailedNonFixable)
-      if entityNonFixable || nonFixableIndividuals.nonEmpty then
-        Some(ApplicationWithIndividuals(appWithIndividuals.application, nonFixableIndividuals))
-      else
-        None
-
-  def getFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
-    val nonFixableAppIds = getNonFixableApplicationsWithIndividuals(applicationsWithIndividuals).map(_.application._id).toSet
+  private def filterNonFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
     applicationsWithIndividuals
-      .filterNot(a => nonFixableAppIds.contains(a.application._id))
-      .flatMap: appWithIndividuals =>
-        val entityFixable = appWithIndividuals.application.failures.exists(_.outcome() === EntityRiskingOutcome.FailedFixable)
+      .filter: appWithIndividuals =>
+        RiskingOutcomeHelper
+          .computeRiskingOutcome(appWithIndividuals)
+          .exists(_ === RiskingOutcome.FailedNonFixable)
+      .map: appWithIndividuals =>
+        val nonFixableIndividuals = appWithIndividuals.individuals.filter: individual =>
+          individual.failures.exists(_.outcome === RiskingOutcome.FailedNonFixable)
+        ApplicationWithIndividuals(appWithIndividuals.application, nonFixableIndividuals)
+
+  private def filterFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
+    applicationsWithIndividuals
+      .filter: appWithIndividuals =>
+        RiskingOutcomeHelper
+          .computeRiskingOutcome(appWithIndividuals)
+          .exists(_ === RiskingOutcome.FailedFixable)
+      .map: appWithIndividuals =>
         val fixableIndividuals = appWithIndividuals.individuals.filter: individual =>
-          individual.failures.exists(_.outcome() === IndividualRiskingOutcome.FailedFixable)
-        if entityFixable || fixableIndividuals.nonEmpty then
-          Some(ApplicationWithIndividuals(appWithIndividuals.application, fixableIndividuals))
-        else
-          None
-
-  def processResults(riskingResultRecords: List[RiskingResultRecord])(using request: RequestHeader): Future[Unit] =
-    // Process in order so repeated updates to the same application do not race.
-    riskingResultRecords.foldLeft(Future.unit): (acc, result) =>
-      acc.flatMap(_ => processResult(result))
-
-  private def processResult(riskingResultRecords: RiskingResultRecord)(using request: RequestHeader): Future[Unit] =
-    riskingResultRecords match
-      case entityRiskingResultRecord: EntityRiskingResultRecord => updateEntityWithResult(entityRiskingResultRecord)
-      case individualRiskingResultRecord: IndividualRiskingResultRecord => updateIndividualWithResult(individualRiskingResultRecord)
-
-  private def updateEntityWithResult(entityRiskingResultRecord: EntityRiskingResultRecord)(using request: RequestHeader): Future[Unit] =
-    applicationForRiskingRepo.findByApplicationReference(entityRiskingResultRecord.applicationReference).flatMap:
-      case None =>
-        logger.error(s"No application found for application reference: ${entityRiskingResultRecord.applicationReference.value}")
-        Future.unit
-      case Some(applicationForRisking) =>
-        val updatedApplication = applicationForRisking.copy(
-          failures = Some(entityRiskingResultRecord.failures),
-          lastUpdatedAt = Instant.now(summon[Clock])
-        )
-        logger.info(s"Updated Application: $updatedApplication")
-        applicationForRiskingRepo.upsert(updatedApplication)
-
-  private def updateIndividualWithResult(individualRiskingResultRecord: IndividualRiskingResultRecord)(using request: RequestHeader): Future[Unit] =
-    individualForRiskingRepo.findByPersonReference(individualRiskingResultRecord.personReference).flatMap:
-      case None =>
-        logger.error(s"No individual found for person reference: ${individualRiskingResultRecord.personReference.value}")
-        Future.unit
-      case Some(individualForRisking) =>
-        val updatedIndividual = individualForRisking.copy(
-          failures = Some(individualRiskingResultRecord.failures),
-          lastUpdatedAt = Instant.now(summon[Clock])
-        )
-        logger.info(s"Updated Individual: $updatedIndividual")
-        individualForRiskingRepo.upsert(updatedIndividual)
+          individual.failures.exists(_.outcome === RiskingOutcome.FailedFixable)
+        ApplicationWithIndividuals(appWithIndividuals.application, fixableIndividuals)

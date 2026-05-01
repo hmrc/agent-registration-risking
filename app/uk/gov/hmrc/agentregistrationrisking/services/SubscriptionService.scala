@@ -18,9 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.*
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -28,13 +25,8 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnec
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.HipConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -44,12 +36,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.chaining.scalaUtilChainingOps
 
 @Singleton
 class SubscriptionService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
+  applicationStatusService: ApplicationStatusService,
   hipConnector: HipConnector,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   clock: Clock
@@ -59,7 +50,7 @@ extends RequestAwareLogging:
   def subscribeApprovedApplications()(using RequestHeader): Future[Unit] =
     logger.info("Subscribing approved applications...")
     for
-      applications: Seq[ApplicationForRisking] <- findApprovedReadyToSubscribe()
+      applications: Seq[ApplicationForRisking] <- applicationStatusService.findApprovedReadyToSubscribe()
       applicationCount: Int = applications.size
       _ = logger.info(s"Found $applicationCount applications ready to subscribe")
       subscriptionSuccessCount <- ProcessInSequence
@@ -81,19 +72,6 @@ extends RequestAwareLogging:
       _ <- applicationForRiskingRepo.upsert(application.copy(isSubscribed = true, lastUpdatedAt = Instant.now(clock)))
       _ = logger.info(s"Application subscribed: ${application.applicationReference}")
     yield ()
-
-  private def findApprovedReadyToSubscribe()(using RequestHeader): Future[Seq[ApplicationForRisking]] =
-    for
-      applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findNotSubscribedWithResults()
-      individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applications.map(_.applicationReference))
-      applicationsWithIndividuals: Seq[ApplicationWithIndividuals] = ApplicationWithIndividuals.merge(applications, individuals)
-      approvedApplicationsWithIndividuals: Seq[ApplicationWithIndividuals] = applicationsWithIndividuals
-        .filter: applicationWithIndividuals =>
-          RiskingOutcomeHelper
-            .computeRiskingOutcome(applicationWithIndividuals)
-            .exists(_ === RiskingOutcome.Approved)
-      approvedApplications: Seq[ApplicationForRisking] = approvedApplicationsWithIndividuals.map(_.application)
-    yield approvedApplications
 
   private def subscribeAgent(agentApplication: AgentApplication)(using RequestHeader): Future[Unit] =
     val agentDetails = agentApplication.getAgentDetails

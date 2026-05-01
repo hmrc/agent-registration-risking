@@ -16,36 +16,26 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
-import org.mongodb.scala.model.Aggregates
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
+import org.mongodb.scala.model.*
+import org.mongodb.scala.result.UpdateResult
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepoHelp.given
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
+import java.time.Clock
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import ApplicationForRiskingRepoHelp.given
-import org.mongodb.scala.result.UpdateResult
-import com.mongodb.client.model.Field
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
-import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
-
-import java.time.Clock
-import java.time.Instant
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
@@ -86,15 +76,14 @@ extends Repo[ApplicationReference, ApplicationForRisking](
 //      )
 //    ).toFuture()
 
-  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
-    collection
-      .find(
-        Filters.and(
-          Filters.exists(FieldNames.failures),
-          Filters.eq(FieldNames.isSubscribed, false)
-        )
-      ).toFuture()
-  }
+  def findApplicationsPendingAction(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.exists(FieldNames.failures),
+        Filters.eq(FieldNames.isSubscribed, false),
+        Filters.eq("isEmailSent", false)
+      )
+    ).toFuture()
 
   def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
     .find(
@@ -104,21 +93,12 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       )
     ).toFuture()
 
-  def findApplicationsReadyForFailureEmailCheck(): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      Filters.and(
-        Filters.exists("failures"),
-        Filters.eq("isSubscribed", false),
-        Filters.eq("isEmailSent", false)
-      )
-    ).toFuture()
-
-  def updateEmailSent(id: ApplicationForRiskingId): Future[UpdateResult] = collection
+  def updateEmailSent(applicationReference: ApplicationReference): Future[UpdateResult] = collection
     .updateOne(
-      Filters.eq("_id", id.value),
+      Filters.eq(FieldNames.applicationReference, applicationReference.value),
       Updates.combine(
         Updates.set("isEmailSent", true),
-        Updates.set("lastUpdatedAt", Instant.now(clock).toString)
+        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
       )
     ).toFuture()
 
