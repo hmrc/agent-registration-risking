@@ -26,99 +26,76 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 class ProcessInSequenceSpec
 extends UnitSpec:
 
-  "processInSequence" - {
+  "processInSequence emptySeq  returns an empty list without calling f" in:
+    val callCount = mutable.ListBuffer.empty[Int]
+    val result =
+      ProcessInSequence.processInSequence(Seq.empty[Int]): item =>
+        callCount += item
+        Future.successful(item)
+    result.futureValue shouldBe List.empty
+    callCount shouldBe empty
 
-    "empty sequence" - {
-      "returns an empty list without calling f" in {
-        val callCount = mutable.ListBuffer.empty[Int]
-        val result =
-          ProcessInSequence.processInSequence(Seq.empty[Int]): item =>
-            callCount += item
-            Future.successful(item)
-        result.futureValue shouldBe List.empty
-        callCount shouldBe empty
-      }
-    }
+  "processInSequence singleItem  returns a one-element list with the result of f" in:
+    val callCount = mutable.ListBuffer.empty[String]
+    val result =
+      ProcessInSequence.processInSequence(Seq("a")): item =>
+        callCount += item
+        Future.successful(s"result-$item")
+    result.futureValue shouldBe List("result-a")
+    callCount.toList shouldBe List("a")
 
-    "single item" - {
-      "returns a one-element list with the result of f" in {
-        val result = ProcessInSequence.processInSequence(Seq("a"))(item => Future.successful(s"result-$item"))
-        result.futureValue shouldBe List("result-a")
-      }
-    }
+  "processInSequence multipleItems  processes items in sequence — each item starts only after the previous one finishes" in:
+    val items: Seq[Int] = (0 until 10).toList
+    val callLog: mutable.Seq[String] = mutable.ListBuffer.empty[String]
+    // Alternating sleep durations: odd items sleep longer than even items.
+    // If items ran concurrently, odd items would finish after the next even item, scrambling the log.
+    // Strict start/finish interleaving proves sequencing.
+    val sleepMs: Int => Int = i => if i % 2 == 0 then 20 else 60
 
-    "multiple items" - {
-      "preserves input order in the result list" in {
-        val result = ProcessInSequence.processInSequence(Seq(1, 2, 3))(item => Future.successful(item * 2))
-        result.futureValue shouldBe List(2, 4, 6)
-      }
+    val resultFuture: Future[List[Int]] =
+      ProcessInSequence.processInSequence(items): item =>
+        Future:
+          callLog += s"Started $item"
+          Thread.sleep(sleepMs(item))
+          callLog += s"Finished $item"
+          item * 10
 
-      "processes items in sequence — each item starts only after the previous one finishes" in {
-        val callLog = mutable.ListBuffer.empty[String]
-        // Varying sleep durations: if items ran concurrently, item 1 (20ms) and item 2 (40ms)
-        // would finish before item 0 (80ms), scrambling the log. Strict interleaving proves sequencing.
-        val sleepMs = Map(
-          0 -> 80,
-          1 -> 20,
-          2 -> 40
-        )
+    resultFuture.futureValue shouldBe items.map(_ * 10)
+    callLog.toList shouldBe items.flatMap(i => List(s"Started $i", s"Finished $i"))
 
-        val resultFuture =
-          ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
-            Future:
-              callLog += s"Started $item"
-              Thread.sleep(sleepMs(item))
-              callLog += s"Finished $item"
-              item * 10
+  "processInSequence failureHandling  propagates a failure from the first item and does not call f for remaining items" in:
+    val callLog: mutable.Seq[Int] = mutable.ListBuffer.empty[Int]
+    val boom: RuntimeException = new RuntimeException("boom")
 
-        resultFuture.futureValue shouldBe List(0, 10, 20)
-        callLog.toList shouldBe List(
-          "Started 0",
-          "Finished 0",
-          "Started 1",
-          "Finished 1",
-          "Started 2",
-          "Finished 2"
-        )
-      }
-    }
+    val result: Future[List[Int]] =
+      ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
+        callLog += item
+        if item == 0 then Future.failed(boom) else Future.successful(item)
 
-    "failure handling" - {
-      "propagates a failure from the first item and does not call f for remaining items" in {
-        val callLog = mutable.ListBuffer.empty[Int]
-        val boom = new RuntimeException("boom")
+    result.failed.futureValue shouldBe boom
+    callLog.toList shouldBe List(0)
 
-        val result =
-          ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
-            callLog += item
-            if item == 0 then Future.failed(boom) else Future.successful(item)
+  "processInSequence failureHandling propagates a failure from a middle item and does not call f for subsequent items" in:
+    val callLog = mutable.ListBuffer.empty[Int]
+    val boom = new RuntimeException("middle boom")
 
-        result.failed.futureValue shouldBe boom
-        callLog.toList shouldBe List(0)
-      }
+    val result =
+      ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
+        callLog += item
+        if item == 1 then Future.failed(boom) else Future.successful(item)
 
-      "propagates a failure from a middle item and does not call f for subsequent items" in {
-        val callLog = mutable.ListBuffer.empty[Int]
-        val boom = new RuntimeException("middle boom")
+    result.failed.futureValue shouldBe boom
+    eventually:
+      callLog.toList shouldBe List(0, 1)
+    callLog should not contain 2
 
-        val result =
-          ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
-            callLog += item
-            if item == 1 then Future.failed(boom) else Future.successful(item)
+  "processInSequence failureHandling  propagates a failure from the last item" in:
+    val callLog = mutable.ListBuffer.empty[Int]
+    val boom = new RuntimeException("last boom")
+    val result =
+      ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
+        callLog += item
+        if item == 2 then Future.failed(boom) else Future.successful(item)
 
-        result.failed.futureValue shouldBe boom
-        eventually:
-          callLog.toList shouldBe List(0, 1)
-        callLog should not contain 2
-      }
-
-      "propagates a failure from the last item" in {
-        val boom = new RuntimeException("last boom")
-        val result =
-          ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
-            if item == 2 then Future.failed(boom) else Future.successful(item)
-
-        result.failed.futureValue shouldBe boom
-      }
-    }
-  }
+    result.failed.futureValue shouldBe boom
+    callLog.toList shouldBe List(0, 1, 2)
