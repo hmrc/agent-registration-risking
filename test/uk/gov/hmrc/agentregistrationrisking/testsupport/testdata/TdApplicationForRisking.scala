@@ -31,13 +31,14 @@ object TdApplicationForRisking:
     riskingFileName: RiskingFileName,
     agentApplication: AgentApplication
   ): TdApplicationForRisking =
+    val instantParam: Instant = instant
+    val riskingFileNameParam: RiskingFileName = riskingFileName
+    val agentApplicationParam: AgentApplication = agentApplication
+
     new TdApplicationForRisking:
-      val instantParam: Instant = instant
-      val riskingFileNameParam: RiskingFileName = riskingFileName
-      val agentApplicationParam: AgentApplication = agentApplication
       override def instant: Instant = instantParam
       override def riskingFileName: RiskingFileName = riskingFileNameParam
-      override def applicationReference: ApplicationReference = agentApplication.applicationReference
+      override def applicationReference: ApplicationReference = agentApplicationParam.applicationReference
       override def agentApplication: AgentApplication = agentApplicationParam
 
 trait TdApplicationForRisking:

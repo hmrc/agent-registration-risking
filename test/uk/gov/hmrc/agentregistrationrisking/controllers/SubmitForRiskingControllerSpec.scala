@@ -62,7 +62,7 @@ extends ControllerSpec:
     // WHEN
     val response =
       httpClient
-        .post(url"$baseUrl/$path")
+        .post(url"${baseUrl + path}")
         .withBody(Json.toJson(submitRequest))
         .execute[HttpResponse]
         .futureValue

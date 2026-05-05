@@ -23,68 +23,21 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 
 import java.time.Instant
 
-object TdIndividualsForRisking:
-
-  def make(
-    instantParam: Instant,
-    personReferencePrefixParam: String,
-    applicationReferenceParam: ApplicationReference
-  ): TdIndividualsForRisking =
-    new TdIndividualsForRisking
-      with TdRiskingBase:
-      override def instant: Instant = instantParam
-      override def personReferencePrefix: String = personReferencePrefixParam
-      override def applicationReference: ApplicationReference = applicationReferenceParam
-
-trait TdIndividualsForRisking {
-  dependencies: TdRiskingBase =>
-
-  def instant: Instant
-  def applicationReference: ApplicationReference
-  def personReferencePrefix: String
-
-  def tdIndividualForRisking1: TdIndividualForRisking = TdIndividualForRisking.make(
-    instant = dependencies.instant,
-    applicationReference = applicationReference,
-    individualProvidedDetails =
-      TdIndividualProvidedDetailsFactory
-        .make(
-          applicationReference = applicationReference,
-          personReference = PersonReference(s"${personReferencePrefix}01")
-        )
-        .providedDetails
-        .afterFinished
-  )
-
-  def tdIndividualForRisking2: TdIndividualForRisking = TdIndividualForRisking.make(
-    instant = dependencies.instant,
-    applicationReference = applicationReference,
-    individualProvidedDetails =
-      TdIndividualProvidedDetailsFactory
-        .make(
-          applicationReference = applicationReference,
-          personReference = PersonReference(s"${personReferencePrefix}02")
-        )
-        .providedDetails
-        .afterFinished
-  )
-
-}
-
 object TdIndividualForRisking:
   def make(
     instant: Instant,
     applicationReference: ApplicationReference,
     individualProvidedDetails: IndividualProvidedDetails
   ): TdIndividualForRisking =
+    def instantParam: Instant = instant
+    def applicationReferenceParam: ApplicationReference = applicationReference
+    def individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
+
     new TdIndividualForRisking:
-      val instantParam: Instant = instant
-      val applicationReferenceParam: ApplicationReference = applicationReference
-      val individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
-      def instant: Instant = instantParam
-      def personReference: PersonReference = individualProvidedDetails.personReference
-      def applicationReference: ApplicationReference = applicationReferenceParam
-      def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
+      override def instant: Instant = instantParam
+      override def personReference: PersonReference = individualProvidedDetails.personReference
+      override def applicationReference: ApplicationReference = applicationReferenceParam
+      override def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
 
 trait TdIndividualForRisking:
 
