@@ -64,18 +64,18 @@ import scala.util.Random
 
 @Singleton()
 class TestRiskingController @Inject() (
-  cc: ControllerComponents,
-  actions: Actions,
-  applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
-  applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
-  agentReferenceGenerator: ApplicationReferenceGenerator,
-  personReferenceGenerator: PersonReferenceGenerator,
-  riskingRunner: RiskingRunner,
-  sdesProxyService: SdesProxyService
-)(using clock: Clock)
-extends BackendController(cc)
-with Logging:
+                                        cc: ControllerComponents,
+                                        actions: Actions,
+                                        applicationForRiskingRepo: ApplicationForRiskingRepo,
+                                        individualForRiskingRepo: IndividualForRiskingRepo,
+                                        applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
+                                        agentReferenceGenerator: ApplicationReferenceGenerator,
+                                        personReferenceGenerator: PersonReferenceGenerator,
+                                        riskingRunner: RiskingRunner,
+                                        sdesProxyService: SdesProxyService
+                                      )(using clock: Clock)
+  extends BackendController(cc)
+    with Logging:
 
   given ExecutionContext = controllerComponents.executionContext
 
