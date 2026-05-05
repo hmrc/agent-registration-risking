@@ -20,6 +20,7 @@ import uk.gov.hmrc.agentregistration.shared
 import uk.gov.hmrc.agentregistration.shared
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsId
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationGeneralPartnership
 import uk.gov.hmrc.agentregistration.shared.AgentApplicationId
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
@@ -57,37 +58,50 @@ import java.time.temporal.TemporalUnit
 //      override def instant: Instant = Instant.parse("2059-11-26T16:33:51Z")
 //      override def riskingFileName: RiskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
 
-trait TdRisking { dependencies: TdRiskingBase =>
+object TdRisking:
 
-  val applicationReference: ApplicationReference = ApplicationReference("APPGENPAR1")
+  def make(
+    instant: Instant,
+    agentApplication: AgentApplication,
+    personReferencePrefix: String,
+    riskingFileName: RiskingFileName
+  ): TdRisking =
+    val instantParam: Instant = instant
+    val agentApplicationParam: AgentApplication = agentApplication
+    val personReferencePrefixParam: String = personReferencePrefix
+    val riskingFileNameParam: RiskingFileName = riskingFileName
+    new TdRisking:
+      override def instant: Instant = instantParam
+      override def agentApplication: AgentApplication = agentApplicationParam
+      override def personReferencePrefix: String = personReferencePrefixParam
+      override def riskingFileName: RiskingFileName = riskingFileNameParam
+
+trait TdRisking:
+
+  def agentApplication: AgentApplication
+  def personReferencePrefix: String
+  def instant: Instant
+  def riskingFileName: RiskingFileName
 
   def tdApplicationForRisking: TdApplicationForRisking = TdApplicationForRisking.make(
-    instant = dependencies.instant,
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt"),
-    applicationReference = applicationReference,
-    agentApplication =
-      TdApplicationsFactory
-        .make(applicationReference)
-        .agentApplicationGeneralPartnership
-        .afterDeclarationSubmitted
+    instant = instant,
+    riskingFileName = riskingFileName,
+    agentApplication = agentApplication
   )
 
-  def tdIndividualForRisking: TdIndividualForRisking =
-    val personReference = PersonReference("PERGENPAR1")
-    TdIndividualForRisking.make(
-      instant = dependencies.instant,
-      personReference = personReference,
-      applicationReference = applicationReference,
-      TdIndividualProvidedDetailsFactory
-        .make(
-          applicationReference = applicationReference,
-          personReference = personReference
-        )
-        .providedDetails
-        .afterFinished
-    )
+  def tdIndividualsForRisking: TdIndividualsForRisking = TdIndividualsForRisking.make(
+    instantParam = instant,
+    personReferencePrefixParam = personReferencePrefix,
+    applicationReferenceParam = agentApplication.applicationReference
+  )
 
-}
+  def submitForRiskingRequest: SubmitForRiskingRequest = SubmitForRiskingRequest(
+    agentApplication = agentApplication,
+    individuals = List(
+      tdIndividualsForRisking.tdIndividualForRisking1.submitted.individualProvidedDetails,
+      tdIndividualsForRisking.tdIndividualForRisking2.submitted.individualProvidedDetails
+    )
+  )
 
 object TdAll:
 
@@ -98,10 +112,20 @@ object TdAll:
 /** TestData (Td), All instances
   */
 trait TdAll
-extends TdRisking,
-  TdRiskingBase,
+extends TdRiskingBase,
   TdRequest,
   TdObjectStore,
   sdes.TdSdesData,
   TdSdesProxy,
-  TdRiskingRecords
+  TdRiskingRecords:
+
+  val tdRisking = TdRisking.make(
+    instant = Instant.parse("2059-11-25T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPGENPAR1"))
+        .agentApplicationGeneralPartnership
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFGENP",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
+  )

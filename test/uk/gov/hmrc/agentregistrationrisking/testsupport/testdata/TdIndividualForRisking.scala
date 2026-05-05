@@ -23,20 +23,66 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 
 import java.time.Instant
 
+object TdIndividualsForRisking:
+
+  def make(
+    instantParam: Instant,
+    personReferencePrefixParam: String,
+    applicationReferenceParam: ApplicationReference
+  ): TdIndividualsForRisking =
+    new TdIndividualsForRisking
+      with TdRiskingBase:
+      override def instant: Instant = instantParam
+      override def personReferencePrefix: String = personReferencePrefixParam
+      override def applicationReference: ApplicationReference = applicationReferenceParam
+
+trait TdIndividualsForRisking {
+  dependencies: TdRiskingBase =>
+
+  def instant: Instant
+  def applicationReference: ApplicationReference
+  def personReferencePrefix: String
+
+  def tdIndividualForRisking1: TdIndividualForRisking = TdIndividualForRisking.make(
+    instant = dependencies.instant,
+    applicationReference = applicationReference,
+    individualProvidedDetails =
+      TdIndividualProvidedDetailsFactory
+        .make(
+          applicationReference = applicationReference,
+          personReference = PersonReference(s"${personReferencePrefix}01")
+        )
+        .providedDetails
+        .afterFinished
+  )
+
+  def tdIndividualForRisking2: TdIndividualForRisking = TdIndividualForRisking.make(
+    instant = dependencies.instant,
+    applicationReference = applicationReference,
+    individualProvidedDetails =
+      TdIndividualProvidedDetailsFactory
+        .make(
+          applicationReference = applicationReference,
+          personReference = PersonReference(s"${personReferencePrefix}02")
+        )
+        .providedDetails
+        .afterFinished
+  )
+
+}
+
 object TdIndividualForRisking:
   def make(
     instant: Instant,
-    personReference: PersonReference,
     applicationReference: ApplicationReference,
     individualProvidedDetails: IndividualProvidedDetails
   ): TdIndividualForRisking =
     new TdIndividualForRisking:
       val instantParam: Instant = instant
-      val personReferenceParam: PersonReference = personReference
       val applicationReferenceParam: ApplicationReference = applicationReference
       val individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
       def instant: Instant = instantParam
-      def personReference: PersonReference = personReferenceParam
+      def personReference: PersonReference = individualProvidedDetails.personReference
       def applicationReference: ApplicationReference = applicationReferenceParam
       def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
 

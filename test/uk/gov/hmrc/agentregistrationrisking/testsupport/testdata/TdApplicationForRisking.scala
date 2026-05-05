@@ -29,17 +29,15 @@ object TdApplicationForRisking:
   def make(
     instant: Instant,
     riskingFileName: RiskingFileName,
-    applicationReference: ApplicationReference,
     agentApplication: AgentApplication
   ): TdApplicationForRisking =
     new TdApplicationForRisking:
       val instantParam: Instant = instant
       val riskingFileNameParam: RiskingFileName = riskingFileName
-      val applicationReferenceParam: ApplicationReference = applicationReference
       val agentApplicationParam: AgentApplication = agentApplication
       override def instant: Instant = instantParam
       override def riskingFileName: RiskingFileName = riskingFileNameParam
-      override def applicationReference: ApplicationReference = applicationReferenceParam
+      override def applicationReference: ApplicationReference = agentApplication.applicationReference
       override def agentApplication: AgentApplication = agentApplicationParam
 
 trait TdApplicationForRisking:
