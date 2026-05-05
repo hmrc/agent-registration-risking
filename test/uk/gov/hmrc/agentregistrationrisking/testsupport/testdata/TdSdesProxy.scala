@@ -33,9 +33,9 @@ import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 import java.time.Instant
 
-trait TdSdesProxy { dependencies: TdBase =>
+trait TdSdesProxy { dependencies: TdRiskingBase =>
 
-  private val createdAt: Instant = dependencies.nowAsInstant
+  private val createdAt: Instant = dependencies.instant
 
   def fileDownloadLocation = s"/${objectSummaryWithMd5.location.directory.value}/${objectSummaryWithMd5.location.fileName}"
 

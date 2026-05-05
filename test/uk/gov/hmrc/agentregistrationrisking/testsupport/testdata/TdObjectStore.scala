@@ -23,7 +23,7 @@ import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path
 
-trait TdObjectStore { dependencies: TdBase =>
+trait TdObjectStore { dependencies: TdRiskingBase =>
 
   def fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
 
@@ -39,28 +39,28 @@ trait TdObjectStore { dependencies: TdBase =>
     ),
     contentLength = sizeInBytes,
     contentMd5 = Md5Hash(contentMd5),
-    lastModified = dependencies.nowAsInstant
+    lastModified = dependencies.instant
   )
 
   def objectStoreUploadResponse: JsObject = Json.obj(
     "location" -> objectStoreLocation,
     "contentLength" -> sizeInBytes,
     "contentMD5" -> contentMd5,
-    "lastModified" -> dependencies.nowAsInstant
+    "lastModified" -> dependencies.instant
   )
 
   def objectStoreUploadFromUrlResponse(uploadedPath: String): JsObject = Json.obj(
     "location" -> uploadedPath,
     "contentLength" -> sizeInBytes,
     "contentMD5" -> contentMd5,
-    "lastModified" -> dependencies.nowAsInstant
+    "lastModified" -> dependencies.instant
   )
 
   def objectStoreListObjectsResponse(uploadedPath: String): JsObject = Json.obj(
     "location" -> uploadedPath,
     "contentLength" -> sizeInBytes,
     "contentMD5" -> contentMd5,
-    "lastModified" -> dependencies.nowAsInstant
+    "lastModified" -> dependencies.instant
   )
 
   def listObjectsResponse(processedFileNames: List[String]): JsObject = Json.obj(
@@ -71,7 +71,7 @@ trait TdObjectStore { dependencies: TdBase =>
     Json.obj(
       "location" -> s"agent-registration-risking/processed-results-files/$fileName",
       "contentLength" -> sizeInBytes,
-      "lastModified" -> dependencies.nowAsInstant
+      "lastModified" -> dependencies.instant
     )
 
 }

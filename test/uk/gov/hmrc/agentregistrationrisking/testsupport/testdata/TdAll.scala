@@ -57,13 +57,12 @@ import java.time.temporal.TemporalUnit
 //      override def instant: Instant = Instant.parse("2059-11-26T16:33:51Z")
 //      override def riskingFileName: RiskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
 
-trait TdRisking:
+trait TdRisking { dependencies: TdRiskingBase =>
 
   val applicationReference: ApplicationReference = ApplicationReference("APPGENPAR1")
-  val instant: Instant = Instant.parse("2059-11-25T16:33:51Z")
 
   def tdApplicationForRisking: TdApplicationForRisking = TdApplicationForRisking.make(
-    instant = instant,
+    instant = dependencies.instant,
     riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt"),
     applicationReference = applicationReference,
     agentApplication =
@@ -76,7 +75,7 @@ trait TdRisking:
   def tdIndividualForRisking: TdIndividualForRisking =
     val personReference = PersonReference("PERGENPAR1")
     TdIndividualForRisking.make(
-      instant = instant,
+      instant = dependencies.instant,
       personReference = personReference,
       applicationReference = applicationReference,
       TdIndividualProvidedDetailsFactory
@@ -88,6 +87,8 @@ trait TdRisking:
         .afterFinished
     )
 
+}
+
 object TdAll:
 
   def apply(): TdAll = new TdAll {}
@@ -97,17 +98,8 @@ object TdAll:
 /** TestData (Td), All instances
   */
 trait TdAll
-extends shared.testdata.TdBase,
-  shared.testdata.TdGrsBusinessDetails,
-  shared.testdata.providedetails.individual.TdIndividualProvidedDetails,
-  shared.testdata.agentapplication.TdAgentApplicationGeneralPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationLimitedCompany,
-  shared.testdata.agentapplication.TdAgentApplicationLimitedPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationLlp,
-  shared.testdata.agentapplication.TdAgentApplicationScottishLimitedPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationScottishPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationSoleTrader,
-  shared.testdata.agentapplication.TdAgentApplicationSoleTraderRepresentative,
+extends TdRisking,
+  TdRiskingBase,
   TdRequest,
   TdObjectStore,
   sdes.TdSdesData,
