@@ -21,8 +21,6 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import java.time.format.DateTimeFormatter
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter.ofPattern
 
 object MinervaDateFormats:
 

@@ -17,52 +17,31 @@
 package uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers
 
 import play.api.Logging
-import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.agentdetails.*
-import uk.gov.hmrc.agentregistration.shared.businessdetails.BusinessDetailsLlp
-import uk.gov.hmrc.agentregistration.shared.businessdetails.CompanyProfile
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantContactDetails
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantEmailAddress
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Provided
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsIdGenerator
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
-import uk.gov.hmrc.agentregistration.shared.individual.ProvidedDetailsState
-import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsIdGenerator
-import uk.gov.hmrc.agentregistration.shared.individual.ProvidedDetailsState
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
-import uk.gov.hmrc.auth.core.retrieve.Credentials
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent.RiskingFileContent
 
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
 
 @Singleton()
+@nowarn()
 class TestRiskingController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
