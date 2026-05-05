@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,91 +16,72 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
-import uk.gov.hmrc.agentregistration.shared.businessdetails.BusinessDetailsLlp
-import uk.gov.hmrc.agentregistration.shared.businessdetails.CompanyProfile
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantContactDetails
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantEmailAddress
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
-import uk.gov.hmrc.agentregistration.shared.upload.UploadId
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 
-import java.time.LocalDate
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
-trait TdApplicationForRisking { dependencies: TdBase =>
+object TdApplicationForRisking:
 
-  val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
-    _id = ApplicationForRiskingId(randomId()),
-    agentApplication = AgentApplicationLlp(
-      _id = dependencies.agentApplicationId,
-      applicationReference = ApplicationReference("ABC123456"),
-      internalUserId = dependencies.internalUserId,
-      applicantCredentials = dependencies.credentials,
-      linkId = dependencies.linkId,
-      groupId = dependencies.groupId,
-      createdAt = dependencies.nowAsInstant,
-      submittedAt = Some(dependencies.nowAsInstant),
-      applicationState = ApplicationState.SentForRisking,
-      userRole = Some(UserRole.Partner),
-      businessDetails = Some(BusinessDetailsLlp(
-        companyProfile = CompanyProfile(
-          companyNumber = dependencies.crn,
-          companyName = "Test Company Name",
-          dateOfIncorporation = Some(LocalDate.parse(dependencies.dateString)),
-          unsanitisedCHROAddress = None
-        ),
-        saUtr = dependencies.saUtr,
-        safeId = SafeId("X0_SAFE_ID_0X")
-      )),
-      applicantContactDetails = Some(ApplicantContactDetails(
-        applicantName = dependencies.applicantName,
-        telephoneNumber = Some(dependencies.telephoneNumber),
-        applicantEmailAddress = Some(ApplicantEmailAddress(dependencies.applicantEmailAddress, isVerified = true))
-      )),
-      amlsDetails = Some(AmlsDetails(
-        supervisoryBody = dependencies.amlsCode,
-        amlsRegistrationNumber = Some(dependencies.amlsRegistrationNumber),
-        amlsEvidence = Some(AmlsEvidence(
-          UploadId("evidence-reference-123"),
-          "certificate.pdf",
-          uk.gov.hmrc.objectstore.client.Path.File("test.txt")
-        ))
-      )),
-      agentDetails = Some(dependencies.completeAgentDetails),
-      refusalToDealWithCheckResult = Some(CheckResult.Pass),
-      companyStatusCheckResult = Some(CheckResult.Pass),
-      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
-      numberOfIndividuals = None,
-      hasOtherRelevantIndividuals = Some(false),
-      vrns = Some(List(dependencies.vrn, dependencies.vrn)),
-      payeRefs = Some(List(dependencies.payeRef, dependencies.payeRef))
-    ),
-    createdAt = dependencies.nowAsInstant,
-    lastUpdatedAt = dependencies.nowAsInstant,
+  def make(
+    instant: Instant,
+    riskingFileName: RiskingFileName,
+    applicationReference: ApplicationReference,
+    agentApplication: AgentApplication
+  ): TdApplicationForRisking =
+    new TdApplicationForRisking:
+      val instantParam: Instant = instant
+      val riskingFileNameParam: RiskingFileName = riskingFileName
+      val applicationReferenceParam: ApplicationReference = applicationReference
+      val agentApplicationParam: AgentApplication = agentApplication
+      override def instant: Instant = instantParam
+      override def riskingFileName: RiskingFileName = riskingFileNameParam
+      override def applicationReference: ApplicationReference = applicationReferenceParam
+      override def agentApplication: AgentApplication = agentApplicationParam
+
+trait TdApplicationForRisking:
+
+  def instant: Instant
+  def riskingFileName: RiskingFileName
+  def applicationReference: ApplicationReference
+  def agentApplication: AgentApplication
+
+  def submitted: ApplicationForRisking = ApplicationForRisking(
+    applicationReference = applicationReference,
     riskingFileName = None,
+    agentApplication = agentApplication,
+    createdAt = instant,
+    lastUpdatedAt = instant,
     failures = None,
     isSubscribed = false,
     isEmailSent = false
   )
 
-  def applicationRiskingResponseReadyForSubmission(
-    applicationReference: ApplicationReference,
-    personReference: PersonReference
-  ) = RiskingProgress(
-    applicationReference = applicationReference,
-    status = RiskingStatus.ReadyForSubmission,
-    isSubscribed = false,
-    individuals = List(IndividualRiskingResponse(
-      personReference = personReference,
-      providedName = dependencies.individualName,
-      failures = None
-    )),
-    failures = None
-  )
+  def sent: ApplicationForRisking = submitted
+    .copy(
+      riskingFileName = Some(riskingFileName),
+      lastUpdatedAt = instant.plus(1, ChronoUnit.DAYS)
+    )
 
-}
+  object receivedRiskingResults:
+
+    val approved: ApplicationForRisking = sent.copy(
+      failures = Some(List.empty)
+    )
+
+    val failedFixable: ApplicationForRisking = sent.copy(
+      failures = Some(List(
+        TdFailures.entityFailures.fixable1,
+        TdFailures.entityFailures.fixable2
+      ))
+    )
+
+    val failedNonFixable: ApplicationForRisking = sent.copy(
+      failures = Some(List(
+        TdFailures.entityFailures.fixable2,
+        TdFailures.entityFailures.nonFixable2
+      ))
+    )

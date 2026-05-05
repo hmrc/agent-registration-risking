@@ -52,7 +52,7 @@ object AuthStubs:
     count = count
   )
 
-  def responseBodyAsCleanAgent(internalUserId: InternalUserId = TdAll.tdAll.internalUserId): String =
+  def responseBodyAsCleanAgent(): String =
     // language=JSON
     s"""
        {
@@ -61,15 +61,13 @@ object AuthStubs:
          "credentialRole": "User",
          "groupIdentifier": "3E7R-E0V0-5V4N-Q5S0",
          "agentInformation": {},
-         "internalId": "${internalUserId.value}"
+         "internalId": "123456789"
        }
     """
 
-  private def responseBodyAsIndividual(
-    internalUserId: InternalUserId = TdAll.tdAll.internalUserId
-  ): String = {
+  private def responseBodyAsIndividual(): String = {
     // language=JSON
-    """
+    s"""
     {
      "allEnrolments": [{
        "key": "MTD-IT",
@@ -81,7 +79,7 @@ object AuthStubs:
      "groupIdentifier": "3E7R-E0V0-5V4N-Q5S0",
      "affinityGroup": "Individual",
      "confidenceLevel": 250,
-     "internalId": "${internalUserId.value}"
+     "internalId": "123456789"
     }
     """
   }

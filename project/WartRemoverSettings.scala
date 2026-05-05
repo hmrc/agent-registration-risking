@@ -9,11 +9,11 @@ import wartremover.WartRemover.autoImport.*
 
 object WartRemoverSettings {
 
-  val wartRemoverSettings =
-    Seq(
-      (Compile / compile / wartremoverErrors) ++= {
-        if (StrictBuilding.strictBuilding.value) Warts.allBut(
-          Wart.Any, //due to scala's string interpolator's `def s(args: Any*): String = ...`
+  val wartRemoverSettings = Seq(
+    (Compile / compile / wartremoverErrors) ++= {
+      if (StrictBuilding.strictBuilding.value)
+        Warts.allBut(
+          Wart.Any, // due to scala's string interpolator's `def s(args: Any*): String = ...`
           Wart.DefaultArguments,
           Wart.ImplicitConversion,
           Wart.ImplicitParameter,
@@ -28,17 +28,19 @@ object WartRemoverSettings {
           Wart.JavaSerializable,
           Wart.Serializable
         )
-        else Nil
-      },
-      Test / compile / wartremoverErrors --= Seq(
-        Wart.Any,
-        Wart.Equals,
-        Wart.GlobalExecutionContext,
-        Wart.Null,
-        Wart.NonUnitStatements,
-        Wart.PublicInference
-      ),
-      wartremoverExcluded ++= (Compile / routes).value ++
-        target.value.get // stops a weird wart remover Null error being thrown, we don't care about target directory
-    )
+      else
+        Nil
+    },
+    Test / compile / wartremoverErrors --= Seq(
+      Wart.Any,
+      Wart.Equals,
+      Wart.GlobalExecutionContext,
+      Wart.Null,
+      Wart.NonUnitStatements,
+      Wart.PublicInference,
+      Wart.ThreadSleep
+    ),
+    wartremoverExcluded ++= (Compile / routes).value ++
+      target.value.get // stops a weird wart remover Null error being thrown, we don't care about target directory
+  )
 }

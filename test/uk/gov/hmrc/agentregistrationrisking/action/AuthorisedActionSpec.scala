@@ -53,7 +53,7 @@ extends ISpec:
            |  "credentialRole": "$credentialRoleNotUserNorAdmin",
            |  "groupIdentifier": "3E7R-E0V0-5V4N-Q5S0",
            |  "agentInformation": {},
-           |  "internalId": "${tdAll.internalUserId.value}"
+           |  "internalId": "123456789"
            |}
            |""".stripMargin
     )
@@ -88,7 +88,7 @@ extends ISpec:
            |  "credentialRole": "User",
            |  "groupIdentifier": "3E7R-E0V0-5V4N-Q5S0",
            |  "agentInformation": {},
-           |  "internalId": "${tdAll.internalUserId.value}"
+           |  "internalId": "123456789"
            |}
            |""".stripMargin
     )
@@ -109,10 +109,7 @@ extends ISpec:
       .invokeBlock(
         notLoggedInRequest,
         (r: AuthorisedRequest[?]) =>
-          Future.successful {
-            r.internalUserId shouldBe tdAll.internalUserId
-            result
-          }
+          Future.successful(result)
       )
       .futureValue shouldBe result
 

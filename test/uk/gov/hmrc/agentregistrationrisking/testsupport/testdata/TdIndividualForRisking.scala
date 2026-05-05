@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,60 +16,65 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetailsId
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualVerifiedEmailAddress
-import uk.gov.hmrc.agentregistration.shared.individual.ProvidedDetailsState
-import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRiskingId
 
-trait TdIndividualForRisking { dependencies: TdBase =>
+import java.time.Instant
 
-  def readyForSubmissionIndividual(
-    applicationForRiskingId: ApplicationForRiskingId = ApplicationForRiskingId("default-app-id")
-  ): IndividualForRisking = IndividualForRisking(
-    _id = IndividualForRiskingId(randomId()),
-    applicationForRiskingId = applicationForRiskingId,
-    individualProvidedDetails = IndividualProvidedDetails(
-      _id = IndividualProvidedDetailsId(randomId()),
-      personReference = dependencies.personReference,
-      individualName = dependencies.individualName,
-      isPersonOfControl = true,
-      internalUserId = None,
-      createdAt = dependencies.nowAsInstant,
-      providedDetailsState = ProvidedDetailsState.Finished,
-      agentApplicationId = dependencies.agentApplicationId,
-      individualDateOfBirth = Some(IndividualDateOfBirth.Provided(dependencies.individualDateOfBirth)),
-      telephoneNumber = Some(dependencies.telephoneNumber),
-      emailAddress = Some(IndividualVerifiedEmailAddress(dependencies.individualEmailAddress, isVerified = true)),
-      individualNino = Some(IndividualNino.Provided(dependencies.nino)),
-      individualSaUtr = Some(dependencies.saUtrProvided),
-      hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed,
-      hasApprovedApplication = Some(true),
-      vrns = Some(List(dependencies.vrn, dependencies.vrn)),
-      payeRefs = Some(List(dependencies.payeRef, dependencies.payeRef)),
-      passedIv = Some(true)
-    ),
-    createdAt = dependencies.nowAsInstant,
-    lastUpdatedAt = dependencies.nowAsInstant,
-    failures = None
-  )
+object TdIndividualForRisking:
+  def make(
+    instant: Instant,
+    personReference: PersonReference,
+    applicationReference: ApplicationReference,
+    individualProvidedDetails: IndividualProvidedDetails
+  ): TdIndividualForRisking =
+    new TdIndividualForRisking:
+      val instantParam: Instant = instant
+      val personReferenceParam: PersonReference = personReference
+      val applicationReferenceParam: ApplicationReference = applicationReference
+      val individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
+      def instant: Instant = instantParam
+      def personReference: PersonReference = personReferenceParam
+      def applicationReference: ApplicationReference = applicationReferenceParam
+      def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
 
-  def individualRiskingResponseReadyForSubmission(
-    personReference: PersonReference
-  ) = IndividualRiskingResponse(
+trait TdIndividualForRisking:
+
+  def instant: Instant
+  def personReference: PersonReference
+  def applicationReference: ApplicationReference
+  def individualProvidedDetails: IndividualProvidedDetails
+
+  def submitted: IndividualForRisking = IndividualForRisking(
     personReference = personReference,
-    providedName = dependencies.individualName,
+    applicationReference = applicationReference,
+    individualProvidedDetails = individualProvidedDetails,
+    createdAt = instant,
+    lastUpdatedAt = instant,
     failures = None
   )
 
-}
+  // nothing changes from data perspective
+  def sent: IndividualForRisking = submitted.copy()
+
+  object receivedRiskingResults:
+
+    def approved: IndividualForRisking = sent.copy(
+      failures = Some(List.empty)
+    )
+
+    def failedFixable: IndividualForRisking = sent.copy(
+      failures = Some(List(
+        TdFailures.individualFailures.fixable1,
+        TdFailures.individualFailures.fixable2
+      ))
+    )
+
+    def applicationFailedNonFixable: IndividualForRisking = sent.copy(
+      failures = Some(List(
+        TdFailures.individualFailures.fixable2,
+        TdFailures.individualFailures.nonFixable2
+      ))
+    )

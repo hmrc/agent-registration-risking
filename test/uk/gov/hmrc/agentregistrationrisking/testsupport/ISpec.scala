@@ -54,9 +54,10 @@ extends AnyFreeSpecLike,
   private val testServerPort = ISpec.testServerPort
   protected val baseUrl: String = s"http://localhost:${testServerPort.toString}"
 
-  lazy val tdAll: TdAll = TdAll()
-  lazy val frozenInstant: Instant = tdAll.nowAsInstant
-  lazy val clock: Clock = Clock.fixed(frozenInstant, AppConfig.zoneId)
+  lazy val tdAll: TdAll = TdAll.tdAll
+  lazy val frozenInstant: Instant = tdAll.instant
+  private val zoneId: ZoneId = ZoneId.of("UTC")
+  lazy val clock: Clock = Clock.fixed(frozenInstant, zoneId)
 
   protected def configMap: Map[String, Any] =
     Map[String, Any](

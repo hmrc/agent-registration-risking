@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared
+package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import javax.inject.Singleton
-import uk.gov.hmrc.agentregistration.shared.util.ReferenceGenerator.generateReference
+import java.time.Instant
 
-@Singleton
-class ApplicationReferenceGenerator:
+trait TdRiskingBase:
 
-  def generateApplicationReference(): ApplicationReference = ApplicationReference(generateReference())
+  def instant: Instant = Instant.parse("2059-11-25T16:33:51Z")
