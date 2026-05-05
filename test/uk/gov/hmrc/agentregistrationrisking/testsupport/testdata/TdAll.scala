@@ -98,8 +98,8 @@ trait TdRisking:
   def submitForRiskingRequest: SubmitForRiskingRequest = SubmitForRiskingRequest(
     agentApplication = agentApplication,
     individuals = List(
-      tdIndividualsForRisking.tdIndividualForRisking1.submitted.individualProvidedDetails,
-      tdIndividualsForRisking.tdIndividualForRisking2.submitted.individualProvidedDetails
+      tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualProvidedDetails,
+      tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualProvidedDetails
     )
   )
 
@@ -119,7 +119,7 @@ extends TdRiskingBase,
   TdSdesProxy,
   TdRiskingRecords:
 
-  val tdRisking = TdRisking.make(
+  val tdRisking: TdRisking = TdRisking.make(
     instant = Instant.parse("2059-11-25T16:33:51Z"),
     agentApplication =
       TdApplicationsFactory
@@ -127,5 +127,38 @@ extends TdRiskingBase,
         .agentApplicationGeneralPartnership
         .afterDeclarationSubmitted,
     personReferencePrefix = "PREFGENP",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt")
+  )
+
+  val tdRisking2: TdRisking = TdRisking.make(
+    instant = Instant.parse("2059-11-26T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPSOLTRA1"))
+        .agentApplicationSoleTrader
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFSOLT",
     riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
+  )
+
+  val tdRisking3: TdRisking = TdRisking.make(
+    instant = Instant.parse("2059-11-27T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPLLPART1"))
+        .agentApplicationLlp
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFLLPA",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591127_163351.txt")
+  )
+
+  val tdRisking4: TdRisking = TdRisking.make(
+    instant = Instant.parse("2059-11-28T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPSCOPAR1"))
+        .agentApplicationScottishPartnership
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFSCOP",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591128_163351.txt")
   )

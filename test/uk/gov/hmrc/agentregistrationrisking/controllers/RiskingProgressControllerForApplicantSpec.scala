@@ -19,38 +19,58 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
+
+import java.net.URL
 
 class RiskingProgressControllerForApplicantSpec
 extends ControllerSpec:
 
+  val tdRisking: TdRisking = tdAll.tdRisking
+  val applicationReference: ApplicationReference = tdRisking.agentApplication.applicationReference
+
   val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
-  val agentApplicationReference: ApplicationReference = tdAll.tdRisking.agentApplication.applicationReference
+
   val path: String = s"/agent-registration-risking/risking-progress/for-applicant"
+  def riskingProgressForApplicantUrl(agentApplicationReference: ApplicationReference): URL = url"${baseUrl + path}/${agentApplicationReference.value}"
+
+  def primeDbWithBackgroundData(): Unit =
+    applicationForRiskingRepo.collection.drop()
+    individualForRiskingRepo.collection.drop()
+    applicationForRiskingRepo.upsert(tdAll.tdRisking2.tdApplicationForRisking.readyForSubmission).futureValue
+    individualForRiskingRepo.upsert(tdAll.tdRisking2.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission).futureValue
+    individualForRiskingRepo.upsert(tdAll.tdRisking2.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission).futureValue
+    applicationForRiskingRepo.upsert(tdAll.tdRisking3.tdApplicationForRisking.submittedForRisking).futureValue
+    individualForRiskingRepo.upsert(tdAll.tdRisking3.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking).futureValue
+    individualForRiskingRepo.upsert(tdAll.tdRisking3.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking).futureValue
+    ()
 
   "routes should have correct paths and methods" in:
-    val call: Call = routes.RiskingProgressController.getRiskingProgressForApplicant(agentApplicationReference)
+    val call: Call = routes.RiskingProgressController.getRiskingProgressForApplicant(applicationReference)
     call shouldBe Call(
       method = "GET",
-      url = s"$path/${agentApplicationReference.value}"
+      url = s"$path/${applicationReference.value}"
     )
 
-  "get application returns NO_CONTENT if there is no underlying records" in:
+  "returns NO_CONTENT if there is no underlying records" in:
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
 
-    applicationForRiskingRepo.findById(agentApplicationReference).futureValue shouldBe None withClue " no prior records in mongo for this application"
+    applicationForRiskingRepo.findById(applicationReference).futureValue shouldBe None withClue " no prior records in mongo for this application"
     individualForRiskingRepo.findByApplicationReference(
-      agentApplicationReference
+      applicationReference
     ).futureValue shouldBe Seq.empty withClue " no prior records in mongo for this application"
 
     val response: HttpResponse =
       httpClient
-        .get(url"${baseUrl + path}/${agentApplicationReference.value}")
+        .get(riskingProgressForApplicantUrl(applicationReference))
         .execute[HttpResponse]
         .futureValue
 
@@ -58,27 +78,82 @@ extends ControllerSpec:
     response.body shouldBe ""
     AuthStubs.verifyAuthorise()
 
-//  "find application returns Ok and the Application as Json body" in:
-//    given Request[?] = tdAll.backendRequest
-//    AuthStubs.stubAuthorise()
-//
-//    val application = tdAll.llpApplicationForRisking
-//    applicationForRiskingRepo.upsert(application).futureValue
-//
-//    val response =
-//      httpClient
-//        .get(url"$baseUrl/agent-registration-risking/application/${application.agentApplication.applicationReference.value}")
-//        .execute[HttpResponse]
-//        .futureValue
-//    response.status shouldBe Status.OK
-//    val parsedResponse = response.json.as[RiskingProgress]
-//    parsedResponse.applicationReference shouldBe application.agentApplication.applicationReference
-//    parsedResponse.status shouldBe RiskingStatus.ReadyForSubmission
-//    parsedResponse.isSubscribed shouldBe false
-//    parsedResponse.failures shouldBe None
-//    parsedResponse.individuals shouldBe List.empty
-//    AuthStubs.verifyAuthorise()
-//
+  final case class TestCase(
+    description: String,
+    application: ApplicationForRisking,
+    individuals: Seq[IndividualForRisking],
+    expectedRiskingProgress: RiskingProgress
+  )
+
+  val testCases: Seq[TestCase] = List(
+    TestCase(
+      description = "application is readyForSubmission",
+      application = tdRisking.tdApplicationForRisking.readyForSubmission,
+      individuals = Seq(
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission,
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
+      ),
+      expectedRiskingProgress = RiskingProgress.ReadyForSubmission
+    ),
+    TestCase(
+      description = "application is submittedForRisking",
+      application = tdRisking.tdApplicationForRisking.submittedForRisking,
+      individuals = Seq(
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking,
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking
+      ),
+      expectedRiskingProgress = RiskingProgress.SubmittedForRisking
+    ),
+    TestCase(
+      description = "partial risking results: application:approved, individual1:submittedForRisking, individual2:submittedForRisking",
+      application = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved,
+      individuals = Seq(
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking,
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking
+      ),
+      expectedRiskingProgress = RiskingProgress.SubmittedForRisking
+    ),
+    TestCase(
+      description = "partial risking results: application:approved, individual1:approved, individual2: submittedForRisking",
+      application = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved,
+      individuals = Seq(
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved,
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking
+      ),
+      expectedRiskingProgress = RiskingProgress.SubmittedForRisking
+    ),
+    TestCase(
+      description = "all approved: application:approved, individual1:approved, individual2:approved",
+      application = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved,
+      individuals = Seq(
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved,
+        tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+      ),
+      expectedRiskingProgress = RiskingProgress.Approved
+    )
+  )
+
+  primeDbWithBackgroundData()
+
+  testCases.foreach: tc =>
+    tc.description in:
+      applicationForRiskingRepo.upsert(tc.application).futureValue
+      tc.individuals.foreach(individualForRiskingRepo.upsert(_).futureValue)
+      given Request[?] = tdAll.backendRequest
+      AuthStubs.stubAuthorise()
+
+      val applicationReference: ApplicationReference = tc.application.applicationReference
+      val riskingStatusForApplicantResponse: HttpResponse =
+        httpClient
+          .get(riskingProgressForApplicantUrl(applicationReference))
+          .execute[HttpResponse]
+          .futureValue
+
+      riskingStatusForApplicantResponse.status shouldBe Status.OK
+      val riskingStatusForApplicant: RiskingProgress = riskingStatusForApplicantResponse.json.as[RiskingProgress]
+      riskingStatusForApplicant shouldBe tc.expectedRiskingProgress
+      AuthStubs.verifyAuthorise()
+
 //  "find application with individuals returns Ok with individuals in response" in:
 //    given Request[?] = tdAll.backendRequest
 //    AuthStubs.stubAuthorise()

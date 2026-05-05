@@ -48,9 +48,9 @@ extends ControllerSpec:
     val submitRequest: SubmitForRiskingRequest = tdAll.tdRisking.submitForRiskingRequest
     val applicationReference: ApplicationReference = submitRequest.agentApplication.applicationReference
 
-    val applicationForRiskingSubmitted: ApplicationForRisking = tdAll.tdRisking.tdApplicationForRisking.submitted
-    val individualForRiskingSubmitted1: IndividualForRisking = tdAll.tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submitted
-    val individualForRiskingSubmitted2: IndividualForRisking = tdAll.tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submitted
+    val applicationForRiskingSubmitted: ApplicationForRisking = tdAll.tdRisking.tdApplicationForRisking.readyForSubmission
+    val individualForRiskingSubmitted1: IndividualForRisking = tdAll.tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
+    val individualForRiskingSubmitted2: IndividualForRisking = tdAll.tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
 
     applicationForRiskingRepo
       .findById(applicationReference)

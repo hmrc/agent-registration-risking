@@ -46,7 +46,7 @@ trait TdIndividualForRisking:
   def applicationReference: ApplicationReference
   def individualProvidedDetails: IndividualProvidedDetails
 
-  def submitted: IndividualForRisking = IndividualForRisking(
+  def readyForSubmission: IndividualForRisking = IndividualForRisking(
     personReference = personReference,
     applicationReference = applicationReference,
     individualProvidedDetails = individualProvidedDetails,
@@ -56,22 +56,22 @@ trait TdIndividualForRisking:
   )
 
   // nothing changes from data perspective
-  def sent: IndividualForRisking = submitted.copy()
+  def submittedForRisking: IndividualForRisking = readyForSubmission.copy()
 
   object receivedRiskingResults:
 
-    def approved: IndividualForRisking = sent.copy(
+    def approved: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List.empty)
     )
 
-    def failedFixable: IndividualForRisking = sent.copy(
+    def failedFixable: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.individualFailures.fixable1,
         TdFailures.individualFailures.fixable2
       ))
     )
 
-    def applicationFailedNonFixable: IndividualForRisking = sent.copy(
+    def applicationFailedNonFixable: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.individualFailures.fixable2,
         TdFailures.individualFailures.nonFixable2

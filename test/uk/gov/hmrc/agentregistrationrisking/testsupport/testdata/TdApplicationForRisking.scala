@@ -48,7 +48,7 @@ trait TdApplicationForRisking:
   def applicationReference: ApplicationReference
   def agentApplication: AgentApplication
 
-  def submitted: ApplicationForRisking = ApplicationForRisking(
+  def readyForSubmission: ApplicationForRisking = ApplicationForRisking(
     applicationReference = applicationReference,
     riskingFileName = None,
     agentApplication = agentApplication,
@@ -59,7 +59,7 @@ trait TdApplicationForRisking:
     isEmailSent = false
   )
 
-  def sent: ApplicationForRisking = submitted
+  def submittedForRisking: ApplicationForRisking = readyForSubmission
     .copy(
       riskingFileName = Some(riskingFileName),
       lastUpdatedAt = instant.plus(1, ChronoUnit.DAYS)
@@ -67,18 +67,18 @@ trait TdApplicationForRisking:
 
   object receivedRiskingResults:
 
-    val approved: ApplicationForRisking = sent.copy(
+    val approved: ApplicationForRisking = submittedForRisking.copy(
       failures = Some(List.empty)
     )
 
-    val failedFixable: ApplicationForRisking = sent.copy(
+    val failedFixable: ApplicationForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.entityFailures.fixable1,
         TdFailures.entityFailures.fixable2
       ))
     )
 
-    val failedNonFixable: ApplicationForRisking = sent.copy(
+    val failedNonFixable: ApplicationForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.entityFailures.fixable2,
         TdFailures.entityFailures.nonFixable2
