@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.testdata.providedetails.individual.TdIndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.testdata.agentapplication.TdAgentApplicationLlp
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes.TdRiskingRecords
 
@@ -44,122 +45,48 @@ import java.time.temporal.TemporalUnit
 //ApplicationReference + ApplicationId
 //x2 IndividualProvidedDetailsId + PersonReference
 
-object TdFailures:
+//trait TdRisking:
+//
+//  val f =
+//    new TdFactory:
+//      override def instant: Instant = Instant.parse("2059-11-25T16:33:51Z")
+//      override def riskingFileName: RiskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt")
+//
+//  val f2 =
+//    new TdFactory:
+//      override def instant: Instant = Instant.parse("2059-11-26T16:33:51Z")
+//      override def riskingFileName: RiskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
 
-  object entityFailures:
+trait TdRisking:
 
-    val fixable1: EntityFailure.Fixable = EntityFailure._3._1
-    val fixable2: EntityFailure.Fixable = EntityFailure._3._2
+  val applicationReference: ApplicationReference = ApplicationReference("APPGENPAR1")
+  val instant: Instant = Instant.parse("2059-11-25T16:33:51Z")
 
-    val nonFixable1: EntityFailure.NonFixable = EntityFailure._8._1
-    val nonFixable2: EntityFailure.NonFixable = EntityFailure._8._4
-
-  object individualFailures:
-
-    val fixable1: IndividualFailure.Fixable = IndividualFailure._4._1
-    val fixable2: IndividualFailure.Fixable = IndividualFailure._4._3
-
-    val nonFixable1: IndividualFailure.NonFixable = IndividualFailure._6
-    val nonFixable2: IndividualFailure.NonFixable = IndividualFailure._7
-
-trait TdFactory:
-
-  def instant: Instant = TdAll.tdAll.nowAsInstant
-  def riskingFileName: RiskingFileName
-
-  object GeneralPartnership:
-
-    private val applicationReference: ApplicationReference = ApplicationReference("APPGENPAR1")
-    val agentApplication: AgentApplicationGeneralPartnership =
-      TdDelegate
-        .makeTdApplications(applicationReference)
+  def tdApplicationForRisking: TdApplicationForRisking = TdApplicationForRisking.make(
+    instant = instant,
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt"),
+    applicationReference = applicationReference,
+    agentApplication =
+      TdApplicationsFactory
+        .make(applicationReference)
         .agentApplicationGeneralPartnership
         .afterDeclarationSubmitted
+  )
 
-    val individualProvidedDetails1: IndividualProvidedDetails =
-      TdDelegate
-        .makeTdIndividualProvidedDetails(applicationReference, PersonReference("PERGENPAR1"))
-        .providedDetails
-        .afterFinished
-
-    val individualProvidedDetails2: IndividualProvidedDetails =
-      TdDelegate
-        .makeTdIndividualProvidedDetails(applicationReference, PersonReference("PERGENPAR2"))
-        .providedDetails
-        .afterFinished
-
-    val submitForRiskingRequest: SubmitForRiskingRequest = SubmitForRiskingRequest(
-      agentApplication = agentApplication,
-      individuals = List(individualProvidedDetails1, individualProvidedDetails2)
-    )
-
-    val applicationSubmitted: ApplicationForRisking = ApplicationForRisking(
+  def tdIndividualForRisking: TdIndividualForRisking =
+    val personReference = PersonReference("PERGENPAR1")
+    TdIndividualForRisking.make(
+      instant = instant,
+      personReference = personReference,
       applicationReference = applicationReference,
-      riskingFileName = None,
-      agentApplication = agentApplication,
-      createdAt = instant,
-      lastUpdatedAt = instant,
-      failures = None,
-      isSubscribed = false,
-      isEmailSent = false
+      TdIndividualProvidedDetailsFactory
+        .make(
+          applicationReference = applicationReference,
+          personReference = personReference
+        )
+        .providedDetails
+        .afterFinished
     )
-
-    val applicationSentForRisking: ApplicationForRisking = applicationSubmitted
-      .copy(
-        riskingFileName = Some(riskingFileName),
-        lastUpdatedAt = instant.plus(1, ChronoUnit.DAYS)
-      )
-
-    object receivedRiskingResults:
-
-      val applicationApproved: ApplicationForRisking = applicationSentForRisking.copy(
-        failures = Some(List.empty)
-      )
-
-      val applicationFailedFixable: ApplicationForRisking = applicationSentForRisking.copy(
-        failures = Some(List(
-          TdFailures.entityFailures.fixable1,
-          TdFailures.entityFailures.fixable2
-        ))
-      )
-
-      val applicationFailedNonFixable: ApplicationForRisking = applicationSentForRisking.copy(
-        failures = Some(List(
-          TdFailures.entityFailures.fixable2,
-          TdFailures.entityFailures.nonFixable2
-        ))
-      )
-
-trait TdApplications
-extends shared.testdata.TdBase,
-  shared.testdata.TdGrsBusinessDetails,
-  shared.testdata.agentapplication.TdAgentApplicationGeneralPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationLimitedCompany,
-  shared.testdata.agentapplication.TdAgentApplicationLimitedPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationLlp,
-  shared.testdata.agentapplication.TdAgentApplicationScottishLimitedPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationScottishPartnership,
-  shared.testdata.agentapplication.TdAgentApplicationSoleTrader,
-  shared.testdata.agentapplication.TdAgentApplicationSoleTraderRepresentative
-
-object TdDelegate:
-
-  def makeTdApplications(applicationReference: ApplicationReference) =
-    new TdApplications:
-      val applicationReferenceParam: ApplicationReference = applicationReference
-      override def applicationReference: ApplicationReference = applicationReferenceParam
-
-  def makeTdIndividualProvidedDetails(
-    applicationReference: ApplicationReference,
-    personReference: PersonReference
-  ): TdIndividualProvidedDetails & TdBase =
-    val personReferenceParam = personReference
-    val applicationReferenceParam = applicationReference
-
-    new shared.testdata.providedetails.individual.TdIndividualProvidedDetails
-      with shared.testdata.TdBase:
-      override def personReference: PersonReference = personReferenceParam
-      override def applicationReference: ApplicationReference = applicationReferenceParam
 
 object TdAll:
 

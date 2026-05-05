@@ -33,8 +33,10 @@
 //package uk.gov.hmrc.agentregistrationrisking.controllers
 //
 //import play.api.mvc.Call
+//import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 //import uk.gov.hmrc.agentregistration.shared.risking.RiskingStatus
 //import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
+//import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 //import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 //import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 //import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
@@ -43,8 +45,8 @@
 //class SubmitForRiskingControllerSpec
 //extends ControllerSpec:
 //
-//  val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-//  val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+//  val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+//  val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 //  val path: String = s"/agent-registration-risking/submit-for-risking"
 //
 //  "routes should have correct paths and methods" in:
@@ -54,37 +56,55 @@
 //      url = path
 //    )
 //
-//  "upsert application upserts application and individuals to mongo and returns CREATED" in:
+//  "submit application and individuals for risking for the first time" in:
+//    // GIVEN
 //    given Request[?] = tdAll.backendRequest
 //    AuthStubs.stubAuthorise()
+//    val submitRequest: SubmitForRiskingRequest = tdAll.GeneralPartnership.submitForRiskingRequest
+//    val applicationReference: ApplicationReference = submitRequest.agentApplication.applicationReference
+//    val applicationForRiskingSubmitted: ApplicationForRisking = tdAll.GeneralPartnership.applicationForRiskingSubmitted
+//    val indivualForRiskingSubmitted1: ApplicationForRisking = tdAll.GeneralPartnership.individualProvidedDetails1
+//    val indivualForRiskingSubmitted2: ApplicationForRisking = tdAll.GeneralPartnership.individualProvidedDetails2
 //
-//    val submitRequest = SubmitForRiskingRequest(
-//      tdAll.agentApplicationLlp.afterSentForRisking,
-//      List(tdAll.providedDetails.afterFinished)
-//    )
+//    applicationForRiskingRepo
+//      .findById(applicationReference)
+//      .futureValue shouldBe None withClue " no prior records in mongo for this application"
+//    individualForRiskingRepo
+//      .findByApplicationReference(applicationReference)
+//      .futureValue shouldBe None withClue " no prior records in mongo for this application"
 //
-//    val applicationReference = submitRequest.agentApplication.applicationReference
-//
-//    repo.findByApplicationReference(applicationReference).futureValue shouldBe None withClue
-//      "assuming initially there are no records in mongo"
-//
+//    // WHEN
 //    val response =
 //      httpClient
-//        .post(url"$baseUrl/agent-registration-risking/submit-for-risking")
+//        .post(url"$baseUrl/$path")
 //        .withBody(Json.toJson(submitRequest))
 //        .execute[HttpResponse]
 //        .futureValue
+//
+//    // THEN
 //    response.status shouldBe Status.CREATED
 //    response.body shouldBe ""
 //
-//    val savedApplication = repo.findByApplicationReference(applicationReference).futureValue.value
-//    savedApplication.agentApplication.applicationReference shouldBe applicationReference
-//    savedApplication.status shouldBe RiskingStatus.ReadyForSubmission
-//    savedApplication.failures shouldBe None
-//    savedApplication.isSubscribed shouldBe false
-//    savedApplication.isEmailSent shouldBe false
+//    applicationForRiskingRepo
+//      .findById(applicationReference)
+//      .futureValue
+//      .value shouldBe applicationForRiskingSubmitted withClue " no prior records in mongo for this application"
 //
-//    val savedIndividuals = individualRepo.findByApplicationForRiskingId(savedApplication._id).futureValue
+//    individualForRiskingRepo
+//      .findByApplicationReference(applicationReference)
+//      .futureValue
+//      .value shouldBe List(
+//      indivualForRiskingSubmitted1,
+//      indivualForRiskingSubmitted2
+//    ) withClue " no prior records in mongo for this application"
+//
+//    application.agentApplication.applicationReference shouldBe applicationReference
+//    application.status shouldBe RiskingStatus.ReadyForSubmission
+//    application.failures shouldBe None
+//    application.isSubscribed shouldBe false
+//    application.isEmailSent shouldBe false
+//
+//    val savedIndividuals = individualForRiskingRepo.findByApplicationForRiskingId(application._id).futureValue
 //    savedIndividuals.size shouldBe 1
 //    savedIndividuals.headOption.value.individualProvidedDetails.personReference shouldBe tdAll.personReference
 //    savedIndividuals.headOption.value.failures shouldBe None

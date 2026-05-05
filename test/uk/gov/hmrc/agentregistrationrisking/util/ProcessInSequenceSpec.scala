@@ -46,7 +46,7 @@ extends UnitSpec:
 
   "processInSequence multipleItems  processes items in sequence — each item starts only after the previous one finishes" in:
     val items: Seq[Int] = (0 until 10).toList
-    val callLog: mutable.Seq[String] = mutable.ListBuffer.empty[String]
+    val callLog = mutable.ListBuffer.empty[String]
     // Alternating sleep durations: odd items sleep longer than even items.
     // If items ran concurrently, odd items would finish after the next even item, scrambling the log.
     // Strict start/finish interleaving proves sequencing.
@@ -64,7 +64,7 @@ extends UnitSpec:
     callLog.toList shouldBe items.flatMap(i => List(s"Started $i", s"Finished $i"))
 
   "processInSequence failureHandling  propagates a failure from the first item and does not call f for remaining items" in:
-    val callLog: mutable.Seq[Int] = mutable.ListBuffer.empty[Int]
+    val callLog = mutable.ListBuffer.empty[Int]
     val boom: RuntimeException = new RuntimeException("boom")
 
     val result: Future[List[Int]] =
