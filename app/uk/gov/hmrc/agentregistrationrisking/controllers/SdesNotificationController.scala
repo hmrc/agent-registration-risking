@@ -25,9 +25,11 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
-import uk.gov.hmrc.agentregistrationrisking.services.EmailService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
+import uk.gov.hmrc.agentregistrationrisking.services.EmailService
+import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
+import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
