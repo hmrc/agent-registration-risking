@@ -86,6 +86,23 @@ extends Repo[ApplicationReference, ApplicationForRisking](
 //      )
 //    ).toFuture()
 
+  def findApplicationsPendingAction(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.exists(FieldNames.failures),
+        Filters.eq(FieldNames.isSubscribed, false),
+        Filters.eq("isEmailSent", false)
+      )
+    ).toFuture()
+
+//  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
+//    .find(
+//      Filters.and(
+//        Filters.size("failures", 0),
+//        Filters.eq("isSubscribed", false)
+//      )
+//    ).toFuture()
+
   def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
     collection
       .find(
@@ -95,6 +112,22 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         )
       ).toFuture()
   }
+  def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.eq("isSubscribed", true),
+        Filters.eq("isEmailSent", false)
+      )
+    ).toFuture()
+
+  def updateEmailSent(applicationReference: ApplicationReference): Future[UpdateResult] = collection
+    .updateOne(
+      Filters.eq(FieldNames.applicationReference, applicationReference.value),
+      Updates.combine(
+        Updates.set("isEmailSent", true),
+        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
+      )
+    ).toFuture()
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...

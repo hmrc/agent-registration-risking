@@ -42,6 +42,7 @@ class AppConfig @Inject() (
   def getConfString(key: String): String = servicesConfig.getConfString(key, throw new RuntimeException(s"config '$key' not found"))
 
   val appName: String = config.get[String]("appName")
+  val emailBaseUrl: String = servicesConfig.baseUrl("email")
   val enrolmentStoreProxyBaseUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
   val hipBaseUrl: String = servicesConfig.baseUrl("hip")
