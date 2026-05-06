@@ -76,6 +76,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         Updates.set(FieldNames.riskingFileName, riskingFileName.value),
         Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
       )
+    ).toFuture()
+
 //  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
 //    .find(
 //      Filters.and(
