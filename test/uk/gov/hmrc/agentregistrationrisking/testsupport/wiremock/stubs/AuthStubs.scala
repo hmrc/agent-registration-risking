@@ -31,7 +31,7 @@ object AuthStubs:
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlMatching("/auth/authorise"),
-    requestBody = Some(expectedRequestBodyAgent),
+    requestBody = Some(expectedRequestBody),
     responseStatus = Status.OK,
     responseBody = responseBody
   )
@@ -84,7 +84,7 @@ object AuthStubs:
     """
   }
 
-  private val expectedRequestBodyAgent: StringValuePattern = wm.equalToJson(
+  private val expectedRequestBody: StringValuePattern = wm.equalToJson(
     // language=JSON
     """
     {
@@ -93,9 +93,6 @@ object AuthStubs:
           "authProviders": [
             "GovernmentGateway"
           ]
-        },
-        {
-          "affinityGroup": "Agent"
         }
       ],
       "retrieve": [
