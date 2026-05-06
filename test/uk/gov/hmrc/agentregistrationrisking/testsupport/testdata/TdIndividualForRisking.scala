@@ -26,19 +26,18 @@ import java.time.Instant
 object TdIndividualForRisking:
   def make(
     instant: Instant,
-    personReference: PersonReference,
     applicationReference: ApplicationReference,
     individualProvidedDetails: IndividualProvidedDetails
   ): TdIndividualForRisking =
+    def instantParam: Instant = instant
+    def applicationReferenceParam: ApplicationReference = applicationReference
+    def individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
+
     new TdIndividualForRisking:
-      val instantParam: Instant = instant
-      val personReferenceParam: PersonReference = personReference
-      val applicationReferenceParam: ApplicationReference = applicationReference
-      val individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
-      def instant: Instant = instantParam
-      def personReference: PersonReference = personReferenceParam
-      def applicationReference: ApplicationReference = applicationReferenceParam
-      def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
+      override def instant: Instant = instantParam
+      override def personReference: PersonReference = individualProvidedDetails.personReference
+      override def applicationReference: ApplicationReference = applicationReferenceParam
+      override def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
 
 trait TdIndividualForRisking:
 
@@ -47,7 +46,7 @@ trait TdIndividualForRisking:
   def applicationReference: ApplicationReference
   def individualProvidedDetails: IndividualProvidedDetails
 
-  def submitted: IndividualForRisking = IndividualForRisking(
+  def readyForSubmission: IndividualForRisking = IndividualForRisking(
     personReference = personReference,
     applicationReference = applicationReference,
     individualProvidedDetails = individualProvidedDetails,
@@ -57,22 +56,22 @@ trait TdIndividualForRisking:
   )
 
   // nothing changes from data perspective
-  def sent: IndividualForRisking = submitted.copy()
+  def submittedForRisking: IndividualForRisking = readyForSubmission.copy()
 
   object receivedRiskingResults:
 
-    def approved: IndividualForRisking = sent.copy(
+    def approved: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List.empty)
     )
 
-    def failedFixable: IndividualForRisking = sent.copy(
+    def failedFixable: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.individualFailures.fixable1,
         TdFailures.individualFailures.fixable2
       ))
     )
 
-    def applicationFailedNonFixable: IndividualForRisking = sent.copy(
+    def applicationFailedNonFixable: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.individualFailures.fixable2,
         TdFailures.individualFailures.nonFixable2

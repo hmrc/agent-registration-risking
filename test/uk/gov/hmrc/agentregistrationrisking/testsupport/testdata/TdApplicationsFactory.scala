@@ -20,10 +20,9 @@ import uk.gov.hmrc.agentregistration.shared
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 
 object TdApplicationsFactory:
-  def make(applicationReference: ApplicationReference): TdApplications =
+  def make(applicationReference_ : ApplicationReference): TdApplications =
     new TdApplications:
-      val applicationReferenceParam: ApplicationReference = applicationReference
-      override def applicationReference: ApplicationReference = applicationReferenceParam
+      override def applicationReference: ApplicationReference = applicationReference_
 
 trait TdApplications
 extends shared.testdata.TdBase,

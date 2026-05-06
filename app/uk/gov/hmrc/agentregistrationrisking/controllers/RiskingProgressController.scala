@@ -101,7 +101,7 @@ object RiskingProgressController:
     (maybeRiskingFileName, maybeReceivedRiskingResults) match
       // format: off
       case (None,    _                           ) => RiskingProgress.ReadyForSubmission
-      case (Some(_), None                        ) => RiskingProgress.SubmittedForRiskingForApplicant
+      case (Some(_), None                        ) => RiskingProgress.SubmittedForRisking
       case (Some(_), Some(receivedRiskingResults)) => receivedRiskingResults
       // format: on
 

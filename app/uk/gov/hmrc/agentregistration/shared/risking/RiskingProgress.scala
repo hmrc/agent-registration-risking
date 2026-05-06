@@ -40,7 +40,7 @@ object RiskingProgress:
 
   /** Indicates that the application has been submitted for risking and is awaiting results. The application is currently being processed by the risking system.
     */
-  case object SubmittedForRiskingForApplicant
+  case object SubmittedForRisking
   extends RiskingProgress
 
   /** Represents states where risking results for all Applications and Individuals have been received from the risking system. These are terminal states for
@@ -78,8 +78,8 @@ object RiskingProgress:
     given OFormat[RiskingProgress.ReadyForSubmission.type] = Json.format[RiskingProgress.ReadyForSubmission.type]
 
     given OFormat[
-      RiskingProgress.SubmittedForRiskingForApplicant.type
-    ] = Json.format[RiskingProgress.SubmittedForRiskingForApplicant.type]
+      RiskingProgress.SubmittedForRisking.type
+    ] = Json.format[RiskingProgress.SubmittedForRisking.type]
     given OFormat[RiskingProgress.Approved.type] = Json.format[RiskingProgress.Approved.type]
     given OFormat[RiskingProgress.FailedNonFixable] = Json.format[RiskingProgress.FailedNonFixable]
     given OFormat[RiskingProgress.FailedFixable] = Json.format[RiskingProgress.FailedFixable]

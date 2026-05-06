@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import org.bson.types.ObjectId
 import play.api.libs.json.Format
 import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
@@ -24,7 +23,6 @@ import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asRiskingFileTimeStamp
 
 import java.time.Instant
-import javax.inject.Singleton
 
 final case class RiskingFileName(value: String)
 
