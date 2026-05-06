@@ -31,7 +31,7 @@ final case class ApplicationWithIndividuals(
     for
       appDate <- application.riskingCompletedDate
       individualDates <- individuals.map(_.riskingCompletedDate).toList.sequence
-    yield individualDates.foldLeft(appDate)((latest, d) => if d.isAfter(latest) then d else latest)
+    yield individualDates.foldLeft(appDate)(Ordering[Instant].max)
 
 object ApplicationWithIndividuals:
 
