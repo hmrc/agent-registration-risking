@@ -55,6 +55,7 @@ trait TdApplicationForRisking:
     createdAt = instant,
     lastUpdatedAt = instant,
     failures = None,
+    riskingCompletedDate = None,
     isSubscribed = false,
     isEmailSent = false
   )
@@ -68,19 +69,22 @@ trait TdApplicationForRisking:
   object receivedRiskingResults:
 
     val approved: ApplicationForRisking = submittedForRisking.copy(
-      failures = Some(List.empty)
+      failures = Some(List.empty),
+      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
     )
 
     val failedFixable: ApplicationForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.entityFailures.fixable1,
         TdFailures.entityFailures.fixable2
-      ))
+      )),
+      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
     )
 
     val failedNonFixable: ApplicationForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.entityFailures.fixable2,
         TdFailures.entityFailures.nonFixable2
-      ))
+      )),
+      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
     )

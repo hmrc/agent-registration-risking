@@ -32,7 +32,8 @@ final case class IndividualForRisking(
   individualProvidedDetails: IndividualProvidedDetails,
   createdAt: Instant,
   lastUpdatedAt: Instant,
-  failures: Option[List[IndividualFailure]]
+  failures: Option[List[IndividualFailure]],
+  riskingCompletedDate: Option[Instant]
 ):
 
   // values that we do not store at the moment
