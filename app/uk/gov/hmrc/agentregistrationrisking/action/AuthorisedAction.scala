@@ -51,7 +51,7 @@ with RequestAwareLogging:
     given r: Request[A] = request
 
     af.authorised(
-      AuthProviders(GovernmentGateway) and AffinityGroup.Agent
+      AuthProviders(GovernmentGateway)
     ).retrieve(
       Retrievals.allEnrolments
         and Retrievals.credentialRole
