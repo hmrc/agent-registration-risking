@@ -22,7 +22,8 @@ import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 
 import java.time.Instant
 
-/** The Minerva risking outcome for a single individual: the failure list and the moment we received it. Both arrive together — they cannot be set independently.
+/** The Minerva risking outcome for a single individual: the failure list and the moment we received it. Both arrive together — they cannot be set
+  * independently.
   */
 final case class IndividualRiskingResult(
   failures: List[IndividualFailure],

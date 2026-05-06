@@ -31,7 +31,8 @@ final case class ApplicationWithIndividuals(
     for
       appDate <- application.riskingCompletedDate
       individualDates <- individuals.map(_.riskingCompletedDate).toList.sequence
-    yield individualDates.foldLeft(appDate)(Ordering[Instant].max)
+      latest <- (appDate :: individualDates).maxOption
+    yield latest
 
 object ApplicationWithIndividuals:
 
