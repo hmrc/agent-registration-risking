@@ -35,7 +35,6 @@ final case class IndividualForRisking(
   individualRiskingResult: Option[IndividualRiskingResult]
 ):
 
-  // derived accessors — the persisted invariant is "both or neither", surfaced as legacy fields
   def failures: Option[List[IndividualFailure]] = individualRiskingResult.map(_.failures)
   def riskingCompletedDate: Option[Instant] = individualRiskingResult.map(_.receivedAt)
 

@@ -35,7 +35,6 @@ final case class ApplicationForRisking(
   isEmailSent: Boolean
 ):
 
-  // derived accessors — the persisted invariant is "both or neither", surfaced as legacy fields
   def failures: Option[List[EntityFailure]] = entityRiskingResult.map(_.failures)
   def riskingCompletedDate: Option[Instant] = entityRiskingResult.map(_.receivedAt)
 
