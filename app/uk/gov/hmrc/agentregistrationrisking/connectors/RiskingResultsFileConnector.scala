@@ -27,13 +27,13 @@ import java.net.URI
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class RiskingResultsConnector @Inject() (
+class RiskingResultsFileConnector @Inject() (
   appConfig: AppConfig,
   httpClient: HttpClientV2
 )(using ExecutionContext)
 extends Connector:
 
-  def getRiskingFile(availableFile: AvailableFile)(using RequestHeader): Future[List[RiskingResultRecord]] =
+  def getRiskingResultRecords(availableFile: AvailableFile)(using RequestHeader): Future[List[RiskingResultRecord]] =
     val fileLocation: URL = new URI(availableFile.downloadURL).toURL
     httpClient
       .get(fileLocation)

@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Format
+import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
+import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asRiskingFileTimeStamp
 
-enum ApplicationForRiskingStatus:
+import java.time.Instant
 
-  case ReadyForSubmission
-  case SubmittedForRisking
-  // TODO: discuss statuses and aggregatioon into RiskingFile
-  // Below statuses can be derived base on the List of failures
-  case Approved
-  case FailedNonFixable
-  case FailedFixable
-  case ReadyForResubmission
-  case SubscribedAndEnrolled
+final case class RiskingFileName(value: String)
 
-object ApplicationForRiskingStatus:
+object RiskingFileName:
 
-  given Format[ApplicationForRiskingStatus] = JsonFormatsFactory.makeEnumFormat[ApplicationForRiskingStatus]
+  def make(timestamp: Instant): RiskingFileName = RiskingFileName(s"asa_risking_file_version1_0_4_${timestamp.asRiskingFileTimeStamp}.txt")
 
-  type RiskingCompletedStatus = Approved.type | FailedNonFixable.type | FailedFixable.type
+  given format: Format[RiskingFileName] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[RiskingFileName] = ValueClassBinder.valueClassBinder[RiskingFileName](_.value)

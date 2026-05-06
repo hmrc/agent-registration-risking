@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +16,64 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Provided
-import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 
 import java.time.Instant
 
-trait TdIndividualForRisking { dependencies: TdBase =>
+object TdIndividualForRisking:
+  def make(
+    instant: Instant,
+    applicationReference: ApplicationReference,
+    individualProvidedDetails: IndividualProvidedDetails
+  ): TdIndividualForRisking =
+    def instantParam: Instant = instant
+    def applicationReferenceParam: ApplicationReference = applicationReference
+    def individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
 
-  private val createdAt: Instant = dependencies.nowAsInstant
+    new TdIndividualForRisking:
+      override def instant: Instant = instantParam
+      override def personReference: PersonReference = individualProvidedDetails.personReference
+      override def applicationReference: ApplicationReference = applicationReferenceParam
+      override def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
 
-  def readyForSubmissionIndividual(personReference: Option[PersonReference] = None): IndividualForRisking = IndividualForRisking(
-    personReference = personReference.getOrElse(PersonReference(randomId)),
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
-    vrns = s"${vrn.value},${vrn.value}",
-    payeRefs = s"${payeRef.value},${payeRef.value}",
-    companiesHouseName = None,
-    companiesHouseDateOfBirth = None,
-    providedName = individualName,
-    providedDateOfBirth = Provided(individualDateOfBirth),
-    nino = Some(IndividualNino.Provided(nino)),
-    saUtr = Some(saUtrProvided),
-    phoneNumber = telephoneNumber,
-    email = individualEmailAddress,
-    providedByApplicant = true,
-    passedIV = true,
-    failures = None
-  )
+trait TdIndividualForRisking:
 
-  def individualRiskingResponseReadyForSubmission(
-    personReference: PersonReference
-  ) = IndividualRiskingResponse(
+  def instant: Instant
+  def personReference: PersonReference
+  def applicationReference: ApplicationReference
+  def individualProvidedDetails: IndividualProvidedDetails
+
+  def readyForSubmission: IndividualForRisking = IndividualForRisking(
     personReference = personReference,
-    providedName = individualName,
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
+    applicationReference = applicationReference,
+    individualProvidedDetails = individualProvidedDetails,
+    createdAt = instant,
+    lastUpdatedAt = instant,
     failures = None
   )
 
-}
+  // nothing changes from data perspective
+  def submittedForRisking: IndividualForRisking = readyForSubmission.copy()
+
+  object receivedRiskingResults:
+
+    def approved: IndividualForRisking = submittedForRisking.copy(
+      failures = Some(List.empty)
+    )
+
+    def failedFixable: IndividualForRisking = submittedForRisking.copy(
+      failures = Some(List(
+        TdFailures.individualFailures.fixable1,
+        TdFailures.individualFailures.fixable2
+      ))
+    )
+
+    def applicationFailedNonFixable: IndividualForRisking = submittedForRisking.copy(
+      failures = Some(List(
+        TdFailures.individualFailures.fixable2,
+        TdFailures.individualFailures.nonFixable2
+      ))
+    )

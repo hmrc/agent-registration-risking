@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes
 import play.api.libs.json.*
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistrationrisking.model.RecordType
 import uk.gov.hmrc.agentregistrationrisking.model.RecordType.*
 import uk.gov.hmrc.agentregistrationrisking.model.AdditionalInfo
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
@@ -147,7 +148,7 @@ trait TdRiskingRecords:
   )
 
   val failRecord1 = RiskingResultRecord(
-    "Entity",
+    RecordType.Entity,
     Some(ApplicationReference("applicationReference")),
     Some(List(
       Failure(
@@ -169,7 +170,7 @@ trait TdRiskingRecords:
   )
 
   val failRecord2 = RiskingResultRecord(
-    "Individual",
+    RecordType.Individual,
     None,
     Some(List(
       Failure(
@@ -184,7 +185,7 @@ trait TdRiskingRecords:
   )
 
   val failRecord3 = RiskingResultRecord(
-    "Individual",
+    RecordType.Individual,
     None,
     Some(List(
       Failure(
@@ -199,14 +200,14 @@ trait TdRiskingRecords:
   )
 
   val passRecord1 = RiskingResultRecord(
-    recordType = "Entity",
+    recordType = RecordType.Entity,
     applicationReference = Some(ApplicationReference("ABC123456")),
     failures = Some(List.empty),
     personReference = None
   )
 
   val passRecord2 = RiskingResultRecord(
-    recordType = "Individual",
+    recordType = RecordType.Individual,
     applicationReference = None,
     failures = Some(List.empty),
     personReference = Some(PersonReference("1234567890"))

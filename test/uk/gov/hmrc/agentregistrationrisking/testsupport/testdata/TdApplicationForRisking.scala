@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,69 +16,71 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.upload.UploadId
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.objectstore.client.Path.File
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 
 import java.time.Instant
-import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
-trait TdApplicationForRisking { dependencies: TdBase & TdIndividualForRisking =>
+object TdApplicationForRisking:
 
-  private val createdAt: Instant = dependencies.nowAsInstant
+  def make(
+    instant: Instant,
+    riskingFileName: RiskingFileName,
+    agentApplication: AgentApplication
+  ): TdApplicationForRisking =
+    val instantParam: Instant = instant
+    val riskingFileNameParam: RiskingFileName = riskingFileName
+    val agentApplicationParam: AgentApplication = agentApplication
 
-  val llpApplicationForRisking: ApplicationForRisking = ApplicationForRisking(
-    applicationReference = ApplicationReference(randomId),
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
-    createdAt = createdAt,
-    uploadedAt = None,
-    fileName = None,
-    applicantGroupId = groupId,
-    applicantCredentials = credentials,
-    agentDetails = completeAgentDetails,
-    applicantName = applicantName,
-    applicantPhone = Some(telephoneNumber),
-    applicantEmail = Some(applicantEmailAddress),
-    entitySafeId = SafeId("X0_SAFE_ID_0X"),
-    entityType = BusinessType.Partnership.LimitedLiabilityPartnership,
-    entityIdentifier = saUtr.asUtr,
-    crn = Some(crn),
-    vrns = s"${vrn.value},${vrn.value}",
-    payeRefs = s"${payeRef.value},${payeRef.value}",
-    amlSupervisoryBody = amlsCode,
-    amlRegNumber = amlsRegistrationNumber,
-    amlExpiryDate = Some(LocalDate.parse(dateString)),
-    amlEvidence = Some(AmlsEvidence(
-      UploadId("evidence-reference-123"),
-      "certificate.pdf",
-      File("test.txt")
-    )),
-    individuals = List(dependencies.readyForSubmissionIndividual(Some(this.personReference))),
-    failures = None
-  )
+    new TdApplicationForRisking:
+      override def instant: Instant = instantParam
+      override def riskingFileName: RiskingFileName = riskingFileNameParam
+      override def applicationReference: ApplicationReference = agentApplicationParam.applicationReference
+      override def agentApplication: AgentApplication = agentApplicationParam
 
-  def applicationRiskingResponseReadyForSubmission(
-    applicationReference: ApplicationReference,
-    personReference: PersonReference
-  ) = ApplicationRiskingResponse(
+trait TdApplicationForRisking:
+
+  def instant: Instant
+  def riskingFileName: RiskingFileName
+  def applicationReference: ApplicationReference
+  def agentApplication: AgentApplication
+
+  def readyForSubmission: ApplicationForRisking = ApplicationForRisking(
     applicationReference = applicationReference,
-    status = ApplicationForRiskingStatus.ReadyForSubmission,
-    individuals = List(IndividualRiskingResponse(
-      personReference = personReference,
-      providedName = individualName,
-      status = ApplicationForRiskingStatus.ReadyForSubmission,
-      failures = None
-    )),
-    failures = None
+    riskingFileName = None,
+    agentApplication = agentApplication,
+    createdAt = instant,
+    lastUpdatedAt = instant,
+    failures = None,
+    isSubscribed = false,
+    isEmailSent = false
   )
 
-}
+  def submittedForRisking: ApplicationForRisking = readyForSubmission
+    .copy(
+      riskingFileName = Some(riskingFileName),
+      lastUpdatedAt = instant.plus(1, ChronoUnit.DAYS)
+    )
+
+  object receivedRiskingResults:
+
+    val approved: ApplicationForRisking = submittedForRisking.copy(
+      failures = Some(List.empty)
+    )
+
+    val failedFixable: ApplicationForRisking = submittedForRisking.copy(
+      failures = Some(List(
+        TdFailures.entityFailures.fixable1,
+        TdFailures.entityFailures.fixable2
+      ))
+    )
+
+    val failedNonFixable: ApplicationForRisking = submittedForRisking.copy(
+      failures = Some(List(
+        TdFailures.entityFailures.fixable2,
+        TdFailures.entityFailures.nonFixable2
+      ))
+    )

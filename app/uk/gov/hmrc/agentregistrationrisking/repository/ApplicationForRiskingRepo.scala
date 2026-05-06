@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
@@ -32,20 +33,25 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import org.mongodb.scala.result.UpdateResult
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import com.mongodb.client.model.Field
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
+
+import java.time.Clock
+import java.time.Instant
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  clock: Clock
 )(using ec: ExecutionContext)
 extends Repo[ApplicationReference, ApplicationForRisking](
   collectionName = "application-for-risking",
@@ -55,31 +61,40 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   replaceIndexes = true
 ):
 
-  def findByApplicationReference(applicationReference: ApplicationReference): Future[Option[ApplicationForRisking]] = collection
-    .find(
-      filter = Filters.eq("applicationReference", applicationReference.value)
-    )
-    .headOption()
+  def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
+    .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
+    .toFuture()
 
-  def findByStatus(status: ApplicationForRiskingStatus): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      filter = Filters.eq("status", status.toString)
-    ).toFuture()
-
-  def findByPersonReference(personReference: PersonReference): Future[Option[ApplicationForRisking]] = collection
-    .find(
-      filter = Filters.eq("individuals.personReference", personReference.value)
-    ).headOption()
-
-  def updateStatusByApplicationReferences(
+  // TODO needs testing?
+  def updateRiskingFileId(
     applicationReferences: Seq[ApplicationReference],
-    status: ApplicationForRiskingStatus
-  ): Future[Unit] = collection
+    riskingFileName: RiskingFileName
+  ): Future[UpdateResult] = collection
     .updateMany(
-      filter = Filters.in("applicationReference", applicationReferences.map(_.value)*),
-      update = Updates.set("status", status.toString)
+      Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value)*),
+      Updates.combine(
+        Updates.set(FieldNames.riskingFileName, riskingFileName.value),
+        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
+      )
     ).toFuture()
-    .map(_ => ())
+
+//  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
+//    .find(
+//      Filters.and(
+//        Filters.size("failures", 0),
+//        Filters.eq("isSubscribed", false)
+//      )
+//    ).toFuture()
+
+  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
+    collection
+      .find(
+        Filters.and(
+          Filters.exists(FieldNames.failures),
+          Filters.eq(FieldNames.isSubscribed, false)
+        )
+      ).toFuture()
+  }
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
@@ -87,7 +102,8 @@ object ApplicationForRiskingRepoHelp:
 
   given IdString[ApplicationReference] =
     new IdString[ApplicationReference]:
-      override def idString(i: ApplicationReference): String = i.value
+      override def idString(id: ApplicationReference): String = id.value
+      override def idField: String = FieldNames.applicationReference
 
   given IdExtractor[ApplicationForRisking, ApplicationReference] =
     new IdExtractor[ApplicationForRisking, ApplicationReference]:
@@ -95,19 +111,21 @@ object ApplicationForRiskingRepoHelp:
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
-      keys = Indexes.ascending("lastUpdated"),
-      indexOptions = IndexOptions().expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS).name("lastUpdatedIdx")
+      keys = Indexes.ascending(FieldNames.applicationReference),
+      indexOptions = IndexOptions()
+        .name(FieldNames.applicationReferenceIndex)
+        .unique(true)
     ),
     IndexModel(
-      keys = Indexes.ascending("applicationReference"),
-      IndexOptions()
-        .unique(true)
-        .name("applicationReference")
+      keys = Indexes.ascending(FieldNames.riskingFileName),
+      indexOptions = IndexOptions()
+        .name(FieldNames.riskingFileNameIndex)
+        .unique(false)
     ),
     IndexModel(
-      keys = Indexes.ascending("individuals.personReference"),
-      IndexOptions()
-        .unique(true)
-        .name("personReference")
+      keys = Indexes.ascending(FieldNames.lastUpdatedAt),
+      indexOptions = IndexOptions()
+        .expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS)
+        .name(FieldNames.lastUpdatedAtIndex)
     )
   )

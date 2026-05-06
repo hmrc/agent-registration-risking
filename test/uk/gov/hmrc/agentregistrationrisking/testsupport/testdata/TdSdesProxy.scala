@@ -22,8 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualRiskingResponse
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
@@ -34,9 +33,9 @@ import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 import java.time.Instant
 
-trait TdSdesProxy { dependencies: TdBase =>
+trait TdSdesProxy { dependencies: TdRiskingBase =>
 
-  private val createdAt: Instant = dependencies.nowAsInstant
+  private val createdAt: Instant = dependencies.instant
 
   def fileDownloadLocation = s"/${objectSummaryWithMd5.location.directory.value}/${objectSummaryWithMd5.location.fileName}"
 

@@ -54,9 +54,10 @@ extends AnyFreeSpecLike,
   private val testServerPort = ISpec.testServerPort
   protected val baseUrl: String = s"http://localhost:${testServerPort.toString}"
 
-  lazy val tdAll: TdAll = TdAll()
-  lazy val frozenInstant: Instant = tdAll.nowAsInstant
-  lazy val clock: Clock = Clock.fixed(frozenInstant, ZoneId.of("UTC"))
+  lazy val tdAll: TdAll = TdAll.tdAll
+  lazy val frozenInstant: Instant = tdAll.instant
+  private val zoneId: ZoneId = ZoneId.of("UTC")
+  lazy val clock: Clock = Clock.fixed(frozenInstant, zoneId)
 
   protected def configMap: Map[String, Any] =
     Map[String, Any](
@@ -66,6 +67,7 @@ extends AnyFreeSpecLike,
       "microservice.services.auth.port" -> WireMockSupport.port,
       "mongodb.uri" -> mongoUri,
       "microservice.services.object-store.port" -> WireMockSupport.port,
+      "microservice.services.secure-data-exchange-proxy.host" -> "localhost",
       "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
       "microservice.services.hip.port" -> WireMockSupport.port,
       "microservice.services.hip.authorization-token" -> "test-hip-auth-token",

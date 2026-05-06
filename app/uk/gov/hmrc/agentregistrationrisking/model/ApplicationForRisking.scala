@@ -16,55 +16,24 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
-import uk.gov.hmrc.agentregistration.shared.AmlsCode
-import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
-import uk.gov.hmrc.agentregistration.shared.BusinessType
-import uk.gov.hmrc.agentregistration.shared.Crn
-import uk.gov.hmrc.agentregistration.shared.EmailAddress
-import uk.gov.hmrc.agentregistration.shared.GroupId
-import uk.gov.hmrc.agentregistration.shared.SafeId
-import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
-import uk.gov.hmrc.agentregistration.shared.Utr
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
-import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
-import uk.gov.hmrc.agentregistration.shared.risking.ApplicationForRiskingStatus
+import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
-import uk.gov.hmrc.auth.core.retrieve.Credentials
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 import java.time.Instant
-import java.time.LocalDate
 
 final case class ApplicationForRisking(
-  applicationReference: ApplicationReference,
-  status: ApplicationForRiskingStatus,
+  applicationReference: ApplicationReference, // primary Key
+  riskingFileName: Option[RiskingFileName], // foreign Key to RiskingFile
+  agentApplication: AgentApplication, // snapshot of the AgentAPplication when sent for risking
   createdAt: Instant,
-  uploadedAt: Option[Instant],
-  fileName: Option[String],
-  agentDetails: AgentDetails,
-  applicantCredentials: Credentials,
-  applicantGroupId: GroupId,
-  applicantName: ApplicantName,
-  applicantPhone: Option[TelephoneNumber],
-  applicantEmail: Option[EmailAddress],
-  entitySafeId: SafeId,
-  entityType: BusinessType,
-  entityIdentifier: Utr,
-  crn: Option[Crn],
-  vrns: String,
-  payeRefs: String,
-  amlSupervisoryBody: AmlsCode,
-  amlRegNumber: AmlsRegistrationNumber,
-  amlExpiryDate: Option[LocalDate],
-  amlEvidence: Option[AmlsEvidence],
-  individuals: List[IndividualForRisking],
-  failures: Option[List[EntityFailure]]
+  lastUpdatedAt: Instant,
+  failures: Option[List[EntityFailure]],
+  isSubscribed: Boolean,
+  isEmailSent: Boolean
 )
 
 object ApplicationForRisking:
-
-  given credentialsFormat: OFormat[Credentials] = Json.format[Credentials]
   given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]

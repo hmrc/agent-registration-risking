@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 
-final case class ApplicationRiskingResponse(
-  applicationReference: ApplicationReference,
-  status: ApplicationForRiskingStatus,
-  individuals: List[IndividualRiskingResponse],
-  failures: Option[List[EntityFailure]]
+import java.time.Instant
+
+final case class RiskingFile(
+  riskingFileName: RiskingFileName,
+  uploadedAt: Instant
 )
 
-object ApplicationRiskingResponse:
-
-  given OFormat[ApplicationRiskingResponse] = Json.format[ApplicationRiskingResponse]
+object RiskingFile:
+  given format: OFormat[RiskingFile] = Json.format[RiskingFile]

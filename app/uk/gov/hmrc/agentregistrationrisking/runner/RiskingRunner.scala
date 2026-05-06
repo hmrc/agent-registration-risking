@@ -21,13 +21,25 @@ import play.api.mvc.RequestHeader
 import play.api.mvc.request.RemoteConnection
 import play.api.mvc.request.RequestTarget
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import play.api.libs.typedmap.TypedMap
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -36,37 +48,49 @@ import scala.concurrent.Future
 @Singleton
 class RiskingRunner @Inject() (
   objectStoreService: ObjectStoreService,
-  riskingFileService: RiskingFileService,
-  sdesProxyService: SdesProxyService
-)(using ec: ExecutionContext)
+  sdesProxyService: SdesProxyService,
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  riskingFileRepo: RiskingFileRepo
+)(using
+  ec: ExecutionContext,
+  clock: Clock
+)
 extends RequestAwareLogging:
 
-  private val emptyRequestHeader: RequestHeader =
-    new RequestHeader:
-      def target: RequestTarget = RequestTarget(
-        uriString = "/",
-        path = "riskingRunner/dummyPath",
-        queryString = Map.empty
-      )
-      def version: String = "HTTP/1.1"
-      def method: String = "GET"
-      def headers: Headers = Headers()
-      def connection: RemoteConnection = RemoteConnection(
-        remoteAddress = java.net.InetAddress.getLoopbackAddress,
-        secure = false,
-        clientCertificateChain = None
-      )
-      def attrs: TypedMap = TypedMap.empty
-
   def run(): Future[Unit] =
-    given RequestHeader = emptyRequestHeader
-    logger.info("Running risking started ...")
-
+    given RequestHeader = EmptyRequest.emptyRequestHeader
+    logger.info(s"Building risking file and sending it to minerva started ...")
+    val instant: Instant = Instant.now(clock)
     for
-      applicationsReadyForRisking: Seq[ApplicationForRisking] <- riskingFileService.getApplicationsReadyForRisking
-      fileContent: String = riskingFileService.buildRiskingFileFrom(applicationsReadyForRisking)
-      objectSummary: ObjectSummaryWithMd5 <- objectStoreService.put(fileContent)
+      applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForSubmission()
+      _ = logger.info(s"Found ${applications.size} applications ready for submission")
+      applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
+      individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
+      _ = logger.info(s"Found ${individuals.size} corresponding individuals")
+      riskingFileWithContent: RiskingFileWithContent = RiskingFileService.buildRiskingFileWithContent(
+        applications = applications,
+        individuals = individuals,
+        instant = instant
+      )
+      riskingFileName: RiskingFileName = riskingFileWithContent.riskingFile.riskingFileName
+      _ = logger.info(s"Generated risking file: $riskingFileName, ${riskingFileWithContent.numberOfRecords} records")
+      objectSummary: ObjectSummaryWithMd5 <- objectStoreService.uploadRiskingFile(riskingFileWithContent)
+      _ = logger.info(s"Uploaded risking file to object store: ${objectSummary.location}")
+      _ <- riskingFileRepo.upsert(riskingFileWithContent.riskingFile)
+      _ = logger.info(s"Persisted risking file: ${riskingFileWithContent.riskingFile}")
+      _ <- applicationForRiskingRepo.updateRiskingFileId(
+        applicationReferences = applicationReferences,
+        riskingFileName = riskingFileName
+      )
+      _ = logger.info(s"Updated applications as submitted for risking in $riskingFileName")
       _ <- sdesProxyService.notifySdesFileReady(objectSummary)
-      _ <- riskingFileService.setAllStatusSubmittedForRisking(applicationsReadyForRisking)
-      _ = logger.info(s"File uploaded to object store: ${objectSummary.location}")
+      _ = logger.info(s"Sent notification to SDES")
+      _ = logger.info(
+        s"""Risking file built and sent to minerva successfully:
+           | ${riskingFileWithContent.riskingFile}
+           | ${riskingFileWithContent.numberOfRecords} records
+           | $objectSummary
+           |""".stripMargin
+      )
     yield ()
