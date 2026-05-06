@@ -25,9 +25,11 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
+import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
@@ -118,8 +120,7 @@ extends RequestAwareLogging:
       case Some(application) =>
         val now = Instant.now(clock)
         val updatedApplication: ApplicationForRisking = application.copy(
-          failures = Some(riskingResult.failures),
-          riskingCompletedDate = Some(now),
+          entityRiskingResult = Some(EntityRiskingResult(failures = riskingResult.failures, receivedAt = now)),
           lastUpdatedAt = now
         )
         applicationForRiskingRepo
@@ -137,8 +138,7 @@ extends RequestAwareLogging:
       case Some(individual) =>
         val now = Instant.now(clock)
         val updatedIndividual: IndividualForRisking = individual.copy(
-          failures = Some(riskingResult.failures),
-          riskingCompletedDate = Some(now),
+          individualRiskingResult = Some(IndividualRiskingResult(failures = riskingResult.failures, receivedAt = now)),
           lastUpdatedAt = now
         )
         individualForRiskingRepo

@@ -30,11 +30,14 @@ final case class ApplicationForRisking(
   agentApplication: AgentApplication, // snapshot of the AgentAPplication when sent for risking
   createdAt: Instant,
   lastUpdatedAt: Instant,
-  failures: Option[List[EntityFailure]],
+  entityRiskingResult: Option[EntityRiskingResult],
   isSubscribed: Boolean,
-  isEmailSent: Boolean,
-  riskingCompletedDate: Option[Instant]
-)
+  isEmailSent: Boolean
+):
+
+  // derived accessors — the persisted invariant is "both or neither", surfaced as legacy fields
+  def failures: Option[List[EntityFailure]] = entityRiskingResult.map(_.failures)
+  def riskingCompletedDate: Option[Instant] = entityRiskingResult.map(_.receivedAt)
 
 object ApplicationForRisking:
   given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]

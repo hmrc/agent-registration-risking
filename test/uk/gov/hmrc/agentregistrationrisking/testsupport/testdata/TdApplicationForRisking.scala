@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 
 import java.time.Instant
@@ -54,8 +55,7 @@ trait TdApplicationForRisking:
     agentApplication = agentApplication,
     createdAt = instant,
     lastUpdatedAt = instant,
-    failures = None,
-    riskingCompletedDate = None,
+    entityRiskingResult = None,
     isSubscribed = false,
     isEmailSent = false
   )
@@ -69,22 +69,28 @@ trait TdApplicationForRisking:
   object receivedRiskingResults:
 
     val approved: ApplicationForRisking = submittedForRisking.copy(
-      failures = Some(List.empty),
-      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
+      entityRiskingResult = Some(EntityRiskingResult(
+        failures = List.empty,
+        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+      ))
     )
 
     val failedFixable: ApplicationForRisking = submittedForRisking.copy(
-      failures = Some(List(
-        TdFailures.entityFailures.fixable1,
-        TdFailures.entityFailures.fixable2
-      )),
-      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
+      entityRiskingResult = Some(EntityRiskingResult(
+        failures = List(
+          TdFailures.entityFailures.fixable1,
+          TdFailures.entityFailures.fixable2
+        ),
+        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+      ))
     )
 
     val failedNonFixable: ApplicationForRisking = submittedForRisking.copy(
-      failures = Some(List(
-        TdFailures.entityFailures.fixable2,
-        TdFailures.entityFailures.nonFixable2
-      )),
-      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
+      entityRiskingResult = Some(EntityRiskingResult(
+        failures = List(
+          TdFailures.entityFailures.fixable2,
+          TdFailures.entityFailures.nonFixable2
+        ),
+        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+      ))
     )
