@@ -20,8 +20,10 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 object TdIndividualForRisking:
   def make(
@@ -52,7 +54,7 @@ trait TdIndividualForRisking:
     individualProvidedDetails = individualProvidedDetails,
     createdAt = instant,
     lastUpdatedAt = instant,
-    failures = None
+    individualRiskingResult = None
   )
 
   // nothing changes from data perspective
@@ -61,19 +63,28 @@ trait TdIndividualForRisking:
   object receivedRiskingResults:
 
     def approved: IndividualForRisking = submittedForRisking.copy(
-      failures = Some(List.empty)
+      individualRiskingResult = Some(IndividualRiskingResult(
+        failures = List.empty,
+        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+      ))
     )
 
     def failedFixable: IndividualForRisking = submittedForRisking.copy(
-      failures = Some(List(
-        TdFailures.individualFailures.fixable1,
-        TdFailures.individualFailures.fixable2
+      individualRiskingResult = Some(IndividualRiskingResult(
+        failures = List(
+          TdFailures.individualFailures.fixable1,
+          TdFailures.individualFailures.fixable2
+        ),
+        receivedAt = instant.minus(2, ChronoUnit.DAYS)
       ))
     )
 
     def applicationFailedNonFixable: IndividualForRisking = submittedForRisking.copy(
-      failures = Some(List(
-        TdFailures.individualFailures.fixable2,
-        TdFailures.individualFailures.nonFixable2
+      individualRiskingResult = Some(IndividualRiskingResult(
+        failures = List(
+          TdFailures.individualFailures.fixable2,
+          TdFailures.individualFailures.nonFixable2
+        ),
+        receivedAt = instant.minus(2, ChronoUnit.DAYS)
       ))
     )
