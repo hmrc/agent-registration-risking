@@ -68,6 +68,7 @@ extends BackendController(cc):
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
     failures = None,
+    riskingCompletedDate = None,
     isSubscribed = false,
     isEmailSent = false
   )
@@ -93,5 +94,6 @@ extends BackendController(cc):
     individualProvidedDetails = individualProvidedDetails,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
-    failures = None
+    failures = None,
+    riskingCompletedDate = None
   )

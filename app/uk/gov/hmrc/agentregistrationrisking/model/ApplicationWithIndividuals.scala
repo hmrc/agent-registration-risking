@@ -18,10 +18,20 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 
+import java.time.Instant
+
 final case class ApplicationWithIndividuals(
   application: ApplicationForRisking,
   individuals: Seq[IndividualForRisking]
-)
+):
+
+  /** Latest moment a Minerva result landed across the entity and all individuals. None if any record is still missing its `riskingCompletedDate`. */
+  def latestRiskingCompletedDate: Option[Instant] =
+    import cats.implicits._
+    for
+      appDate <- application.riskingCompletedDate
+      individualDates <- individuals.map(_.riskingCompletedDate).toList.sequence
+    yield individualDates.foldLeft(appDate)((latest, d) => if d.isAfter(latest) then d else latest)
 
 object ApplicationWithIndividuals:
 

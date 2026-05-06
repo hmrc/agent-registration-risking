@@ -116,9 +116,11 @@ extends RequestAwareLogging:
         logger.error(s"Missing application for: ${riskingResult.applicationReference}")
         Future.unit
       case Some(application) =>
+        val now = Instant.now(clock)
         val updatedApplication: ApplicationForRisking = application.copy(
           failures = Some(riskingResult.failures),
-          lastUpdatedAt = Instant.now(clock)
+          riskingCompletedDate = Some(now),
+          lastUpdatedAt = now
         )
         applicationForRiskingRepo
           .upsert(updatedApplication)
@@ -133,9 +135,11 @@ extends RequestAwareLogging:
         logger.error(s"Missing individual for: ${riskingResult.personReference}")
         Future.unit
       case Some(individual) =>
+        val now = Instant.now(clock)
         val updatedIndividual: IndividualForRisking = individual.copy(
           failures = Some(riskingResult.failures),
-          lastUpdatedAt = Instant.now(clock)
+          riskingCompletedDate = Some(now),
+          lastUpdatedAt = now
         )
         individualForRiskingRepo
           .upsert(updatedIndividual)

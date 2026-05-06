@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 object TdIndividualForRisking:
   def make(
@@ -52,7 +53,8 @@ trait TdIndividualForRisking:
     individualProvidedDetails = individualProvidedDetails,
     createdAt = instant,
     lastUpdatedAt = instant,
-    failures = None
+    failures = None,
+    riskingCompletedDate = None
   )
 
   // nothing changes from data perspective
@@ -61,19 +63,22 @@ trait TdIndividualForRisking:
   object receivedRiskingResults:
 
     def approved: IndividualForRisking = submittedForRisking.copy(
-      failures = Some(List.empty)
+      failures = Some(List.empty),
+      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
     )
 
     def failedFixable: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.individualFailures.fixable1,
         TdFailures.individualFailures.fixable2
-      ))
+      )),
+      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
     )
 
     def applicationFailedNonFixable: IndividualForRisking = submittedForRisking.copy(
       failures = Some(List(
         TdFailures.individualFailures.fixable2,
         TdFailures.individualFailures.nonFixable2
-      ))
+      )),
+      riskingCompletedDate = Some(instant.minus(2, ChronoUnit.DAYS))
     )
