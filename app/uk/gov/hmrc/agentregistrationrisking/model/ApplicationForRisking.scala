@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
@@ -33,10 +32,7 @@ final case class ApplicationForRisking(
   entityRiskingResult: Option[EntityRiskingResult],
   isSubscribed: Boolean,
   isEmailSent: Boolean
-):
-
-  def failures: Option[List[EntityFailure]] = entityRiskingResult.map(_.failures)
-  def riskingCompletedDate: Option[Instant] = entityRiskingResult.map(_.receivedAt)
+)
 
 object ApplicationForRisking:
   given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]

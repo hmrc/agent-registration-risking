@@ -86,20 +86,20 @@ object RiskingProgressController:
       outcome: RiskingOutcome <- RiskingOutcomeHelper.computeRiskingOutcome(applicationWithIndividuals)
       riskedEntity: RiskedEntity <- applicationWithIndividuals
         .application
-        .failures.map: failures =>
+        .entityRiskingResult.map: result =>
           RiskedEntity(
             applicationReference = applicationWithIndividuals.application.applicationReference,
-            failures = failures
+            failures = result.failures
           )
       riskedIndividuals: Seq[RiskedIndividual] <-
         applicationWithIndividuals
           .individuals
           .map: individual =>
-            individual.failures.map: (failures: Seq[IndividualFailure]) =>
+            individual.individualRiskingResult.map: result =>
               RiskedIndividual(
                 personReference = individual.personReference,
                 individualName = individual.individualProvidedDetails.individualName,
-                failures = failures
+                failures = result.failures
               )
           .sequence
       latestDate <- applicationWithIndividuals.riskingCompletedDate
@@ -119,24 +119,3 @@ object RiskingProgressController:
             riskedIndividuals = riskedIndividuals,
             riskingCompletedDate = riskingCompletedDate
           )
-
-  private def maybeRiskedEntity(applicationWithIndividuals: ApplicationWithIndividuals): Option[RiskedEntity] = applicationWithIndividuals
-    .application
-    .failures
-    .map((failures: List[EntityFailure]) => RiskedEntity(applicationWithIndividuals.application.applicationReference, failures))
-
-  private def maybeRiskedIndividuals(applicationWithIndividuals: ApplicationWithIndividuals): Option[Seq[RiskedIndividual]] =
-    import cats.implicits.*
-    applicationWithIndividuals
-      .individuals
-      .map: individual =>
-        individual
-          .failures
-          .map(failures =>
-            RiskedIndividual(
-              personReference = individual.individualProvidedDetails.personReference,
-              individualName = individual.individualProvidedDetails.individualName,
-              failures = failures
-            )
-          )
-      .sequence

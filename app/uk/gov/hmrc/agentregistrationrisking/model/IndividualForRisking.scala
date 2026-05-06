@@ -35,9 +35,6 @@ final case class IndividualForRisking(
   individualRiskingResult: Option[IndividualRiskingResult]
 ):
 
-  def failures: Option[List[IndividualFailure]] = individualRiskingResult.map(_.failures)
-  def riskingCompletedDate: Option[Instant] = individualRiskingResult.map(_.receivedAt)
-
   // values that we do not store at the moment
   def providedByApplicant: Boolean = false
   def companiesHouseName = None

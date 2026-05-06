@@ -29,8 +29,8 @@ final case class ApplicationWithIndividuals(
   def riskingCompletedDate: Option[Instant] =
     import cats.implicits._
     for
-      appDate <- application.riskingCompletedDate
-      individualDates <- individuals.map(_.riskingCompletedDate).toList.sequence
+      appDate <- application.entityRiskingResult.map(_.receivedAt)
+      individualDates <- individuals.map(_.individualRiskingResult.map(_.receivedAt)).toList.sequence
       latest <- (appDate :: individualDates).maxOption
     yield latest
 
