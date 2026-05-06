@@ -26,7 +26,7 @@ final case class ApplicationWithIndividuals(
 ):
 
   /** Latest moment a Minerva result landed across the entity and all individuals. None if any record is still missing its `riskingCompletedDate`. */
-  def latestRiskingCompletedDate: Option[Instant] =
+  def riskingCompletedDate: Option[Instant] =
     import cats.implicits._
     for
       appDate <- application.riskingCompletedDate

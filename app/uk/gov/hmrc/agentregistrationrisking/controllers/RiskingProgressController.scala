@@ -102,7 +102,7 @@ object RiskingProgressController:
                 failures = failures
               )
           .sequence
-      latestDate <- applicationWithIndividuals.latestRiskingCompletedDate
+      latestDate <- applicationWithIndividuals.riskingCompletedDate
     yield
       val riskingCompletedDate = latestDate.atZone(displayZone).toLocalDate
       outcome match
