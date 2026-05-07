@@ -1,7 +1,7 @@
 [
   {
     "recordType": "Entity",
-    "applicationReference": "XKXP9HEZB",
+    "applicationReference": "SIALALA",
     "failures": [
       {
         "reasonCode": "7",
@@ -13,7 +13,7 @@
   },
   {
     "recordType": "Individual",
-    "personReference": "JJFCXYTM4",
+    "personReference": "SIALALA_PERSON1",
     "failures": [
       {
         "reasonCode": "9",
@@ -25,7 +25,7 @@
   },
   {
     "recordType": "Individual",
-    "personReference": "ZHQGTDK8Y",
+    "personReference": "SIALALA_PERSON2",
     "failures": [
       {
         "reasonCode": "6",
