@@ -47,6 +47,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import RiskingOutcomeHelper.*
 
+import java.net.URL
+
 @Singleton
 class RiskingResultsService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
@@ -86,12 +88,23 @@ extends RequestAwareLogging:
     yield ()
 
   private def uploadRiskingResultFileToObjectStoreForBackup(file: AvailableFile)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
-    val downloadUri = Uri(file.downloadURL).toJavaUri.toURL
     val fileName = file.filename
     for
-      uploadResult <- objectStoreService.uploadRiskingResultsFileFromUrl(downloadUrl = downloadUri, fileName = fileName)
+      downloadUrl <- parseDownloadUrl(file)
+      uploadResult <- objectStoreService.uploadRiskingResultsFileFromUrl(
+        downloadUrl = downloadUrl,
+        fileName = fileName
+      )
       _ = logger.info(s"Uploaded file to object store: $fileName")
     yield uploadResult
+
+  private def parseDownloadUrl(file: AvailableFile): Future[URL] = Future:
+    Uri
+      .parse(file.downloadURL)
+      .fold(
+        e => throw new RuntimeException(s"Could not parse the downloadURL for ${file.filename}: [${file.downloadURL}], $e"),
+        _.toJavaUri.toURL
+      )
 
   private def getUnprocessedAvailableFiles()(using request: RequestHeader): Future[Seq[AvailableFile]] =
     for
