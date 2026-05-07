@@ -96,6 +96,7 @@ final case class RiskingFileDataRecord(
 
   private def getDobString: String = individualProvidedDateOfBirth.map {
     case IndividualDateOfBirth.Provided(dob) => asMinervaDate(dob)
+    case IndividualDateOfBirth.ApplicantProvided(dob) => asMinervaDate(dob)
     case IndividualDateOfBirth.FromCitizensDetails(dob) => asMinervaDate(dob)
   }.getOrElse("")
 
