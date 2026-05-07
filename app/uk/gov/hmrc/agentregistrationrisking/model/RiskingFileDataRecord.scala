@@ -96,6 +96,7 @@ final case class RiskingFileDataRecord(
 
   private def getDobString: String = individualProvidedDateOfBirth.map {
     case IndividualDateOfBirth.Provided(dob) => asMinervaDate(dob)
+    case IndividualDateOfBirth.ApplicantProvided(dob) => asMinervaDate(dob)
     case IndividualDateOfBirth.FromCitizensDetails(dob) => asMinervaDate(dob)
   }.getOrElse("")
 
@@ -121,7 +122,7 @@ object RiskingFileDataRecord:
     val contactDetails = app.getApplicantContactDetails
     this.apply(
       recordType = RecordType.Entity,
-      resubmission = applicationForRisking.failures.isDefined,
+      resubmission = applicationForRisking.entityRiskingResult.isDefined,
       applicationReference = Some(app.applicationReference),
       applicantName = Some(contactDetails.applicantName),
       applicantPhone = contactDetails.telephoneNumber,
@@ -152,7 +153,7 @@ object RiskingFileDataRecord:
     val details = individualForRisking.individualProvidedDetails
     this.apply(
       recordType = RecordType.Individual,
-      resubmission = individualForRisking.failures.isDefined,
+      resubmission = individualForRisking.individualRiskingResult.isDefined,
       applicationReference = None,
       applicantName = None,
       applicantPhone = None,

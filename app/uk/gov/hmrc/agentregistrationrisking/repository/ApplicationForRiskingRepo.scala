@@ -107,7 +107,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     collection
       .find(
         Filters.and(
-          Filters.exists(FieldNames.failures),
+          Filters.exists(FieldNames.entityRiskingResult),
           Filters.eq(FieldNames.isSubscribed, false)
         )
       ).toFuture()

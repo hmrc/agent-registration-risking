@@ -67,7 +67,7 @@ extends BackendController(cc):
     agentApplication = submitForRiskingRequest.agentApplication,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
-    failures = None,
+    entityRiskingResult = None,
     isSubscribed = false,
     isEmailSent = false
   )
@@ -93,5 +93,5 @@ extends BackendController(cc):
     individualProvidedDetails = individualProvidedDetails,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
-    failures = None
+    individualRiskingResult = None
   )

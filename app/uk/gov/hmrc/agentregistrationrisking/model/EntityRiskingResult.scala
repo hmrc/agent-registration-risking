@@ -16,23 +16,19 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 
 import java.time.Instant
 
-final case class ApplicationForRisking(
-  applicationReference: ApplicationReference, // primary Key
-  riskingFileName: Option[RiskingFileName], // foreign Key to RiskingFile
-  agentApplication: AgentApplication, // snapshot of the AgentAPplication when sent for risking
-  createdAt: Instant,
-  lastUpdatedAt: Instant,
-  entityRiskingResult: Option[EntityRiskingResult],
-  isSubscribed: Boolean,
-  isEmailSent: Boolean
+/** The Minerva risking outcome for an application/entity: the failure list and the moment we received it. Both arrive together — they cannot be set
+  * independently.
+  */
+final case class EntityRiskingResult(
+  failures: List[EntityFailure],
+  receivedAt: Instant
 )
 
-object ApplicationForRisking:
-  given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
+object EntityRiskingResult:
+  given OFormat[EntityRiskingResult] = Json.format[EntityRiskingResult]

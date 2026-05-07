@@ -29,15 +29,15 @@ object RiskingOutcomeHelper:
     for
       entityOutcome: RiskingOutcome <- applicationWithIndividuals
         .application
-        .failures
-        .map(_.outcomeForEntity)
+        .entityRiskingResult
+        .map(_.failures.outcomeForEntity)
       individualsOutcome: RiskingOutcome <- maybeOutcomeForIndividuals(applicationWithIndividuals.individuals)
     yield foldOutcomes(entityOutcome, individualsOutcome)
 
   def maybeOutcomeForIndividuals(individuals: Seq[IndividualForRisking]): Option[RiskingOutcome] =
     import cats.implicits.*
     individuals
-      .map(_.failures.map(_.outcome))
+      .map(_.individualRiskingResult.map(_.failures.outcome))
       .sequence
       .map(_.foldLeft[RiskingOutcome](RiskingOutcome.Approved)(foldOutcomes))
 
@@ -86,8 +86,8 @@ object RiskingOutcomeHelper:
 
   def maybeRiskedEntity(applicationWithIndividuals: ApplicationWithIndividuals): Option[RiskedEntity] = applicationWithIndividuals
     .application
-    .failures
-    .map((failures: List[EntityFailure]) => RiskedEntity(applicationWithIndividuals.application.applicationReference, failures))
+    .entityRiskingResult
+    .map(entityRiskingResult => RiskedEntity(applicationWithIndividuals.application.applicationReference, entityRiskingResult.failures))
 
   def maybeRiskedIndividuals(applicationWithIndividuals: ApplicationWithIndividuals): Option[Seq[RiskedIndividual]] =
     import cats.implicits.*
@@ -95,12 +95,12 @@ object RiskingOutcomeHelper:
       .individuals
       .map: individual =>
         individual
-          .failures
-          .map(failures =>
+          .individualRiskingResult
+          .map(individualRiskingResult =>
             RiskedIndividual(
               personReference = individual.individualProvidedDetails.personReference,
               individualName = individual.individualProvidedDetails.individualName,
-              failures = failures
+              failures = individualRiskingResult.failures
             )
           )
       .sequence
