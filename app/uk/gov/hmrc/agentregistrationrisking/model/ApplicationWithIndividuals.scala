@@ -27,12 +27,14 @@ final case class ApplicationWithIndividuals(
 
   /** Latest moment a Minerva result landed across the entity and all individuals. None if any record is still missing its `riskingCompletedDate`. */
   def riskingCompletedDate: Option[Instant] =
-    import cats.implicits._
+    import cats.data.NonEmptyList
+    import cats.implicits.*
+    import cats.kernel.Order
+    given Order[Instant] = Order.fromOrdering(Ordering[Instant])
     for
       appDate <- application.entityRiskingResult.map(_.receivedAt)
       individualDates <- individuals.map(_.individualRiskingResult.map(_.receivedAt)).toList.sequence
-      latest <- (appDate :: individualDates).maxOption
-    yield latest
+    yield NonEmptyList(appDate, individualDates).maximum
 
 object ApplicationWithIndividuals:
 
