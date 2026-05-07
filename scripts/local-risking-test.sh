@@ -2,22 +2,51 @@
 # =============================================================================
 # local-risking-test.sh
 #
-# Manual local processing helper:
-#   1. Assumes you have pre-created a risking record in your local Mongo
-#   2. You edit Step 4 below with the result file content you want to test
-#   3. Script creates the results file, serves it via temporary HTTP server
-#   4. Patches SDES stub canned response to point at the file
-#   5. Triggers the skip-upload endpoint to process the file
+# Purpose
+#   Manual local test helper for processing a risking results file without
+#   requiring object-store upload of the results file.
 #
-# Prerequisites (all must be running before you execute this script):
-#   - agent-registration-risking:
-#       cd agent-registration-risking
-#       sbt -Dapplication.router=testOnlyDoNotUseInAppConf.Routes run
-#   - secure-data-exchange-list-files-stubs:
-#       cd secure-data-exchange-list-files-stubs
-#       sbt -Dhttp.port=8765 run
-#   - MongoDB on localhost:27017 with pre-created risking record
-#   - python3, curl
+# What this script does
+#   1. Checks local prerequisites (python3, curl, running services)
+#   2. Writes a local risking-results JSON file from the payload in Step 2
+#      (edit that payload for your scenario)
+#   3. Serves the file from /tmp over a temporary local HTTP server
+#   4. Patches the SDES stub canned response to point to that file URL
+#   5. Calls test-only endpoint:
+#        GET /agent-registration-risking/test-only/download-available-results-files-skip-upload
+#      to fetch and process the file
+#   6. Stops the temporary HTTP server on exit
+#
+# Prerequisites
+#   - Local Mongo contains your pre-created risking record(s)
+#     (applicationReference / personReference values must match Step 2 payload)
+#   - agent-registration-risking running with test-only router
+#   - secure-data-exchange-list-files-stubs running on port 8765
+#   - python3 and curl installed
+#
+# Important local config for agent-registration-risking
+#   secure-data-exchange-proxy must point at the local SDES stub:
+#     host = localhost
+#     port = 8765
+#
+#   Easiest way is startup overrides:
+#     sbt -Dapplication.router=testOnlyDoNotUseInAppConf.Routes \
+#         -Dmicroservice.services.secure-data-exchange-proxy.host=localhost \
+#         -Dmicroservice.services.secure-data-exchange-proxy.port=8765 run
+#
+# How to run
+#   1) Start agent-registration-risking (command above)
+#   2) Start SDES list-files stub:
+#        cd ~/workspace/secure-data-exchange-list-files-stubs
+#        sbt -Dhttp.port=8765 run
+#   3) Edit Step 2 payload below to your desired result-file scenario
+#   4) Run:
+#        ./scripts/local-risking-test.sh
+#   5) Verify DB updates manually in Mongo
+#
+# Optional env override
+#   If your SDES stub repo is in a different location:
+#     export SDES_STUB_CANNED_RESPONSE="/path/to/secure-data-exchange-list-files-stubs/conf/responses/downloads/apiDownloadFiles.json"
 # =============================================================================
 
 set -euo pipefail
