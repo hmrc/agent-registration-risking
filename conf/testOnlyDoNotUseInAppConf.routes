@@ -14,4 +14,5 @@
 #GET        /agent-registration-risking/test-only/create-application-for-risking/:numberOfIndividuals    uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.createTestApplicationForRisking(numberOfIndividuals: Int)
 GET        /agent-registration-risking/test-only/view-next-file-contents                                 uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.viewNextRiskingFileContents
 GET        /agent-registration-risking/test-only/run-risking                            uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.runRisking
+GET        /agent-registration-risking/test-only/download-available-results-files-skip-upload           uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.controllers.TestRiskingController.downloadAvailableResultsFilesSkipUpload
 

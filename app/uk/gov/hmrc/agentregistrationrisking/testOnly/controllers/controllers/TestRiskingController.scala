@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
+import uk.gov.hmrc.agentregistrationrisking.testOnly.services.TestOnlyRiskingResultsService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
@@ -51,7 +52,8 @@ class TestRiskingController @Inject() (
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
   riskingRunner: RiskingRunner,
-  sdesProxyService: SdesProxyService
+  sdesProxyService: SdesProxyService,
+  testOnlyRiskingResultsService: TestOnlyRiskingResultsService
 )(using clock: Clock)
 extends BackendController(cc)
 with Logging:
@@ -62,6 +64,13 @@ with Logging:
     .async:
       implicit request =>
         riskingRunner.run().map(_ => Ok)
+
+  // Test-only: processes results files but skips the object store backup upload.
+  // Use this locally where the object store stub cannot reach a localhost file server.
+  def downloadAvailableResultsFilesSkipUpload: Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        testOnlyRiskingResultsService.processResultsFilesSkipUpload().map(_ => Ok("done"))
 
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
