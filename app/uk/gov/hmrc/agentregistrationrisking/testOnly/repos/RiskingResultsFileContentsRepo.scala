@@ -45,7 +45,7 @@ final class RiskingResultsFileContentsRepo @Inject() (
 extends Repo[RiskingResultsFileName, RiskingResultsFileContent](
   collectionName = "risking-results-file-contents",
   mongoComponent = mongoComponent,
-  indexes = RiskingResultFilesRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
+  indexes = RiskingResultFilesRepoHelp.indexes,
   extraCodecs = Seq(Codecs.playFormatCodec(RiskingResultsFileContent.format)),
   replaceIndexes = true
 ):
@@ -70,7 +70,7 @@ object RiskingResultFilesRepoHelp:
     new IdExtractor[RiskingResultsFileContent, RiskingResultsFileName]:
       override def id(riskingResultsFileContent: RiskingResultsFileContent): RiskingResultsFileName = riskingResultsFileContent.riskingResultsFileName
 
-  def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
+  val indexes: Seq[IndexModel] = Seq(
     IndexModel(
       keys = Indexes.ascending(FieldNames.riskingResultsFileName),
       indexOptions = IndexOptions()
