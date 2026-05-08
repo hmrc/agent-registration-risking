@@ -37,7 +37,6 @@ import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileCon
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultFilesRepoHelp.FieldNames.riskingResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultsFileContentsRepo
-import uk.gov.hmrc.agentregistrationrisking.testOnly.services.TestOnlyRiskingResultsService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
@@ -62,7 +61,6 @@ class SdesTestOnlyController @Inject() (
   personReferenceGenerator: PersonReferenceGenerator,
   riskingRunner: RiskingRunner,
   sdesProxyService: SdesProxyService,
-  testOnlyRiskingResultsService: TestOnlyRiskingResultsService,
   appConfig: AppConfig,
   configuration: Configuration,
   riskingResultsFileContentsRepo: RiskingResultsFileContentsRepo
