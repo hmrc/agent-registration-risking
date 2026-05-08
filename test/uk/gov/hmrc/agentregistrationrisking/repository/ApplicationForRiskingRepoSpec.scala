@@ -14,162 +14,111 @@
  * limitations under the License.
  */
 
-///*
-// * Copyright 2026 HM Revenue & Customs
-// *
-// * Licensed under the Apache License, Version 2.0 (the "License");
-// * you may not use this file except in compliance with the License.
-// * You may obtain a copy of the License at
-// *
-// *     http://www.apache.org/licenses/LICENSE-2.0
-// *
-// * Unless required by applicable law or agreed to in writing, software
-// * distributed under the License is distributed on an "AS IS" BASIS,
-// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// * See the License for the specific language governing permissions and
-// * limitations under the License.
-// */
-//
-//package uk.gov.hmrc.agentregistrationrisking.repository
-//
-//import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
-//import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRiskingId
-//import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-//import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
-//import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.*
-//
-//class ApplicationForRiskingRepoSpec
-//extends ISpec:
-//
-//  val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-//
-//  "findByApplicationReference" - {
-//
-//    "returns application when found" in {
-//      val app = tdAll.llpApplicationForRisking.copy(_id = ApplicationForRiskingId("find-ref-1"))
-//      repo.upsert(app).futureValue
-//
-//      val result = repo.findByApplicationReference(app.agentApplication.applicationReference).futureValue
-//      result.value._id shouldBe app._id
-//    }
-//
-//    "returns None when not found" in {
-//      val result = repo.findByApplicationReference(uk.gov.hmrc.agentregistration.shared.ApplicationReference("NON_EXISTENT")).futureValue
-//      result shouldBe None
-//    }
-//  }
-//
-//  "findReadyForSubmission" - {
-//
-//    "returns applications without riskingFileId" in {
-//      val ready = tdAll.llpApplicationForRisking.copy(_id = ApplicationForRiskingId("ready-1"))
-//      val submitted = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("submitted-1"),
-//        riskingFileName = Some(RiskingFileName("file-1"))
-//      )
-//      repo.upsert(ready).futureValue
-//      repo.upsert(submitted).futureValue
-//
-//      val result = repo.findReadyForSubmission().futureValue
-//      result.size shouldBe 1
-//      result.headOption.value._id shouldBe ready._id
-//    }
-//  }
-//
-//  "findReadyForSubscription" - {
-//
-//    "returns applications with empty failures and not subscribed" in {
-//      val ready = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("sub-ready-1"),
-//        failures = Some(List.empty)
-//      )
-//      repo.upsert(ready).futureValue
-//
-//      val result = repo.findReadyForSubscription().futureValue
-//      result.size shouldBe 1
-//      result.headOption.value._id shouldBe ready._id
-//    }
-//
-//    "does not return applications with non-empty failures" in {
-//      val failed = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("sub-failed-1"),
-//        failures = Some(List(EntityFailure._3._2))
-//      )
-//      repo.upsert(failed).futureValue
-//
-//      val result = repo.findReadyForSubscription().futureValue
-//      result.size shouldBe 0
-//    }
-//
-//    "does not return applications without failures" in {
-//      val noFailures = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("sub-none-1"),
-//        failures = None
-//      )
-//      repo.upsert(noFailures).futureValue
-//
-//      val result = repo.findReadyForSubscription().futureValue
-//      result.size shouldBe 0
-//    }
-//
-//    "does not return already subscribed applications" in {
-//      val subscribed = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("sub-done-1"),
-//        failures = Some(List.empty),
-//        isSubscribed = true
-//      )
-//      repo.upsert(subscribed).futureValue
-//
-//      val result = repo.findReadyForSubscription().futureValue
-//      result.size shouldBe 0
-//    }
-//  }
-//
-//  "findNotSubscribedWithResults" - {
-//
-//    "returns applications with failures present and not subscribed" in {
-//      val withResults = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("results-1"),
-//        failures = Some(List(EntityFailure._3._2))
-//      )
-//      repo.upsert(withResults).futureValue
-//
-//      val result = repo.findNotSubscribedWithResults().futureValue
-//      result.size shouldBe 1
-//      result.headOption.value._id shouldBe withResults._id
-//    }
-//
-//    "returns applications with empty failures and not subscribed" in {
-//      val emptyFailures = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("results-empty-1"),
-//        failures = Some(List.empty)
-//      )
-//      repo.upsert(emptyFailures).futureValue
-//
-//      val result = repo.findNotSubscribedWithResults().futureValue
-//      result.size shouldBe 1
-//    }
-//
-//    "does not return applications without failures" in {
-//      val noFailures = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("results-none-1"),
-//        failures = None
-//      )
-//      repo.upsert(noFailures).futureValue
-//
-//      val result = repo.findNotSubscribedWithResults().futureValue
-//      result.size shouldBe 0
-//    }
-//
-//    "does not return already subscribed applications" in {
-//      val subscribed = tdAll.llpApplicationForRisking.copy(
-//        _id = ApplicationForRiskingId("results-sub-1"),
-//        failures = Some(List(EntityFailure._3._2)),
-//        isSubscribed = true
-//      )
-//      repo.upsert(subscribed).futureValue
-//
-//      val result = repo.findNotSubscribedWithResults().futureValue
-//      result.size shouldBe 0
-//    }
-//  }
+package uk.gov.hmrc.agentregistrationrisking.repository
+
+import org.mongodb.scala.model.Filters
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
+
+class ApplicationForRiskingRepoSpec
+extends ISpec:
+
+  object readyForSubmission:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.readyForSubmission
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
+
+  object submittedForRisking:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking2
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  object partiallyRisked:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking6
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  object approved:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking3
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  object failedFixable:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking4
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+  object failedNonFixable:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking5
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixable
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+  "getApplicationWithIndividualsSeq tests" in:
+    val applicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+    val individualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+
+    // GIVEN
+    applicationForRiskingRepo.collection.drop()
+
+    applicationForRiskingRepo.upsert(readyForSubmission.application)
+    individualForRiskingRepo.upsert(readyForSubmission.individual1)
+    individualForRiskingRepo.upsert(readyForSubmission.individual2)
+
+    applicationForRiskingRepo.upsert(submittedForRisking.application)
+    individualForRiskingRepo.upsert(submittedForRisking.individual1)
+    individualForRiskingRepo.upsert(submittedForRisking.individual2)
+
+    applicationForRiskingRepo.upsert(partiallyRisked.application)
+    individualForRiskingRepo.upsert(partiallyRisked.individual1)
+    individualForRiskingRepo.upsert(partiallyRisked.individual2)
+
+    applicationForRiskingRepo.upsert(approved.application)
+    individualForRiskingRepo.upsert(approved.individual1)
+    individualForRiskingRepo.upsert(approved.individual2)
+
+    applicationForRiskingRepo.upsert(failedFixable.application)
+    individualForRiskingRepo.upsert(failedFixable.individual1)
+    individualForRiskingRepo.upsert(failedFixable.individual2)
+
+    applicationForRiskingRepo.upsert(failedNonFixable.application)
+    individualForRiskingRepo.upsert(failedNonFixable.individual1)
+    individualForRiskingRepo.upsert(failedNonFixable.individual2)
+
+    // THEN
+    applicationForRiskingRepo.getApplicationWithIndividualsSeq(
+      applicationFilter = Filters.eq(
+        "applicationReference",
+        approved.application.applicationReference.value
+      ),
+      individualElemMatchFilter = Filters.empty()
+    ).futureValue shouldBe Seq(
+      approved.applicationWithIndividuals
+    )

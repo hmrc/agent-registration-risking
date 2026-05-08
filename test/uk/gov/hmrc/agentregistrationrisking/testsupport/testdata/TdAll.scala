@@ -160,5 +160,27 @@ extends TdRiskingBase,
         .agentApplicationScottishPartnership
         .afterDeclarationSubmitted,
     personReferencePrefix = "PREFSCOP",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591128_163351.txt")
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_2059112_163351.txt")
+  )
+
+  val tdRisking5: TdRisking = TdRisking.make(
+    instant = Instant.parse("2059-11-29T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPLTDART1"))
+        .agentApplicationLimitedCompany
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFLTDA",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591129_163351.txt")
+  )
+
+  val tdRisking6: TdRisking = TdRisking.make(
+    instant = Instant.parse("2059-11-30T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPSOLTRR1"))
+        .agentApplicationSoleTraderRepresentative
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFSOLR",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591130_163351.txt")
   )

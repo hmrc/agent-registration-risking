@@ -16,6 +16,17 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.bson.json.JsonMode
+import org.bson.json.JsonWriterSettings
+import org.mongodb.scala.Document
+import org.mongodb.scala.model.Aggregates
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.IndexOptions
+import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.Updates
+import play.api.libs.json.Json
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
@@ -39,6 +50,7 @@ import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
@@ -60,6 +72,49 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   extraCodecs = Seq(Codecs.playFormatCodec(ApplicationForRisking.format)),
   replaceIndexes = true
 ):
+
+  private val relaxedJson = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
+
+  def getApplicationWithIndividualsSeq(
+    applicationFilter: Bson,
+    individualElemMatchFilter: Bson // the filter must apply to all individuals otherwise entire ApplicationWithIndividuals is discarded
+  ): Future[Seq[ApplicationWithIndividuals]] = collection
+    .aggregate[Document](Seq(
+      Aggregates.filter(applicationFilter),
+      Aggregates.lookup(
+        from = "individual-for-risking",
+        localField = FieldNames.applicationReference,
+        foreignField = FieldNames.applicationReference,
+        as = "individuals"
+      ),
+      Aggregates.filter(Filters.elemMatch("individuals", individualElemMatchFilter))
+    ))
+    .toFuture()
+    .map:
+      _.map: (doc: Document) =>
+        val json = Json.parse(doc.toJson(relaxedJson))
+        val app = json.as[ApplicationForRisking]
+        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
+        ApplicationWithIndividuals(app, individuals)
+
+  def getApplicationWithIndividuals(applicationReference: ApplicationReference): Future[
+    Option[ApplicationWithIndividuals]
+  ] = getApplicationWithIndividualsSeq(
+    applicationFilter = Filters.eq(
+      fieldName = FieldNames.applicationReference,
+      value = applicationReference.value
+    ),
+    individualElemMatchFilter = Filters.empty()
+  ).map(_.headOption)
+
+  def getRiskedApplicationsWithIndividuals(): Future[
+    Seq[ApplicationWithIndividuals]
+  ] = getApplicationWithIndividualsSeq(
+    applicationFilter = Filters.and(
+      Filters.exists(FieldNames.entityRiskingResult, true)
+    ),
+    individualElemMatchFilter = Filters.exists(FieldNames.individualRiskingResult, true)
+  )
 
   def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
