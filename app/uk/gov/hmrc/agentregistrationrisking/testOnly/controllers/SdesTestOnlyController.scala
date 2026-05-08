@@ -49,7 +49,6 @@ import javax.inject.Singleton
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Random
 
 @Singleton()
 @nowarn()

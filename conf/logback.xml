@@ -29,12 +29,14 @@
 
     <logger name="com.google.inject" level="INFO"/>
 
-    <logger name="uk.gov" level="DEBUG"/>
+    <logger name="uk.gov" level="WARN"/>
+    <logger name="uk.gov.hmrc.agentregistration" level="DEBUG"/>
+    <logger name="uk.gov.hmrc.agentregistrationrisking" level="DEBUG"/>
 
     <logger name="application" level="DEBUG"/>
     <logger name="DatastreamHandler" level="WARN"/>
 
-    <logger name="connector" level="TRACE">
+    <logger name="connector" level="INFO">
         <appender-ref ref="STDOUT"/>
     </logger>
 

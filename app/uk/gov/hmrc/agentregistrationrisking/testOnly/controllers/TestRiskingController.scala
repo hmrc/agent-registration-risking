@@ -65,13 +65,6 @@ with Logging:
       implicit request =>
         riskingRunner.run().map(_ => Ok)
 
-  // Test-only: processes results files but skips the object store backup upload.
-  // Use this locally where the object store stub cannot reach a localhost file server.
-  def downloadAvailableResultsFilesSkipUpload: Action[AnyContent] = Action
-    .async:
-      implicit request =>
-        testOnlyRiskingResultsService.processResultsFilesSkipUpload().map(_ => Ok("done"))
-
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
       implicit request =>
