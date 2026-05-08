@@ -1,0 +1,44 @@
+[
+  {
+    "recordType": "Entity",
+    "applicationReference": "JRJAAYLFQ",
+    "failures": [
+      {
+        "reasonCode": "7",
+        "reasonDescription": "Insolvent",
+        "checkId": "7",
+        "checkDescription": "Insolvent"
+      }
+    ]
+  },
+  {
+    "recordType": "Individual",
+    "personReference": "QPTGDFRQ4",
+    "failures": [
+      {
+        "reasonCode": "9",
+        "reasonDescription": "Relevant criminal convictions",
+        "checkId": "9",
+        "checkDescription": "Relevant criminal convictions"
+      }
+    ]
+  },
+  {
+    "recordType": "Individual",
+    "personReference": "8JRJA6XZZ",
+    "failures": [
+      {
+        "reasonCode": "6",
+        "reasonDescription": "Disqualified as a director on Companies House",
+        "checkId": "6",
+        "checkDescription": "Disqualified as a director on Companies House"
+      },
+      {
+        "reasonCode": "9",
+        "reasonDescription": "Relevant criminal convictions",
+        "checkId": "9",
+        "checkDescription": "Relevant criminal convictions"
+      }
+    ]
+  }
+]

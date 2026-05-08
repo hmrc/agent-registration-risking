@@ -1,0 +1,44 @@
+[
+  {
+    "recordType": "Entity",
+    "applicationReference": "SIALALA",
+    "failures": [
+      {
+        "reasonCode": "7",
+        "reasonDescription": "Insolvent",
+        "checkId": "7",
+        "checkDescription": "Insolvent"
+      }
+    ]
+  },
+  {
+    "recordType": "Individual",
+    "personReference": "SIALALA_PERSON1",
+    "failures": [
+      {
+        "reasonCode": "9",
+        "reasonDescription": "Relevant criminal convictions",
+        "checkId": "9",
+        "checkDescription": "Relevant criminal convictions"
+      }
+    ]
+  },
+  {
+    "recordType": "Individual",
+    "personReference": "SIALALA_PERSON2",
+    "failures": [
+      {
+        "reasonCode": "6",
+        "reasonDescription": "Disqualified as a director on Companies House",
+        "checkId": "6",
+        "checkDescription": "Disqualified as a director on Companies House"
+      },
+      {
+        "reasonCode": "9",
+        "reasonDescription": "Relevant criminal convictions",
+        "checkId": "9",
+        "checkDescription": "Relevant criminal convictions"
+      }
+    ]
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "notification" : "FileReady",
+  "filename" : "file-name-whatever.json",
+  "checksumAlgorithm" : "md5-whatever",
+  "checksum" : "123456-whatever",
+  "correlationID" : "correlationId-whatever",
+  "availableUntil" : "2027-01-01T00:00:00.000Z-whatever",
+  "dateTime" : "2027-01-01T00:00:00.000Z-whatever"
+}
