@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.connectors
 import play.api.http.Status.ACCEPTED
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.EmailInformation
+import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.util.FutureUtil.andLogOnFailure
 import uk.gov.hmrc.http.client.HttpClientV2
 
@@ -34,7 +34,7 @@ class EmailConnector @Inject() (
 )(using ExecutionContext)
 extends Connector:
 
-  def sendEmail(emailInformation: EmailInformation)(using RequestHeader): Future[Unit] =
+  def sendEmail(emailInformation: SendEmailRequest)(using RequestHeader): Future[Unit] =
     val url: URL = url"$baseUrl/hmrc/email"
     httpClient
       .post(url)

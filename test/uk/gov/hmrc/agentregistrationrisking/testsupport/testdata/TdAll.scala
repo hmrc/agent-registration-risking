@@ -117,7 +117,8 @@ extends TdRiskingBase,
   TdObjectStore,
   sdes.TdSdesData,
   TdSdesProxy,
-  TdRiskingRecords:
+  TdRiskingRecords,
+  TdEmail:
 
   val tdRisking: TdRisking = TdRisking.make(
     instant = Instant.parse("2059-11-25T16:33:51Z"),

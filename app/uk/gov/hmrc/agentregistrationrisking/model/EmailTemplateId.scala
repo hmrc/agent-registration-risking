@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
+package uk.gov.hmrc.agentregistrationrisking.model
 
-import uk.gov.hmrc.agentregistration.shared.EmailAddress
-import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
-import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
+import play.api.libs.json.JsString
+import play.api.libs.json.Writes
 
-trait TdEmail:
+enum EmailTemplateId(val id: String):
+  case RegistrationSuccess
+  extends EmailTemplateId("agent_registration_success")
+  case ApplicationNonFixableFailure
+  extends EmailTemplateId("agent_registration_application_non_fixable_failure")
+  case IndividualNonFixableFailure
+  extends EmailTemplateId("agent_registration_individual_non_fixable_failure")
 
-  val testEmailInformation: SendEmailRequest = SendEmailRequest(
-    to = Seq(EmailAddress("agent@example.com")),
-    templateId = EmailTemplateId.RegistrationSuccess,
-    parameters = Map(
-      "agencyName" -> "Test Agency",
-      "arn" -> "TARN0000001"
-    )
-  )
+object EmailTemplateId:
+
+  given Writes[EmailTemplateId] = Writes(o => JsString(o.id))

@@ -17,16 +17,14 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.OWrites
+import uk.gov.hmrc.agentregistration.shared.EmailAddress
 
-final case class EmailInformation(
-  to: Seq[String],
-  templateId: String,
-  parameters: Map[String, String],
-  force: Boolean = false,
-  eventUrl: Option[String] = None,
-  onSendUrl: Option[String] = None
+final case class SendEmailRequest(
+  to: Seq[EmailAddress],
+  templateId: EmailTemplateId,
+  parameters: Map[String, String]
 )
 
-object EmailInformation:
-  given OFormat[EmailInformation] = Json.format[EmailInformation]
+object SendEmailRequest:
+  given OWrites[SendEmailRequest] = Json.writes[SendEmailRequest]

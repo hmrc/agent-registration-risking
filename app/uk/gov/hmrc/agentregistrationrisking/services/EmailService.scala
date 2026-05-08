@@ -18,11 +18,13 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.BusinessType
+import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.EmailInformation
+import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
+import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
@@ -41,18 +43,18 @@ class EmailService @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
-  def sendEmail(emailInformation: EmailInformation)(using RequestHeader): Future[Unit] = emailConnector.sendEmail(emailInformation)
-
   def sendRegisteredEmail(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = sendEmail(applicantSuccessEmailInformation(application))
 
   def sendApplicantNonFixableFailureEmail(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = sendEmail(
     applicantNonFixableFailureEmailInformation(application)
   )
 
-  def sendIndividualNonFixableFailureEmail(
+  private def sendEmail(emailInformation: SendEmailRequest)(using RequestHeader): Future[Unit] = emailConnector.sendEmail(emailInformation)
+
+  private def sendIndividualNonFixableFailureEmail(
     individual: IndividualForRisking
   )(using RequestHeader): Future[Unit] = sendEmail(individualEmailInformation(
-    EmailService.individualNonFixableFailureTemplateId,
+    EmailTemplateId.IndividualNonFixableFailure,
     individual
   ))
 
@@ -117,12 +119,12 @@ extends RequestAwareLogging:
       .map(_.emailAddress.value)
     applicantEmail.isDefined && applicantEmail === individualEmail
 
-  private def applicantSuccessEmailInformation(application: ApplicationForRisking): EmailInformation =
+  private def applicantSuccessEmailInformation(application: ApplicationForRisking): SendEmailRequest =
     val agentApplication = application.agentApplication
     val agentDetails = agentApplication.getAgentDetails
-    EmailInformation(
-      to = Seq(agentDetails.getAgentEmailAddress.getEmailAddress),
-      templateId = EmailService.registrationSuccessTemplateId,
+    SendEmailRequest(
+      to = Seq(EmailAddress(agentDetails.getAgentEmailAddress.getEmailAddress)),
+      templateId = EmailTemplateId.RegistrationSuccess,
       parameters = Map(
         "agentName" -> agentApplication.getApplicantContactDetails.applicantName.value,
         "applicationRef" -> agentApplication.applicationReference.value,
@@ -130,11 +132,11 @@ extends RequestAwareLogging:
       )
     )
 
-  private def applicantNonFixableFailureEmailInformation(application: ApplicationForRisking): EmailInformation =
+  private def applicantNonFixableFailureEmailInformation(application: ApplicationForRisking): SendEmailRequest =
     val agentApplication = application.agentApplication
-    EmailInformation(
-      to = Seq(agentApplication.getAgentDetails.getAgentEmailAddress.getEmailAddress),
-      templateId = EmailService.applicationNonFixableFailureTemplateId,
+    SendEmailRequest(
+      to = Seq(EmailAddress(agentApplication.getAgentDetails.getAgentEmailAddress.getEmailAddress)),
+      templateId = EmailTemplateId.ApplicationNonFixableFailure,
       parameters = Map(
         "agentName" -> agentApplication.getApplicantContactDetails.applicantName.value,
         "applicationRef" -> agentApplication.applicationReference.value
@@ -142,20 +144,14 @@ extends RequestAwareLogging:
     )
 
   private def individualEmailInformation(
-    templateId: String,
+    templateId: EmailTemplateId,
     individual: IndividualForRisking
-  ): EmailInformation =
+  ): SendEmailRequest =
     val individualDetails = individual.individualProvidedDetails
-    EmailInformation(
-      to = Seq(individualDetails.getEmailAddress.emailAddress.value),
+    SendEmailRequest(
+      to = Seq(individualDetails.getEmailAddress.emailAddress),
       templateId = templateId,
       parameters = Map(
         "individualName" -> individualDetails.individualName.value
       )
     )
-
-object EmailService:
-
-  val registrationSuccessTemplateId: String = "agent_registration_success"
-  val applicationNonFixableFailureTemplateId: String = "agent_registration_application_non_fixable_failure"
-  val individualNonFixableFailureTemplateId: String = "agent_registration_individual_non_fixable_failure"

@@ -78,14 +78,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       )
     ).toFuture()
 
-//  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
-//    .find(
-//      Filters.and(
-//        Filters.size("failures", 0),
-//        Filters.eq("isSubscribed", false)
-//      )
-//    ).toFuture()
-
   def findApplicationsPendingAction(): Future[Seq[ApplicationForRisking]] = collection
     .find(
       Filters.and(
@@ -94,14 +86,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         Filters.eq("isEmailSent", false)
       )
     ).toFuture()
-
-//  def findReadyForSubscription(): Future[Seq[ApplicationForRisking]] = collection
-//    .find(
-//      Filters.and(
-//        Filters.size("failures", 0),
-//        Filters.eq("isSubscribed", false)
-//      )
-//    ).toFuture()
 
   def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
     collection

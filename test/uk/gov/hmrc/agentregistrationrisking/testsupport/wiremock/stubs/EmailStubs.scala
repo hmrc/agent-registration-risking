@@ -20,21 +20,21 @@ import com.github.tomakehurst.wiremock.client.WireMock as wm
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentregistrationrisking.model.EmailInformation
+import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object EmailStubs:
 
   private val sendEmailUrl: String = "/hmrc/email"
 
-  def stubSendEmail(emailInformation: EmailInformation): StubMapping = StubMaker.make(
+  def stubSendEmail(emailInformation: SendEmailRequest): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(sendEmailUrl),
     requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(emailInformation)))),
     responseStatus = 202
   )
 
-  def stubSendEmailFailure(emailInformation: EmailInformation): StubMapping = StubMaker.make(
+  def stubSendEmailFailure(emailInformation: SendEmailRequest): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(sendEmailUrl),
     requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(emailInformation)))),
