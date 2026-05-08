@@ -1,0 +1,17 @@
+[
+  {
+    "recordType": "Entity",
+    "applicationReference": "PGLXB7GZ6",
+    "failures": []
+  },
+  {
+    "recordType": "Individual",
+    "personReference": "TKTTD9BLL",
+    "failures": []
+  },
+  {
+    "recordType": "Individual",
+    "personReference": "C6ZN9FB3F",
+    "failures": [ ]
+  }
+]

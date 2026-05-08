@@ -51,9 +51,9 @@ extends BackendController(cc):
 
   // TODO: what if few notifications received in the same time during the processing of one notification
   private def onFileReady()(using RequestHeader): Future[Unit] =
-    for
+    (for
       _ <- riskingResultsService.processResultsFiles()
       _ <- subscriptionService.subscribeApprovedApplications()
       _ <- emailService.findAndSendRegisteredEmail()
       _ <- emailService.findAndSendNonFixableFailureEmails()
-    yield ()
+    yield ()).recover { case ex: Exception => logger.error(s"Error processing file ready notification", ex) }
