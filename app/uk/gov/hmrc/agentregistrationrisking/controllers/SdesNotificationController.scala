@@ -17,12 +17,17 @@
 package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import com.google.inject.Inject
-import play.api.mvc.{Action, ControllerComponents, RequestHeader}
+import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
-import uk.gov.hmrc.agentregistrationrisking.services.{EmailService, RiskingResultsService, SubscriptionService}
+import uk.gov.hmrc.agentregistrationrisking.services.EmailService
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
+import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,

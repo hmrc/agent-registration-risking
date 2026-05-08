@@ -53,7 +53,7 @@ extends RequestAwareLogging:
       individuals <- individualForRiskingRepo.findByApplicationReferences(applications.map(_.applicationReference))
     yield ApplicationWithIndividuals
       .merge(applications, individuals)
-      .filter(_.individuals.forall(_.failures.isDefined))
+      .filter(_.individuals.forall(_.individualRiskingResult.isDefined))
 
   private def filterApprovedApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
     applicationsWithIndividuals.filter: appWithIndividuals =>
@@ -69,7 +69,7 @@ extends RequestAwareLogging:
           .exists(_ === RiskingOutcome.FailedNonFixable)
       .map: appWithIndividuals =>
         val nonFixableIndividuals = appWithIndividuals.individuals.filter: individual =>
-          individual.failures.exists(_.outcome === RiskingOutcome.FailedNonFixable)
+          individual.individualRiskingResult.exists(_.failures.outcome === RiskingOutcome.FailedNonFixable)
         ApplicationWithIndividuals(appWithIndividuals.application, nonFixableIndividuals)
 
   private def filterFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
@@ -80,5 +80,5 @@ extends RequestAwareLogging:
           .exists(_ === RiskingOutcome.FailedFixable)
       .map: appWithIndividuals =>
         val fixableIndividuals = appWithIndividuals.individuals.filter: individual =>
-          individual.failures.exists(_.outcome === RiskingOutcome.FailedFixable)
+          individual.individualRiskingResult.exists(_.failures.outcome === RiskingOutcome.FailedFixable)
         ApplicationWithIndividuals(appWithIndividuals.application, fixableIndividuals)

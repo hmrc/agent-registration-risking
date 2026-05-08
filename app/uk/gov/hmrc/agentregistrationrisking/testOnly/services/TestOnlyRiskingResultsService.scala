@@ -21,6 +21,8 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnect
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
@@ -89,9 +91,10 @@ extends RequestAwareLogging:
         logger.error(s"Missing application for: ${riskingResult.applicationReference}")
         Future.unit
       case Some(application) =>
+        val now = Instant.now(clock)
         val updatedApplication: ApplicationForRisking = application.copy(
-          failures = Some(riskingResult.failures),
-          lastUpdatedAt = Instant.now(clock)
+          entityRiskingResult = Some(EntityRiskingResult(failures = riskingResult.failures, receivedAt = now)),
+          lastUpdatedAt = now
         )
         applicationForRiskingRepo.upsert(updatedApplication).map(_ => ())
 
@@ -102,8 +105,9 @@ extends RequestAwareLogging:
         logger.error(s"Missing individual for: ${riskingResult.personReference}")
         Future.unit
       case Some(individual) =>
+        val now = Instant.now(clock)
         val updatedIndividual: IndividualForRisking = individual.copy(
-          failures = Some(riskingResult.failures),
-          lastUpdatedAt = Instant.now(clock)
+          individualRiskingResult = Some(IndividualRiskingResult(failures = riskingResult.failures, receivedAt = now)),
+          lastUpdatedAt = now
         )
         individualForRiskingRepo.upsert(updatedIndividual).map(_ => ())
