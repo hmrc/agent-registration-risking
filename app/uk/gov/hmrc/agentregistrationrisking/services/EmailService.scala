@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
+import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import javax.inject.Inject
@@ -43,7 +44,40 @@ class EmailService @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
-  def sendRegisteredEmail(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = sendEmail(applicantSuccessEmailInformation(application))
+  def findAndSendRegisteredEmail(): Future[Unit] =
+    given RequestHeader = EmptyRequest.emptyRequestHeader
+
+    for
+      applications <- applicationForRiskingRepo.findSubscribedReadyForSuccessEmail()
+      _ = logger.info(s"Found ${applications.size} subscribed applications ready for success email")
+      _ <-
+        ProcessInSequence.processInSequence(applications): application =>
+          sendRegisteredEmail(application)
+            .flatMap(_ => applicationForRiskingRepo.updateEmailSent(application.applicationReference))
+            .recover:
+              case ex =>
+                logger.warn(
+                  s"Failed to send registered email for application ${application.applicationReference.value} - will retry on next scheduler tick",
+                  ex
+                )
+    yield ()
+
+  def findAndSendNonFixableFailureEmails(): Future[Unit] =
+    given RequestHeader = EmptyRequest.emptyRequestHeader
+
+    for
+      nonFixable <- applicationStatusService.findNonFixableReadyForFailureEmail()
+      _ = logger.info(s"Found ${nonFixable.size} FailedNonFixable applications ready for failure emails")
+      _ <-
+        ProcessInSequence.processInSequence(nonFixable): appWithIndividuals =>
+          sendNonFixableFailureEmailsForApplication(appWithIndividuals)
+            .recover:
+              case ex =>
+                logger.warn(
+                  s"Failed to send failure emails for application ${appWithIndividuals.application.applicationReference.value} - will retry on next scheduler tick (already-sent recipients may receive duplicates)",
+                  ex
+                )
+    yield ()
 
   def sendApplicantNonFixableFailureEmail(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = sendEmail(
     applicantNonFixableFailureEmailInformation(application)
@@ -58,31 +92,9 @@ extends RequestAwareLogging:
     individual
   ))
 
-  def findAndSendRegisteredEmail(): Future[Unit] =
-    given RequestHeader = EmptyRequest.emptyRequestHeader
-    for
-      applications <- applicationForRiskingRepo.findSubscribedReadyForSuccessEmail()
-      _ = logger.info(s"Found ${applications.size} subscribed applications ready for success email")
-      _ <-
-        Future.traverse(applications): application =>
-          // TODO: introduce a retry send emails for failed emails
-          sendRegisteredEmail(application)
-            .recover:
-              case ex =>
-                logger.warn(
-                  s"Failed to send registered email for application ${application.applicationReference.value} - marking as sent to avoid unbounded retries",
-                  ex
-                )
-            .flatMap(_ => applicationForRiskingRepo.updateEmailSent(application.applicationReference))
-    yield ()
-
-  def findAndSendNonFixableFailureEmails(): Future[Unit] =
-    given RequestHeader = EmptyRequest.emptyRequestHeader
-    for
-      nonFixable <- applicationStatusService.findNonFixableReadyForFailureEmail()
-      _ = logger.info(s"Found ${nonFixable.size} FailedNonFixable applications ready for failure emails")
-      _ <- Future.traverse(nonFixable)(sendNonFixableFailureEmailsForApplication)
-    yield ()
+  private def sendRegisteredEmail(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = sendEmail(
+    applicantSuccessEmailInformation(application)
+  )
 
   private def sendNonFixableFailureEmailsForApplication(appWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application = appWithIndividuals.application
@@ -90,21 +102,9 @@ extends RequestAwareLogging:
       application.agentApplication.businessType match
         case BusinessType.SoleTrader => appWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => appWithIndividuals.individuals
-    // TODO: introduce a retry cap. For now we always mark isEmailSent=true after one round of attempts to avoid
-    // unbounded retries. Failed sends are visible in WARN logs.
     for
       _ <- sendApplicantNonFixableFailureEmail(application)
-        .recover:
-          case ex => logger.warn(s"Failed to send applicant failure email for application ${application.applicationReference.value}", ex)
-      _ <-
-        Future.traverse(individuals): individual =>
-          sendIndividualNonFixableFailureEmail(individual)
-            .recover:
-              case ex =>
-                logger.warn(
-                  s"Failed to send individual failure email for individual ${individual.personReference.value} (application ${application.applicationReference.value})",
-                  ex
-                )
+      _ <- ProcessInSequence.processInSequence(individuals)(sendIndividualNonFixableFailureEmail)
       _ <- applicationForRiskingRepo.updateEmailSent(application.applicationReference)
     yield ()
 

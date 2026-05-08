@@ -20,6 +20,7 @@ import play.api.libs.json.JsString
 import play.api.libs.json.Writes
 
 enum EmailTemplateId(val id: String):
+
   case RegistrationSuccess
   extends EmailTemplateId("agent_registration_success")
   case ApplicationNonFixableFailure
