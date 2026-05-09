@@ -27,6 +27,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
 import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -40,6 +41,7 @@ import scala.concurrent.Future
 class EmailService @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
+  individualForRiskingRepo: IndividualForRiskingRepo,
   applicationStatusService: ApplicationStatusService
 )(using ExecutionContext)
 extends RequestAwareLogging:
@@ -68,29 +70,10 @@ extends RequestAwareLogging:
     for
       nonFixable <- applicationStatusService.findNonFixableReadyForFailureEmail()
       _ = logger.info(s"Found ${nonFixable.size} FailedNonFixable applications ready for failure emails")
-      _ <-
-        ProcessInSequence.processInSequence(nonFixable): appWithIndividuals =>
-          sendNonFixableFailureEmailsForApplication(appWithIndividuals)
-            .recover:
-              case ex =>
-                logger.warn(
-                  s"Failed to send failure emails for application ${appWithIndividuals.application.applicationReference.value} - will retry on next scheduler tick (already-sent recipients may receive duplicates)",
-                  ex
-                )
+      _ <- ProcessInSequence.processInSequence(nonFixable)(sendNonFixableFailureEmailsForApplication)
     yield ()
 
-  def sendApplicantNonFixableFailureEmail(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = sendEmail(
-    applicantNonFixableFailureEmailInformation(application)
-  )
-
   private def sendEmail(emailInformation: SendEmailRequest)(using RequestHeader): Future[Unit] = emailConnector.sendEmail(emailInformation)
-
-  private def sendIndividualNonFixableFailureEmail(
-    individual: IndividualForRisking
-  )(using RequestHeader): Future[Unit] = sendEmail(individualEmailInformation(
-    EmailTemplateId.IndividualNonFixableFailure,
-    individual
-  ))
 
   private def sendRegisteredEmail(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = sendEmail(
     applicantSuccessEmailInformation(application)
@@ -103,10 +86,33 @@ extends RequestAwareLogging:
         case BusinessType.SoleTrader => appWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => appWithIndividuals.individuals
     for
-      _ <- sendApplicantNonFixableFailureEmail(application)
-      _ <- ProcessInSequence.processInSequence(individuals)(sendIndividualNonFixableFailureEmail)
-      _ <- applicationForRiskingRepo.updateEmailSent(application.applicationReference)
+      _ <- sendApplicantFailureEmailIfPending(application)
+      _ <- ProcessInSequence.processInSequence(individuals)(sendIndividualFailureEmailIfPending)
     yield ()
+
+  private def sendApplicantFailureEmailIfPending(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+    if application.isEmailSent then Future.unit
+    else
+      sendEmail(applicantNonFixableFailureEmailInformation(application))
+        .flatMap(_ => applicationForRiskingRepo.updateEmailSent(application.applicationReference).map(_ => ()))
+        .recover:
+          case ex =>
+            logger.warn(
+              s"Failed to send applicant failure email for application ${application.applicationReference.value} - will retry on next scheduler tick",
+              ex
+            )
+
+  private def sendIndividualFailureEmailIfPending(individual: IndividualForRisking)(using RequestHeader): Future[Unit] =
+    if individual.isEmailSent then Future.unit
+    else
+      sendEmail(individualEmailInformation(EmailTemplateId.IndividualNonFixableFailure, individual))
+        .flatMap(_ => individualForRiskingRepo.updateEmailSent(individual.personReference).map(_ => ()))
+        .recover:
+          case ex =>
+            logger.warn(
+              s"Failed to send individual failure email for individual ${individual.personReference.value} (application ${individual.applicationReference.value}) - will retry on next scheduler tick",
+              ex
+            )
 
   private def isIndividualTheApplicant(
     individual: IndividualForRisking,

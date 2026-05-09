@@ -32,7 +32,8 @@ final case class IndividualForRisking(
   individualProvidedDetails: IndividualProvidedDetails,
   createdAt: Instant,
   lastUpdatedAt: Instant,
-  individualRiskingResult: Option[IndividualRiskingResult]
+  individualRiskingResult: Option[IndividualRiskingResult],
+  isEmailSent: Boolean
 ):
 
   // values that we do not store at the moment

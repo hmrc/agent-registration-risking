@@ -93,5 +93,6 @@ extends BackendController(cc):
     individualProvidedDetails = individualProvidedDetails,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
-    individualRiskingResult = None
+    individualRiskingResult = None,
+    isEmailSent = false
   )

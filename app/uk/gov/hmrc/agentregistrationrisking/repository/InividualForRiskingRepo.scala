@@ -20,9 +20,13 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.Updates
+import org.mongodb.scala.result.UpdateResult
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
+import java.time.Clock
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -40,7 +44,8 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 @Singleton
 final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  clock: Clock
 )(using ec: ExecutionContext)
 extends Repo[PersonReference, IndividualForRisking](
   collectionName = "individual-for-risking",
@@ -63,6 +68,15 @@ extends Repo[PersonReference, IndividualForRisking](
       filter = Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value))
     )
     .toFuture()
+
+  def updateEmailSent(personReference: PersonReference): Future[UpdateResult] = collection
+    .updateOne(
+      Filters.eq(FieldNames.personReference, personReference.value),
+      Updates.combine(
+        Updates.set(FieldNames.isEmailSent, true),
+        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
+      )
+    ).toFuture()
 
 object IndividualForRiskingRepoHelp:
 

@@ -83,7 +83,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       Filters.and(
         Filters.exists(FieldNames.entityRiskingResult),
         Filters.eq(FieldNames.isSubscribed, false),
-        Filters.eq("isEmailSent", false)
+        Filters.eq(FieldNames.isEmailSent, false)
       )
     ).toFuture()
 
@@ -99,8 +99,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
     .find(
       Filters.and(
-        Filters.eq("isSubscribed", true),
-        Filters.eq("isEmailSent", false)
+        Filters.eq(FieldNames.isSubscribed, true),
+        Filters.eq(FieldNames.isEmailSent, false)
       )
     ).toFuture()
 
@@ -108,7 +108,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .updateOne(
       Filters.eq(FieldNames.applicationReference, applicationReference.value),
       Updates.combine(
-        Updates.set("isEmailSent", true),
+        Updates.set(FieldNames.isEmailSent, true),
         Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
       )
     ).toFuture()

@@ -54,7 +54,8 @@ trait TdIndividualForRisking:
     individualProvidedDetails = individualProvidedDetails,
     createdAt = instant,
     lastUpdatedAt = instant,
-    individualRiskingResult = None
+    individualRiskingResult = None,
+    isEmailSent = false
   )
 
   // nothing changes from data perspective

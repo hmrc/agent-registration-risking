@@ -49,7 +49,7 @@ extends RequestAwareLogging:
 
   private def getApplicationsPendingActionWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
     for
-      applications <- applicationForRiskingRepo.findApplicationsPendingAction()
+      applications <- applicationForRiskingRepo.findNotSubscribedWithResults()
       individuals <- individualForRiskingRepo.findByApplicationReferences(applications.map(_.applicationReference))
     yield ApplicationWithIndividuals
       .merge(applications, individuals)

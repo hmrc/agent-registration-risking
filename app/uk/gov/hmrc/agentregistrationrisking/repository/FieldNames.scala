@@ -35,3 +35,5 @@ object FieldNames:
   val entityRiskingResult: String = "entityRiskingResult"
 
   val isSubscribed: String = "isSubscribed"
+
+  val isEmailSent: String = "isEmailSent"
