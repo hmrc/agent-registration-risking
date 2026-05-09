@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
@@ -81,44 +82,48 @@ extends ISpec:
     val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
-  "getApplicationWithIndividualsSeq tests" in:
-    val applicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-    val individualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  val applicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
+  def primeMongo(): Unit =
     // GIVEN
-    applicationForRiskingRepo.collection.drop()
+    applicationForRiskingRepo.collection.drop().toFuture().futureValue
 
-    applicationForRiskingRepo.upsert(readyForSubmission.application)
-    individualForRiskingRepo.upsert(readyForSubmission.individual1)
-    individualForRiskingRepo.upsert(readyForSubmission.individual2)
+    applicationForRiskingRepo.upsert(readyForSubmission.application).futureValue
+    individualForRiskingRepo.upsert(readyForSubmission.individual1).futureValue
+    individualForRiskingRepo.upsert(readyForSubmission.individual2).futureValue
 
-    applicationForRiskingRepo.upsert(submittedForRisking.application)
-    individualForRiskingRepo.upsert(submittedForRisking.individual1)
-    individualForRiskingRepo.upsert(submittedForRisking.individual2)
+    applicationForRiskingRepo.upsert(submittedForRisking.application).futureValue
+    individualForRiskingRepo.upsert(submittedForRisking.individual1).futureValue
+    individualForRiskingRepo.upsert(submittedForRisking.individual2).futureValue
 
-    applicationForRiskingRepo.upsert(partiallyRisked.application)
-    individualForRiskingRepo.upsert(partiallyRisked.individual1)
-    individualForRiskingRepo.upsert(partiallyRisked.individual2)
+    applicationForRiskingRepo.upsert(partiallyRisked.application).futureValue
+    individualForRiskingRepo.upsert(partiallyRisked.individual1).futureValue
+    individualForRiskingRepo.upsert(partiallyRisked.individual2).futureValue
 
-    applicationForRiskingRepo.upsert(approved.application)
-    individualForRiskingRepo.upsert(approved.individual1)
-    individualForRiskingRepo.upsert(approved.individual2)
+    applicationForRiskingRepo.upsert(approved.application).futureValue
+    individualForRiskingRepo.upsert(approved.individual1).futureValue
+    individualForRiskingRepo.upsert(approved.individual2).futureValue
 
-    applicationForRiskingRepo.upsert(failedFixable.application)
-    individualForRiskingRepo.upsert(failedFixable.individual1)
-    individualForRiskingRepo.upsert(failedFixable.individual2)
+    applicationForRiskingRepo.upsert(failedFixable.application).futureValue
+    individualForRiskingRepo.upsert(failedFixable.individual1).futureValue
+    individualForRiskingRepo.upsert(failedFixable.individual2).futureValue
 
-    applicationForRiskingRepo.upsert(failedNonFixable.application)
-    individualForRiskingRepo.upsert(failedNonFixable.individual1)
-    individualForRiskingRepo.upsert(failedNonFixable.individual2)
+    applicationForRiskingRepo.upsert(failedNonFixable.application).futureValue
+    individualForRiskingRepo.upsert(failedNonFixable.individual1).futureValue
+    individualForRiskingRepo.upsert(failedNonFixable.individual2).futureValue
 
+  "getRiskedApplicationsWithIndividuals should return all applications with individuals which have received risking results" in:
+    // WHEN
+    primeMongo()
     // THEN
-    applicationForRiskingRepo.getApplicationWithIndividualsSeq(
-      applicationFilter = Filters.eq(
-        "applicationReference",
-        approved.application.applicationReference.value
-      ),
-      individualElemMatchFilter = Filters.empty()
-    ).futureValue shouldBe Seq(
-      approved.applicationWithIndividuals
+    val applicationWithIndividuals: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findRiskedApplicationsWithIndividuals()
+        .futureValue
+
+    applicationWithIndividuals.map(a => (a.application, a.individuals.toSet)).toSet shouldBe Set(
+      (approved.application, Set(approved.individual1, approved.individual2)),
+      (failedNonFixable.application, Set(failedNonFixable.individual1, failedNonFixable.individual2)),
+      (failedFixable.application, Set(failedFixable.individual1, failedFixable.individual2))
     )

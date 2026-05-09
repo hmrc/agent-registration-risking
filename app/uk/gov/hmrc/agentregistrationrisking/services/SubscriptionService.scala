@@ -86,7 +86,8 @@ extends RequestAwareLogging:
     for
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findNotSubscribedWithResults()
       individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applications.map(_.applicationReference))
-      applicationsWithIndividuals: Seq[ApplicationWithIndividuals] = ApplicationWithIndividuals.merge(applications, individuals)
+      applicationsWithIndividuals2: Seq[ApplicationWithIndividuals] = ApplicationWithIndividuals.merge(applications, individuals)
+      applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findRiskedApplicationsWithIndividuals()
       approvedApplicationsWithIndividuals: Seq[ApplicationWithIndividuals] = applicationsWithIndividuals
         .filter: applicationWithIndividuals =>
           RiskingOutcomeHelper

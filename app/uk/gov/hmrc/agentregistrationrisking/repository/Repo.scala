@@ -96,3 +96,35 @@ object Repo:
 
   trait IdExtractor[A, ID]:
     def id(a: A): ID
+
+  /** Returns a filter that matches documents where '''every''' element in the array field satisfies `filter`.
+    *
+    * Mirrors the semantics of [[scala.collection.IterableOps.forall]]:
+    *   - empty array → `true` (vacuous truth, same as `List.empty.forall(p)`)
+    *   - all elements satisfy `filter` → `true`
+    *   - any element fails `filter` → the whole document is excluded
+    *
+    * ==How it works==
+    * MongoDB has no `$forall` operator, so the universal quantifier is expressed via De Morgan's law:
+    * {{{
+    *   ∀x ∈ array: P(x)  ≡  ¬∃x ∈ array: ¬P(x)
+    * }}}
+    * Translated to MongoDB operators:
+    * {{{
+    *   $nor [ $elemMatch(array, $nor [filter]) ]
+    *   │                        └── ¬P(x): element does NOT satisfy filter
+    *   │     └── ∃x: there exists such a failing element
+    *   └── ¬∃x: no such failing element exists → all pass
+    * }}}
+    *
+    * @param fieldName
+    *   name of the array field to test
+    * @param filter
+    *   condition each element must satisfy
+    */
+  def forall(
+    fieldName: String,
+    filter: Bson
+  ): Bson = Filters.nor(
+    Filters.elemMatch(fieldName, Filters.nor(filter))
+  )

@@ -75,9 +75,38 @@ extends Repo[ApplicationReference, ApplicationForRisking](
 
   private val relaxedJson = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
 
-  def getApplicationWithIndividualsSeq(
+  def getApplicationWithIndividuals(applicationReference: ApplicationReference): Future[
+    Option[ApplicationWithIndividuals]
+  ] = getApplicationWithIndividualsSeq(
+    applicationFilter = Filters.eq(
+      fieldName = FieldNames.applicationReference,
+      value = applicationReference.value
+    ),
+    individualForAllFilter = Filters.empty()
+  ).map(_.headOption)
+
+  def findRiskedNotSubscribed(): Future[
+    Seq[ApplicationWithIndividuals]
+  ] = getApplicationWithIndividualsSeq(
+    applicationFilter = Filters.and(
+      Filters.exists(FieldNames.entityRiskingResult, true),
+      Filters.eq(FieldNames.isSubscribed, false)
+    ),
+    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult, true)
+  )
+
+  def findRiskedApplicationsWithIndividuals(): Future[
+    Seq[ApplicationWithIndividuals]
+  ] = getApplicationWithIndividualsSeq(
+    applicationFilter = Filters.and(
+      Filters.exists(FieldNames.entityRiskingResult, true)
+    ),
+    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult, true)
+  )
+
+  private def getApplicationWithIndividualsSeq(
     applicationFilter: Bson,
-    individualElemMatchFilter: Bson // the filter must apply to all individuals otherwise entire ApplicationWithIndividuals is discarded
+    individualForAllFilter: Bson // the filter must apply "forall" individuals otherwise entire ApplicationWithIndividuals is discarded
   ): Future[Seq[ApplicationWithIndividuals]] = collection
     .aggregate[Document](Seq(
       Aggregates.filter(applicationFilter),
@@ -87,7 +116,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         foreignField = FieldNames.applicationReference,
         as = "individuals"
       ),
-      Aggregates.filter(Filters.elemMatch("individuals", individualElemMatchFilter))
+      Aggregates.filter(Repo.forall("individuals", individualForAllFilter))
     ))
     .toFuture()
     .map:
@@ -96,25 +125,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         val app = json.as[ApplicationForRisking]
         val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
         ApplicationWithIndividuals(app, individuals)
-
-  def getApplicationWithIndividuals(applicationReference: ApplicationReference): Future[
-    Option[ApplicationWithIndividuals]
-  ] = getApplicationWithIndividualsSeq(
-    applicationFilter = Filters.eq(
-      fieldName = FieldNames.applicationReference,
-      value = applicationReference.value
-    ),
-    individualElemMatchFilter = Filters.empty()
-  ).map(_.headOption)
-
-  def getRiskedApplicationsWithIndividuals(): Future[
-    Seq[ApplicationWithIndividuals]
-  ] = getApplicationWithIndividualsSeq(
-    applicationFilter = Filters.and(
-      Filters.exists(FieldNames.entityRiskingResult, true)
-    ),
-    individualElemMatchFilter = Filters.exists(FieldNames.individualRiskingResult, true)
-  )
 
   def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
