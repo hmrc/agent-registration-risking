@@ -184,3 +184,25 @@ extends TdRiskingBase,
     personReferencePrefix = "PREFSOLR",
     riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591130_163351.txt")
   )
+
+  val tdRisking7: TdRisking = TdRisking.make(
+    instant = Instant.parse("2059-12-01T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPSCOTLP1"))
+        .agentApplicationScottishLimitedPartnership
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFSCLP",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591201_163351.txt")
+  )
+
+  val tdRisking8: TdRisking = TdRisking.make(
+    instant = Instant.parse("2059-12-02T16:33:51Z"),
+    agentApplication =
+      TdApplicationsFactory
+        .make(ApplicationReference("APPSCOTLP2"))
+        .agentApplicationScottishLimitedPartnership
+        .afterDeclarationSubmitted,
+    personReferencePrefix = "PREFSCP2",
+    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591202_163351.txt")
+  )

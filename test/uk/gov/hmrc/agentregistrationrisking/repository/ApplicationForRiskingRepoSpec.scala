@@ -68,6 +68,28 @@ extends ISpec:
       individuals = Seq(individual1, individual2)
     )
 
+  object approvedAndSubscribed:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking7
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribed
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  object approvedAndSubscribedAndEmailSent:
+
+    private val tdRisking: TdRisking = tdAll.tdRisking8
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribedAndEmailSent
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
   object failedFixable:
 
     private val tdRisking: TdRisking = tdAll.tdRisking4
@@ -105,6 +127,14 @@ extends ISpec:
     individualForRiskingRepo.upsert(approved.individual1).futureValue
     individualForRiskingRepo.upsert(approved.individual2).futureValue
 
+    applicationForRiskingRepo.upsert(approvedAndSubscribed.application).futureValue
+    individualForRiskingRepo.upsert(approvedAndSubscribed.individual1).futureValue
+    individualForRiskingRepo.upsert(approvedAndSubscribed.individual2).futureValue
+
+    applicationForRiskingRepo.upsert(approvedAndSubscribedAndEmailSent.application).futureValue
+    individualForRiskingRepo.upsert(approvedAndSubscribedAndEmailSent.individual1).futureValue
+    individualForRiskingRepo.upsert(approvedAndSubscribedAndEmailSent.individual2).futureValue
+
     applicationForRiskingRepo.upsert(failedFixable.application).futureValue
     individualForRiskingRepo.upsert(failedFixable.individual1).futureValue
     individualForRiskingRepo.upsert(failedFixable.individual2).futureValue
@@ -113,17 +143,15 @@ extends ISpec:
     individualForRiskingRepo.upsert(failedNonFixable.individual1).futureValue
     individualForRiskingRepo.upsert(failedNonFixable.individual2).futureValue
 
-  "getRiskedApplicationsWithIndividuals should return all applications with individuals which have received risking results" in:
+  "findApprovedNotSubscribed should return all applications with individuals which have received risking results, all have 0 failures and application is not subscribed" in:
     // WHEN
     primeMongo()
     // THEN
     val applicationWithIndividuals: Seq[ApplicationWithIndividuals] =
       applicationForRiskingRepo
-        .findRiskedApplicationsWithIndividuals()
+        .findApprovedNotSubscribed()
         .futureValue
 
     applicationWithIndividuals.map(a => (a.application, a.individuals.toSet)).toSet shouldBe Set(
-      (approved.application, Set(approved.individual1, approved.individual2)),
-      (failedNonFixable.application, Set(failedNonFixable.individual1, failedNonFixable.individual2)),
-      (failedFixable.application, Set(failedFixable.individual1, failedFixable.individual2))
+      (approved.application, Set(approved.individual1, approved.individual2))
     )

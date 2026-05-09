@@ -22,7 +22,6 @@ object FieldNames:
   val riskingFileNameIndex: String = riskingFileName + "Index"
   val uploadedAt: String = "uploadedAt"
   val uploadedAtIndex: String = uploadedAt + "Index"
-
   val applicationReference: String = "applicationReference"
   val applicationReferenceIndex: String = applicationReference + "Index"
 
@@ -33,6 +32,9 @@ object FieldNames:
   val personReferenceIndex: String = personReference + "Index"
 
   val entityRiskingResult: String = "entityRiskingResult"
+  val entityRiskingResult_failures: String = "entityRiskingResult.failures"
+
   val individualRiskingResult: String = "individualRiskingResult"
+  val individualRiskingResult_failures: String = "individualRiskingResult.failures"
 
   val isSubscribed: String = "isSubscribed"

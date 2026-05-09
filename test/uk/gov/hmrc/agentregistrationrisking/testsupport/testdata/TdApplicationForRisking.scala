@@ -74,6 +74,8 @@ trait TdApplicationForRisking:
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
       ))
     )
+    val approvedAndSubscribed: ApplicationForRisking = approved.copy(isSubscribed = true)
+    val approvedAndSubscribedAndEmailSent: ApplicationForRisking = approvedAndSubscribed.copy(isEmailSent = true)
 
     val failedFixable: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(

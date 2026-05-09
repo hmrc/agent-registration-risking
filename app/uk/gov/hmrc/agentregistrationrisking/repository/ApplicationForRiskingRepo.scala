@@ -84,24 +84,24 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     ),
     individualForAllFilter = Filters.empty()
   ).map(_.headOption)
+//
+//  def findRiskedApplicationsWithIndividuals(): Future[
+//    Seq[ApplicationWithIndividuals]
+//  ] = getApplicationWithIndividualsSeq(
+//    applicationFilter = Filters.and(
+//      Filters.exists(FieldNames.entityRiskingResult, true)
+//    ),
+//    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult, true)
+//  )
 
-  def findRiskedNotSubscribed(): Future[
+  def findApprovedNotSubscribed(): Future[
     Seq[ApplicationWithIndividuals]
   ] = getApplicationWithIndividualsSeq(
     applicationFilter = Filters.and(
-      Filters.exists(FieldNames.entityRiskingResult, true),
+      Filters.size(FieldNames.entityRiskingResult_failures, 0),
       Filters.eq(FieldNames.isSubscribed, false)
     ),
-    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult, true)
-  )
-
-  def findRiskedApplicationsWithIndividuals(): Future[
-    Seq[ApplicationWithIndividuals]
-  ] = getApplicationWithIndividualsSeq(
-    applicationFilter = Filters.and(
-      Filters.exists(FieldNames.entityRiskingResult, true)
-    ),
-    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult, true)
+    individualForAllFilter = Filters.size(FieldNames.individualRiskingResult_failures, 0)
   )
 
   private def getApplicationWithIndividualsSeq(
