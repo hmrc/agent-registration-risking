@@ -46,6 +46,7 @@ extends RequestAwareLogging:
 
   def findNonFixableReadyForFailureEmail(): Future[Seq[ApplicationWithIndividuals]] = getApplicationsPendingActionWithIndividuals
     .map(filterNonFixableApplicationsWithIndividuals)
+    .map(filterOutAlreadyEmailed)
 
   private def getApplicationsPendingActionWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
     for
@@ -71,6 +72,14 @@ extends RequestAwareLogging:
         val nonFixableIndividuals = appWithIndividuals.individuals.filter: individual =>
           individual.individualRiskingResult.exists(_.failures.outcome === RiskingOutcome.FailedNonFixable)
         ApplicationWithIndividuals(appWithIndividuals.application, nonFixableIndividuals)
+
+  private def filterOutAlreadyEmailed(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
+    applicationsWithIndividuals
+      .map: appWithIndividuals =>
+        val pendingIndividuals = appWithIndividuals.individuals.filterNot(_.isEmailSent)
+        ApplicationWithIndividuals(appWithIndividuals.application, pendingIndividuals)
+      .filterNot: appWithIndividuals =>
+        appWithIndividuals.application.isEmailSent && appWithIndividuals.individuals.isEmpty
 
   private def filterFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
     applicationsWithIndividuals
