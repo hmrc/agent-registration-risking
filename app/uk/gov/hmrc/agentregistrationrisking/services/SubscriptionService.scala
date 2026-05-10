@@ -59,16 +59,16 @@ extends RequestAwareLogging:
   def subscribeApprovedApplications()(using RequestHeader): Future[Unit] =
     logger.info("Subscribing approved applications...")
     for
-      applications: Seq[ApplicationForRisking] <- findApprovedReadyToSubscribe()
+      applications: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findApprovedNotSubscribed()
       applicationCount: Int = applications.size
       _ = logger.info(s"Found $applicationCount applications ready to subscribe")
       subscriptionSuccessCount <- ProcessInSequence
-        .processInSequence(applications): application =>
+        .processInSequence(applications.map(_.application)): application =>
           subscribeApplication(application)
             .map(_ => true)
             .recover:
               case ex: Throwable =>
-                logger.error(s"Failed to subscribe agent: ${application.agentApplication.applicationReference.value}: ${ex.getMessage}")
+                logger.error(s"Failed to subscribe agent: ${application.agentApplication.applicationReference.value}: ${ex.getMessage}", ex)
                 false
         .map(_.count(identity))
       _ = logger.info(s"Subscribed $subscriptionSuccessCount/$applicationCount applications")
@@ -81,19 +81,6 @@ extends RequestAwareLogging:
       _ <- applicationForRiskingRepo.upsert(application.copy(isSubscribed = true, lastUpdatedAt = Instant.now(clock)))
       _ = logger.info(s"Application subscribed: ${application.applicationReference}")
     yield ()
-
-  private def findApprovedReadyToSubscribe()(using RequestHeader): Future[Seq[ApplicationForRisking]] =
-    for
-      applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findNotSubscribedWithResults()
-      individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applications.map(_.applicationReference))
-      applicationsWithIndividuals: Seq[ApplicationWithIndividuals] = ApplicationWithIndividuals.merge(applications, individuals)
-      approvedApplicationsWithIndividuals: Seq[ApplicationWithIndividuals] = applicationsWithIndividuals
-        .filter: applicationWithIndividuals =>
-          RiskingOutcomeHelper
-            .computeRiskingOutcome(applicationWithIndividuals)
-            .exists(_ === RiskingOutcome.Approved)
-      approvedApplications: Seq[ApplicationForRisking] = approvedApplicationsWithIndividuals.map(_.application)
-    yield approvedApplications
 
   private def subscribeAgent(agentApplication: AgentApplication)(using RequestHeader): Future[Unit] =
     val agentDetails = agentApplication.getAgentDetails

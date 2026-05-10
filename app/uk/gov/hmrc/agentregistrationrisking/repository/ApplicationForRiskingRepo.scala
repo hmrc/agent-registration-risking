@@ -104,6 +104,16 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     individualForAllFilter = Filters.size(FieldNames.individualRiskingResult_failures, 0)
   )
 
+  def findRiskedFailed(): Future[
+    Seq[ApplicationWithIndividuals]
+  ] = getApplicationWithIndividualsSeq(
+    applicationFilter = Filters.and(
+      Filters.not(Filters.size(FieldNames.entityRiskingResult_failures, 0)),
+      Filters.eq(FieldNames.isSubscribed, false)
+    ),
+    individualForAllFilter = Filters.size(FieldNames.individualRiskingResult_failures, 0)
+  )
+
   private def getApplicationWithIndividualsSeq(
     applicationFilter: Bson,
     individualForAllFilter: Bson // the filter must apply "forall" individuals otherwise entire ApplicationWithIndividuals is discarded
@@ -151,15 +161,15 @@ extends Repo[ApplicationReference, ApplicationForRisking](
 //      )
 //    ).toFuture()
 
-  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
-    collection
-      .find(
-        Filters.and(
-          Filters.exists(FieldNames.entityRiskingResult),
-          Filters.eq(FieldNames.isSubscribed, false)
-        )
-      ).toFuture()
-  }
+//  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
+//    collection
+//      .find(
+//        Filters.and(
+//          Filters.exists(FieldNames.entityRiskingResult),
+//          Filters.eq(FieldNames.isSubscribed, false)
+//        )
+//      ).toFuture()
+//  }
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...

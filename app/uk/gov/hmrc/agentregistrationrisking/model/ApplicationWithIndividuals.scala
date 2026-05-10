@@ -36,15 +36,15 @@ final case class ApplicationWithIndividuals(
       individualDates <- individuals.map(_.individualRiskingResult.map(_.receivedAt)).toList.sequence
     yield NonEmptyList(appDate, individualDates).maximum
 
-object ApplicationWithIndividuals:
+//object ApplicationWithIndividuals:
 
-  def merge(
-    applications: Seq[ApplicationForRisking],
-    individuals: Seq[IndividualForRisking]
-  ): Seq[ApplicationWithIndividuals] =
-    val map: Map[ApplicationReference, Seq[IndividualForRisking]] = individuals.groupBy(_.applicationReference)
-    applications.map: app =>
-      ApplicationWithIndividuals(
-        application = app,
-        individuals = map.getOrElse(app.applicationReference, Seq.empty)
-      )
+//  def merge(
+//    applications: Seq[ApplicationForRisking],
+//    individuals: Seq[IndividualForRisking]
+//  ): Seq[ApplicationWithIndividuals] =
+//    val map: Map[ApplicationReference, Seq[IndividualForRisking]] = individuals.groupBy(_.applicationReference)
+//    applications.map: app =>
+//      ApplicationWithIndividuals(
+//        application = app,
+//        individuals = map.getOrElse(app.applicationReference, Seq.empty)
+//      )

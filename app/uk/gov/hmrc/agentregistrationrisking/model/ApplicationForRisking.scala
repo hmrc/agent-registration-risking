@@ -20,8 +20,15 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 
 import java.time.Instant
+
+final case class OverallXXX(
+  riskingOutcome: Option[RiskingOutcome],
+  isSubscribed: Boolean,
+  emailsProcessed: Boolean
+)
 
 final case class ApplicationForRisking(
   applicationReference: ApplicationReference, // primary Key
@@ -30,8 +37,8 @@ final case class ApplicationForRisking(
   createdAt: Instant,
   lastUpdatedAt: Instant,
   entityRiskingResult: Option[EntityRiskingResult],
-  isSubscribed: Boolean,
-  isEmailSent: Boolean
+  isEmailSent: Boolean,
+  overall: OverallXXX
 )
 
 object ApplicationForRisking:
