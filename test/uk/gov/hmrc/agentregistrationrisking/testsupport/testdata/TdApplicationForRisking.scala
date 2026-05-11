@@ -62,7 +62,6 @@ trait TdApplicationForRisking:
     isEmailSent = false,
     overallStatus = OverallStatus(
       riskingOutcome = None,
-      isSubscribed = false,
       emailsProcessed = false
     )
   )
@@ -82,7 +81,6 @@ trait TdApplicationForRisking:
       )),
       overallStatus = OverallStatus(
         riskingOutcome = Some(RiskingOutcome.Approved),
-        isSubscribed = false,
         emailsProcessed = false
       )
     )
@@ -97,7 +95,6 @@ trait TdApplicationForRisking:
       )),
       overallStatus = OverallStatus(
         riskingOutcome = Some(RiskingOutcome.FailedFixable),
-        isSubscribed = false,
         emailsProcessed = false
       )
     )
@@ -112,7 +109,6 @@ trait TdApplicationForRisking:
       )),
       overallStatus = OverallStatus(
         riskingOutcome = Some(RiskingOutcome.FailedNonFixable),
-        isSubscribed = false,
         emailsProcessed = false
       )
     )

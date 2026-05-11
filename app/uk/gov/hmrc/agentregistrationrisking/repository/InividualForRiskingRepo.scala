@@ -41,6 +41,9 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
+object IndividualForRiskingRepo:
+  val collectionName: String = "individual-for-risking"
+
 @Singleton
 final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
@@ -48,7 +51,7 @@ final class IndividualForRiskingRepo @Inject() (
   clock: Clock
 )(using ec: ExecutionContext)
 extends Repo[PersonReference, IndividualForRisking](
-  collectionName = "individual-for-risking",
+  collectionName = IndividualForRiskingRepo.collectionName,
   mongoComponent = mongoComponent,
   indexes = IndividualForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
   extraCodecs = Seq(Codecs.playFormatCodec(IndividualForRisking.format)),

@@ -50,7 +50,7 @@ extends RequestAwareLogging:
   def subscribeApprovedApplications()(using RequestHeader): Future[Unit] =
     logger.info("Subscribing approved applications...")
     for
-      applications: Seq[ApplicationForRisking] <- applicationStatusService.findApprovedReadyToSubscribe()
+      applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyToBeSubscribed()
       applicationCount: Int = applications.size
       _ = logger.info(s"Found $applicationCount applications ready to subscribe")
       subscriptionSuccessCount <- ProcessInSequence

@@ -16,6 +16,17 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.bson.json.JsonMode
+import org.bson.json.JsonWriterSettings
+import org.mongodb.scala.Document
+import org.mongodb.scala.model.Aggregates
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.IndexOptions
+import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.Updates
+import play.api.libs.json.Json
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
@@ -39,8 +50,10 @@ import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
@@ -64,6 +77,44 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
     .toFuture()
+
+  def findReadyToBeSubscribed(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved),
+        Filters.eq(FieldNames.isSubscribed, false)
+      )
+    )
+    .toFuture()
+
+  def findRequiringEmailProcessingForFailedNonFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable),
+      Filters.eq(FieldNames.overallStatus.emailsProcessed, false)
+    )
+  )
+
+  private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
+
+  private def findApplicationWithIndividuals(
+    applicationFilter: Bson
+  ): Future[Seq[ApplicationWithIndividuals]] = collection
+    .aggregate[Document](Seq(
+      Aggregates.filter(applicationFilter),
+      Aggregates.lookup(
+        from = IndividualForRiskingRepo.collectionName,
+        localField = FieldNames.applicationReference,
+        foreignField = FieldNames.applicationReference,
+        as = "individuals"
+      )
+    ))
+    .toFuture()
+    .map:
+      _.map: (doc: Document) =>
+        val json = Json.parse(doc.toJson(relaxedJson))
+        val app = json.as[ApplicationForRisking]
+        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
+        ApplicationWithIndividuals(app, individuals)
 
   // TODO needs testing?
   def updateRiskingFileId(
@@ -96,20 +147,13 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         )
       ).toFuture()
   }
+
   def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
     .find(
       Filters.and(
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved),
         Filters.eq(FieldNames.isSubscribed, true),
         Filters.eq(FieldNames.isEmailSent, false)
-      )
-    ).toFuture()
-
-  def updateEmailSent(applicationReference: ApplicationReference): Future[UpdateResult] = collection
-    .updateOne(
-      Filters.eq(FieldNames.applicationReference, applicationReference.value),
-      Updates.combine(
-        Updates.set(FieldNames.isEmailSent, true),
-        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
       )
     ).toFuture()
 
@@ -125,6 +169,8 @@ object ApplicationForRiskingRepoHelp:
   given IdExtractor[ApplicationForRisking, ApplicationReference] =
     new IdExtractor[ApplicationForRisking, ApplicationReference]:
       override def id(applicationForRisking: ApplicationForRisking): ApplicationReference = applicationForRisking.applicationReference
+
+  // TODO: sparse combined index on overallStatus.riskingOutcome, isSubscribed, isEmailSent
 
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(

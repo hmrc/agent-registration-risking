@@ -59,6 +59,6 @@ extends BackendController(cc):
     (for
       _ <- riskingResultsService.processResultsFiles()
       _ <- subscriptionService.subscribeApprovedApplications()
-      _ <- emailService.findAndSendRegisteredEmail()
-      _ <- emailService.findAndSendNonFixableFailureEmails()
+      _ <- emailService.sendEmailsForApprovedApplications()
+      _ <- emailService.sendEmailsForFailedNonFixable()
     yield ()).recover { case ex: Exception => logger.error(s"Error processing file ready notification", ex) }

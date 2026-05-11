@@ -30,7 +30,6 @@ import play.api.libs.json.OFormat
   */
 final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],
-  isSubscribed: Boolean,
   emailsProcessed: Boolean
 )
 

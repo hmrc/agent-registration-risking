@@ -73,7 +73,6 @@ extends BackendController(cc):
     isEmailSent = false,
     overallStatus = OverallStatus(
       riskingOutcome = None,
-      isSubscribed = false,
       emailsProcessed = false
     )
   )

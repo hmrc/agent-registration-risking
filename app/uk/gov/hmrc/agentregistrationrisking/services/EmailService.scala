@@ -46,31 +46,41 @@ class EmailService @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
-  def findAndSendRegisteredEmail(): Future[Unit] =
-    given RequestHeader = EmptyRequest.emptyRequestHeader
+  def sendEmailsForApprovedApplications(): Future[Unit] =
+    given RequestHeader = EmptyRequest.emptyRequestHeader // TODO: make this a param
 
     for
-      applications <- applicationForRiskingRepo.findSubscribedReadyForSuccessEmail()
-      _ = logger.info(s"Found ${applications.size} subscribed applications ready for success email")
-      _ <-
-        ProcessInSequence.processInSequence(applications): application =>
-          sendRegisteredEmail(application)
-            .flatMap(_ => applicationForRiskingRepo.updateEmailSent(application.applicationReference))
+      applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findSubscribedReadyForSuccessEmail()
+      applicationCount: Int = applications.size
+      _ = logger.info(s"Found ${applicationCount} subscribed applications ready for success email")
+      emailsSentSuccessCount <- ProcessInSequence
+        .processInSequence(applications): application =>
+          processEmailForApproved(application)
+            .map(_ => true)
             .recover:
               case ex =>
-                logger.warn(
+                logger.error(
                   s"Failed to send registered email for application ${application.applicationReference.value} - will retry on next scheduler tick",
                   ex
                 )
+                false
+        .map(_.count(identity))
+      _ = logger.info(s"Sent $emailsSentSuccessCount/$applicationCount emails")
     yield ()
 
-  def findAndSendNonFixableFailureEmails(): Future[Unit] =
-    given RequestHeader = EmptyRequest.emptyRequestHeader
+  private def processEmailForApproved(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+    for
+      _ <- sendRegisteredEmail(application)
+      _ <- applicationForRiskingRepo.upsert(application.copy(isEmailSent = true))
+    yield ()
+
+  def sendEmailsForFailedNonFixable(): Future[Unit] =
+    given RequestHeader = EmptyRequest.emptyRequestHeader // TODO
 
     for
-      nonFixable <- applicationStatusService.findNonFixableReadyForFailureEmail()
-      _ = logger.info(s"Found ${nonFixable.size} FailedNonFixable applications ready for failure emails")
-      _ <- ProcessInSequence.processInSequence(nonFixable)(sendNonFixableFailureEmailsForApplication)
+      applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findRequiringEmailProcessingForFailedNonFixable()
+      _ = logger.info(s"Found ${applicationsWithIndividuals.size} FailedNonFixable applications ready for failure emails")
+      _ <- ProcessInSequence.processInSequence(applicationsWithIndividuals)(processEmailsForFailedNonFixable)
     yield ()
 
   private def sendEmail(emailInformation: SendEmailRequest)(using RequestHeader): Future[Unit] = emailConnector.sendEmail(emailInformation)
@@ -79,22 +89,23 @@ extends RequestAwareLogging:
     applicantSuccessEmailInformation(application)
   )
 
-  private def sendNonFixableFailureEmailsForApplication(appWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
+  private def processEmailsForFailedNonFixable(appWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application = appWithIndividuals.application
     val individuals: Seq[IndividualForRisking] =
       application.agentApplication.businessType match
         case BusinessType.SoleTrader => appWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => appWithIndividuals.individuals
     for
-      _ <- sendApplicantFailureEmailIfPending(application)
+      _ <- sendFailedNonFixableEmailForApplicant(application)
       _ <- ProcessInSequence.processInSequence(individuals)(sendIndividualFailureEmailIfPending)
+//      _ <- updateOverallStatusEmailSent(application)
     yield ()
 
-  private def sendApplicantFailureEmailIfPending(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+  private def sendFailedNonFixableEmailForApplicant(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
     if application.isEmailSent then Future.unit
     else
       sendEmail(applicantNonFixableFailureEmailInformation(application))
-        .flatMap(_ => applicationForRiskingRepo.updateEmailSent(application.applicationReference).map(_ => ()))
+        .flatMap(_ => applicationForRiskingRepo.upsert(application.copy(isEmailSent = true)))
         .recover:
           case ex =>
             logger.warn(

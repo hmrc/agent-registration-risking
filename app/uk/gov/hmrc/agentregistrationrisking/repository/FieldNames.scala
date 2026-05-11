@@ -18,6 +18,11 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 
 object FieldNames:
 
+  object overallStatus:
+
+    val riskingOutcome: String = "overallStatus.riskingOutcome"
+    val emailsProcessed: String = "overallStatus.emailsProcessed"
+
   val riskingFileName: String = "riskingFileName"
   val riskingFileNameIndex: String = riskingFileName + "Index"
   val uploadedAt: String = "uploadedAt"
