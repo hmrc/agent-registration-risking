@@ -51,27 +51,9 @@ class SmuViewerController @Inject() (
 )
 extends BackendController(cc):
 
-  private val emptyRequestHeader: RequestHeader =
-    new RequestHeader:
-      def target: RequestTarget = RequestTarget(
-        uriString = "/",
-        path = "smuViewer/dummyPath",
-        queryString = Map.empty
-      )
-      def version: String = "HTTP/1.1"
-      def method: String = "GET"
-      def headers: Headers = Headers()
-      def connection: RemoteConnection = RemoteConnection(
-        remoteAddress = java.net.InetAddress.getLoopbackAddress,
-        secure = false,
-        clientCertificateChain = None
-      )
-      def attrs: TypedMap = TypedMap.empty
-
   def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.authorised.async: request =>
-    given RequestHeader = emptyRequestHeader
     for
-      maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findByPersonReference(personReference)
+      maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findById(personReference)
       maybeApp: Option[ApplicationForRisking] <-
         maybeIndividual match
           case Some(indi) => applicationForRiskingRepo.findById(indi.applicationReference)
