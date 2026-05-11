@@ -134,7 +134,6 @@ extends RequestAwareLogging:
         Future.unit
       case Some(application) =>
         val now = Instant.now(clock)
-        val outcome = riskingResult.failures.outcomeForEntity
         val updatedApplication: ApplicationForRisking = application.copy(
           entityRiskingResult = Some(EntityRiskingResult(failures = riskingResult.failures, receivedAt = now)),
           lastUpdatedAt = now
@@ -142,7 +141,7 @@ extends RequestAwareLogging:
         applicationForRiskingRepo
           .upsert(updatedApplication)
           .map: _ =>
-            logger.debug(s"Updated Application with risking results: ${updatedApplication.applicationReference} ($outcome)")
+            logger.debug(s"Updated Application with risking results: ${updatedApplication.applicationReference} (${riskingResult.failures.outcomeForEntity})")
             auditService.sendRiskingResponseEntityEvent(riskingResult)
 
   private def updateRiskingResults(riskingResult: RiskingResult.ForIndividual)(using request: RequestHeader): Future[Unit] = individualForRiskingRepo
@@ -154,7 +153,6 @@ extends RequestAwareLogging:
         Future.unit
       case Some(individual) =>
         val now = Instant.now(clock)
-        val outcome = riskingResult.failures.outcome
         val updatedIndividual: IndividualForRisking = individual.copy(
           individualRiskingResult = Some(IndividualRiskingResult(failures = riskingResult.failures, receivedAt = now)),
           lastUpdatedAt = now
@@ -162,5 +160,5 @@ extends RequestAwareLogging:
         individualForRiskingRepo
           .upsert(updatedIndividual)
           .map: _ =>
-            logger.debug(s"Updated Individual with risking results: ${updatedIndividual.personReference} ($outcome)")
+            logger.debug(s"Updated Individual with risking results: ${updatedIndividual.personReference} (${riskingResult.failures.outcome})")
             auditService.sendRiskingResponseIndividualEvent(updatedIndividual, riskingResult)
