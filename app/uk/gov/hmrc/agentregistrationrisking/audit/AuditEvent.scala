@@ -50,6 +50,15 @@ extends AuditEvent
 object RiskingResponseIndividual:
   given OWrites[RiskingResponseIndividual] = Json.writes[RiskingResponseIndividual]
 
+final case class RiskingDetermination(
+  applicationReference: ApplicationReference,
+  determination: AuditOutcome
+)
+extends AuditEvent
+
+object RiskingDetermination:
+  given OWrites[RiskingDetermination] = Json.writes[RiskingDetermination]
+
 final case class FailureDetail(
   reasonCode: String,
   reasonDescription: String

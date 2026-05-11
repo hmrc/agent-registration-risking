@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
@@ -30,7 +31,8 @@ import scala.concurrent.Future
 
 @Singleton
 class ApplicationOutcomeService @Inject() (
-  applicationForRiskingRepo: ApplicationForRiskingRepo
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  auditService: AuditService
 )(using
   ExecutionContext
 )
@@ -64,4 +66,5 @@ extends RequestAwareLogging:
           .setTo(Some(outcome))
         applicationForRiskingRepo
           .upsert(applicationForRisking)
-          .map(_ => ())
+          .map: _ =>
+            auditService.sendRiskingDeterminationEvent(applicationForRisking.applicationReference, outcome)
