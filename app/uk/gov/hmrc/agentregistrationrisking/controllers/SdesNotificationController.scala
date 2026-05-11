@@ -22,6 +22,7 @@ import play.api.mvc.ControllerComponents
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.services.ApplicationStatusService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
@@ -34,6 +35,7 @@ class SdesNotificationController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
   riskingResultsService: RiskingResultsService,
+  applicationStatusService: ApplicationStatusService,
   subscriptionService: SubscriptionService,
   emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
   emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable
@@ -60,6 +62,7 @@ extends BackendController(cc):
   private def onFileReady()(using RequestHeader): Future[Unit] =
     (for
       _ <- riskingResultsService.processResultsFiles()
+      _ <- applicationStatusService.processOverallOutcomes()
       _ <- subscriptionService.processSubscriptions()
       _ <- emailServiceForApprovedApplications.processEmails()
       _ <- emailServiceForFailedNonFixable.processEmails()

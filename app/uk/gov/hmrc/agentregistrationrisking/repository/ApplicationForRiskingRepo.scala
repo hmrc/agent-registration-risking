@@ -19,46 +19,27 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import org.mongodb.scala.Document
-import org.mongodb.scala.model.Aggregates
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
-import play.api.libs.json.Json
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Aggregates
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
+import org.mongodb.scala.model.*
+import org.mongodb.scala.result.UpdateResult
+import play.api.libs.json.Json
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.model.*
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepoHelp.given
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
+import java.time.Clock
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import ApplicationForRiskingRepoHelp.given
-import org.mongodb.scala.result.UpdateResult
-import com.mongodb.client.model.Field
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
-import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
-import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
-
-import java.time.Clock
-import java.time.Instant
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
@@ -91,6 +72,13 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     applicationFilter = Filters.and(
       Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable),
       Filters.eq(FieldNames.overallStatus.emailsProcessed, false)
+    )
+  )
+
+  def findApplicationsAwaitingOverallOutcome(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.exists(FieldNames.entityRiskingResult),
+      Filters.exists(FieldNames.overallStatus.riskingOutcome, false)
     )
   )
 

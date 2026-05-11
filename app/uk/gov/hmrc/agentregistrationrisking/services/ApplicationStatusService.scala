@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import com.softwaremill.quicklens.modify
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
-import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper._
 
-import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -31,62 +30,36 @@ import scala.concurrent.Future
 
 @Singleton
 class ApplicationStatusService @Inject() (
-  applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo
+  applicationForRiskingRepo: ApplicationForRiskingRepo
 )(using
-  ExecutionContext,
-  Clock
+  ExecutionContext
 )
 extends RequestAwareLogging:
 
-  def findApprovedReadyToSubscribe(): Future[Seq[ApplicationForRisking]] = getApplicationsPendingActionWithIndividuals
-    .map(filterApprovedApplicationsWithIndividuals)
-    .map(_.map(_.application))
-
-  def findNonFixableReadyForFailureEmail(): Future[Seq[ApplicationWithIndividuals]] = getApplicationsPendingActionWithIndividuals
-    .map(filterNonFixableApplicationsWithIndividuals)
-    .map(filterOutAlreadyEmailed)
-
-  private def getApplicationsPendingActionWithIndividuals: Future[Seq[ApplicationWithIndividuals]] =
+  def processOverallOutcomes()(using RequestHeader): Future[Unit] =
     for
-      applications <- applicationForRiskingRepo.findNotSubscribedWithResults()
-      individuals <- individualForRiskingRepo.findByApplicationReferences(applications.map(_.applicationReference))
-    yield ApplicationWithIndividuals
-      .merge(applications, individuals)
-      .filter(_.individuals.forall(_.individualRiskingResult.isDefined))
+      applicationsWithIndividuals <- applicationForRiskingRepo.findApplicationsAwaitingOverallOutcome()
+      eligible: Seq[ApplicationWithIndividuals] = applicationsWithIndividuals.filter(_.individuals.forall(_.individualRiskingResult.isDefined))
+      applicationCount: Int = eligible.size
+      _ = logger.info(s"Found $applicationCount applications ready to compute overall outcome")
+      successCount <-
+        ProcessInSequence
+          .processAllInSequence(eligible)(computeAndSaveOverallOutcome):
+            case (ex, appWithIndividuals) =>
+              logger.error(
+                s"Failed to compute overall outcome for application ${appWithIndividuals.application.applicationReference.value}",
+                ex
+              )
+      _ = logger.info(s"Computed overall outcome for $successCount/$applicationCount applications")
+    yield ()
 
-  private def filterApprovedApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
-    applicationsWithIndividuals.filter: appWithIndividuals =>
-      RiskingOutcomeHelper
-        .computeRiskingOutcome(appWithIndividuals)
-        .exists(_ === RiskingOutcome.Approved)
-
-  private def filterNonFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
-    applicationsWithIndividuals
-      .filter: appWithIndividuals =>
-        RiskingOutcomeHelper
-          .computeRiskingOutcome(appWithIndividuals)
-          .exists(_ === RiskingOutcome.FailedNonFixable)
-      .map: appWithIndividuals =>
-        val nonFixableIndividuals = appWithIndividuals.individuals.filter: individual =>
-          individual.individualRiskingResult.exists(_.failures.outcome === RiskingOutcome.FailedNonFixable)
-        ApplicationWithIndividuals(appWithIndividuals.application, nonFixableIndividuals)
-
-  private def filterOutAlreadyEmailed(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
-    applicationsWithIndividuals
-      .map: appWithIndividuals =>
-        val pendingIndividuals = appWithIndividuals.individuals.filterNot(_.isEmailSent)
-        ApplicationWithIndividuals(appWithIndividuals.application, pendingIndividuals)
-      .filterNot: appWithIndividuals =>
-        appWithIndividuals.application.isEmailSent && appWithIndividuals.individuals.isEmpty
-
-  private def filterFixableApplicationsWithIndividuals(applicationsWithIndividuals: Seq[ApplicationWithIndividuals]): Seq[ApplicationWithIndividuals] =
-    applicationsWithIndividuals
-      .filter: appWithIndividuals =>
-        RiskingOutcomeHelper
-          .computeRiskingOutcome(appWithIndividuals)
-          .exists(_ === RiskingOutcome.FailedFixable)
-      .map: appWithIndividuals =>
-        val fixableIndividuals = appWithIndividuals.individuals.filter: individual =>
-          individual.individualRiskingResult.exists(_.failures.outcome === RiskingOutcome.FailedFixable)
-        ApplicationWithIndividuals(appWithIndividuals.application, fixableIndividuals)
+  private def computeAndSaveOverallOutcome(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
+    RiskingOutcomeHelper.computeRiskingOutcome(applicationWithIndividuals) match
+      case None =>
+        logger.warn(s"Could not compute overall outcome for ${applicationWithIndividuals.application.applicationReference.value} (missing results)")
+        Future.unit
+      case Some(outcome) =>
+        val updated = applicationWithIndividuals.application
+          .modify(_.overallStatus.riskingOutcome)
+          .setTo(Some(outcome))
+        applicationForRiskingRepo.upsert(updated).map(_ => ())
