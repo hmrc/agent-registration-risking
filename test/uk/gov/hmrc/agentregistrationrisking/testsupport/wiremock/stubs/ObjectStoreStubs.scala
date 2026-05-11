@@ -143,16 +143,3 @@ object ObjectStoreStubs:
       responseStatus = 500,
       responseBody = Json.stringify(Json.obj("error" -> "Error when downloading file"))
     )
-
-  def stubObjectStoreGeneratePresignedUrl: StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"/object-store/ops/presigned-url"),
-    responseStatus = 200,
-    responseBody = Json.prettyPrint(
-      Json.obj(
-        "downloadUrl" -> "http://presigned-url/file",
-        "contentLength" -> 1532,
-        "contentMD5" -> "o+btpLe7b3Vqz3SShTP+Nw=="
-      )
-    )
-  )

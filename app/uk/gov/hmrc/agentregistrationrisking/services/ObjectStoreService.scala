@@ -73,9 +73,7 @@ extends RequestAwareLogging:
 
   def generatePreSignedDownloadUrl(
     objectStorePath: Path.Directory,
-    objectStoreFileName: String,
-    owner: String
+    objectStoreFileName: String
   )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
-    path = objectStorePath.file(fileName = objectStoreFileName),
-    owner = owner
+    path = Path.Directory("sdes").file(fileName = objectStoreFileName)
   )

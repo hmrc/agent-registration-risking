@@ -23,7 +23,6 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication.IsIncorporated
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.*
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.objectstore.client.PresignedDownloadUrl
 
 import java.time.LocalDate
 

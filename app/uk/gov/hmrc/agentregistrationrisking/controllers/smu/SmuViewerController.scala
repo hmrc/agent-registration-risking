@@ -26,7 +26,6 @@ import play.api.mvc.ControllerComponents
 import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.controllers.BackendController
@@ -36,7 +35,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.smu.SmuIndividualResponse
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
-import uk.gov.hmrc.objectstore.client.PresignedDownloadUrl
 
 import javax.inject.Inject
 import javax.inject.Singleton
