@@ -21,6 +21,7 @@ import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
@@ -30,6 +31,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -52,8 +54,20 @@ extends RequestAwareLogging:
   def processEmails()(using requestHeader: RequestHeader): Future[Unit] =
     for
       applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findRequiringEmailProcessingForFailedNonFixable()
-      _ = logger.info(s"Found ${applicationsWithIndividuals.size} FailedNonFixable applications ready for failure emails")
-      _ <- ProcessInSequence.processInSequence(applicationsWithIndividuals)(process)
+      applicationCount: Int = applicationsWithIndividuals.size
+      _ = logger.info(s"Found $applicationCount FailedNonFixable applications ready for emails")
+      successCount <-
+        ProcessInSequence
+          .processInSequenceWithRecovery(applicationsWithIndividuals)(process):
+            (
+              appWithIndividuals,
+              ex
+            ) =>
+              logger.error(
+                s"Failed to process emails for application ${appWithIndividuals.application.applicationReference.value} - will retry on next scheduler tick",
+                ex
+              )
+      _ = logger.info(s"Processed failure emails for $successCount/$applicationCount applications")
     yield ()
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
@@ -63,18 +77,30 @@ extends RequestAwareLogging:
         case BusinessType.SoleTrader => applicationWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => applicationWithIndividuals.individuals
 
-    val processF: Future[Unit] =
-      for
-        updatedApplication <- process(application)
-        _ <-
-          ProcessInSequence
-            .processInSequence(individuals.filter(_.isEmailSent === false))(process)
-        _ <- applicationForRiskingRepo
-          .upsert(updatedApplication.modify(_.overallStatus.emailsProcessed).setTo(true))
-      yield ()
-
-    processF
-  // TODO: logging
+    val individualsToProcess = individuals
+      .filter(_.individualRiskingResult.exists(_.failures.outcome === RiskingOutcome.FailedNonFixable))
+      .filter(_.isEmailSent === false)
+    for
+      updatedApplication <- process(application)
+      individualSuccessCount <-
+        ProcessInSequence
+          .processInSequenceWithRecovery(individualsToProcess)(process):
+            (
+              individual,
+              ex
+            ) =>
+              logger.error(
+                s"Failed to send failure email for individual ${individual.personReference.value} (application ${individual.applicationReference.value}) - will retry on next scheduler tick",
+                ex
+              )
+      _ <-
+        if individualSuccessCount === individualsToProcess.size then
+          applicationForRiskingRepo
+            .upsert(updatedApplication.modify(_.overallStatus.emailsProcessed).setTo(true))
+            .map(_ => ())
+        else
+          Future.unit
+    yield ()
 
   private def process(application: ApplicationForRisking)(using RequestHeader): Future[ApplicationForRisking] =
     if application.isEmailSent
