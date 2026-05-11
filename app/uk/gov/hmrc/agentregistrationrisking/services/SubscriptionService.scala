@@ -47,7 +47,7 @@ class SubscriptionService @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
-  def subscribeApprovedApplications()(using RequestHeader): Future[Unit] =
+  def processSubscriptions()(using RequestHeader): Future[Unit] =
     logger.info("Subscribing approved applications...")
     for
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyToBeSubscribed()
