@@ -18,6 +18,11 @@ package uk.gov.hmrc.agentregistrationrisking.audit
 
 import play.api.libs.json.OWrites
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.model.Failure
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
 import uk.gov.hmrc.play.audit.DefaultAuditConnector
@@ -30,6 +35,33 @@ import scala.concurrent.ExecutionContext
 class AuditService @Inject() (auditConnector: DefaultAuditConnector)(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
-  def sendAudit[E <: AuditEvent](event: E)(using RequestHeader, OWrites[E]): Unit =
-    logger.info(s"Auditing ${event.auditType} for ${event.applicationReference.value}")
+  def sendRiskingResponseEntityEvent(result: RiskingResult.ForEntity)(using RequestHeader): Unit =
+    val event = RiskingResponseEntity(
+      applicationReference = result.applicationReference,
+      riskingOutcome = AuditOutcome.fromRiskingOutcome(result.failures.outcomeForEntity),
+      failures = toFailureDetails(result.rawFailures)
+    )
+    send(event)
+
+  def sendRiskingResponseIndividualEvent(
+    individual: IndividualForRisking,
+    result: RiskingResult.ForIndividual
+  )(using RequestHeader): Unit =
+    val event = RiskingResponseIndividual(
+      applicationReference = individual.applicationReference,
+      personReference = individual.personReference,
+      riskingOutcome = AuditOutcome.fromRiskingOutcome(result.failures.outcome),
+      failures = toFailureDetails(result.rawFailures)
+    )
+    send(event)
+
+  private def send[E <: AuditEvent](event: E)(using
+    RequestHeader,
+    OWrites[E]
+  ): Unit =
+    logger.info(s"Auditing ${event.auditType}")
     auditConnector.sendExplicitAudit(auditType = event.auditType, detail = event)
+
+  private def toFailureDetails(rawFailures: List[Failure]): Option[List[FailureDetail]] =
+    if rawFailures.isEmpty then None
+    else Some(rawFailures.map(f => FailureDetail(reasonCode = f.reasonCode, reasonDescription = f.reasonDescription)))

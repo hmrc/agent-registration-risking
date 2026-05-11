@@ -27,14 +27,12 @@ import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
 sealed trait AuditEvent:
 
-  val applicationReference: ApplicationReference
   val auditType: String = this.getClass.getSimpleName
 
-
 final case class RiskingResponseEntity(
-                                        applicationReference: ApplicationReference,
-                                        riskingOutcome: AuditOutcome,
-                                        failures: Option[List[FailureDetail]]
+  applicationReference: ApplicationReference,
+  riskingOutcome: AuditOutcome,
+  failures: Option[List[FailureDetail]]
 )
 extends AuditEvent
 
@@ -42,10 +40,10 @@ object RiskingResponseEntity:
   given OWrites[RiskingResponseEntity] = Json.writes[RiskingResponseEntity]
 
 final case class RiskingResponseIndividual(
-                                            applicationReference: ApplicationReference,
-                                            personReference: PersonReference,
-                                            riskingOutcome: AuditOutcome,
-                                            failures: Option[List[FailureDetail]]
+  applicationReference: ApplicationReference,
+  personReference: PersonReference,
+  riskingOutcome: AuditOutcome,
+  failures: Option[List[FailureDetail]]
 )
 extends AuditEvent
 
@@ -61,6 +59,7 @@ object FailureDetail:
   given OFormat[FailureDetail] = Json.format[FailureDetail]
 
 enum AuditOutcome:
+
   case Success
   case NonFixableFailure
   case FixableFailure
@@ -69,7 +68,8 @@ object AuditOutcome:
 
   given Format[AuditOutcome] = JsonFormatsFactory.makeEnumFormat
 
-  def fromRiskingOutcome(outcome: RiskingOutcome): AuditOutcome = outcome match
-    case RiskingOutcome.Approved         => Success
-    case RiskingOutcome.FailedNonFixable => NonFixableFailure
-    case RiskingOutcome.FailedFixable    => FixableFailure
+  def fromRiskingOutcome(outcome: RiskingOutcome): AuditOutcome =
+    outcome match
+      case RiskingOutcome.Approved => Success
+      case RiskingOutcome.FailedNonFixable => NonFixableFailure
+      case RiskingOutcome.FailedFixable => FixableFailure

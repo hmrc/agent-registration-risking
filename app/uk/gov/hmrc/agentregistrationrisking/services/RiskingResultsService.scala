@@ -20,10 +20,6 @@ import play.api.mvc.RequestHeader
 import sttp.model.Uri
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
-import uk.gov.hmrc.agentregistrationrisking.audit.AuditOutcome
-import uk.gov.hmrc.agentregistrationrisking.audit.FailureDetail
-import uk.gov.hmrc.agentregistrationrisking.audit.RiskingResponseEntity
-import uk.gov.hmrc.agentregistrationrisking.audit.RiskingResponseIndividual
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
@@ -147,11 +143,7 @@ extends RequestAwareLogging:
           .upsert(updatedApplication)
           .map: _ =>
             logger.debug(s"Updated Application with risking results: ${updatedApplication.applicationReference} ($outcome)")
-            auditService.sendAudit(RiskingResponseEntity(
-              applicationReference = updatedApplication.applicationReference,
-              riskingOutcome = AuditOutcome.fromRiskingOutcome(outcome),
-              failures = toFailureDetails(riskingResult.rawFailures)
-            ))
+            auditService.sendRiskingResponseEntityEvent(riskingResult)
 
   private def updateRiskingResults(riskingResult: RiskingResult.ForIndividual)(using request: RequestHeader): Future[Unit] = individualForRiskingRepo
     .findById(riskingResult.personReference)
@@ -171,13 +163,4 @@ extends RequestAwareLogging:
           .upsert(updatedIndividual)
           .map: _ =>
             logger.debug(s"Updated Individual with risking results: ${updatedIndividual.personReference} ($outcome)")
-            auditService.sendAudit(RiskingResponseIndividual(
-              applicationReference = updatedIndividual.applicationReference,
-              personReference = updatedIndividual.personReference,
-              riskingOutcome = AuditOutcome.fromRiskingOutcome(outcome),
-              failures = toFailureDetails(riskingResult.rawFailures)
-            ))
-
-  private def toFailureDetails(rawFailures: List[uk.gov.hmrc.agentregistrationrisking.model.Failure]): Option[List[FailureDetail]] =
-    val details = rawFailures.map(f => FailureDetail(reasonCode = f.reasonCode, reasonDescription = f.reasonDescription))
-    if details.isEmpty then None else Some(details)
+            auditService.sendRiskingResponseIndividualEvent(updatedIndividual, riskingResult)
