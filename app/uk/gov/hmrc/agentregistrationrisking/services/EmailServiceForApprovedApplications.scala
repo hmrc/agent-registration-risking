@@ -22,7 +22,6 @@ import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
@@ -38,8 +37,7 @@ import scala.concurrent.Future
 class EmailServiceForApprovedApplications @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
-  applicationOutcomeService: ApplicationOutcomeService
+  individualForRiskingRepo: IndividualForRiskingRepo
 )(using ExecutionContext)
 extends RequestAwareLogging:
 

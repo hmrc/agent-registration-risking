@@ -40,7 +40,6 @@ import scala.concurrent.Future
 @Singleton
 class SubscriptionService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  applicationOutcomeService: ApplicationOutcomeService,
   hipConnector: HipConnector,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   clock: Clock

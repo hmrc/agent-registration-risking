@@ -16,18 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
-import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
@@ -37,14 +32,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import com.softwaremill.quicklens.modify
 
 @Singleton
 class EmailServiceForFailedNonFixable @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
-  applicationOutcomeService: ApplicationOutcomeService
+  individualForRiskingRepo: IndividualForRiskingRepo
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
