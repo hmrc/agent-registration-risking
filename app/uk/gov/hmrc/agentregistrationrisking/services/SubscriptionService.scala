@@ -53,15 +53,9 @@ extends RequestAwareLogging:
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyToBeSubscribed()
       applicationCount: Int = applications.size
       _ = logger.info(s"Found $applicationCount applications ready to subscribe")
-      subscriptionSuccessCount <- ProcessInSequence
-        .processInSequence(applications): application =>
-          subscribeApplication(application)
-            .map(_ => true)
-            .recover:
-              case ex: Throwable =>
-                logger.error(s"Failed to subscribe agent: ${application.agentApplication.applicationReference.value}: ${ex.getMessage}")
-                false
-        .map(_.count(identity))
+      subscriptionSuccessCount <-
+        ProcessInSequence.processAllInSequence(applications)(subscribeApplication):
+          case (ex, application) => logger.error(s"Failed to subscribe agent: ${application.agentApplication.applicationReference.value}", ex)
       _ = logger.info(s"Subscribed $subscriptionSuccessCount/$applicationCount applications")
     yield ()
 
