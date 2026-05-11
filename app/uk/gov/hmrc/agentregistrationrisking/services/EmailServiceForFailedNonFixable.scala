@@ -26,12 +26,10 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -46,7 +44,7 @@ class EmailServiceForFailedNonFixable @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
-  applicationStatusService: ApplicationStatusService
+  applicationOutcomeService: ApplicationOutcomeService
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -78,11 +76,7 @@ extends RequestAwareLogging:
       updatedApplication <- process(application)
       _ <-
         ProcessInSequence
-          .processInSequence(
-            individuals
-              .filter(_.individualRiskingResult.exists(_.failures.outcome === RiskingOutcome.FailedNonFixable))
-              .filter(_.isEmailSent === false)
-          )(process)
+          .processInSequence(individuals.filter(_.isEmailSent === false))(process)
       _ <- applicationForRiskingRepo
         .upsert(updatedApplication.modify(_.overallStatus.emailsProcessed).setTo(true))
     yield ()

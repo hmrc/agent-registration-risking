@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ApplicationStatusService @Inject() (
+class ApplicationOutcomeService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo
 )(using
   ExecutionContext
@@ -38,28 +38,30 @@ extends RequestAwareLogging:
 
   def processOverallOutcomes()(using RequestHeader): Future[Unit] =
     for
-      applicationsWithIndividuals <- applicationForRiskingRepo.findApplicationsAwaitingOverallOutcome()
-      eligible: Seq[ApplicationWithIndividuals] = applicationsWithIndividuals.filter(_.individuals.forall(_.individualRiskingResult.isDefined))
-      applicationCount: Int = eligible.size
+      applicationWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findReadyToSetRiskingOutcome()
+      applicationCount: Int = applicationWithIndividuals.size
       _ = logger.info(s"Found $applicationCount applications ready to compute overall outcome")
-      successCount <-
+      updatedOutcomeCount <-
         ProcessInSequence
-          .processAllInSequence(eligible)(computeAndSaveOverallOutcome):
+          .processAllInSequence(applicationWithIndividuals)(computeAndSaveOverallOutcome):
             case (ex, appWithIndividuals) =>
               logger.error(
                 s"Failed to compute overall outcome for application ${appWithIndividuals.application.applicationReference.value}",
                 ex
               )
-      _ = logger.info(s"Computed overall outcome for $successCount/$applicationCount applications")
+      _ = logger.info(s"Successfully computed overall outcome for $updatedOutcomeCount/$applicationCount applications")
     yield ()
 
   private def computeAndSaveOverallOutcome(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     RiskingOutcomeHelper.computeRiskingOutcome(applicationWithIndividuals) match
       case None =>
-        logger.warn(s"Could not compute overall outcome for ${applicationWithIndividuals.application.applicationReference.value} (missing results)")
+        logger.error(s"BUG: Missing risking results for application ${applicationWithIndividuals.application.applicationReference} - this should not happen")
         Future.unit
       case Some(outcome) =>
-        val updated = applicationWithIndividuals.application
+        val applicationForRisking: ApplicationForRisking = applicationWithIndividuals
+          .application
           .modify(_.overallStatus.riskingOutcome)
           .setTo(Some(outcome))
-        applicationForRiskingRepo.upsert(updated).map(_ => ())
+        applicationForRiskingRepo
+          .upsert(applicationForRisking)
+          .map(_ => ())

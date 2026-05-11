@@ -39,7 +39,7 @@ class EmailServiceForApprovedApplications @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
-  applicationStatusService: ApplicationStatusService
+  applicationOutcomeService: ApplicationOutcomeService
 )(using ExecutionContext)
 extends RequestAwareLogging:
 

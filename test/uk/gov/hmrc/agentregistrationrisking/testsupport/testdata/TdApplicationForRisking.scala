@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import com.softwaremill.quicklens.modify
 
 object TdApplicationForRisking:
 
@@ -85,30 +86,32 @@ trait TdApplicationForRisking:
       )
     )
 
-    val failedFixable: ApplicationForRisking = submittedForRisking.copy(
-      entityRiskingResult = Some(EntityRiskingResult(
-        failures = List(
-          TdFailures.entityFailures.fixable1,
-          TdFailures.entityFailures.fixable2
-        ),
-        receivedAt = instant.minus(2, ChronoUnit.DAYS)
-      )),
-      overallStatus = OverallStatus(
-        riskingOutcome = Some(RiskingOutcome.FailedFixable),
-        emailsProcessed = false
-      )
-    )
+    val approvedAndSubscribed: ApplicationForRisking = approved.copy(isSubscribed = true)
 
-    val failedNonFixable: ApplicationForRisking = submittedForRisking.copy(
-      entityRiskingResult = Some(EntityRiskingResult(
-        failures = List(
-          TdFailures.entityFailures.fixable2,
-          TdFailures.entityFailures.nonFixable2
-        ),
-        receivedAt = instant.minus(2, ChronoUnit.DAYS)
-      )),
-      overallStatus = OverallStatus(
-        riskingOutcome = Some(RiskingOutcome.FailedNonFixable),
-        emailsProcessed = false
+    val approvedAndSubscribedAndEmailSent: ApplicationForRisking = approvedAndSubscribed
+      .copy(isEmailSent = true)
+      .modify(_.overallStatus.emailsProcessed).setTo(true)
+
+    val failedFixable: ApplicationForRisking = submittedForRisking
+      .copy(
+        entityRiskingResult = Some(EntityRiskingResult(
+          failures = List(
+            TdFailures.entityFailures.fixable1,
+            TdFailures.entityFailures.fixable2
+          ),
+          receivedAt = instant.minus(2, ChronoUnit.DAYS)
+        ))
       )
-    )
+      .modify(_.overallStatus.riskingOutcome).setTo(Some(RiskingOutcome.FailedFixable))
+
+    val failedNonFixable: ApplicationForRisking = submittedForRisking
+      .copy(
+        entityRiskingResult = Some(EntityRiskingResult(
+          failures = List(
+            TdFailures.entityFailures.fixable2,
+            TdFailures.entityFailures.nonFixable2
+          ),
+          receivedAt = instant.minus(2, ChronoUnit.DAYS)
+        ))
+      )
+      .modify(_.overallStatus.riskingOutcome).setTo(Some(RiskingOutcome.FailedNonFixable))

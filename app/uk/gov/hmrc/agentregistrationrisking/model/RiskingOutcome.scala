@@ -26,4 +26,4 @@ enum RiskingOutcome:
   case FailedFixable
 
 object RiskingOutcome:
-  given Format[RiskingOutcome] = JsonFormatsFactory.makeEnumFormat[RiskingOutcome]
+  given format: Format[RiskingOutcome] = JsonFormatsFactory.makeEnumFormat[RiskingOutcome]

@@ -32,8 +32,11 @@ import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.testdata.providedetails.individual.TdIndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.testdata.agentapplication.TdAgentApplicationLlp
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes.TdRiskingRecords
 
 import java.time.Instant
@@ -58,50 +61,84 @@ import java.time.temporal.TemporalUnit
 //      override def instant: Instant = Instant.parse("2059-11-26T16:33:51Z")
 //      override def riskingFileName: RiskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
 
-object TdRisking:
+object TdApplicationWithRiskingInstances:
 
-  def make(
-    instant: Instant,
-    agentApplication: AgentApplication,
-    personReferencePrefix: String,
-    riskingFileName: RiskingFileName
-  ): TdRisking =
-    val instantParam: Instant = instant
-    val agentApplicationParam: AgentApplication = agentApplication
-    val personReferencePrefixParam: String = personReferencePrefix
-    val riskingFileNameParam: RiskingFileName = riskingFileName
-    new TdRisking:
-      override def instant: Instant = instantParam
-      override def agentApplication: AgentApplication = agentApplicationParam
-      override def personReferencePrefix: String = personReferencePrefixParam
-      override def riskingFileName: RiskingFileName = riskingFileNameParam
+  private object readyForSubmission:
 
-trait TdRisking:
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.readyForSubmission
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
 
-  def agentApplication: AgentApplication
-  def personReferencePrefix: String
-  def instant: Instant
-  def riskingFileName: RiskingFileName
+  private object submittedForRisking:
 
-  def tdApplicationForRisking: TdApplicationForRisking = TdApplicationForRisking.make(
-    instant = instant,
-    riskingFileName = riskingFileName,
-    agentApplication = agentApplication
-  )
-
-  def tdIndividualsForRisking: TdIndividualsForRisking = TdIndividualsForRisking.make(
-    instantParam = instant,
-    personReferencePrefixParam = personReferencePrefix,
-    applicationReferenceParam = agentApplication.applicationReference
-  )
-
-  def submitForRiskingRequest: SubmitForRiskingRequest = SubmitForRiskingRequest(
-    agentApplication = agentApplication,
-    individuals = List(
-      tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualProvidedDetails,
-      tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualProvidedDetails
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking2
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
     )
-  )
+
+  private object partiallyRisked:
+
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking6
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedFixable
+
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  private object approved:
+
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking3
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  private object approvedAndSubscribed:
+
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking7
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribed
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  private object approvedAndSubscribedAndEmailSent:
+
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking8
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribedAndEmailSent
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
+      application = application,
+      individuals = Seq(individual1, individual2)
+    )
+
+  private object failedFixable:
+
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking4
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+  private object failedNonFixable:
+
+    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking5
+    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixable
+    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
+    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
 object TdAll:
 
@@ -120,46 +157,4 @@ extends TdRiskingBase,
   TdRiskingRecords,
   TdEmail:
 
-  val tdRisking: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-25T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPGENPAR1"))
-        .agentApplicationGeneralPartnership
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFGENP",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt")
-  )
-
-  val tdRisking2: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-26T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPSOLTRA1"))
-        .agentApplicationSoleTrader
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFSOLT",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
-  )
-
-  val tdRisking3: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-27T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPLLPART1"))
-        .agentApplicationLlp
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFLLPA",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591127_163351.txt")
-  )
-
-  val tdRisking4: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-28T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPSCOPAR1"))
-        .agentApplicationScottishPartnership
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFSCOP",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591128_163351.txt")
-  )
+  export TdRiskingInstances.*
