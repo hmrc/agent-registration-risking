@@ -27,12 +27,14 @@ object RiskingResult:
 
   final case class ForIndividual(
     personReference: PersonReference,
-    failures: List[IndividualFailure]
+    failures: List[IndividualFailure],
+    rawFailures: List[Failure]
   )
   extends RiskingResult
 
   final case class ForEntity(
     applicationReference: ApplicationReference,
-    failures: List[EntityFailure]
+    failures: List[EntityFailure],
+    rawFailures: List[Failure]
   )
   extends RiskingResult
