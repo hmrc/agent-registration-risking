@@ -20,7 +20,9 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -57,7 +59,12 @@ trait TdApplicationForRisking:
     lastUpdatedAt = instant,
     entityRiskingResult = None,
     isSubscribed = false,
-    isEmailSent = false
+    isEmailSent = false,
+    overallStatus = OverallStatus(
+      riskingOutcome = None,
+      isSubscribed = false,
+      emailsProcessed = false
+    )
   )
 
   def submittedForRisking: ApplicationForRisking = readyForSubmission
@@ -72,7 +79,12 @@ trait TdApplicationForRisking:
       entityRiskingResult = Some(EntityRiskingResult(
         failures = List.empty,
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
-      ))
+      )),
+      overallStatus = OverallStatus(
+        riskingOutcome = Some(RiskingOutcome.Approved),
+        isSubscribed = false,
+        emailsProcessed = false
+      )
     )
 
     val failedFixable: ApplicationForRisking = submittedForRisking.copy(
@@ -82,7 +94,12 @@ trait TdApplicationForRisking:
           TdFailures.entityFailures.fixable2
         ),
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
-      ))
+      )),
+      overallStatus = OverallStatus(
+        riskingOutcome = Some(RiskingOutcome.FailedFixable),
+        isSubscribed = false,
+        emailsProcessed = false
+      )
     )
 
     val failedNonFixable: ApplicationForRisking = submittedForRisking.copy(
@@ -92,5 +109,10 @@ trait TdApplicationForRisking:
           TdFailures.entityFailures.nonFixable2
         ),
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
-      ))
+      )),
+      overallStatus = OverallStatus(
+        riskingOutcome = Some(RiskingOutcome.FailedNonFixable),
+        isSubscribed = false,
+        emailsProcessed = false
+      )
     )
