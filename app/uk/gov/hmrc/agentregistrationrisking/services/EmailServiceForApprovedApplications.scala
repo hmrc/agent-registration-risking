@@ -43,29 +43,24 @@ class EmailServiceForApprovedApplications @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
+  private val emailTemplateId: EmailTemplateId = EmailTemplateId.RegistrationSuccess
+
   def processEmails()(using RequestHeader): Future[Unit] =
     for
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findSubscribedReadyForSuccessEmail()
       applicationCount: Int = applications.size
-      _ = logger.info(s"Found ${applicationCount} subscribed applications ready for success email")
-      emailsSentSuccessCount <- ProcessInSequence
-        .processInSequence(applications): application =>
-          process(application)
-            .map(_ => true)
-            .recover:
-              case ex =>
-                logger.error(
-                  s"Failed to send registered email for application ${application.applicationReference.value} - will retry on next scheduler tick",
-                  ex
-                )
-                false
-        .map(_.count(identity))
-      _ = logger.info(s"Sent $emailsSentSuccessCount/$applicationCount emails")
+      _ = logger.info(s"Found $applicationCount subscribed applications ready to be sent an email: $emailTemplateId")
+      emailsSentSuccessCount <-
+        ProcessInSequence
+          .processAllInSequence(applications)(process):
+            case (ex, application) => logger.error(s"Failed to send email for ${application.applicationReference}: $emailTemplateId", ex)
+      _ = logger.info(s"Sent $emailsSentSuccessCount/$applicationCount $emailTemplateId emails")
     yield ()
 
   private def process(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
     for
       sendEmailRequest <- Future.successful(makeSendEmailRequest(application))
+      _ = logger.info(s"Sending ${sendEmailRequest.templateId} email for ${application.applicationReference}")
       _ <- emailConnector.sendEmail(sendEmailRequest)
       _ <- applicationForRiskingRepo.upsert(
         application
@@ -73,6 +68,7 @@ extends RequestAwareLogging:
           .modify(_.overallStatus.emailsProcessed)
           .setTo(true)
       )
+      _ = logger.info(s"Sent ${sendEmailRequest.templateId} email for ${application.applicationReference}")
     yield ()
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
@@ -80,7 +76,7 @@ extends RequestAwareLogging:
     val agentDetails = agentApplication.getAgentDetails
     SendEmailRequest(
       to = Seq(EmailAddress(agentDetails.getAgentEmailAddress.getEmailAddress)),
-      templateId = EmailTemplateId.RegistrationSuccess,
+      templateId = emailTemplateId,
       parameters = Map(
         "agentName" -> agentApplication.getApplicantContactDetails.applicantName.value,
         "applicationRef" -> agentApplication.applicationReference.value,

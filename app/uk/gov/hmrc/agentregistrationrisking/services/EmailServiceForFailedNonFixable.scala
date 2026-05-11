@@ -30,7 +30,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -49,11 +48,21 @@ class EmailServiceForFailedNonFixable @Inject() (
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
+  private val emailTemplateId: EmailTemplateId = EmailTemplateId.ApplicationNonFixableFailure
+
   def processEmails()(using requestHeader: RequestHeader): Future[Unit] =
     for
       applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findRequiringEmailProcessingForFailedNonFixable()
-      _ = logger.info(s"Found ${applicationsWithIndividuals.size} FailedNonFixable applications ready for failure emails")
-      _ <- ProcessInSequence.processInSequence(applicationsWithIndividuals)(process)
+      applicationsCount: Int = applicationsWithIndividuals.size
+      _ = logger.info(s"Found $applicationsCount FailedNonFixable applications with individuals ready to process emails")
+      successfullyProcessedCount <-
+        ProcessInSequence.processAllInSequence(applicationsWithIndividuals)(process):
+          case (ex, applicationWithIndividuals) =>
+            logger.error(
+              s"Failed to process emails for FailedNonFixable application: ${applicationWithIndividuals.application.applicationReference}",
+              ex
+            )
+      _ = logger.info(s"Processed emails for $successfullyProcessedCount/$applicationsCount FailedNonFixable applications")
     yield ()
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
@@ -63,18 +72,14 @@ extends RequestAwareLogging:
         case BusinessType.SoleTrader => applicationWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => applicationWithIndividuals.individuals
 
-    val processF: Future[Unit] =
-      for
-        updatedApplication <- process(application)
-        _ <-
-          ProcessInSequence
-            .processInSequence(individuals.filter(_.isEmailSent === false))(process)
-        _ <- applicationForRiskingRepo
-          .upsert(updatedApplication.modify(_.overallStatus.emailsProcessed).setTo(true))
-      yield ()
-
-    processF
-  // TODO: logging
+    for
+      updatedApplication <- process(application)
+      _ <-
+        ProcessInSequence
+          .processInSequence(individuals.filter(_.isEmailSent === false))(process)
+      _ <- applicationForRiskingRepo
+        .upsert(updatedApplication.modify(_.overallStatus.emailsProcessed).setTo(true))
+    yield ()
 
   private def process(application: ApplicationForRisking)(using RequestHeader): Future[ApplicationForRisking] =
     if application.isEmailSent
@@ -82,16 +87,20 @@ extends RequestAwareLogging:
     else
       for
         sendEmailRequest <- Future.successful(makeSendEmailRequest(application))
+        _ = logger.info(s"Sending ${sendEmailRequest.templateId} email for ${application.applicationReference}")
         _ <- emailConnector.sendEmail(sendEmailRequest)
         updatedApplication = application.copy(isEmailSent = true)
         _ <- applicationForRiskingRepo.upsert(updatedApplication)
+        _ = logger.info(s"Sent ${sendEmailRequest.templateId} email for ${application.applicationReference}")
       yield updatedApplication
 
   private def process(individual: IndividualForRisking)(using RequestHeader): Future[Unit] =
     for
       sendEmailRequest <- Future.successful(makeSendEmailRequest(individual))
+      _ = logger.info(s"Sending ${sendEmailRequest.templateId} email for ${individual.applicationReference} ${individual.personReference}")
       _ <- emailConnector.sendEmail(sendEmailRequest)
       _ <- individualForRiskingRepo.upsert(individual.copy(isEmailSent = true))
+      _ = logger.info(s"Sent ${sendEmailRequest.templateId} email for ${individual.applicationReference} ${individual.personReference}")
     yield ()
 
   private def isIndividualTheApplicant(
@@ -111,7 +120,7 @@ extends RequestAwareLogging:
     val agentApplication = application.agentApplication
     SendEmailRequest(
       to = Seq(EmailAddress(agentApplication.getAgentDetails.getAgentEmailAddress.getEmailAddress)),
-      templateId = EmailTemplateId.ApplicationNonFixableFailure,
+      templateId = emailTemplateId,
       parameters = Map(
         "agentName" -> agentApplication.getApplicantContactDetails.applicantName.value,
         "applicationRef" -> agentApplication.applicationReference.value
