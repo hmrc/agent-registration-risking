@@ -34,3 +34,16 @@ object ProcessInSequence:
       ) =>
         acc.flatMap(list => f(item).map(_ :: list))
     .map(_.reverse)
+
+  /** Like [[processInSequence]] but recovers per-item failures by invoking `onError` and returns the count of successful invocations. Use when the caller wants
+    * best-effort processing — one item's failure doesn't abort the rest, and the caller decides how to log/record the failure.
+    */
+  def processInSequenceWithRecovery[A](items: Seq[A])(action: A => Future[Unit])(onError: (A, Throwable) => Unit)(using ExecutionContext): Future[Int] =
+    processInSequence(items): item =>
+      action(item)
+        .map(_ => true)
+        .recover:
+          case ex =>
+            onError(item, ex)
+            false
+    .map(_.count(identity))

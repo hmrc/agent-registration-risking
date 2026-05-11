@@ -48,18 +48,17 @@ extends RequestAwareLogging:
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findSubscribedReadyForSuccessEmail()
       applicationCount: Int = applications.size
       _ = logger.info(s"Found ${applicationCount} subscribed applications ready for success email")
-      emailsSentSuccessCount <- ProcessInSequence
-        .processInSequence(applications): application =>
-          process(application)
-            .map(_ => true)
-            .recover:
-              case ex =>
-                logger.error(
-                  s"Failed to send registered email for application ${application.applicationReference.value} - will retry on next scheduler tick",
-                  ex
-                )
-                false
-        .map(_.count(identity))
+      emailsSentSuccessCount <-
+        ProcessInSequence
+          .processInSequenceWithRecovery(applications)(process):
+            (
+              application,
+              ex
+            ) =>
+              logger.error(
+                s"Failed to send registered email for application ${application.applicationReference.value} - will retry on next scheduler tick",
+                ex
+              )
       _ = logger.info(s"Sent $emailsSentSuccessCount/$applicationCount emails")
     yield ()
 
