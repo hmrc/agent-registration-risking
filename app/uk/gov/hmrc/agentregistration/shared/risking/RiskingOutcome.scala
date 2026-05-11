@@ -18,29 +18,6 @@ package uk.gov.hmrc.agentregistration.shared.risking
 
 enum RiskingOutcome:
 
-<<<<<<<< HEAD:app/uk/gov/hmrc/agentregistration/shared/risking/RiskingOutcome.scala
-<<<<<<<< HEAD:app/uk/gov/hmrc/agentregistration/shared/risking/RiskingOutcome.scala
   case FailedNonFixable
   case FailedFixable
   case Approved
-========
-enum ApplicationForRiskingStatusOld:
-========
-enum RiskingStatus:
->>>>>>>> 232a634 ([WG][APB-11100] Do actions per Pav description):app/uk/gov/hmrc/agentregistration/shared/risking/RiskingStatus.scala
-
-  case ReadyForSubmission
-  case SubmittedForRisking
-  case ReceivedRiskingResults
-
-<<<<<<<< HEAD:app/uk/gov/hmrc/agentregistration/shared/risking/RiskingOutcome.scala
-object ApplicationForRiskingStatusOld:
-
-  given Format[ApplicationForRiskingStatusOld] = JsonFormatsFactory.makeEnumFormat[ApplicationForRiskingStatusOld]
-
-  type RiskingCompletedStatus = Approved.type | FailedNonFixable.type | FailedFixable.type
->>>>>>>> 7c02966 ([APB-11100] model):app/uk/gov/hmrc/agentregistration/shared/risking/ApplicationForRiskingStatusOld.scala
-========
-object RiskingStatus:
-  given Format[RiskingStatus] = JsonFormatsFactory.makeEnumFormat[RiskingStatus]
->>>>>>>> 232a634 ([WG][APB-11100] Do actions per Pav description):app/uk/gov/hmrc/agentregistration/shared/risking/RiskingStatus.scala

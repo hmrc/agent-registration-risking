@@ -14,27 +14,13 @@
  * limitations under the License.
  */
 
-<<<<<<<< HEAD:app/uk/gov/hmrc/agentregistration/shared/audit/SessionId.scala
 package uk.gov.hmrc.agentregistration.shared.audit
-========
-package uk.gov.hmrc.agentregistrationrisking.model
->>>>>>>> e646367 ([APB-11100] fixes after sync from FE):app/uk/gov/hmrc/agentregistrationrisking/model/RiskingFileWithContent.scala
 
-final case class RiskingFileWithContent(
-  riskingFile: RiskingFile,
-  riskingFileContent: RiskingFileWithContent.RiskingFileContent,
-  numberOfRecords: RiskingFileWithContent.NumberOfRecords
-)
+import play.api.libs.json.Format
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-<<<<<<<< HEAD:app/uk/gov/hmrc/agentregistration/shared/audit/SessionId.scala
 final case class SessionId(value: String)
 
 object SessionId:
 
   given format: Format[SessionId] = JsonFormatsFactory.makeValueClassFormat
-========
-object RiskingFileWithContent:
-
-  type NumberOfRecords = Int
-  type RiskingFileContent = String
->>>>>>>> e646367 ([APB-11100] fixes after sync from FE):app/uk/gov/hmrc/agentregistrationrisking/model/RiskingFileWithContent.scala
