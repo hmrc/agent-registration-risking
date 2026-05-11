@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
@@ -61,6 +62,7 @@ class RiskingResultsService @Inject() (
   objectStoreService: ObjectStoreService,
   correlationIdGenerator: CorrelationIdGenerator,
   riskingResultsFileConnector: RiskingResultsFileConnector,
+  auditService: AuditService,
   clock: Clock
 )(using
   ExecutionContext
@@ -140,6 +142,7 @@ extends RequestAwareLogging:
           .upsert(updatedApplication)
           .map: _ =>
             logger.debug(s"Updated Application with risking results: ${updatedApplication.applicationReference} (${riskingResult.failures.outcomeForEntity})")
+            auditService.sendRiskingResponseEntityEvent(riskingResult)
 
   private def updateRiskingResults(riskingResult: RiskingResult.ForIndividual)(using request: RequestHeader): Future[Unit] = individualForRiskingRepo
     .findById(riskingResult.personReference)
@@ -158,3 +161,4 @@ extends RequestAwareLogging:
           .upsert(updatedIndividual)
           .map: _ =>
             logger.debug(s"Updated Individual with risking results: ${updatedIndividual.personReference} (${riskingResult.failures.outcome})")
+            auditService.sendRiskingResponseIndividualEvent(updatedIndividual, riskingResult)

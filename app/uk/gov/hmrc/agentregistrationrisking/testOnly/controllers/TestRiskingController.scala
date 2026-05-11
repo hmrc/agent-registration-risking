@@ -28,7 +28,6 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
-import uk.gov.hmrc.agentregistrationrisking.testOnly.services.TestOnlyRiskingResultsService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
@@ -52,8 +51,7 @@ class TestRiskingController @Inject() (
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
   riskingRunner: RiskingRunner,
-  sdesProxyService: SdesProxyService,
-  testOnlyRiskingResultsService: TestOnlyRiskingResultsService
+  sdesProxyService: SdesProxyService
 )(using clock: Clock)
 extends BackendController(cc)
 with Logging:

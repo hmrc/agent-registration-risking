@@ -79,7 +79,7 @@ final case class RiskingFileDataRecord(
       amlSupervisoryBody.map(_.value).getOrElse(""),
       amlRegNumber.map(_.value).getOrElse(""),
       amlExpiryDate.map(asMinervaDate).getOrElse(""),
-      amlEvidence.map(_.uploadId.value).getOrElse(""),
+      amlEvidence.map(_.fileUploadReference.value).getOrElse(""),
       personReference.map(_.value).getOrElse(""),
       individualCompaniesHouseName.getOrElse(""),
       individualCompaniesHouseDateOfBirth.map(_.toString).getOrElse(""),

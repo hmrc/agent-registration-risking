@@ -29,9 +29,11 @@ object RiskingResultParser:
             failures,
             None
           ) =>
+        val rawFailures = failures.getOrElse(Nil)
         RiskingResult.ForEntity(
           applicationReference = applicationReference,
-          failures = failures.getOrElse(Nil).map(FailureParser.parseEntityFailure)
+          failures = rawFailures.map(FailureParser.parseEntityFailure),
+          rawFailures = rawFailures
         )
       case RiskingResultRecord(
             RecordType.Individual,
@@ -39,8 +41,10 @@ object RiskingResultParser:
             failures,
             Some(personReference: PersonReference)
           ) =>
+        val rawFailures = failures.getOrElse(Nil)
         RiskingResult.ForIndividual(
           personReference = personReference,
-          failures = failures.getOrElse(Nil).map(FailureParser.parseIndividualFailure)
+          failures = rawFailures.map(FailureParser.parseIndividualFailure),
+          rawFailures = rawFailures
         )
       case other => throw new RuntimeException(s"Could not parse this unexpected risking result record: $other")

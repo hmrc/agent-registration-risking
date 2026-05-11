@@ -42,6 +42,7 @@ trait TdAgentApplicationLlp { dependencies: (TdBase & TdGrsBusinessDetails) =>
       linkId = dependencies.linkId,
       groupId = dependencies.groupId,
       createdAt = dependencies.nowAsInstant,
+      applicationExpiresAt = Some(dependencies.applicationExpiresAtAsInstant),
       submittedAt = None,
       applicationState = ApplicationState.Started,
       userRole = Some(UserRole.Authorised),
@@ -99,6 +100,16 @@ trait TdAgentApplicationLlp { dependencies: (TdBase & TdGrsBusinessDetails) =>
       hmrcStandardForAgentsAgreed = StateOfAgreement.Agreed
     )
 
+    val afterZeroCompaniesHouseOfficers: AgentApplicationLlp = afterHmrcStandardForAgentsAgreed.copy(
+      numberOfIndividuals = Some(
+        FiveOrLessOfficers(
+          numberOfCompaniesHouseOfficers = 0,
+          isCompaniesHouseOfficersListCorrect = true
+        )
+      ),
+      hasOtherRelevantIndividuals = Some(true)
+    )
+
     val afterConfirmCompaniesHouseOfficersYes: AgentApplicationLlp = afterHmrcStandardForAgentsAgreed.copy(
       numberOfIndividuals = Some(
         dependencies.fiveOrLessCompaniesHouseOfficers
@@ -137,7 +148,8 @@ trait TdAgentApplicationLlp { dependencies: (TdBase & TdGrsBusinessDetails) =>
 
     val afterDeclarationSubmitted: AgentApplicationLlp = afterConfirmTwoChOfficers.copy(
       applicationState = ApplicationState.SentForRisking,
-      submittedAt = Some(dependencies.nowAsInstant)
+      submittedAt = Some(dependencies.nowAsInstant),
+      applicationExpiresAt = None
     )
 
     val afterSentForRisking: AgentApplicationLlp = afterDeclarationSubmitted.copy(
@@ -161,7 +173,7 @@ trait TdAgentApplicationLlp { dependencies: (TdBase & TdGrsBusinessDetails) =>
         supervisoryBody = AmlsCode("HMRC"),
         amlsRegistrationNumber = Some(AmlsRegistrationNumber("XAML1234567890")),
         amlsEvidence = Some(uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence(
-          uk.gov.hmrc.agentregistration.shared.upload.UploadId("evidence-reference-123"),
+          uk.gov.hmrc.agentregistration.shared.upload.FileUploadReference("evidence-reference-123"),
           "certificate.pdf",
           uk.gov.hmrc.objectstore.client.Path.File("/test.txt")
         ))
