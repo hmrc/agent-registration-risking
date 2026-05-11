@@ -27,18 +27,18 @@ object EmailStubs:
 
   private val sendEmailUrl: String = "/hmrc/email"
 
-  def stubSendEmail(emailInformation: SendEmailRequest): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(sendEmailUrl),
-    requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(emailInformation)))),
-    responseStatus = 202
-  )
+  def stubSendEmail(emailInformation: SendEmailRequest): StubMapping = stub(emailInformation, responseStatus = 202)
 
-  def stubSendEmailFailure(emailInformation: SendEmailRequest): StubMapping = StubMaker.make(
+  def stubSendEmailFailure(emailInformation: SendEmailRequest): StubMapping = stub(emailInformation, responseStatus = 500)
+
+  private def stub(
+    emailInformation: SendEmailRequest,
+    responseStatus: Int
+  ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(sendEmailUrl),
     requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(emailInformation)))),
-    responseStatus = 500
+    responseStatus = responseStatus
   )
 
   def verifySendEmail(count: Int = 1): Unit = StubMaker.verify(
