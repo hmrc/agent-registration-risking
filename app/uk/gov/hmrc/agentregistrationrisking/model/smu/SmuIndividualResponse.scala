@@ -43,9 +43,8 @@ object SmuIndividualResponse:
 
   def make(
     ipd: IndividualProvidedDetails,
-    aa: AgentApplication,
-    amlsEvidencePresignedDownloadUrl: Option[PresignedDownloadUrl]
-  ) = SmuIndividualResponse(Individual.make(ipd), Entity.make(aa, amlsEvidencePresignedDownloadUrl))
+    aa: AgentApplication
+  ) = SmuIndividualResponse(Individual.make(ipd), Entity.make(aa))
 
   final case class Individual(
     personReference: PersonReference,
@@ -78,6 +77,7 @@ object SmuIndividualResponse:
         ipd.getDateOfBirth match
           case IndividualDateOfBirth.Provided(date) => date
           case IndividualDateOfBirth.FromCitizensDetails(date) => date
+          case IndividualDateOfBirth.ApplicantProvided(date) => date
       ,
       individualNino =
         ipd.individualNino match
@@ -110,7 +110,7 @@ object SmuIndividualResponse:
     amlsSupervisoryBody: AmlsCode,
     amlsRegNumber: AmlsRegistrationNumber,
     amlsExpiryDate: Option[LocalDate],
-    amlsEvidencePresignedDownloadUrl: Option[String],
+    amlsEvidenceReferenceId: Option[String],
     applicantPhone: Option[TelephoneNumber],
     applicantEmail: Option[EmailAddress]
   )
@@ -120,8 +120,7 @@ object SmuIndividualResponse:
     given format: OFormat[Entity] = Json.format[Entity]
 
     private[SmuIndividualResponse] def make(
-      aa: AgentApplication,
-      amlsEvidencePresignedDownloadUrl: Option[PresignedDownloadUrl]
+      aa: AgentApplication
     ): Entity = Entity(
       applicationReference = aa.applicationReference,
       // TODO update this once we have implemented resubmission flags
@@ -139,7 +138,7 @@ object SmuIndividualResponse:
       amlsSupervisoryBody = aa.getAmlsDetails.supervisoryBody,
       amlsRegNumber = aa.getAmlsDetails.getRegistrationNumber,
       amlsExpiryDate = None,
-      amlsEvidencePresignedDownloadUrl = amlsEvidencePresignedDownloadUrl.map(_.downloadUrl.toString),
+      amlsEvidenceReferenceId = aa.getAmlsDetails.amlsEvidence.map(_.fileUploadReference.value),
       applicantPhone = aa.applicantContactDetails.map(_.getTelephoneNumber),
       applicantEmail = aa.applicantContactDetails.map(_.getVerifiedEmail)
     )

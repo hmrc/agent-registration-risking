@@ -78,23 +78,10 @@ extends BackendController(cc):
         maybeIndividual match
           case Some(indi) => applicationForRiskingRepo.findById(indi.applicationReference)
           case None => Future.successful(None)
-      maybePresignedAmlsEvidenceUrl: Option[PresignedDownloadUrl] <-
-        maybeApp match
-          case Some(app) =>
-            if app.agentApplication.getAmlsDetails.isHmrc then Future.successful(None)
-            else
-              val amlsEvidence: AmlsEvidence = app.agentApplication.getAmlsDetails.getAmlsEvidence
-              objectStoreService.generatePreSignedDownloadUrl(
-                amlsEvidence.objectStoreLocation.directory,
-                amlsEvidence.fileName,
-                appConfig.SmuViewer.amlsEvidenceOwner
-              ).map(Option(_))
-          case None => Future.successful(None)
-    yield (maybeIndividual, maybeApp, maybePresignedAmlsEvidenceUrl) match
-      case (Some(indi), Some(app), _) =>
+    yield (maybeIndividual, maybeApp) match
+      case (Some(indi), Some(app)) =>
         Ok(Json.toJson(SmuIndividualResponse.make(
           indi.individualProvidedDetails,
-          app.agentApplication,
-          maybePresignedAmlsEvidenceUrl
+          app.agentApplication
         )))
       case _ => NoContent
