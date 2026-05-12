@@ -27,9 +27,9 @@ object EmailStubs:
 
   private val sendEmailUrl: String = "/hmrc/email"
 
-  def stubSendEmail(emailInformation: SendEmailRequest): StubMapping = stub(emailInformation, responseStatus = 202)
+  def stubSendEmail(sendEmailRequest: SendEmailRequest): StubMapping = stub(sendEmailRequest, responseStatus = 202)
 
-  def stubSendEmailFailure(emailInformation: SendEmailRequest): StubMapping = stub(emailInformation, responseStatus = 500)
+  def stubSendEmailFailure(sendEmailRequest: SendEmailRequest): StubMapping = stub(sendEmailRequest, responseStatus = 500)
 
   private def stub(
     sendEmailRequest: SendEmailRequest,
