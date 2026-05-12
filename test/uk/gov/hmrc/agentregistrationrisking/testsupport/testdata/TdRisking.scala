@@ -17,10 +17,13 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 
 import java.time.Instant
+import scala.util.Random
 
 trait TdRisking:
 
@@ -66,3 +69,21 @@ object TdRisking:
       override def agentApplication: AgentApplication = agentApplicationParam
       override def personReferencePrefix: String = personReferencePrefixParam
       override def riskingFileName: RiskingFileName = riskingFileNameParam
+
+  def make(
+    seed: String
+  ): TdRisking =
+    val random: Random = new scala.util.Random(seed.hashCode)
+    val instant: Instant = Instant.parse("2059-11-26T16:33:51Z").plusSeconds(random.nextInt(1000000))
+    val application: AgentApplicationLlp =
+      TdApplicationsFactory
+        .make(ApplicationReference(s"APPREF_$seed"))
+        .agentApplicationLlp
+        .afterDeclarationSubmitted
+
+    make(
+      instant = instant,
+      agentApplication = application,
+      personReferencePrefix = s"PREF_$seed",
+      riskingFileName = RiskingFileName.make(instant)
+    )

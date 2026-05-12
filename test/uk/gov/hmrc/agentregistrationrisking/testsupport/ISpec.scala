@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport
 
 import com.google.inject.AbstractModule
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -31,6 +32,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdZoneId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.test.MongoSupport
@@ -43,6 +45,7 @@ import scala.concurrent.ExecutionContext
 trait ISpec
 extends AnyFreeSpecLike,
   BeforeAndAfterEach,
+  BeforeAndAfterAll,
   GuiceOneServerPerSuite,
   WireMockSupport,
   RichMatchers,
@@ -56,8 +59,7 @@ extends AnyFreeSpecLike,
 
   lazy val tdAll: TdAll = TdAll.tdAll
   lazy val frozenInstant: Instant = tdAll.instant
-  private val zoneId: ZoneId = ZoneId.of("UTC")
-  lazy val clock: Clock = Clock.fixed(frozenInstant, zoneId)
+  lazy val clock: Clock = Clock.fixed(frozenInstant, TdZoneId.zoneId)
 
   protected def configMap: Map[String, Any] =
     Map[String, Any](

@@ -40,6 +40,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes.TdRiskingRecords
 
 import java.time.Instant
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalUnit
 
@@ -61,85 +62,6 @@ import java.time.temporal.TemporalUnit
 //      override def instant: Instant = Instant.parse("2059-11-26T16:33:51Z")
 //      override def riskingFileName: RiskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
 
-object TdApplicationWithRiskingInstances:
-
-  private object readyForSubmission:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.readyForSubmission
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
-
-  private object submittedForRisking:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking2
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object partiallyRisked:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking6
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedFixable
-
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object approved:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking3
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object approvedAndSubscribed:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking7
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribed
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object approvedAndSubscribedAndEmailSent:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking8
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribedAndEmailSent
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object failedFixable:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking4
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-
-  private object failedNonFixable:
-
-    private val tdRisking: TdRisking = TdRiskingInstances.tdRisking5
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixable
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-
 object TdAll:
 
   def apply(): TdAll = new TdAll {}
@@ -157,4 +79,7 @@ extends TdRiskingBase,
   TdRiskingRecords,
   TdEmail:
 
-  export TdRiskingInstances.*
+  val tdRiskingInstancesInStates: TdRiskingInstancesInStates.type = TdRiskingInstancesInStates
+
+object TdZoneId:
+  val zoneId: ZoneId = ZoneId.of("UTC")

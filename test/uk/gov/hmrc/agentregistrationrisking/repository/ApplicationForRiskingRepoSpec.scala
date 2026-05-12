@@ -22,7 +22,9 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 
 class ApplicationForRiskingRepoSpec
 extends ISpec:
@@ -32,138 +34,32 @@ extends ISpec:
       applicationForRiskingRepo
         .findReadyForSubmission()
         .futureValue
-    applications.toSet shouldBe Set(readyForSubmission.application)
+    applications.toSet shouldBe Set(TdRiskingInstancesInStates.readyForSubmission.application)
 
   "findReadyToBeSubscribed should return all applications which are approved but not subscribed yet" in:
-    // WHEN
-    primeMongo()
+
     // THEN
     val applications: Seq[ApplicationForRisking] =
       applicationForRiskingRepo
         .findReadyToBeSubscribed()
         .futureValue
 
-    applications.toSet shouldBe Set(approved.application)
-    applications.contains(approvedAndSubscribed.application) shouldBe false
-    applications.contains(approvedAndSubscribedAndEmailSent.application) shouldBe false
-
-  private object readyForSubmission:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.readyForSubmission
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
-
-  private object submittedForRisking:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking2
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object partiallyRisked:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking6
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedFixable
-
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object approved:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking3
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object approvedAndSubscribed:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking7
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribed
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object approvedAndSubscribedAndEmailSent:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking8
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribedAndEmailSent
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-    val applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(
-      application = application,
-      individuals = Seq(individual1, individual2)
-    )
-
-  private object failedFixable:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking4
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-
-  private object failedNonFixable:
-
-    private val tdRisking: TdRisking = tdAll.tdRisking5
-    val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixable
-    val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
-    val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+    applications.toSet shouldBe Set(TdRiskingInstancesInStates.approved.application)
+    applications.contains(TdRiskingInstancesInStates.approvedAndSubscribed.application) shouldBe false
+    applications.contains(TdRiskingInstancesInStates.approvedAndSubscribedAndEmailSent.application) shouldBe false
 
   val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
-  private def primeMongo(): Unit =
-    applicationForRiskingRepo.collection.drop().toFuture().futureValue
-    individualForRiskingRepo.collection.drop().toFuture().futureValue
+  override protected def beforeAll(): Unit =
+    super.beforeAll()
 
-    applicationForRiskingRepo.upsert(readyForSubmission.application).futureValue
-    individualForRiskingRepo.upsert(readyForSubmission.individual1).futureValue
-    individualForRiskingRepo.upsert(readyForSubmission.individual2).futureValue
+    def primeDbWithBackgroundData(): Unit =
+      applicationForRiskingRepo.collection.drop().toFuture.futureValue
+      individualForRiskingRepo.collection.drop().toFuture.futureValue
+      tdAll.tdRiskingInstancesInStates.all.foreach: td =>
+        applicationForRiskingRepo.upsert(td.application).futureValue
+        individualForRiskingRepo.upsert(td.individual1).futureValue
+        individualForRiskingRepo.upsert(td.individual2).futureValue
 
-    applicationForRiskingRepo.upsert(submittedForRisking.application).futureValue
-    individualForRiskingRepo.upsert(submittedForRisking.individual1).futureValue
-    individualForRiskingRepo.upsert(submittedForRisking.individual2).futureValue
-
-    applicationForRiskingRepo.upsert(partiallyRisked.application).futureValue
-    individualForRiskingRepo.upsert(partiallyRisked.individual1).futureValue
-    individualForRiskingRepo.upsert(partiallyRisked.individual2).futureValue
-
-    applicationForRiskingRepo.upsert(approved.application).futureValue
-    individualForRiskingRepo.upsert(approved.individual1).futureValue
-    individualForRiskingRepo.upsert(approved.individual2).futureValue
-
-    applicationForRiskingRepo.upsert(approvedAndSubscribed.application).futureValue
-    individualForRiskingRepo.upsert(approvedAndSubscribed.individual1).futureValue
-    individualForRiskingRepo.upsert(approvedAndSubscribed.individual2).futureValue
-
-    applicationForRiskingRepo.upsert(approvedAndSubscribedAndEmailSent.application).futureValue
-    individualForRiskingRepo.upsert(approvedAndSubscribedAndEmailSent.individual1).futureValue
-    individualForRiskingRepo.upsert(approvedAndSubscribedAndEmailSent.individual2).futureValue
-
-    applicationForRiskingRepo.upsert(failedFixable.application).futureValue
-    individualForRiskingRepo.upsert(failedFixable.individual1).futureValue
-    individualForRiskingRepo.upsert(failedFixable.individual2).futureValue
-
-    applicationForRiskingRepo.upsert(failedNonFixable.application).futureValue
-    individualForRiskingRepo.upsert(failedNonFixable.individual1).futureValue
-    individualForRiskingRepo.upsert(failedNonFixable.individual2).futureValue
-
-  override def beforeEach(): Unit =
-    super.beforeEach()
-
-    primeMongo()
+    primeDbWithBackgroundData()
