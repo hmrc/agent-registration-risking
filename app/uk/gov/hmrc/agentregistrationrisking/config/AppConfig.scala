@@ -16,18 +16,18 @@
 
 package uk.gov.hmrc.agentregistrationrisking.config
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import play.api.Configuration
 import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesServerToken
+import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.time.LocalTime
 import java.time.ZoneId
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.duration.FiniteDuration
 
 object AppConfig:
@@ -39,8 +39,6 @@ class AppConfig @Inject() (
   config: Configuration
 ):
 
-  def getConfString(key: String): String = servicesConfig.getConfString(key, throw new RuntimeException(s"config '$key' not found"))
-
   val appName: String = config.get[String]("appName")
   val emailBaseUrl: String = servicesConfig.baseUrl("email")
   val enrolmentStoreProxyBaseUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
@@ -49,7 +47,7 @@ class AppConfig @Inject() (
   val hipAuthToken: HipAuthToken = HipAuthToken(config.get[String]("microservice.services.hip.authorization-token"))
 
   object AmlsEvidence:
-    val baseUrl: String = config.get[String]("amls-evidence.base-url")
+    val baseUrl: String = ConfigHelper.readConfigAsValidUrlString("urls.agent-helpdesk-amls-evidence", config)
 
   object Scheduler:
 
@@ -63,12 +61,12 @@ class AppConfig @Inject() (
 
     val baseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
     val inboundInformationType: SdesInformationType = SdesInformationType(
-      getConfString("secure-data-exchange-proxy.inbound.information-type")
+      ConfigHelper.getConfString("secure-data-exchange-proxy.inbound.information-type", servicesConfig)
     )
     val outboundInformationType: SdesInformationType = SdesInformationType(
-      getConfString("secure-data-exchange-proxy.outbound.information-type")
+      ConfigHelper.getConfString("secure-data-exchange-proxy.outbound.information-type", servicesConfig)
     )
-    val inboundServerToken: SdesServerToken = SdesServerToken(getConfString("secure-data-exchange-proxy.inbound.server-token"))
-    val outboundServerToken: SdesServerToken = SdesServerToken(getConfString("secure-data-exchange-proxy.outbound.server-token"))
-    val srn: SdesSrn = SdesSrn(getConfString("secure-data-exchange-proxy.srn"))
-    val objectStoreLocationPrefix: String = getConfString("secure-data-exchange-proxy.object-store-location-prefix")
+    val inboundServerToken: SdesServerToken = SdesServerToken(ConfigHelper.getConfString("secure-data-exchange-proxy.inbound.server-token", servicesConfig))
+    val outboundServerToken: SdesServerToken = SdesServerToken(ConfigHelper.getConfString("secure-data-exchange-proxy.outbound.server-token", servicesConfig))
+    val srn: SdesSrn = SdesSrn(ConfigHelper.getConfString("secure-data-exchange-proxy.srn", servicesConfig))
+    val objectStoreLocationPrefix: String = ConfigHelper.getConfString("secure-data-exchange-proxy.object-store-location-prefix", servicesConfig)

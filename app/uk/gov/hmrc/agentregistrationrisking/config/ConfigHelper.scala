@@ -46,3 +46,8 @@ object ConfigHelper:
     servicesConfig.getDuration(configPath) match
       case d: FiniteDuration => d
       case _: Infinite => throw new RuntimeException(s"Infinite Duration in config for the key [$configPath]")
+
+  def getConfString(
+    key: String,
+    servicesConfig: ServicesConfig
+  ): String = servicesConfig.getConfString(key, throw new RuntimeException(s"config '$key' not found"))
