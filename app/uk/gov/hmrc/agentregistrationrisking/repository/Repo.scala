@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.bson.BsonValue
 import org.bson.codecs.Codec
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters
@@ -26,6 +27,7 @@ import play.api.libs.json.*
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import scala.concurrent.ExecutionContext
@@ -128,3 +130,6 @@ object Repo:
   ): Bson = Filters.nor(
     Filters.elemMatch(fieldName, Filters.nor(filter))
   )
+
+  extension [A: Writes](a: A)
+    def toBison: BsonValue = Codecs.toBson(a)

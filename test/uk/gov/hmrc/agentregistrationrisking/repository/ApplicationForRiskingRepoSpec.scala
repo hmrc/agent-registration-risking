@@ -44,7 +44,7 @@ extends ISpec:
     applications.size shouldBe 1 withClue applications.map(_.applicationReference.value).mkString(", ")
     applications.toSet shouldBe Set(TdRiskingInstancesInStates.approved.application)
 
-  "findReadyToSetRiskingOutcome should return all applications which are approved but not subscribed yet" in:
+  "findReadyToSetRiskingOutcome" in:
 
     val applications: Seq[ApplicationWithIndividuals] =
       applicationForRiskingRepo
@@ -56,6 +56,20 @@ extends ISpec:
       TdRiskingInstancesInStates.beforeFailedFixable.applicationWithIndividuals,
       TdRiskingInstancesInStates.beforeFailedNonFixable.applicationWithIndividuals
     )
+
+  "findRequiringEmailProcessingForFailedNonFixable" in:
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findRequiringEmailProcessingForFailedNonFixable()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.failedNonFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals
+    ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]

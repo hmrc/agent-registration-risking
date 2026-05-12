@@ -89,3 +89,5 @@ trait TdIndividualForRisking:
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
       ))
     )
+
+    def failedNonFixableEmailSent: IndividualForRisking = failedNonFixable.copy(isEmailSent = true)

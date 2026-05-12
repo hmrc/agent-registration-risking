@@ -120,3 +120,11 @@ trait TdApplicationForRisking:
     val failedNonFixable: ApplicationForRisking = beforeFailedNonFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedNonFixable))
+
+    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixable.copy(
+      isEmailSent = true
+    )
+
+    val failedNonFixableAfterEmailsProcessed: ApplicationForRisking = failedNonFixableAfterEmailSent
+      .modify(_.overallStatus.emailsProcessed)
+      .setTo(true)

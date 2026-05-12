@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalUnit
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
 import com.softwaremill.quicklens.modify
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.individual2
 
 trait TdApplicationWithIndividuals:
 
@@ -73,7 +74,11 @@ object TdRiskingInstancesInStates:
     beforeFailedFixable,
     failedFixable,
     beforeFailedNonFixable,
-    failedNonFixable
+    failedNonFixable,
+    failedNonFixableAfter1EmailSent,
+    failedNonFixableAfter2EmailsSent,
+    failedNonFixableAfterAllEmailsSent,
+    failedNonFixableAfterAllEmailsProcessed
   )
 
   case object readyForSubmission
@@ -221,7 +226,7 @@ object TdRiskingInstancesInStates:
 
     val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
 
-    override val riskingProgressForApplicant: RiskingProgress.FailedFixable = RiskingProgress.FailedFixable(
+    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
       riskedEntity = RiskedEntity(
         applicationReference = application.applicationReference,
         failures = application.entityRiskingResult.value.failures
@@ -235,7 +240,132 @@ object TdRiskingInstancesInStates:
         RiskedIndividual(
           personReference = individual2.personReference,
           individualName = individual2.individualProvidedDetails.individualName,
-          failures = List.empty
+          failures = individual2.individualRiskingResult.value.failures
+        )
+      ),
+      riskingCompletedDate = riskingCompletedDate
+    )
+
+  case object failedNonFixableAfter1EmailSent
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterEmailSent
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixable
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
+
+    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
+
+    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
+      riskedEntity = RiskedEntity(
+        applicationReference = application.applicationReference,
+        failures = application.entityRiskingResult.value.failures
+      ),
+      riskedIndividuals = Seq(
+        RiskedIndividual(
+          personReference = individual1.personReference,
+          individualName = individual1.individualProvidedDetails.individualName,
+          failures = individual1.individualRiskingResult.value.failures
+        ),
+        RiskedIndividual(
+          personReference = individual2.personReference,
+          individualName = individual2.individualProvidedDetails.individualName,
+          failures = individual2.individualRiskingResult.value.failures
+        )
+      ),
+      riskingCompletedDate = riskingCompletedDate
+    )
+
+  case object failedNonFixableAfter2EmailsSent
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterEmailSent
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
+
+    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
+
+    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
+      riskedEntity = RiskedEntity(
+        applicationReference = application.applicationReference,
+        failures = application.entityRiskingResult.value.failures
+      ),
+      riskedIndividuals = Seq(
+        RiskedIndividual(
+          personReference = individual1.personReference,
+          individualName = individual1.individualProvidedDetails.individualName,
+          failures = individual1.individualRiskingResult.value.failures
+        ),
+        RiskedIndividual(
+          personReference = individual2.personReference,
+          individualName = individual2.individualProvidedDetails.individualName,
+          failures = individual2.individualRiskingResult.value.failures
+        )
+      ),
+      riskingCompletedDate = riskingCompletedDate
+    )
+
+  case object failedNonFixableAfterAllEmailsSent
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterEmailSent
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixableEmailSent
+
+    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
+
+    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
+      riskedEntity = RiskedEntity(
+        applicationReference = application.applicationReference,
+        failures = application.entityRiskingResult.value.failures
+      ),
+      riskedIndividuals = Seq(
+        RiskedIndividual(
+          personReference = individual1.personReference,
+          individualName = individual1.individualProvidedDetails.individualName,
+          failures = individual1.individualRiskingResult.value.failures
+        ),
+        RiskedIndividual(
+          personReference = individual2.personReference,
+          individualName = individual2.individualProvidedDetails.individualName,
+          failures = individual2.individualRiskingResult.value.failures
+        )
+      ),
+      riskingCompletedDate = riskingCompletedDate
+    )
+
+  case object failedNonFixableAfterAllEmailsProcessed
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking =
+      tdRisking
+        .tdApplicationForRisking
+        .receivedRiskingResults
+        .failedNonFixableAfterEmailsProcessed
+
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixableEmailSent
+
+    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
+
+    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
+      riskedEntity = RiskedEntity(
+        applicationReference = application.applicationReference,
+        failures = application.entityRiskingResult.value.failures
+      ),
+      riskedIndividuals = Seq(
+        RiskedIndividual(
+          personReference = individual1.personReference,
+          individualName = individual1.individualProvidedDetails.individualName,
+          failures = individual1.individualRiskingResult.value.failures
+        ),
+        RiskedIndividual(
+          personReference = individual2.personReference,
+          individualName = individual2.individualProvidedDetails.individualName,
+          failures = individual2.individualRiskingResult.value.failures
         )
       ),
       riskingCompletedDate = riskingCompletedDate

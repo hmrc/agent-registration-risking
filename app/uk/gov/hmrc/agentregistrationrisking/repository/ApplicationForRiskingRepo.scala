@@ -45,6 +45,7 @@ import scala.concurrent.duration.FiniteDuration
 import ApplicationForRiskingRepoHelp.given
 import org.mongodb.scala.result.UpdateResult
 import com.mongodb.client.model.Field
+import org.bson.BsonValue
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
@@ -59,6 +60,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
 import java.time.Clock
 import java.time.Instant
+import Repo.toBison
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
@@ -84,7 +86,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findReadyToBeSubscribed(): Future[Seq[ApplicationForRisking]] = collection
     .find(
       Filters.and(
-        Filters.eq(FieldNames.overallStatus.riskingOutcome, Codecs.toBson(RiskingOutcome.Approved)),
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
         Filters.eq(FieldNames.isSubscribed, false)
       )
     )
@@ -100,7 +102,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
 
   def findRequiringEmailProcessingForFailedNonFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
-      Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable),
+      Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable.toBison),
       Filters.eq(FieldNames.overallStatus.emailsProcessed, false)
     )
   )
