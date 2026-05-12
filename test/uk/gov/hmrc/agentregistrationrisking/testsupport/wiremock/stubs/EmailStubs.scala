@@ -32,12 +32,12 @@ object EmailStubs:
   def stubSendEmailFailure(emailInformation: SendEmailRequest): StubMapping = stub(emailInformation, responseStatus = 500)
 
   private def stub(
-    emailInformation: SendEmailRequest,
+    sendEmailRequest: SendEmailRequest,
     responseStatus: Int
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(sendEmailUrl),
-    requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(emailInformation)))),
+    requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(sendEmailRequest)))),
     responseStatus = responseStatus
   )
 

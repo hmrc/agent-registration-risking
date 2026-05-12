@@ -43,6 +43,7 @@ extends ControllerSpec:
 
   "submit application and individuals for risking for the first time" in:
     // GIVEN
+    dropDatabase()
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
 

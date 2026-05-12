@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
+import com.softwaremill.quicklens.modify
 import uk.gov.hmrc.agentregistration.shared.risking.RiskedEntity
 import uk.gov.hmrc.agentregistration.shared.risking.RiskedIndividual
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
@@ -23,13 +24,10 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
+import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalUnit
-import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
-import com.softwaremill.quicklens.modify
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.individual2
 
 trait TdApplicationWithIndividuals:
 
@@ -139,7 +137,7 @@ object TdRiskingInstancesInStates:
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
-    override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
+    override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
   case object approvedAfterOutcome
   extends TdApplicationWithIndividuals:
@@ -189,9 +187,25 @@ object TdRiskingInstancesInStates:
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
-
-    override val riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
+    override val riskingProgressForApplicant: RiskingProgress.FailedFixable = RiskingProgress.FailedFixable(
+      riskedEntity = RiskedEntity(
+        applicationReference = application.applicationReference,
+        failures = Seq.empty
+      ),
+      riskedIndividuals = Seq(
+        RiskedIndividual(
+          personReference = individual1.personReference,
+          individualName = individual1.individualProvidedDetails.individualName,
+          failures = individual1.individualRiskingResult.value.failures
+        ),
+        RiskedIndividual(
+          personReference = individual2.personReference,
+          individualName = individual2.individualProvidedDetails.individualName,
+          failures = individual2.individualRiskingResult.value.failures
+        )
+      ),
+      riskingCompletedDate = LocalDate.parse("2059-11-26")
+    )
 
   case object failedFixableAfterOutcome
   extends TdApplicationWithIndividuals:
@@ -203,8 +217,6 @@ object TdRiskingInstancesInStates:
 
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
 
     override val riskingProgressForApplicant: RiskingProgress.FailedFixable = RiskingProgress.FailedFixable(
       riskedEntity = RiskedEntity(
@@ -223,7 +235,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = riskingCompletedDate
+      riskingCompletedDate = LocalDate.parse("2059-11-28")
     )
 
   case object failedNonFixable
@@ -234,9 +246,25 @@ object TdRiskingInstancesInStates:
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
-
-    override val riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
+    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
+      riskedEntity = RiskedEntity(
+        applicationReference = application.applicationReference,
+        failures = application.entityRiskingResult.value.failures
+      ),
+      riskedIndividuals = Seq(
+        RiskedIndividual(
+          personReference = individual1.personReference,
+          individualName = individual1.individualProvidedDetails.individualName,
+          failures = individual1.individualRiskingResult.value.failures
+        ),
+        RiskedIndividual(
+          personReference = individual2.personReference,
+          individualName = individual2.individualProvidedDetails.individualName,
+          failures = individual2.individualRiskingResult.value.failures
+        )
+      ),
+      riskingCompletedDate = LocalDate.parse("2059-12-02")
+    )
 
   case object failedNonFixableAfterOutcome
   extends TdApplicationWithIndividuals:
@@ -245,8 +273,6 @@ object TdRiskingInstancesInStates:
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
 
     override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
       riskedEntity = RiskedEntity(
@@ -265,7 +291,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = riskingCompletedDate
+      riskingCompletedDate = LocalDate.parse("2059-11-27")
     )
 
   case object failedNonFixableAfter1EmailSent
@@ -276,8 +302,6 @@ object TdRiskingInstancesInStates:
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
 
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
-
     override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
       riskedEntity = RiskedEntity(
         applicationReference = application.applicationReference,
@@ -295,7 +319,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = riskingCompletedDate
+      riskingCompletedDate = LocalDate.parse("2059-11-25")
     )
 
   case object failedNonFixableAfter2EmailsSent
@@ -306,8 +330,6 @@ object TdRiskingInstancesInStates:
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
 
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
-
     override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
       riskedEntity = RiskedEntity(
         applicationReference = application.applicationReference,
@@ -325,7 +347,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = riskingCompletedDate
+      riskingCompletedDate = LocalDate.parse("2059-12-05")
     )
 
   case object failedNonFixableAfterAllEmailsSent
@@ -336,8 +358,6 @@ object TdRiskingInstancesInStates:
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixableEmailSent
 
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
-
     override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
       riskedEntity = RiskedEntity(
         applicationReference = application.applicationReference,
@@ -355,7 +375,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = riskingCompletedDate
+      riskingCompletedDate = LocalDate.parse("2059-12-05")
     )
 
   case object failedNonFixableAfterAllEmailsProcessed
@@ -371,8 +391,6 @@ object TdRiskingInstancesInStates:
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixableEmailSent
 
-    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
-
     override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
       riskedEntity = RiskedEntity(
         applicationReference = application.applicationReference,
@@ -390,5 +408,5 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = riskingCompletedDate
+      riskingCompletedDate = LocalDate.parse("2059-11-26")
     )

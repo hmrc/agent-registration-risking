@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.mongodb.scala.SingleObservableFuture
-import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
@@ -32,7 +31,8 @@ extends ISpec:
         .findReadyForSubmission()
         .futureValue
     applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.readyForSubmission.application
+      TdRiskingInstancesInStates.readyForSubmission.application,
+      TdRiskingInstancesInStates.readyForSubmission2.application
     )
 
   "findReadyToBeSubscribed should return all applications which are approved but not subscribed yet" in:

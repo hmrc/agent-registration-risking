@@ -16,19 +16,17 @@
 
 package uk.gov.hmrc.agentregistrationrisking.controllers
 
+import org.mongodb.scala.SingleObservableFuture
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
-import org.mongodb.scala.SingleObservableFuture
 
 import java.net.URL
 
@@ -76,7 +74,6 @@ extends ControllerSpec:
   tdAll
     .tdRiskingInstancesInStates
     .all
-//    .take(1)
     .foreach: (td: TdApplicationWithIndividuals) =>
       s"return correct riskingProgress - $td" in:
         AuthStubs.stubAuthorise()

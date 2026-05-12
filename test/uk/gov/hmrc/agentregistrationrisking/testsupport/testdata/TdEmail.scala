@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 
 trait TdEmail:
 
-  val testEmailInformation: SendEmailRequest = SendEmailRequest(
+  val sendEmailRequest: SendEmailRequest = SendEmailRequest(
     to = Seq(EmailAddress("agent@example.com")),
     templateId = EmailTemplateId.RegistrationSuccess,
     parameters = Map(
