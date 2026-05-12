@@ -19,48 +19,26 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import org.mongodb.scala.Document
-import org.mongodb.scala.model.Aggregates
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
-import play.api.libs.json.Json
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Aggregates
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
+import org.mongodb.scala.model.*
+import play.api.libs.json.Json
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.model.*
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepoHelp.given
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.toBison
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
+import java.time.Clock
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import ApplicationForRiskingRepoHelp.given
-import org.mongodb.scala.result.UpdateResult
-import com.mongodb.client.model.Field
-import org.bson.BsonValue
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
-import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
-import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
-
-import java.time.Clock
-import java.time.Instant
-import Repo.toBison
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
@@ -78,6 +56,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   ),
   replaceIndexes = true
 ):
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
+  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
@@ -100,6 +83,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
+  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
+  // ═══════════════════════════════════════════════════════════════════════════════
+
   def findRequiringEmailProcessingForFailedNonFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
       Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable.toBison),
@@ -114,6 +102,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     ),
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
+  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
 
@@ -151,6 +144,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
     .toFuture()
     .map(_ => ())
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
+  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   def findByRiskingFileName(
     riskingFileName: RiskingFileName
