@@ -27,7 +27,7 @@ case object failedFixable_submitted_submitted
 extends TdApplicationWithIndividuals:
 
   override val tdRisking: TdRisking = TdRisking.make(this.toString)
-  override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedFixable
+  override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome
   override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.submittedForRisking
   override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking
   override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking

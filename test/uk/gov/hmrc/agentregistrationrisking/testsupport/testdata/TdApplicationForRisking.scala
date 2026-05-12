@@ -75,24 +75,24 @@ trait TdApplicationForRisking:
 
   object receivedRiskingResults:
 
-    val beforeApproved: ApplicationForRisking = submittedForRisking.copy(
+    val approved: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(
         failures = List.empty,
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
       ))
     )
 
-    val approved: ApplicationForRisking = beforeApproved
+    val approvedAfterOutcome: ApplicationForRisking = approved
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.Approved))
 
-    val approvedAndSubscribed: ApplicationForRisking = approved.copy(isSubscribed = true)
+    val approvedAfterSubscribed: ApplicationForRisking = approvedAfterOutcome.copy(isSubscribed = true)
 
-    val approvedAndSubscribedAndEmailSent: ApplicationForRisking = approvedAndSubscribed
+    val approvedAfterEmailSent: ApplicationForRisking = approvedAfterSubscribed
       .copy(isEmailSent = true)
       .modify(_.overallStatus.emailsProcessed).setTo(true)
 
-    val beforeFailedFixable: ApplicationForRisking = submittedForRisking.copy(
+    val failedFixable: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(
         failures = List(
           TdFailures.entityFailures.fixable1,
@@ -102,11 +102,11 @@ trait TdApplicationForRisking:
       ))
     )
 
-    val failedFixable: ApplicationForRisking = beforeFailedFixable
+    val failedFixableAfterOutcome: ApplicationForRisking = failedFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedFixable))
 
-    val beforeFailedNonFixable: ApplicationForRisking = submittedForRisking
+    val failedNonFixable: ApplicationForRisking = submittedForRisking
       .copy(
         entityRiskingResult = Some(EntityRiskingResult(
           failures = List(
@@ -117,11 +117,11 @@ trait TdApplicationForRisking:
         ))
       )
 
-    val failedNonFixable: ApplicationForRisking = beforeFailedNonFixable
+    val failedNonFixableAfterOutcome: ApplicationForRisking = failedNonFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedNonFixable))
 
-    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixable.copy(
+    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome.copy(
       isEmailSent = true
     )
 

@@ -123,7 +123,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.beforeApproved
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -133,7 +133,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking3
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterOutcome
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -143,7 +143,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking7
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribed
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterSubscribed
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -153,7 +153,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking8
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAndSubscribedAndEmailSent
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterEmailSent
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -163,7 +163,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking4
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.beforeApproved
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -175,7 +175,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterOutcome
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedFixable))
 
@@ -208,7 +208,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.beforeFailedNonFixable
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixable
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -220,7 +220,7 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking5
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixable
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
