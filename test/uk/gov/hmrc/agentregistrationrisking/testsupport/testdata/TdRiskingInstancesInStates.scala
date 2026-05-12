@@ -67,14 +67,14 @@ object TdRiskingInstancesInStates:
     partiallyRisked.submitted_approved_submitted,
     partiallyRisked.submitted_failedFixable_submitted,
     partiallyRisked.submitted_failedNonFixable_submitted,
-    beforeApproved,
     approved,
+    approvedAfterOutcome,
     approvedAndSubscribed,
     approvedAndSubscribedAndEmailSent,
-    beforeFailedFixable,
     failedFixable,
-    beforeFailedNonFixable,
+    failedFixableAfterOutcome,
     failedNonFixable,
+    failedNonFixableAfterOutcome,
     failedNonFixableAfter1EmailSent,
     failedNonFixableAfter2EmailsSent,
     failedNonFixableAfterAllEmailsSent,
@@ -119,7 +119,7 @@ object TdRiskingInstancesInStates:
     val submitted_failedFixable_submitted = partiallyrisked.submitted_failedFixable_submitted
     val submitted_failedNonFixable_submitted = partiallyrisked.submitted_failedNonFixable_submitted
 
-  case object beforeApproved
+  case object approved
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
@@ -129,7 +129,7 @@ object TdRiskingInstancesInStates:
 
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
 
-  case object approved
+  case object approvedAfterOutcome
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking3
@@ -159,7 +159,7 @@ object TdRiskingInstancesInStates:
 
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
-  case object beforeFailedFixable
+  case object failedFixable
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking4
@@ -171,7 +171,7 @@ object TdRiskingInstancesInStates:
 
     override val riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
 
-  case object failedFixable
+  case object failedFixableAfterOutcome
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
@@ -204,7 +204,7 @@ object TdRiskingInstancesInStates:
       riskingCompletedDate = riskingCompletedDate
     )
 
-  case object beforeFailedNonFixable
+  case object failedNonFixable
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
@@ -216,7 +216,7 @@ object TdRiskingInstancesInStates:
 
     override val riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
 
-  case object failedNonFixable
+  case object failedNonFixableAfterOutcome
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking5

@@ -42,7 +42,7 @@ extends ISpec:
         .futureValue
 
     applications.size shouldBe 1 withClue applications.map(_.applicationReference.value).mkString(", ")
-    applications.toSet shouldBe Set(TdRiskingInstancesInStates.approved.application)
+    applications.toSet shouldBe Set(TdRiskingInstancesInStates.approvedAfterOutcome.application)
 
   "findReadyToSetRiskingOutcome" in:
 
@@ -52,9 +52,9 @@ extends ISpec:
         .futureValue
 
     applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.beforeApproved.applicationWithIndividuals,
-      TdRiskingInstancesInStates.beforeFailedFixable.applicationWithIndividuals,
-      TdRiskingInstancesInStates.beforeFailedNonFixable.applicationWithIndividuals
+      TdRiskingInstancesInStates.approved.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixable.applicationWithIndividuals
     )
 
   "findRequiringEmailProcessingForFailedNonFixable" in:
@@ -65,10 +65,23 @@ extends ISpec:
         .futureValue
 
     applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.failedNonFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals
+    ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
+  "findApplicationsAwaitingOverallOutcome" in:
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findApplicationsAwaitingOverallOutcome()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.approved.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixable.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]

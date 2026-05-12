@@ -111,7 +111,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     applicationFilter = Filters.and(
       Filters.exists(FieldNames.entityRiskingResult),
       Filters.exists(FieldNames.overallStatus.riskingOutcome, false)
-    )
+    ),
+    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
 
   private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
