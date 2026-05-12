@@ -20,21 +20,25 @@ import com.google.inject.Inject
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import play.api.mvc.RequestHeader
-
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
+import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
+import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
-import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
-import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
   riskingResultsService: RiskingResultsService,
-  subscriptionService: SubscriptionService
+  applicationOutcomeService: ApplicationOutcomeService,
+  subscriptionService: SubscriptionService,
+  emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
+  emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable
 )(using ExecutionContext)
 extends BackendController(cc):
 
@@ -58,5 +62,8 @@ extends BackendController(cc):
   private def onFileReady()(using RequestHeader): Future[Unit] =
     (for
       _ <- riskingResultsService.processResultsFiles()
-      _ <- subscriptionService.subscribeApprovedApplications()
+      _ <- applicationOutcomeService.processOverallOutcomes()
+      _ <- subscriptionService.processSubscriptions()
+      _ <- emailServiceForApprovedApplications.processEmails()
+      _ <- emailServiceForFailedNonFixable.processEmails()
     yield ()).recover { case ex: Exception => logger.error(s"Error processing file ready notification", ex) }

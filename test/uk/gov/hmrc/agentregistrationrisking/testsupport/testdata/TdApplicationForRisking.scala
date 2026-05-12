@@ -20,10 +20,13 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import com.softwaremill.quicklens.modify
 
 object TdApplicationForRisking:
 
@@ -57,7 +60,11 @@ trait TdApplicationForRisking:
     lastUpdatedAt = instant,
     entityRiskingResult = None,
     isSubscribed = false,
-    isEmailSent = false
+    isEmailSent = false,
+    overallStatus = OverallStatus(
+      riskingOutcome = None,
+      emailsProcessed = false
+    )
   )
 
   def submittedForRisking: ApplicationForRisking = readyForSubmission
@@ -75,6 +82,18 @@ trait TdApplicationForRisking:
       ))
     )
 
+    val approvedAfterOutcome: ApplicationForRisking = approved
+      .modify(_.overallStatus.riskingOutcome)
+      .setTo(Some(RiskingOutcome.Approved))
+
+    val approvedAfterSubscribed: ApplicationForRisking = approvedAfterOutcome.copy(isSubscribed = true)
+
+    val approvedAfterEmailSent: ApplicationForRisking = approvedAfterSubscribed
+      .copy(isEmailSent = true)
+
+    val approvedAfterEmailsProcessed: ApplicationForRisking = approvedAfterEmailSent
+      .modify(_.overallStatus.emailsProcessed).setTo(true)
+
     val failedFixable: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(
         failures = List(
@@ -85,12 +104,29 @@ trait TdApplicationForRisking:
       ))
     )
 
-    val failedNonFixable: ApplicationForRisking = submittedForRisking.copy(
-      entityRiskingResult = Some(EntityRiskingResult(
-        failures = List(
-          TdFailures.entityFailures.fixable2,
-          TdFailures.entityFailures.nonFixable2
-        ),
-        receivedAt = instant.minus(2, ChronoUnit.DAYS)
-      ))
+    val failedFixableAfterOutcome: ApplicationForRisking = failedFixable
+      .modify(_.overallStatus.riskingOutcome)
+      .setTo(Some(RiskingOutcome.FailedFixable))
+
+    val failedNonFixable: ApplicationForRisking = submittedForRisking
+      .copy(
+        entityRiskingResult = Some(EntityRiskingResult(
+          failures = List(
+            TdFailures.entityFailures.fixable2,
+            TdFailures.entityFailures.nonFixable2
+          ),
+          receivedAt = instant.minus(2, ChronoUnit.DAYS)
+        ))
+      )
+
+    val failedNonFixableAfterOutcome: ApplicationForRisking = failedNonFixable
+      .modify(_.overallStatus.riskingOutcome)
+      .setTo(Some(RiskingOutcome.FailedNonFixable))
+
+    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome.copy(
+      isEmailSent = true
     )
+
+    val failedNonFixableAfterEmailsProcessed: ApplicationForRisking = failedNonFixableAfterEmailSent
+      .modify(_.overallStatus.emailsProcessed)
+      .setTo(true)

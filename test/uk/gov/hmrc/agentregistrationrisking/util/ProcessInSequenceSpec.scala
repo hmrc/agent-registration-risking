@@ -99,3 +99,69 @@ extends UnitSpec:
 
     result.failed.futureValue shouldBe boom
     callLog.toList shouldBe List(0, 1, 2)
+
+  "processAllInSequence emptySeq  returns 0 and does not call f or onFailure" in:
+    val callLog = mutable.ListBuffer.empty[Int]
+    val failureLog = mutable.ListBuffer.empty[(Throwable, Int)]
+    val result =
+      ProcessInSequence.processAllInSequence(Seq.empty[Int])(item => { callLog += item; Future.successful(item) })((ex, item) => failureLog += ((ex, item)))
+
+    result.futureValue shouldBe 0
+    callLog shouldBe empty
+    failureLog shouldBe empty
+
+  "processAllInSequence allSucceed  returns a count equal to the number of items" in:
+    val result = ProcessInSequence.processAllInSequence(Seq(1, 2, 3))(item => Future.successful(item))((_, _) => ())
+
+    result.futureValue shouldBe 3
+
+  "processAllInSequence singleFailure  calls onFailure with the correct exception and item, returns 0" in:
+    val failureLog = mutable.ListBuffer.empty[(Throwable, Int)]
+    val boom = new RuntimeException("boom")
+    val result = ProcessInSequence.processAllInSequence(Seq(42))(_ => Future.failed(boom))((ex, item) => failureLog += ((ex, item)))
+
+    result.futureValue shouldBe 0
+    failureLog.toList shouldBe List((boom, 42))
+
+  "processAllInSequence someFailures  continues processing after failures and returns count of successes" in:
+    val callLog = mutable.ListBuffer.empty[Int]
+    val failureLog = mutable.ListBuffer.empty[Int]
+    val boom = new RuntimeException("boom")
+    val result =
+      ProcessInSequence.processAllInSequence(Seq(0, 1, 2, 3, 4))(item =>
+        callLog += item
+        if item % 2 == 1 then Future.failed(boom) else Future.successful(item)
+      )((_, item) => failureLog += item)
+
+    result.futureValue shouldBe 3
+    callLog.toList shouldBe List(0, 1, 2, 3, 4)
+    failureLog.toList shouldBe List(1, 3)
+
+  "processAllInSequence allFail  calls onFailure for every item and returns 0" in:
+    val failureLog = mutable.ListBuffer.empty[Int]
+    val boom = new RuntimeException("boom")
+    val result = ProcessInSequence.processAllInSequence(Seq(0, 1, 2))(item => Future.failed(boom))((_, item) => failureLog += item)
+
+    result.futureValue shouldBe 0
+    failureLog.toList shouldBe List(0, 1, 2)
+
+  "processAllInSequence sequencing  processes items in order even when some fail" in:
+    val callLog = mutable.ListBuffer.empty[String]
+    val boom = new RuntimeException("boom")
+
+    ProcessInSequence.processAllInSequence(Seq(0, 1, 2))(item =>
+      Future:
+        callLog += s"Started $item"
+        Thread.sleep(if item == 1 then 60 else 20)
+        callLog += s"Finished $item"
+        if item == 1 then throw boom else item
+    )((_, _) => ()).futureValue
+
+    callLog.toList shouldBe List(
+      "Started 0",
+      "Finished 0",
+      "Started 1",
+      "Finished 1",
+      "Started 2",
+      "Finished 2"
+    )

@@ -20,6 +20,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.*
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 
 import java.time.LocalDate
 
@@ -69,7 +70,7 @@ object RiskingOutcomeHelper:
     o1: RiskingOutcome,
     o2: RiskingOutcome
   ): RiskingOutcome =
-    import RiskingOutcome.*
+    import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome.*
     // Hint: a spoiled apple makes a spoiled basket
     (o1, o2) match
       // format: off
