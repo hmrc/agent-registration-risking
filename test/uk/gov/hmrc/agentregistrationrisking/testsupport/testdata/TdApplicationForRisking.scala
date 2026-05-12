@@ -75,16 +75,16 @@ trait TdApplicationForRisking:
 
   object receivedRiskingResults:
 
-    val approved: ApplicationForRisking = submittedForRisking.copy(
+    val beforeApproved: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(
         failures = List.empty,
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
-      )),
-      overallStatus = OverallStatus(
-        riskingOutcome = Some(RiskingOutcome.Approved),
-        emailsProcessed = false
-      )
+      ))
     )
+
+    val approved: ApplicationForRisking = beforeApproved
+      .modify(_.overallStatus.riskingOutcome)
+      .setTo(Some(RiskingOutcome.Approved))
 
     val approvedAndSubscribed: ApplicationForRisking = approved.copy(isSubscribed = true)
 
@@ -92,19 +92,21 @@ trait TdApplicationForRisking:
       .copy(isEmailSent = true)
       .modify(_.overallStatus.emailsProcessed).setTo(true)
 
-    val failedFixable: ApplicationForRisking = submittedForRisking
-      .copy(
-        entityRiskingResult = Some(EntityRiskingResult(
-          failures = List(
-            TdFailures.entityFailures.fixable1,
-            TdFailures.entityFailures.fixable2
-          ),
-          receivedAt = instant.minus(2, ChronoUnit.DAYS)
-        ))
-      )
-      .modify(_.overallStatus.riskingOutcome).setTo(Some(RiskingOutcome.FailedFixable))
+    val beforeFailedFixable: ApplicationForRisking = submittedForRisking.copy(
+      entityRiskingResult = Some(EntityRiskingResult(
+        failures = List(
+          TdFailures.entityFailures.fixable1,
+          TdFailures.entityFailures.fixable2
+        ),
+        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+      ))
+    )
 
-    val failedNonFixable: ApplicationForRisking = submittedForRisking
+    val failedFixable: ApplicationForRisking = beforeFailedFixable
+      .modify(_.overallStatus.riskingOutcome)
+      .setTo(Some(RiskingOutcome.FailedFixable))
+
+    val beforeFailedNonFixable: ApplicationForRisking = submittedForRisking
       .copy(
         entityRiskingResult = Some(EntityRiskingResult(
           failures = List(
@@ -114,4 +116,7 @@ trait TdApplicationForRisking:
           receivedAt = instant.minus(2, ChronoUnit.DAYS)
         ))
       )
-      .modify(_.overallStatus.riskingOutcome).setTo(Some(RiskingOutcome.FailedNonFixable))
+
+    val failedNonFixable: ApplicationForRisking = beforeFailedNonFixable
+      .modify(_.overallStatus.riskingOutcome)
+      .setTo(Some(RiskingOutcome.FailedNonFixable))

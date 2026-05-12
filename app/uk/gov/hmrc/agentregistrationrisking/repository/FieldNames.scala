@@ -38,6 +38,7 @@ object FieldNames:
   val personReferenceIndex: String = personReference + "Index"
 
   val entityRiskingResult: String = "entityRiskingResult"
+  val individualRiskingResult: String = "individualRiskingResult"
 
   val isSubscribed: String = "isSubscribed"
 

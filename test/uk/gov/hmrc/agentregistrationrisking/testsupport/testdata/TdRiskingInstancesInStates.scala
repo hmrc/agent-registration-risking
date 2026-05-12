@@ -22,11 +22,13 @@ import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalUnit
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
+import com.softwaremill.quicklens.modify
 
 trait TdApplicationWithIndividuals:
 
@@ -64,10 +66,13 @@ object TdRiskingInstancesInStates:
     partiallyRisked.submitted_approved_submitted,
     partiallyRisked.submitted_failedFixable_submitted,
     partiallyRisked.submitted_failedNonFixable_submitted,
+    beforeApproved,
     approved,
     approvedAndSubscribed,
     approvedAndSubscribedAndEmailSent,
+    beforeFailedFixable,
     failedFixable,
+    beforeFailedNonFixable,
     failedNonFixable
   )
 
@@ -109,6 +114,16 @@ object TdRiskingInstancesInStates:
     val submitted_failedFixable_submitted = partiallyrisked.submitted_failedFixable_submitted
     val submitted_failedNonFixable_submitted = partiallyrisked.submitted_failedNonFixable_submitted
 
+  case object beforeApproved
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.beforeApproved
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+    override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
+
   case object approved
   extends TdApplicationWithIndividuals:
 
@@ -139,11 +154,26 @@ object TdRiskingInstancesInStates:
 
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
-  case object failedFixable
+  case object beforeFailedFixable
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking4
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.beforeApproved
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
+
+    override val riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
+
+  case object failedFixable
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+      .modify(_.overallStatus.riskingOutcome)
+      .setTo(Some(RiskingOutcome.FailedFixable))
+
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -168,6 +198,18 @@ object TdRiskingInstancesInStates:
       ),
       riskingCompletedDate = riskingCompletedDate
     )
+
+  case object beforeFailedNonFixable
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.beforeFailedNonFixable
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+    val riskingCompletedDate: LocalDate = LocalDate.ofInstant(tdRisking.instant.plus(15, ChronoUnit.DAYS), TdZoneId.zoneId)
+
+    override val riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
 
   case object failedNonFixable
   extends TdApplicationWithIndividuals:

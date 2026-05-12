@@ -95,7 +95,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       Filters.exists(FieldNames.entityRiskingResult),
       Filters.exists(FieldNames.overallStatus.riskingOutcome, false)
     ),
-    individualForAllFilter = Filters.exists(FieldNames.entityRiskingResult)
+    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
 
   def findRequiringEmailProcessingForFailedNonFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(

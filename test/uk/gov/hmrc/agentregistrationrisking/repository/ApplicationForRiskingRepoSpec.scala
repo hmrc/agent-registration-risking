@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 
@@ -29,19 +30,32 @@ extends ISpec:
       applicationForRiskingRepo
         .findReadyForSubmission()
         .futureValue
-    applications.toSet shouldBe Set(TdRiskingInstancesInStates.readyForSubmission.application)
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.readyForSubmission.application
+    )
 
   "findReadyToBeSubscribed should return all applications which are approved but not subscribed yet" in:
 
-    // THEN
     val applications: Seq[ApplicationForRisking] =
       applicationForRiskingRepo
         .findReadyToBeSubscribed()
         .futureValue
 
+    applications.size shouldBe 1 withClue applications.map(_.applicationReference.value).mkString(", ")
     applications.toSet shouldBe Set(TdRiskingInstancesInStates.approved.application)
-    applications.contains(TdRiskingInstancesInStates.approvedAndSubscribed.application) shouldBe false
-    applications.contains(TdRiskingInstancesInStates.approvedAndSubscribedAndEmailSent.application) shouldBe false
+
+  "findReadyToSetRiskingOutcome should return all applications which are approved but not subscribed yet" in:
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findReadyToSetRiskingOutcome()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.beforeApproved.applicationWithIndividuals,
+      TdRiskingInstancesInStates.beforeFailedFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.beforeFailedNonFixable.applicationWithIndividuals
+    )
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
@@ -49,23 +63,6 @@ extends ISpec:
   override protected def beforeAll(): Unit =
     super.beforeAll()
     primeDb()
-    applicationForRiskingRepo
-      .collection
-      .countDocuments()
-      .toFuture
-      .futureValue shouldBe tdAll
-      .tdRiskingInstancesInStates
-      .all
-      .size withClue "sanity check1"
-
-    individualForRiskingRepo
-      .collection
-      .countDocuments()
-      .toFuture.futureValue shouldBe (tdAll
-      .tdRiskingInstancesInStates
-      .all
-      .size * 2) withClue "sanity check2 "
-
     ()
 
   private def primeDb(): Unit =

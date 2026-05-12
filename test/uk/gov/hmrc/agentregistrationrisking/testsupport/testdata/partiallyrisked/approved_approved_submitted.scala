@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.partiallyriske
 
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
@@ -27,7 +26,7 @@ case object approved_approved_submitted
 extends TdApplicationWithIndividuals:
 
   override val tdRisking: TdRisking = TdRisking.make(this.toString)
-  override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
+  override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.beforeApproved
   override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
   override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking
 
