@@ -191,9 +191,6 @@ object ApplicationForRiskingRepoHelp:
         .name(FieldNames.riskingFileNameIndex)
         .unique(false)
     ),
-    // covers findReadyToBeSubscribed (riskingOutcome + isSubscribed prefix)
-    // and   findSubscribedReadyForSuccessEmail (full compound)
-    // partial filter keeps index small: only docs that already have a riskingOutcome
     IndexModel(
       keys = Indexes.ascending(
         FieldNames.overallStatus.riskingOutcome,
@@ -201,26 +198,19 @@ object ApplicationForRiskingRepoHelp:
         FieldNames.isEmailSent
       ),
       indexOptions = IndexOptions()
-        .name(FieldNames.subscriptionStatusIndex)
-        .partialFilterExpression(Filters.exists(FieldNames.overallStatus.riskingOutcome))
+        .name("overallStatus_riskingOutcome_isSubscribed_isEmailSent_index")
     ),
-    // covers findRequiringEmailProcessingForFailedNonFixable (riskingOutcome + emailsProcessed)
     IndexModel(
-      keys = Indexes.ascending(FieldNames.overallStatus.riskingOutcome, FieldNames.overallStatus.emailsProcessed),
+      keys = Indexes.ascending(
+        FieldNames.overallStatus.riskingOutcome,
+        FieldNames.overallStatus.emailsProcessed
+      ),
       indexOptions = IndexOptions()
-        .name(FieldNames.emailProcessingStatusIndex)
-        .partialFilterExpression(Filters.exists(FieldNames.overallStatus.riskingOutcome))
+        .name("overallStatus_riskingOutcome_index")
     ),
-    // covers findReadyToSetRiskingOutcome / findApplicationsAwaitingOverallOutcome
-    // (entityRiskingResult exists && riskingOutcome NOT exists)
-    // partial filter restricts index to docs that have entityRiskingResult but no riskingOutcome yet
     IndexModel(
       keys = Indexes.ascending(FieldNames.entityRiskingResult),
       indexOptions = IndexOptions()
         .name(FieldNames.entityRiskingResultIndex)
-        .partialFilterExpression(Filters.and(
-          Filters.exists(FieldNames.entityRiskingResult),
-          Filters.exists(FieldNames.overallStatus.riskingOutcome, false)
-        ))
     )
   )

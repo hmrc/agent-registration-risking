@@ -38,12 +38,12 @@ object FieldNames:
   val personReferenceIndex: String = personReference + "Index"
 
   val entityRiskingResult: String = "entityRiskingResult"
+  val entityRiskingResultIndex: String = entityRiskingResult + "Index"
+
   val individualRiskingResult: String = "individualRiskingResult"
 
   val isSubscribed: String = "isSubscribed"
 
   val isEmailSent: String = "isEmailSent"
 
-  val subscriptionStatusIndex: String = "subscriptionStatusIndex"
-  val emailProcessingStatusIndex: String = "emailProcessingStatusIndex"
-  val entityRiskingResultIndex: String = "entityRiskingResultIndex"
+
