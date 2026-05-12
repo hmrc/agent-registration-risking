@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.mongodb.scala.SingleObservableFuture
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
@@ -83,6 +84,15 @@ extends ISpec:
       TdRiskingInstancesInStates.failedFixable.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixable.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
+  "findSubscribedReadyForSuccessEmail" in:
+
+    val applications: Seq[ApplicationForRisking] =
+      applicationForRiskingRepo
+        .findSubscribedReadyForSuccessEmail()
+        .futureValue
+
+    applications.toSet shouldBe Set(TdRiskingInstancesInStates.approvedAfterSubscribed.application)
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]

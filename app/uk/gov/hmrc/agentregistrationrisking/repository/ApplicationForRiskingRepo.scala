@@ -158,20 +158,10 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .find(Filters.eq(FieldNames.riskingFileName, riskingFileName.value))
     .toFuture()
 
-  def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
-    collection
-      .find(
-        Filters.and(
-          Filters.exists(FieldNames.entityRiskingResult),
-          Filters.eq(FieldNames.isSubscribed, false)
-        )
-      ).toFuture()
-  }
-
   def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
     .find(
       Filters.and(
-        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved),
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
         Filters.eq(FieldNames.isSubscribed, true),
         Filters.eq(FieldNames.isEmailSent, false)
       )

@@ -70,8 +70,9 @@ object TdRiskingInstancesInStates:
     partiallyRisked.submitted_failedNonFixable_submitted,
     approved,
     approvedAfterOutcome,
-    approvedAndSubscribed,
-    approvedAndSubscribedAndEmailSent,
+    approvedAfterSubscribed,
+    approvedAfterEmailSent,
+    approvedAfterEmailsProcessed,
     failedFixable,
     failedFixableAfterOutcome,
     failedNonFixable,
@@ -150,7 +151,7 @@ object TdRiskingInstancesInStates:
 
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
-  case object approvedAndSubscribed
+  case object approvedAfterSubscribed
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking7
@@ -160,11 +161,21 @@ object TdRiskingInstancesInStates:
 
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
-  case object approvedAndSubscribedAndEmailSent
+  case object approvedAfterEmailSent
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking8
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterEmailSent
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+    override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
+
+  case object approvedAfterEmailsProcessed
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterEmailsProcessed
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 

@@ -90,6 +90,8 @@ trait TdApplicationForRisking:
 
     val approvedAfterEmailSent: ApplicationForRisking = approvedAfterSubscribed
       .copy(isEmailSent = true)
+
+    val approvedAfterEmailsProcessed: ApplicationForRisking = approvedAfterEmailSent
       .modify(_.overallStatus.emailsProcessed).setTo(true)
 
     val failedFixable: ApplicationForRisking = submittedForRisking.copy(
