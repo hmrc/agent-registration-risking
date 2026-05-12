@@ -51,6 +51,7 @@ object TdRiskingInstancesInStates:
 
   val all: Seq[TdApplicationWithIndividuals] = Seq(
     readyForSubmission,
+    readyForSubmission2,
     submittedForRisking,
     partiallyRisked.approved_approved_submitted,
     partiallyRisked.approved_failedFixable_submitted,
@@ -85,6 +86,16 @@ object TdRiskingInstancesInStates:
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRiskingInstances.tdRisking
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.readyForSubmission
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
+
+    override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.ReadyForSubmission
+
+  case object readyForSubmission2
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.readyForSubmission
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission

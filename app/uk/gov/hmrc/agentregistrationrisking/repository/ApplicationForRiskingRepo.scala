@@ -139,27 +139,24 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
         ApplicationWithIndividuals(app, individuals)
 
-  // TODO needs testing?
-  def updateRiskingFileId(
+  def updateRiskingFileName(
     applicationReferences: Seq[ApplicationReference],
     riskingFileName: RiskingFileName
-  ): Future[UpdateResult] = collection
+  ): Future[Unit] = collection
     .updateMany(
       Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value)*),
       Updates.combine(
-        Updates.set(FieldNames.riskingFileName, riskingFileName.value),
-        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
+        Updates.set(FieldNames.riskingFileName, riskingFileName.value)
       )
-    ).toFuture()
+    )
+    .toFuture()
+    .map(_ => ())
 
-  def findApplicationsPendingAction(): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      Filters.and(
-        Filters.exists(FieldNames.entityRiskingResult),
-        Filters.eq(FieldNames.isSubscribed, false),
-        Filters.eq(FieldNames.isEmailSent, false)
-      )
-    ).toFuture()
+  def findByRiskingFileName(
+    riskingFileName: RiskingFileName
+  ): Future[Seq[ApplicationForRisking]] = collection
+    .find(Filters.eq(FieldNames.riskingFileName, riskingFileName.value))
+    .toFuture()
 
   def findNotSubscribedWithResults(): Future[Seq[ApplicationForRisking]] = {
     collection
