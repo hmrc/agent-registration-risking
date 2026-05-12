@@ -43,3 +43,7 @@ object FieldNames:
   val isSubscribed: String = "isSubscribed"
 
   val isEmailSent: String = "isEmailSent"
+
+  val subscriptionStatusIndex: String = "subscriptionStatusIndex"
+  val emailProcessingStatusIndex: String = "emailProcessingStatusIndex"
+  val entityRiskingResultIndex: String = "entityRiskingResultIndex"

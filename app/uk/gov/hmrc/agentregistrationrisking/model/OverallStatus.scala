@@ -23,10 +23,8 @@ import play.api.libs.json.OFormat
   *
   * @param riskingOutcome
   *   the outcome of the risking process
-  * @param isSubscribed
-  *   whether the application has been subscribed if it was approved
   * @param emailsProcessed
-  *   whether all required emails have been for this application after computed riskingOutcome
+  *   whether all required emails have been sent for this application after computed riskingOutcome
   */
 final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],

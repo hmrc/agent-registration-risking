@@ -178,8 +178,6 @@ object ApplicationForRiskingRepoHelp:
     new IdExtractor[ApplicationForRisking, ApplicationReference]:
       override def id(applicationForRisking: ApplicationForRisking): ApplicationReference = applicationForRisking.applicationReference
 
-  // TODO: sparse combined index on overallStatus.riskingOutcome, isSubscribed, isEmailSent
-
   def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
     IndexModel(
       keys = Indexes.ascending(FieldNames.applicationReference),
@@ -193,10 +191,36 @@ object ApplicationForRiskingRepoHelp:
         .name(FieldNames.riskingFileNameIndex)
         .unique(false)
     ),
+    // covers findReadyToBeSubscribed (riskingOutcome + isSubscribed prefix)
+    // and   findSubscribedReadyForSuccessEmail (full compound)
+    // partial filter keeps index small: only docs that already have a riskingOutcome
     IndexModel(
-      keys = Indexes.ascending(FieldNames.lastUpdatedAt),
+      keys = Indexes.ascending(
+        FieldNames.overallStatus.riskingOutcome,
+        FieldNames.isSubscribed,
+        FieldNames.isEmailSent
+      ),
       indexOptions = IndexOptions()
-        .expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS)
-        .name(FieldNames.lastUpdatedAtIndex)
+        .name(FieldNames.subscriptionStatusIndex)
+        .partialFilterExpression(Filters.exists(FieldNames.overallStatus.riskingOutcome))
+    ),
+    // covers findRequiringEmailProcessingForFailedNonFixable (riskingOutcome + emailsProcessed)
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.overallStatus.riskingOutcome, FieldNames.overallStatus.emailsProcessed),
+      indexOptions = IndexOptions()
+        .name(FieldNames.emailProcessingStatusIndex)
+        .partialFilterExpression(Filters.exists(FieldNames.overallStatus.riskingOutcome))
+    ),
+    // covers findReadyToSetRiskingOutcome / findApplicationsAwaitingOverallOutcome
+    // (entityRiskingResult exists && riskingOutcome NOT exists)
+    // partial filter restricts index to docs that have entityRiskingResult but no riskingOutcome yet
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.entityRiskingResult),
+      indexOptions = IndexOptions()
+        .name(FieldNames.entityRiskingResultIndex)
+        .partialFilterExpression(Filters.and(
+          Filters.exists(FieldNames.entityRiskingResult),
+          Filters.exists(FieldNames.overallStatus.riskingOutcome, false)
+        ))
     )
   )
