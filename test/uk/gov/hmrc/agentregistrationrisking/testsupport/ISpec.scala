@@ -107,10 +107,5 @@ extends AnyFreeSpecLike,
       )
       sc.copy(configuration = sc.configuration.withFallback(overrideServerConfiguration(app)))
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    dropDatabase()
-  }
-
 object ISpec:
   val testServerPort: Int = 19003

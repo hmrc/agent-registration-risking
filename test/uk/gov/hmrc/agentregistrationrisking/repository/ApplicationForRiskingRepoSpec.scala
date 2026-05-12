@@ -17,13 +17,8 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 
 class ApplicationForRiskingRepoSpec
@@ -48,18 +43,38 @@ extends ISpec:
     applications.contains(TdRiskingInstancesInStates.approvedAndSubscribed.application) shouldBe false
     applications.contains(TdRiskingInstancesInStates.approvedAndSubscribedAndEmailSent.application) shouldBe false
 
-  val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-  val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
   override protected def beforeAll(): Unit =
     super.beforeAll()
+    primeDb()
+    applicationForRiskingRepo
+      .collection
+      .countDocuments()
+      .toFuture
+      .futureValue shouldBe tdAll
+      .tdRiskingInstancesInStates
+      .all
+      .size withClue "sanity check1"
 
-    def primeDbWithBackgroundData(): Unit =
-      applicationForRiskingRepo.collection.drop().toFuture.futureValue
-      individualForRiskingRepo.collection.drop().toFuture.futureValue
-      tdAll.tdRiskingInstancesInStates.all.foreach: td =>
+    individualForRiskingRepo
+      .collection
+      .countDocuments()
+      .toFuture.futureValue shouldBe (tdAll
+      .tdRiskingInstancesInStates
+      .all
+      .size * 2) withClue "sanity check2 "
+
+    ()
+
+  private def primeDb(): Unit =
+    applicationForRiskingRepo.collection.drop().toFuture.futureValue
+    individualForRiskingRepo.collection.drop().toFuture.futureValue
+    tdAll
+      .tdRiskingInstancesInStates
+      .all
+      .foreach: td =>
         applicationForRiskingRepo.upsert(td.application).futureValue
         individualForRiskingRepo.upsert(td.individual1).futureValue
         individualForRiskingRepo.upsert(td.individual2).futureValue
-
-    primeDbWithBackgroundData()
