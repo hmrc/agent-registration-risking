@@ -22,6 +22,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
@@ -37,7 +38,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.util.Random
 
 @Singleton()
@@ -52,7 +52,10 @@ class TestRiskingController @Inject() (
   personReferenceGenerator: PersonReferenceGenerator,
   riskingRunner: RiskingRunner,
   sdesProxyService: SdesProxyService
-)(using clock: Clock)
+)(using
+  clock: Clock,
+  appConfig: AppConfig
+)
 extends BackendController(cc)
 with Logging:
 

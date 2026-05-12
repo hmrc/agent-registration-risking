@@ -48,6 +48,9 @@ class AppConfig @Inject() (
   val hipBaseUrl: String = servicesConfig.baseUrl("hip")
   val hipAuthToken: HipAuthToken = HipAuthToken(config.get[String]("microservice.services.hip.authorization-token"))
 
+  object AmlsEvidence:
+    val baseUrl: String = config.get[String]("amls-evidence.base-url")
+
   object Scheduler:
 
     val enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)

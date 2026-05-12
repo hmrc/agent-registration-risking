@@ -17,27 +17,12 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileDataRecord
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
+import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent.*
-import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats
-import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
-import java.time.Clock
 import java.time.Instant
-import java.time.LocalDateTime
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 object RiskingFileService:
 
@@ -45,7 +30,7 @@ object RiskingFileService:
     applications: Seq[ApplicationForRisking],
     individuals: Seq[IndividualForRisking],
     instant: Instant
-  ): RiskingFileWithContent =
+  )(using AppConfig): RiskingFileWithContent =
     // TODO: when resubmitting, THE APPROVED should be REMOVED from the below lists so they won't be sent for risking twice
     val riskingFile: RiskingFile = RiskingFile(
       riskingFileName = RiskingFileName.make(instant),
@@ -69,7 +54,7 @@ object RiskingFileService:
     applications: Seq[ApplicationForRisking],
     individuals: Seq[IndividualForRisking],
     instant: Instant
-  ): (RiskingFileContent, NumberOfRecords) =
+  )(using AppConfig): (RiskingFileContent, NumberOfRecords) =
     val headerRow: String = s"00|ARR|SAS|${asMinervaHeaderDate(instant)}|${asMinervaHeaderTime(instant)}\n"
     val (dataRecords: String, footerRecord: String, numberOfRecords: NumberOfRecords) =
       val applicationRecords: Seq[RiskingFileDataRecord] = applications.map(RiskingFileDataRecord.fromApplicationForRisking)
