@@ -22,6 +22,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
@@ -37,7 +38,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.util.Random
 
 @Singleton()
@@ -51,8 +51,12 @@ class TestRiskingController @Inject() (
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
   riskingRunner: RiskingRunner,
-  sdesProxyService: SdesProxyService
-)(using clock: Clock)
+  sdesProxyService: SdesProxyService,
+  riskingFileService: RiskingFileService,
+  appConfig: AppConfig
+)(using
+  clock: Clock
+)
 extends BackendController(cc)
 with Logging:
 
@@ -74,7 +78,7 @@ with Logging:
           applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
           individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
           _ = logger.info(s"Found ${individuals.size} corresponding individuals")
-          riskingFileWithContent: RiskingFileWithContent = RiskingFileService.buildRiskingFileWithContent(
+          riskingFileWithContent: RiskingFileWithContent = riskingFileService.buildRiskingFileWithContent(
             applications,
             individuals,
             instant
