@@ -45,6 +45,7 @@ import uk.gov.hmrc.auth.core.retrieve.Credentials
 
 object TdApplicationData:
 
+  @SuppressWarnings(Array("org.wartremover.warts.SeqApply"))
   def make(seed: String): ApplicationData =
     val random: scala.util.Random = new scala.util.Random(seed.hashCode)
     ApplicationData(

@@ -27,7 +27,7 @@ import java.time.Instant
 final case class ApplicationForRisking(
   applicationReference: ApplicationReference, // primary Key
   riskingFileName: Option[RiskingFileName], // foreign Key to RiskingFile
-  applicationData: ApplicationData, // data received from FE
+  applicationData: ApplicationData, // data submitted by agent-registration-frontend
   createdAt: Instant,
   lastUpdatedAt: Instant,
   entityRiskingResult: Option[EntityRiskingResult],

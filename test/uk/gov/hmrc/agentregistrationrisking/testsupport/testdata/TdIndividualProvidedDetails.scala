@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.testdata.providedetails.individual.T
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 
-object TdIndividualProvidedDetailsFactory:
+object TdIndividualProvidedDetails:
 
   def make(
     applicationReference: ApplicationReference,

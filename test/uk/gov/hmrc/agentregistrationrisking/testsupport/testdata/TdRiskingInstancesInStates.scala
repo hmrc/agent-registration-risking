@@ -204,7 +204,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-11-26")
+      riskingCompletedDate = TdInstant.localDate
     )
 
   case object failedFixableAfterOutcome
@@ -235,7 +235,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-11-28")
+      riskingCompletedDate = TdInstant.localDate
     )
 
   case object failedNonFixable
@@ -263,7 +263,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-12-02")
+      riskingCompletedDate = TdInstant.localDate
     )
 
   case object failedNonFixableAfterOutcome
@@ -291,7 +291,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-11-27")
+      riskingCompletedDate = TdInstant.localDate
     )
 
   case object failedNonFixableAfter1EmailSent
@@ -319,7 +319,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-11-25")
+      riskingCompletedDate = TdInstant.localDate
     )
 
   case object failedNonFixableAfter2EmailsSent
@@ -347,7 +347,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-12-05")
+      riskingCompletedDate = TdInstant.localDate
     )
 
   case object failedNonFixableAfterAllEmailsSent
@@ -375,7 +375,7 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-12-05")
+      riskingCompletedDate = TdInstant.localDate
     )
 
   case object failedNonFixableAfterAllEmailsProcessed
@@ -408,5 +408,5 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = LocalDate.parse("2059-11-26")
+      riskingCompletedDate = TdInstant.localDate
     )

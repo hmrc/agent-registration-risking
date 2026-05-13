@@ -33,7 +33,7 @@ import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
 import java.time.Instant
 
-trait TdSdesProxy { dependencies: TdRiskingBase =>
+trait TdSdesProxy { dependencies: TdInstant =>
 
   private val createdAt: Instant = dependencies.instant
 

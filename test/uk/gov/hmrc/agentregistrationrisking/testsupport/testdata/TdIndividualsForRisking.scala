@@ -30,13 +30,13 @@ object TdIndividualsForRisking:
     applicationReferenceParam: ApplicationReference
   ): TdIndividualsForRisking =
     new TdIndividualsForRisking
-      with TdRiskingBase:
+      with TdInstant:
       override def instant: Instant = instantParam
       override def personReferencePrefix: String = personReferencePrefixParam
       override def applicationReference: ApplicationReference = applicationReferenceParam
 
 trait TdIndividualsForRisking {
-  dependencies: TdRiskingBase =>
+  dependencies: TdInstant =>
 
   def instant: Instant
   def applicationReference: ApplicationReference
@@ -46,7 +46,7 @@ trait TdIndividualsForRisking {
     instant = dependencies.instant,
     applicationReference = applicationReference,
     individualProvidedDetails =
-      TdIndividualProvidedDetailsFactory
+      TdIndividualProvidedDetails
         .make(
           applicationReference = applicationReference,
           personReference = PersonReference(s"${personReferencePrefix}01")
@@ -59,7 +59,7 @@ trait TdIndividualsForRisking {
     instant = dependencies.instant,
     applicationReference = applicationReference,
     individualProvidedDetails =
-      TdIndividualProvidedDetailsFactory
+      TdIndividualProvidedDetails
         .make(
           applicationReference = applicationReference,
           personReference = PersonReference(s"${personReferencePrefix}02")

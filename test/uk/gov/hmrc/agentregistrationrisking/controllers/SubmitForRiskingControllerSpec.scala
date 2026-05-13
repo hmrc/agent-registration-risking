@@ -78,7 +78,8 @@ extends ControllerSpec:
     applicationForRiskingRepo
       .findById(applicationReference)
       .futureValue
-      .value shouldBe applicationForRiskingSubmitted withClue " no prior records in mongo for this application"
+      .value
+      .prettyPrintJson shouldBe applicationForRiskingSubmitted.prettyPrintJson
 
     individualForRiskingRepo
       .findByApplicationReference(applicationReference)

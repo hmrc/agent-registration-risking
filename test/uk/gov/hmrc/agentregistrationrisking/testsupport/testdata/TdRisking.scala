@@ -78,15 +78,15 @@ trait TdRisking:
 object TdRisking:
 
   def make(
-    seed: String
+    seed: String,
+    instant: Instant = TdInstant.instant
   ): TdRisking =
-    object t:
-      val random: Random = new scala.util.Random(seed.hashCode)
-      val instant: Instant = Instant.parse("2059-11-26T16:33:51Z").plusSeconds(random.nextInt(1000000))
-      val applicationData: ApplicationData = TdApplicationData.make(seed)
+
+    val instantP: Instant = instant
+    val random: Random = new scala.util.Random(seed.hashCode)
 
     new TdRisking:
-      override def instant: Instant = t.instant
-      override def applicationData: ApplicationData = t.applicationData
-      override def personReferencePrefix: String = s"PREF_$seed"
-      override def riskingFileName: RiskingFileName = RiskingFileName.make(t.instant)
+      override def instant: Instant = instantP
+      override def applicationData: ApplicationData = TdApplicationData.make(seed)
+      override def personReferencePrefix: String = s"PERSON_REF_$seed"
+      override def riskingFileName: RiskingFileName = RiskingFileName.make(instantP)

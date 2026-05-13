@@ -72,7 +72,7 @@ trait TdApplicationForRisking:
   def submittedForRisking: ApplicationForRisking = readyForSubmission
     .copy(
       riskingFileName = Some(riskingFileName),
-      lastUpdatedAt = instant.plus(1, ChronoUnit.DAYS)
+      lastUpdatedAt = instant
     )
 
   object receivedRiskingResults:
@@ -80,7 +80,7 @@ trait TdApplicationForRisking:
     val approved: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(
         failures = List.empty,
-        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+        receivedAt = instant
       ))
     )
 
@@ -102,7 +102,7 @@ trait TdApplicationForRisking:
           TdFailures.entityFailures.fixable1,
           TdFailures.entityFailures.fixable2
         ),
-        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+        receivedAt = instant
       ))
     )
 
@@ -117,7 +117,7 @@ trait TdApplicationForRisking:
             TdFailures.entityFailures.fixable2,
             TdFailures.entityFailures.nonFixable2
           ),
-          receivedAt = instant.minus(2, ChronoUnit.DAYS)
+          receivedAt = instant
         ))
       )
 
