@@ -20,7 +20,7 @@ import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
@@ -83,19 +83,19 @@ extends BackendController(cc):
   ) = submitForRiskingRequest.individuals.map(individualProvidedDetails =>
     makeIndividualForRisking(
       applicationReference = submitForRiskingRequest.agentApplication.applicationReference,
-      individualProvidedDetails = individualProvidedDetails,
+      individualData = individualProvidedDetails,
       createdAt = createdAt
     )
   )
 
   private def makeIndividualForRisking(
     applicationReference: ApplicationReference,
-    individualProvidedDetails: IndividualProvidedDetails,
+    individualData: IndividualData,
     createdAt: Instant
   ): IndividualForRisking = IndividualForRisking(
-    personReference = individualProvidedDetails.personReference,
+    personReference = individualData.personReference,
     applicationReference = applicationReference,
-    individualProvidedDetails = individualProvidedDetails,
+    individualData = individualData,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
     individualRiskingResult = None,

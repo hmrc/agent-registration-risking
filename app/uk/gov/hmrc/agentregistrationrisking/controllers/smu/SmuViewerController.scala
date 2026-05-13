@@ -61,7 +61,7 @@ extends BackendController(cc):
     yield (maybeIndividual, maybeApp) match
       case (Some(indi), Some(app)) =>
         Ok(Json.toJson(SmuIndividualResponse.make(
-          indi.individualProvidedDetails,
+          indi.individualData,
           app.applicationData
         )))
       case _ => NoContent

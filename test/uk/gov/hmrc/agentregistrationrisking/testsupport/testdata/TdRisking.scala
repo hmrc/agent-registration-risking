@@ -36,10 +36,10 @@ import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddr
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsFe
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsFe
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceFe
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsFe
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistration.shared.upload.FileUploadReference
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
@@ -50,8 +50,10 @@ import scala.util.Random
 
 trait TdRisking:
 
-  def applicationData: ApplicationData
-  def personReferencePrefix: String
+  def seed: String
+  def personReferencePrefix: String = s"PERSON_REF_$seed"
+
+  def applicationData: ApplicationData = TdApplicationData.make(seed)
   def instant: Instant
   def riskingFileName: RiskingFileName
 
@@ -63,15 +65,15 @@ trait TdRisking:
 
   def tdIndividualsForRisking: TdIndividualsForRisking = TdIndividualsForRisking.make(
     instantParam = instant,
-    personReferencePrefixParam = personReferencePrefix,
+    seed,
     applicationReferenceParam = applicationData.applicationReference
   )
 
   def submitForRiskingRequest: SubmitForRiskingRequest = SubmitForRiskingRequest(
     agentApplication = applicationData,
     individuals = List(
-      tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualProvidedDetails,
-      tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualProvidedDetails
+      tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualData,
+      tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualData
     )
   )
 
@@ -83,10 +85,10 @@ object TdRisking:
   ): TdRisking =
 
     val instantP: Instant = instant
+    val seedP = seed
     val random: Random = new scala.util.Random(seed.hashCode)
 
     new TdRisking:
+      override def seed: String = seedP
       override def instant: Instant = instantP
-      override def applicationData: ApplicationData = TdApplicationData.make(seed)
-      override def personReferencePrefix: String = s"PERSON_REF_$seed"
       override def riskingFileName: RiskingFileName = RiskingFileName.make(instantP)

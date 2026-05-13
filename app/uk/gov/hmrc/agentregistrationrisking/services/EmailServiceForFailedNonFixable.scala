@@ -104,8 +104,7 @@ extends RequestAwareLogging:
       .applicationData
       .applicantContactDetails
       .applicantEmailAddress === individual
-      .individualProvidedDetails
-      .getEmailAddress
+      .individualData
       .emailAddress
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
@@ -121,12 +120,10 @@ extends RequestAwareLogging:
 
   private def makeSendEmailRequest(
     individual: IndividualForRisking
-  ): SendEmailRequest =
-    val individualDetails = individual.individualProvidedDetails
-    SendEmailRequest(
-      to = Seq(individualDetails.getEmailAddress.emailAddress),
-      templateId = EmailTemplateId.IndividualNonFixableFailure,
-      parameters = Map(
-        "individualName" -> individualDetails.individualName.value
-      )
+  ): SendEmailRequest = SendEmailRequest(
+    to = Seq(individual.individualData.emailAddress),
+    templateId = EmailTemplateId.IndividualNonFixableFailure,
+    parameters = Map(
+      "individualName" -> individual.individualData.individualName.value
     )
+  )

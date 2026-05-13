@@ -26,7 +26,8 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceFe
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.convertBooleanToStringRepresentation
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asMinervaDate
@@ -48,7 +49,7 @@ final case class RiskingFileDataRecord(
   amlSupervisoryBody: Option[AmlsCode],
   amlRegNumber: Option[AmlsRegistrationNumber],
   amlExpiryDate: Option[LocalDate],
-  amlEvidence: Option[AmlsEvidenceFe],
+  amlEvidence: Option[AmlsEvidenceData],
   personReference: Option[PersonReference],
   individualCompaniesHouseName: Option[String],
   individualCompaniesHouseDateOfBirth: Option[LocalDate],
@@ -149,7 +150,7 @@ object RiskingFileDataRecord:
     )
 
   def fromIndividualForRisking(individualForRisking: IndividualForRisking): RiskingFileDataRecord =
-    val details = individualForRisking.individualProvidedDetails
+    val individualData: IndividualData = individualForRisking.individualData
     this.apply(
       recordType = RecordType.Individual,
       resubmission = individualForRisking.individualRiskingResult.isDefined, // TODO rework this for resubmission
@@ -160,25 +161,23 @@ object RiskingFileDataRecord:
       entityType = None,
       entityIdentifier = None,
       crn = None,
-//      vrns = details.vrns.map(_.value).mkString(","),
-//      payeRefs = details.payeRefs.map(_.value).mkString(","),
-      vrns = transformToCommaSeparatedString(details.vrns.map(_.map(_.value))),
-      payeRefs = transformToCommaSeparatedString(details.payeRefs.map(_.map(_.value))),
+      vrns = individualData.vrns.map(_.value).mkString(","),
+      payeRefs = individualData.payeRefs.map(_.value).mkString(","),
       amlSupervisoryBody = None,
       amlRegNumber = None,
       amlExpiryDate = None,
       amlEvidence = None,
-      personReference = Some(details.personReference),
-      individualCompaniesHouseName = individualForRisking.companiesHouseName,
-      individualCompaniesHouseDateOfBirth = individualForRisking.companiesHouseDateOfBirth,
-      individualProvidedName = Some(details.individualName),
-      individualProvidedDateOfBirth = details.individualDateOfBirth,
-      individualNino = details.individualNino,
-      individualSaUtr = details.individualSaUtr,
-      individualPhoneNumber = details.telephoneNumber,
-      individualEmail = details.emailAddress.map(_.emailAddress),
-      providedByApplicant = Some(individualForRisking.providedByApplicant),
-      passedIV = details.passedIv
+      personReference = Some(individualData.personReference),
+      individualCompaniesHouseName = individualData.companiesHouseName,
+      individualCompaniesHouseDateOfBirth = individualData.companiesHouseDateOfBirth,
+      individualProvidedName = Some(individualData.individualName),
+      individualProvidedDateOfBirth = Some(individualData.individualDateOfBirth),
+      individualNino = Some(individualData.individualNino),
+      individualSaUtr = Some(individualData.individualSaUtr),
+      individualPhoneNumber = Some(individualData.telephoneNumber),
+      individualEmail = Some(individualData.emailAddress),
+      providedByApplicant = Some(individualData.providedByApplicant),
+      passedIV = Some(individualData.passedIv)
     )
 
   private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =

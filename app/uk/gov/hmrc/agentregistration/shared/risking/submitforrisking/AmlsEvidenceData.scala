@@ -20,10 +20,10 @@ import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.upload.FileUploadReference
 
-final case class AmlsEvidenceFe(
+final case class AmlsEvidenceData(
   fileUploadReference: FileUploadReference,
   fileName: String
 )
 
-object AmlsEvidenceFe:
-  given OFormat[AmlsEvidenceFe] = Json.format[AmlsEvidenceFe]
+object AmlsEvidenceData:
+  given OFormat[AmlsEvidenceData] = Json.format[AmlsEvidenceData]

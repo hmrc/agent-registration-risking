@@ -22,11 +22,11 @@ import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
 
-final case class ApplicantContactDetailsFe(
+final case class ApplicantContactDetailsData(
   applicantName: ApplicantName,
   telephoneNumber: TelephoneNumber,
   applicantEmailAddress: EmailAddress
 )
 
-object ApplicantContactDetailsFe:
-  given OFormat[ApplicantContactDetailsFe] = Json.format[ApplicantContactDetailsFe]
+object ApplicantContactDetailsData:
+  given OFormat[ApplicantContactDetailsData] = Json.format[ApplicantContactDetailsData]

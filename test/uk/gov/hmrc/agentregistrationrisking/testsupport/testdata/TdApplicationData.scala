@@ -36,10 +36,10 @@ import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsFe
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsFe
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceFe
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsFe
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
 import uk.gov.hmrc.agentregistration.shared.upload.FileUploadReference
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 
@@ -54,20 +54,20 @@ object TdApplicationData:
       applicantCredentials = Credentials(providerId = s"providerid_$seed", providerType = s"providertype_$seed"),
       businessType = BusinessType.values(random.nextInt(BusinessType.values.size - 1)),
       groupId = GroupId(s"groupid_$seed"),
-      applicantContactDetails = ApplicantContactDetailsFe(
+      applicantContactDetails = ApplicantContactDetailsData(
         applicantName = ApplicantName(s"applicantname_$seed"),
         telephoneNumber = TelephoneNumber(s"01234567890"),
         applicantEmailAddress = EmailAddress(s"applicantemail@$seed.com")
       ),
-      amlsDetails = AmlsDetailsFe(
+      amlsDetails = AmlsDetailsData(
         supervisoryBody = AmlsCode(s"amlscode_$seed"),
         amlsRegistrationNumber = AmlsRegistrationNumber(s"amlsregistrationnumber_$seed"),
-        amlsEvidence = Some(AmlsEvidenceFe(
+        amlsEvidence = Some(AmlsEvidenceData(
           fileUploadReference = FileUploadReference(s"amls_fileupload_ref$seed"),
           fileName = s"amls_evicence_$seed"
         ))
       ),
-      agentDetails = AgentDetailsFe(
+      agentDetails = AgentDetailsData(
         businessName = AgentBusinessName(
           agentBusinessName = s"agentBusinessName_$seed",
           otherAgentBusinessName = Some(s"otherAgentBusinessName_$seed")

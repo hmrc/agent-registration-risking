@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.*
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 
 import java.time.LocalDate
 
@@ -33,8 +34,8 @@ import java.time.LocalDate
   * This case class aggregates individual provided details and agent application details.
   */
 final case class SmuIndividualResponse(
-  individual: SmuIndividualResponse.Individual,
-  entity: SmuIndividualResponse.Entity
+  individual: SmuIndividualResponse.IndividualForSmuViewer,
+  entity: SmuIndividualResponse.EntityForSmuViewer
 )
 
 object SmuIndividualResponse:
@@ -42,11 +43,11 @@ object SmuIndividualResponse:
   given format: OFormat[SmuIndividualResponse] = Json.format[SmuIndividualResponse]
 
   def make(
-    ipd: IndividualProvidedDetails,
+    ipd: IndividualData,
     aa: ApplicationData
-  ) = SmuIndividualResponse(Individual.make(ipd), Entity.make(aa))
+  ) = SmuIndividualResponse(IndividualForSmuViewer.make(ipd), EntityForSmuViewer.make(aa))
 
-  final case class Individual(
+  final case class IndividualForSmuViewer(
     personReference: PersonReference,
     resubmission: Boolean,
     passedIdentityVerification: Boolean,
@@ -55,49 +56,49 @@ object SmuIndividualResponse:
     individualDateOfBirth: LocalDate,
     individualNino: Option[Nino],
     individualSaUtr: Option[SaUtr],
-    payeRefs: Option[List[PayeRef]],
-    vrns: Option[List[Vrn]],
+    payeRefs: List[PayeRef],
+    vrns: List[Vrn],
     telephoneNumber: TelephoneNumber,
     emailAddress: EmailAddress
   )
 
-  object Individual:
+  object IndividualForSmuViewer:
 
-    given format: OFormat[Individual] = Json.format[Individual]
+    given format: OFormat[IndividualForSmuViewer] = Json.format[IndividualForSmuViewer]
 
-    private[SmuIndividualResponse] def make(ipd: IndividualProvidedDetails): Individual = Individual(
-      personReference = ipd.personReference,
+    private[SmuIndividualResponse] def make(individual: IndividualData): IndividualForSmuViewer = IndividualForSmuViewer(
+      personReference = individual.personReference,
       // TODO update this once we have implemented resubmission flags
       resubmission = false,
-      passedIdentityVerification = ipd.passedIv.contains(true),
-      detailsProvidedByApplicant = ipd.providedByApplicant.contains(true),
-      individualName = ipd.individualName,
+      passedIdentityVerification = individual.passedIv,
+      detailsProvidedByApplicant = individual.providedByApplicant,
+      individualName = individual.individualName,
       individualDateOfBirth =
-        ipd.getDateOfBirth match
+        individual.individualDateOfBirth match
           case IndividualDateOfBirth.Provided(date) => date
           case IndividualDateOfBirth.FromCitizensDetails(date) => date
           case IndividualDateOfBirth.ApplicantProvided(date) => date
       ,
       individualNino =
-        ipd.individualNino match
-          case Some(IndividualNino.Provided(nino)) => Some(nino)
-          case Some(IndividualNino.FromAuth(nino)) => Some(nino)
-          case _ => None
+        individual.individualNino match
+          case IndividualNino.Provided(nino) => Some(nino)
+          case IndividualNino.FromAuth(nino) => Some(nino)
+          case IndividualNino.NotProvided => None
       ,
       individualSaUtr =
-        ipd.individualSaUtr match {
-          case Some(IndividualSaUtr.Provided(saUtr)) => Some(saUtr)
-          case Some(IndividualSaUtr.FromAuth(saUtr)) => Some(saUtr)
-          case Some(IndividualSaUtr.FromCitizenDetails(saUtr)) => Some(saUtr)
-          case _ => None
-        },
-      payeRefs = ipd.payeRefs,
-      vrns = ipd.vrns,
-      telephoneNumber = ipd.getTelephoneNumber,
-      emailAddress = ipd.getEmailAddress.emailAddress
+        individual.individualSaUtr match
+          case IndividualSaUtr.Provided(saUtr) => Some(saUtr)
+          case IndividualSaUtr.FromAuth(saUtr) => Some(saUtr)
+          case IndividualSaUtr.FromCitizenDetails(saUtr) => Some(saUtr)
+          case IndividualSaUtr.NotProvided => None
+      ,
+      payeRefs = individual.payeRefs,
+      vrns = individual.vrns,
+      telephoneNumber = individual.telephoneNumber,
+      emailAddress = individual.emailAddress
     )
 
-  final case class Entity(
+  final case class EntityForSmuViewer(
     applicationReference: ApplicationReference,
     resubmission: Boolean,
     applicantName: ApplicantName,
@@ -114,13 +115,13 @@ object SmuIndividualResponse:
     applicantEmail: EmailAddress
   )
 
-  object Entity:
+  object EntityForSmuViewer:
 
-    given format: OFormat[Entity] = Json.format[Entity]
+    given format: OFormat[EntityForSmuViewer] = Json.format[EntityForSmuViewer]
 
     private[SmuIndividualResponse] def make(
       aa: ApplicationData
-    ): Entity = Entity(
+    ): EntityForSmuViewer = EntityForSmuViewer(
       applicationReference = aa.applicationReference,
       // TODO update this once we have implemented resubmission flags
       resubmission = false,

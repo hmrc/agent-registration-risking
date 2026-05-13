@@ -195,12 +195,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
@@ -226,12 +226,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
@@ -254,12 +254,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
@@ -282,12 +282,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
@@ -310,12 +310,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
@@ -338,12 +338,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
@@ -366,12 +366,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
@@ -399,12 +399,12 @@ object TdRiskingInstancesInStates:
       riskedIndividuals = Seq(
         RiskedIndividual(
           personReference = individual1.personReference,
-          individualName = individual1.individualProvidedDetails.individualName,
+          individualName = individual1.individualData.individualName,
           failures = individual1.individualRiskingResult.value.failures
         ),
         RiskedIndividual(
           personReference = individual2.personReference,
-          individualName = individual2.individualProvidedDetails.individualName,
+          individualName = individual2.individualData.individualName,
           failures = individual2.individualRiskingResult.value.failures
         )
       ),

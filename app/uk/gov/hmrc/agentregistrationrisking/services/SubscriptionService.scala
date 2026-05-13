@@ -19,8 +19,8 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsFe
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsFe
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -70,8 +70,8 @@ extends RequestAwareLogging:
     yield ()
 
   private def subscribeAgent(agentApplication: ApplicationData)(using RequestHeader): Future[Unit] =
-    val agentDetails: AgentDetailsFe = agentApplication.agentDetails
-    val amlsDetails: AmlsDetailsFe = agentApplication.amlsDetails
+    val agentDetails: AgentDetailsData = agentApplication.agentDetails
+    val amlsDetails: AmlsDetailsData = agentApplication.amlsDetails
     val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(
       name = agentDetails.businessName.getAgentBusinessName,
       addr1 = agentDetails.agentCorrespondenceAddress.addressLine1,

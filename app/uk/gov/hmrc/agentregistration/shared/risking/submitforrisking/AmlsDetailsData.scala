@@ -18,17 +18,14 @@ package uk.gov.hmrc.agentregistration.shared.risking.submitforrisking
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddress
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.AmlsCode
+import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
 
-final case class AgentDetailsFe(
-  businessName: AgentBusinessName,
-  telephoneNumber: AgentTelephoneNumber,
-  agentEmailAddress: AgentEmailAddress,
-  agentCorrespondenceAddress: AgentCorrespondenceAddress
+final case class AmlsDetailsData(
+  supervisoryBody: AmlsCode,
+  amlsRegistrationNumber: AmlsRegistrationNumber,
+  amlsEvidence: Option[AmlsEvidenceData]
 )
 
-object AgentDetailsFe:
-  given OFormat[AgentDetailsFe] = Json.format[AgentDetailsFe]
+object AmlsDetailsData:
+  given OFormat[AmlsDetailsData] = Json.format[AmlsDetailsData]

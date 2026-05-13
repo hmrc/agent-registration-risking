@@ -20,7 +20,7 @@ import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsFe
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
@@ -73,7 +73,7 @@ extends RequestAwareLogging:
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
     val agentApplication: ApplicationData = application.applicationData
-    val agentDetails: AgentDetailsFe = agentApplication.agentDetails
+    val agentDetails: AgentDetailsData = agentApplication.agentDetails
     SendEmailRequest(
       to = Seq(agentDetails.agentEmailAddress.getEmailAddress),
       templateId = emailTemplateId,
