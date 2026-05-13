@@ -20,7 +20,6 @@ import play.api.mvc.ActionBuilder
 import play.api.mvc.AnyContent
 import play.api.mvc.DefaultActionBuilder
 import play.api.mvc.Request
-import play.shaded.ahc.org.asynchttpclient.DefaultRequest
 
 import javax.inject.Inject
 import javax.inject.Singleton

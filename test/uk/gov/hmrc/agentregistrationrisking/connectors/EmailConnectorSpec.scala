@@ -27,26 +27,15 @@ extends ISpec:
 
   val connector: EmailConnector = app.injector.instanceOf[EmailConnector]
 
-  "sendEmail" - {
+  "completes successfully when the email service responds with 202 Accepted" in:
+    given RequestHeader = FakeRequest()
+    EmailStubs.stubSendEmail(sendEmailRequest)
+    connector.sendEmail(sendEmailRequest).futureValue shouldBe (())
+    EmailStubs.verifySendEmail()
 
-    "completes successfully when the email service responds with 202 Accepted" in:
-
-      given RequestHeader = FakeRequest()
-
-      EmailStubs.stubSendEmail(testEmailInformation)
-
-      connector.sendEmail(testEmailInformation).futureValue shouldBe (())
-
-      EmailStubs.verifySendEmail()
-
-    "fails when the email service responds with a non-2xx status" in:
-
-      given RequestHeader = FakeRequest()
-
-      EmailStubs.stubSendEmailFailure(testEmailInformation)
-
-      val exception = connector.sendEmail(testEmailInformation).failed.futureValue
-
-      exception shouldBe a[Throwable]
-      EmailStubs.verifySendEmail()
-  }
+  "fails when the email service responds with a non-2xx status" in:
+    given RequestHeader = FakeRequest()
+    EmailStubs.stubSendEmailFailure(sendEmailRequest)
+    val exception = connector.sendEmail(sendEmailRequest).failed.futureValue
+    exception shouldBe a[Throwable]
+    EmailStubs.verifySendEmail()

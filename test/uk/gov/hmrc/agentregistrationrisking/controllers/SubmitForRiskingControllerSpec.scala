@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
 
 class SubmitForRiskingControllerSpec
@@ -42,15 +43,18 @@ extends ControllerSpec:
 
   "submit application and individuals for risking for the first time" in:
     // GIVEN
+    dropDatabase()
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
 
-    val submitRequest: SubmitForRiskingRequest = tdAll.tdRisking.submitForRiskingRequest
+    val td = tdAll.tdRiskingInstancesInStates.readyForSubmission
+
+    val submitRequest: SubmitForRiskingRequest = td.tdRisking.submitForRiskingRequest
     val applicationReference: ApplicationReference = submitRequest.agentApplication.applicationReference
 
-    val applicationForRiskingSubmitted: ApplicationForRisking = tdAll.tdRisking.tdApplicationForRisking.readyForSubmission
-    val individualForRiskingSubmitted1: IndividualForRisking = tdAll.tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
-    val individualForRiskingSubmitted2: IndividualForRisking = tdAll.tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
+    val applicationForRiskingSubmitted: ApplicationForRisking = td.application
+    val individualForRiskingSubmitted1: IndividualForRisking = td.individual1
+    val individualForRiskingSubmitted2: IndividualForRisking = td.individual2
 
     applicationForRiskingRepo
       .findById(applicationReference)

@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
+package uk.gov.hmrc.agentregistration.shared.companieshouse
 
-import uk.gov.hmrc.agentregistration.shared.EmailAddress
-import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
-import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
-trait TdEmail:
+final case class CompaniesHouseOfficerIdentification(
+  identificationType: Option[String],
+  legalAuthority: Option[String],
+  legalForm: Option[String],
+  placeRegistered: Option[String],
+  registrationNumber: Option[String]
+)
 
-  val sendEmailRequest: SendEmailRequest = SendEmailRequest(
-    to = Seq(EmailAddress("agent@example.com")),
-    templateId = EmailTemplateId.RegistrationSuccess,
-    parameters = Map(
-      "agencyName" -> "Test Agency",
-      "arn" -> "TARN0000001"
-    )
-  )
+object CompaniesHouseOfficerIdentification:
+  given Format[CompaniesHouseOfficerIdentification] = Json.format[CompaniesHouseOfficerIdentification]
