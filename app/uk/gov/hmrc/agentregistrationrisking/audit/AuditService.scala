@@ -55,6 +55,14 @@ extends RequestAwareLogging:
     )
     send(event)
 
+  def sendApplicationsTransferredToRiskingEvent(
+    applicationReferences: Seq[ApplicationReference]
+  )(using RequestHeader): Unit =
+    val event = ApplicationsTransferredToRisking(
+      applicationReferences = applicationReferences
+    )
+    send(event)
+
   private def send[E <: AuditEvent](event: E)(using
     RequestHeader,
     OWrites[E]
