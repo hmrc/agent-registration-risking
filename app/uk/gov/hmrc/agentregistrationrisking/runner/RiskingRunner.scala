@@ -36,6 +36,7 @@ import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import play.api.libs.typedmap.TypedMap
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -54,6 +55,7 @@ class RiskingRunner @Inject() (
   individualForRiskingRepo: IndividualForRiskingRepo,
   riskingFileRepo: RiskingFileRepo,
   riskingFileService: RiskingFileService
+  auditService: AuditService
 )(using
   appConfig: AppConfig,
   ec: ExecutionContext,
@@ -80,6 +82,8 @@ extends RequestAwareLogging:
       _ = logger.info(s"Generated risking file: $riskingFileName, ${riskingFileWithContent.numberOfRecords} records")
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.uploadRiskingFile(riskingFileWithContent)
       _ = logger.info(s"Uploaded risking file to object store: ${objectSummary.location}")
+      _ = auditService.sendApplicationsTransferredToRiskingEvent(applicationReferences)
+      _ = logger.info("Sent ApplicationsTransferredToRiskingAuditEvent")
       _ <- riskingFileRepo.upsert(riskingFileWithContent.riskingFile)
       _ = logger.info(s"Persisted risking file: ${riskingFileWithContent.riskingFile}")
       _ <- applicationForRiskingRepo.updateRiskingFileName(

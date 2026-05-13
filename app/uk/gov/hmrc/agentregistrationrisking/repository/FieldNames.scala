@@ -45,5 +45,3 @@ object FieldNames:
   val isSubscribed: String = "isSubscribed"
 
   val isEmailSent: String = "isEmailSent"
-
-
