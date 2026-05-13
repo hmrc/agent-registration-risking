@@ -16,17 +16,23 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
-import org.mongodb.scala.model.Aggregates
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
+import org.bson.json.JsonMode
+import org.bson.json.JsonWriterSettings
+import org.mongodb.scala.Document
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.*
+import play.api.libs.json.Json
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.model.*
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepoHelp.given
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
+import uk.gov.hmrc.agentregistrationrisking.repository.Repo.toBison
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
 import java.time.Clock
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -153,15 +159,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .find(
       Filters.and(
         Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
-        Filters.eq(FieldNames.isSubscribed, true),
-        Filters.eq(FieldNames.isEmailSent, false)
-      )
-    ).toFuture()
-
-  def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
-    .find(
-      Filters.and(
-        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved),
         Filters.eq(FieldNames.isSubscribed, true),
         Filters.eq(FieldNames.isEmailSent, false)
       )
