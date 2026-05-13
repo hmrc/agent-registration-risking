@@ -54,7 +54,7 @@ class RiskingRunner @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
   riskingFileRepo: RiskingFileRepo,
-  riskingFileService: RiskingFileService
+  riskingFileService: RiskingFileService,
   auditService: AuditService
 )(using
   appConfig: AppConfig,
