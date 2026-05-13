@@ -82,3 +82,11 @@ object AuditOutcome:
       case RiskingOutcome.Approved => Success
       case RiskingOutcome.FailedNonFixable => NonFixableFailure
       case RiskingOutcome.FailedFixable => FixableFailure
+
+final case class ApplicationsTransferredToRisking(
+  applicationReferences: Seq[ApplicationReference]
+)
+extends AuditEvent
+
+object ApplicationsTransferredToRisking:
+  given OWrites[ApplicationsTransferredToRisking] = Json.writes[ApplicationsTransferredToRisking]

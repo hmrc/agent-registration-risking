@@ -56,6 +56,14 @@ extends RequestAwareLogging:
     )
     send(event)
 
+  def sendApplicationsTransferredToRiskingEvent(
+    applicationReferences: Seq[ApplicationReference]
+  )(using RequestHeader): Unit =
+    val event = ApplicationsTransferredToRisking(
+      applicationReferences = applicationReferences
+    )
+    send(event)
+
   def sendRiskingDeterminationEvent(
     applicationReference: ApplicationReference,
     outcome: RiskingOutcome
