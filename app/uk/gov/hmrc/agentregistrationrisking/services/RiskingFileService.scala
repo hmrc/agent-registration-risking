@@ -17,29 +17,17 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileDataRecord
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
+import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent.*
-import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats
-import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
-import java.time.Clock
 import java.time.Instant
-import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
-object RiskingFileService:
+@Singleton
+class RiskingFileService @Inject() (appConfig: AppConfig):
 
   def buildRiskingFileWithContent(
     applications: Seq[ApplicationForRisking],
@@ -65,14 +53,14 @@ object RiskingFileService:
       numberOfRecords = numberOfRecords
     )
 
-  private def buildRiskingFileContent(
+  def buildRiskingFileContent(
     applications: Seq[ApplicationForRisking],
     individuals: Seq[IndividualForRisking],
     instant: Instant
   ): (RiskingFileContent, NumberOfRecords) =
     val headerRow: String = s"00|ARR|SAS|${asMinervaHeaderDate(instant)}|${asMinervaHeaderTime(instant)}\n"
     val (dataRecords: String, footerRecord: String, numberOfRecords: NumberOfRecords) =
-      val applicationRecords: Seq[RiskingFileDataRecord] = applications.map(RiskingFileDataRecord.fromApplicationForRisking)
+      val applicationRecords: Seq[RiskingFileDataRecord] = applications.map(RiskingFileDataRecord.fromApplicationForRisking(_, appConfig.AmlsEvidence.baseUrl))
       val individualRecords: Seq[RiskingFileDataRecord] = individuals.map(RiskingFileDataRecord.fromIndividualForRisking)
       val allRecords: Seq[RiskingFileDataRecord] = applicationRecords ++ individualRecords
       val numberOfRecords: NumberOfRecords = allRecords.size
