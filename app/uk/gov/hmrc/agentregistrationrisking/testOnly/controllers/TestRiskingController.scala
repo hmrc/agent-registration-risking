@@ -51,10 +51,11 @@ class TestRiskingController @Inject() (
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
   riskingRunner: RiskingRunner,
-  sdesProxyService: SdesProxyService
-)(using
-  clock: Clock,
+  sdesProxyService: SdesProxyService,
+  riskingFileService: RiskingFileService,
   appConfig: AppConfig
+)(using
+  clock: Clock
 )
 extends BackendController(cc)
 with Logging:
@@ -77,7 +78,7 @@ with Logging:
           applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
           individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
           _ = logger.info(s"Found ${individuals.size} corresponding individuals")
-          riskingFileWithContent: RiskingFileWithContent = RiskingFileService.buildRiskingFileWithContent(
+          riskingFileWithContent: RiskingFileWithContent = riskingFileService.buildRiskingFileWithContent(
             applications,
             individuals,
             instant

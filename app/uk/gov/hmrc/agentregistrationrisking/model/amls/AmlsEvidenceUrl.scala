@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.util
+package uk.gov.hmrc.agentregistrationrisking.model.amls
 
-import play.api.libs.json.*
+import play.api.libs.json.Format
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 
-import java.net.URI
-import java.net.URL
+final case class AmlsEvidenceUrl(value: String)
 
-object UrlJsonFormats:
-
-  given Format[URL] = Format(
-    Reads:
-      case JsString(value) => JsSuccess(URI.create(value).toURL)
-      case _ => JsError("Expected URL as string")
-    ,
-    Writes(url => JsString(url.toString))
-  )
+object AmlsEvidenceUrl:
+  given format: Format[AmlsEvidenceUrl] = JsonFormatsFactory.makeValueClassFormat

@@ -23,14 +23,17 @@ import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
 import java.time.Instant
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object RiskingFileService:
+@Singleton
+class RiskingFileService @Inject() (appConfig: AppConfig):
 
   def buildRiskingFileWithContent(
     applications: Seq[ApplicationForRisking],
     individuals: Seq[IndividualForRisking],
     instant: Instant
-  )(using AppConfig): RiskingFileWithContent =
+  ): RiskingFileWithContent =
     // TODO: when resubmitting, THE APPROVED should be REMOVED from the below lists so they won't be sent for risking twice
     val riskingFile: RiskingFile = RiskingFile(
       riskingFileName = RiskingFileName.make(instant),
@@ -50,14 +53,14 @@ object RiskingFileService:
       numberOfRecords = numberOfRecords
     )
 
-  private def buildRiskingFileContent(
+  def buildRiskingFileContent(
     applications: Seq[ApplicationForRisking],
     individuals: Seq[IndividualForRisking],
     instant: Instant
-  )(using AppConfig): (RiskingFileContent, NumberOfRecords) =
+  ): (RiskingFileContent, NumberOfRecords) =
     val headerRow: String = s"00|ARR|SAS|${asMinervaHeaderDate(instant)}|${asMinervaHeaderTime(instant)}\n"
     val (dataRecords: String, footerRecord: String, numberOfRecords: NumberOfRecords) =
-      val applicationRecords: Seq[RiskingFileDataRecord] = applications.map(RiskingFileDataRecord.fromApplicationForRisking)
+      val applicationRecords: Seq[RiskingFileDataRecord] = applications.map(RiskingFileDataRecord.fromApplicationForRisking(_, appConfig.AmlsEvidence.baseUrl))
       val individualRecords: Seq[RiskingFileDataRecord] = individuals.map(RiskingFileDataRecord.fromIndividualForRisking)
       val allRecords: Seq[RiskingFileDataRecord] = applicationRecords ++ individualRecords
       val numberOfRecords: NumberOfRecords = allRecords.size

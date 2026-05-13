@@ -52,7 +52,8 @@ class RiskingRunner @Inject() (
   sdesProxyService: SdesProxyService,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
-  riskingFileRepo: RiskingFileRepo
+  riskingFileRepo: RiskingFileRepo,
+  riskingFileService: RiskingFileService
 )(using
   appConfig: AppConfig,
   ec: ExecutionContext,
@@ -70,7 +71,7 @@ extends RequestAwareLogging:
       applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
       individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
       _ = logger.info(s"Found ${individuals.size} corresponding individuals")
-      riskingFileWithContent: RiskingFileWithContent = RiskingFileService.buildRiskingFileWithContent(
+      riskingFileWithContent: RiskingFileWithContent = riskingFileService.buildRiskingFileWithContent(
         applications = applications,
         individuals = individuals,
         instant = instant
