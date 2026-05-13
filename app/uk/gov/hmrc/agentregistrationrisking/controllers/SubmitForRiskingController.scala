@@ -21,7 +21,7 @@ import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
-import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
@@ -65,7 +65,7 @@ extends BackendController(cc):
   ): ApplicationForRisking = ApplicationForRisking(
     applicationReference = submitForRiskingRequest.agentApplication.applicationReference,
     riskingFileName = None,
-    agentApplication = submitForRiskingRequest.agentApplication,
+    applicationData = submitForRiskingRequest.agentApplication,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
     entityRiskingResult = None,

@@ -62,6 +62,6 @@ extends BackendController(cc):
       case (Some(indi), Some(app)) =>
         Ok(Json.toJson(SmuIndividualResponse.make(
           indi.individualProvidedDetails,
-          app.agentApplication
+          app.applicationData
         )))
       case _ => NoContent

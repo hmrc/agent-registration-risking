@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
@@ -27,6 +26,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceFe
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.convertBooleanToStringRepresentation
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asMinervaDate
@@ -48,7 +48,7 @@ final case class RiskingFileDataRecord(
   amlSupervisoryBody: Option[AmlsCode],
   amlRegNumber: Option[AmlsRegistrationNumber],
   amlExpiryDate: Option[LocalDate],
-  amlEvidence: Option[AmlsEvidence],
+  amlEvidence: Option[AmlsEvidenceFe],
   personReference: Option[PersonReference],
   individualCompaniesHouseName: Option[String],
   individualCompaniesHouseDateOfBirth: Option[LocalDate],
@@ -118,24 +118,23 @@ final case class RiskingFileDataRecord(
 object RiskingFileDataRecord:
 
   def fromApplicationForRisking(applicationForRisking: ApplicationForRisking): RiskingFileDataRecord =
-    val app = applicationForRisking.agentApplication
-    val contactDetails = app.getApplicantContactDetails
-    this.apply(
+    val app = applicationForRisking.applicationData
+    RiskingFileDataRecord(
       recordType = RecordType.Entity,
-      resubmission = applicationForRisking.entityRiskingResult.isDefined,
+      resubmission = applicationForRisking.entityRiskingResult.isDefined, // TODO: this has to be recomputed
       applicationReference = Some(app.applicationReference),
-      applicantName = Some(contactDetails.applicantName),
-      applicantPhone = contactDetails.telephoneNumber,
-      applicantEmail = contactDetails.applicantEmailAddress.map(_.emailAddress),
+      applicantName = Some(app.applicantContactDetails.applicantName),
+      applicantPhone = Some(app.applicantContactDetails.telephoneNumber),
+      applicantEmail = Some(app.applicantContactDetails.applicantEmailAddress),
       entityType = Some(app.businessType),
-      entityIdentifier = Some(app.getUtr),
-      crn = getMaybeCrn(app),
-      vrns = transformToCommaSeparatedString(app.vrns.map(_.map(_.value))),
-      payeRefs = transformToCommaSeparatedString(app.payeRefs.map(_.map(_.value))),
-      amlSupervisoryBody = Some(app.getAmlsDetails.supervisoryBody),
-      amlRegNumber = Some(app.getAmlsDetails.getRegistrationNumber),
+      entityIdentifier = Some(app.utr),
+      crn = app.crn,
+      vrns = app.vrns.map(_.value).mkString(","),
+      payeRefs = app.payeRefs.map(_.value).mkString(","),
+      amlSupervisoryBody = Some(app.amlsDetails.supervisoryBody),
+      amlRegNumber = Some(app.amlsDetails.amlsRegistrationNumber),
       amlExpiryDate = None, // we don't capture the AML expiry date in the application
-      amlEvidence = app.getAmlsDetails.amlsEvidence,
+      amlEvidence = app.amlsDetails.amlsEvidence,
       personReference = None,
       individualCompaniesHouseName = None,
       individualCompaniesHouseDateOfBirth = None,
@@ -153,7 +152,7 @@ object RiskingFileDataRecord:
     val details = individualForRisking.individualProvidedDetails
     this.apply(
       recordType = RecordType.Individual,
-      resubmission = individualForRisking.individualRiskingResult.isDefined,
+      resubmission = individualForRisking.individualRiskingResult.isDefined, // TODO rework this for resubmission
       applicationReference = None,
       applicantName = None,
       applicantPhone = None,
@@ -161,6 +160,8 @@ object RiskingFileDataRecord:
       entityType = None,
       entityIdentifier = None,
       crn = None,
+//      vrns = details.vrns.map(_.value).mkString(","),
+//      payeRefs = details.payeRefs.map(_.value).mkString(","),
       vrns = transformToCommaSeparatedString(details.vrns.map(_.map(_.value))),
       payeRefs = transformToCommaSeparatedString(details.payeRefs.map(_.map(_.value))),
       amlSupervisoryBody = None,

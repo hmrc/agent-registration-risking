@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication.IsIncorporated
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.*
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 
 import java.time.LocalDate
 
@@ -42,7 +43,7 @@ object SmuIndividualResponse:
 
   def make(
     ipd: IndividualProvidedDetails,
-    aa: AgentApplication
+    aa: ApplicationData
   ) = SmuIndividualResponse(Individual.make(ipd), Entity.make(aa))
 
   final case class Individual(
@@ -102,15 +103,15 @@ object SmuIndividualResponse:
     applicantName: ApplicantName,
     businessType: BusinessType,
     utr: Utr,
-    payeRefs: Option[List[PayeRef]],
-    vrns: Option[List[Vrn]],
+    payeRefs: List[PayeRef],
+    vrns: List[Vrn],
     crn: Option[Crn],
     amlsSupervisoryBody: AmlsCode,
     amlsRegNumber: AmlsRegistrationNumber,
     amlsExpiryDate: Option[LocalDate],
     amlsEvidenceReferenceId: Option[String],
-    applicantPhone: Option[TelephoneNumber],
-    applicantEmail: Option[EmailAddress]
+    applicantPhone: TelephoneNumber,
+    applicantEmail: EmailAddress
   )
 
   object Entity:
@@ -118,25 +119,21 @@ object SmuIndividualResponse:
     given format: OFormat[Entity] = Json.format[Entity]
 
     private[SmuIndividualResponse] def make(
-      aa: AgentApplication
+      aa: ApplicationData
     ): Entity = Entity(
       applicationReference = aa.applicationReference,
       // TODO update this once we have implemented resubmission flags
       resubmission = false,
-      applicantName = aa.getApplicantContactDetails.applicantName,
+      applicantName = aa.applicantContactDetails.applicantName,
       businessType = aa.businessType,
-      utr = aa.getUtr,
+      utr = aa.utr,
       payeRefs = aa.payeRefs,
       vrns = aa.vrns,
-      crn =
-        aa match
-          case aa: IsIncorporated => Some(aa.getCrn)
-          case _ => None
-      ,
-      amlsSupervisoryBody = aa.getAmlsDetails.supervisoryBody,
-      amlsRegNumber = aa.getAmlsDetails.getRegistrationNumber,
+      crn = aa.crn,
+      amlsSupervisoryBody = aa.amlsDetails.supervisoryBody,
+      amlsRegNumber = aa.amlsDetails.amlsRegistrationNumber,
       amlsExpiryDate = None,
-      amlsEvidenceReferenceId = aa.getAmlsDetails.amlsEvidence.map(_.fileUploadReference.value),
-      applicantPhone = aa.applicantContactDetails.map(_.getTelephoneNumber),
-      applicantEmail = aa.applicantContactDetails.map(_.getVerifiedEmail)
+      amlsEvidenceReferenceId = aa.amlsDetails.amlsEvidence.map(_.fileUploadReference.value),
+      applicantPhone = aa.applicantContactDetails.telephoneNumber,
+      applicantEmail = aa.applicantContactDetails.applicantEmailAddress
     )

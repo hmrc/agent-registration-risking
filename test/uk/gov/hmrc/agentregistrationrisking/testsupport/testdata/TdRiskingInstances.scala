@@ -23,90 +23,11 @@ import java.time.Instant
 
 object TdRiskingInstances:
 
-  val tdRisking: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-25T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPGENPAR1"))
-        .agentApplicationGeneralPartnership
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFGENP",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt")
-  )
-
-  val tdRisking2: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-26T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPSOLTRA1"))
-        .agentApplicationSoleTrader
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFSOLT",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591126_163351.txt")
-  )
-
-  val tdRisking3: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-27T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPLLPART1"))
-        .agentApplicationLlp
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFLLPA",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591127_163351.txt")
-  )
-
-  val tdRisking4: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-28T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPSCOPAR1"))
-        .agentApplicationScottishPartnership
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFSCOP",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591128_163351.txt")
-  )
-
-  val tdRisking5: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-29T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPLTDART1"))
-        .agentApplicationLimitedCompany
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFLTDA",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591129_163351.txt")
-  )
-
-  val tdRisking6: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-11-30T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPSOLTRR1"))
-        .agentApplicationSoleTraderRepresentative
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFSOLR",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591130_163351.txt")
-  )
-
-  val tdRisking7: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-12-01T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPSCOTLP1"))
-        .agentApplicationScottishLimitedPartnership
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFSCLP",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591201_163351.txt")
-  )
-
-  val tdRisking8: TdRisking = TdRisking.make(
-    instant = Instant.parse("2059-12-02T16:33:51Z"),
-    agentApplication =
-      TdApplicationsFactory
-        .make(ApplicationReference("APPSCOTLP2"))
-        .agentApplicationScottishLimitedPartnership
-        .afterDeclarationSubmitted,
-    personReferencePrefix = "PREFSCP2",
-    riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591202_163351.txt")
-  )
+  val tdRisking1: TdRisking = TdRisking.make("R1")
+  val tdRisking2: TdRisking = TdRisking.make("R2")
+  val tdRisking3: TdRisking = TdRisking.make("R3")
+  val tdRisking4: TdRisking = TdRisking.make("R4")
+  val tdRisking5: TdRisking = TdRisking.make("R5")
+  val tdRisking6: TdRisking = TdRisking.make("R6")
+  val tdRisking7: TdRisking = TdRisking.make("R7")
+  val tdRisking8: TdRisking = TdRisking.make("R8")

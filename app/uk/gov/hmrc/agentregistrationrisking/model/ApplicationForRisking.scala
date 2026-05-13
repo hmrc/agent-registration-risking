@@ -20,13 +20,14 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 
 import java.time.Instant
 
 final case class ApplicationForRisking(
   applicationReference: ApplicationReference, // primary Key
   riskingFileName: Option[RiskingFileName], // foreign Key to RiskingFile
-  agentApplication: AgentApplication, // snapshot of the AgentAPplication when sent for risking
+  applicationData: ApplicationData, // data received from FE
   createdAt: Instant,
   lastUpdatedAt: Instant,
   entityRiskingResult: Option[EntityRiskingResult],

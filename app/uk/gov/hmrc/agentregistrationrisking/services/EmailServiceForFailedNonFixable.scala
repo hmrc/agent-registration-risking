@@ -61,7 +61,7 @@ extends RequestAwareLogging:
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application: ApplicationForRisking = applicationWithIndividuals.application
     val individuals: Seq[IndividualForRisking] =
-      application.agentApplication.businessType match
+      application.applicationData.businessType match
         case BusinessType.SoleTrader => applicationWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => applicationWithIndividuals.individuals
 
@@ -100,22 +100,21 @@ extends RequestAwareLogging:
     individual: IndividualForRisking,
     application: ApplicationForRisking
   ): Boolean =
-    val maybeTheSame: Option[Boolean] =
-      for
-        applicantContactDetails <- application.agentApplication.applicantContactDetails
-        applicantEmailAddress <- applicantContactDetails.applicantEmailAddress.map(_.emailAddress)
-        individualEmail <- individual.individualProvidedDetails.emailAddress.map(_.emailAddress)
-      yield (applicantEmailAddress.value === individualEmail.value)
-
-    maybeTheSame.getOrElse(false)
+    application
+      .applicationData
+      .applicantContactDetails
+      .applicantEmailAddress === individual
+      .individualProvidedDetails
+      .getEmailAddress
+      .emailAddress
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
-    val agentApplication = application.agentApplication
+    val agentApplication = application.applicationData
     SendEmailRequest(
-      to = Seq(EmailAddress(agentApplication.getAgentDetails.getAgentEmailAddress.getEmailAddress)),
+      to = Seq(agentApplication.agentDetails.agentEmailAddress.getEmailAddress),
       templateId = emailTemplateId,
       parameters = Map(
-        "agentName" -> agentApplication.getApplicantContactDetails.applicantName.value,
+        "agentName" -> agentApplication.applicantContactDetails.applicantName.value,
         "applicationRef" -> agentApplication.applicationReference.value
       )
     )
