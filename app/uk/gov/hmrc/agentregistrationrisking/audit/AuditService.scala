@@ -21,6 +21,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -60,6 +61,16 @@ extends RequestAwareLogging:
   )(using RequestHeader): Unit =
     val event = ApplicationsTransferredToRisking(
       applicationReferences = applicationReferences
+    )
+    send(event)
+
+  def sendRiskingDeterminationEvent(
+    applicationReference: ApplicationReference,
+    outcome: RiskingOutcome
+  )(using RequestHeader): Unit =
+    val event = RiskingDetermination(
+      applicationReference = applicationReference,
+      determination = AuditOutcome.fromRiskingOutcome(outcome)
     )
     send(event)
 
