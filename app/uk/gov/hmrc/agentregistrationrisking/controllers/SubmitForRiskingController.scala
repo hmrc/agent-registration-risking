@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 
@@ -69,7 +70,11 @@ extends BackendController(cc):
     lastUpdatedAt = createdAt,
     entityRiskingResult = None,
     isSubscribed = false,
-    isEmailSent = false
+    isEmailSent = false,
+    overallStatus = OverallStatus(
+      riskingOutcome = None,
+      emailsProcessed = false
+    )
   )
 
   private def makeIndividualForRiskingList(
@@ -93,5 +98,6 @@ extends BackendController(cc):
     individualProvidedDetails = individualProvidedDetails,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
-    individualRiskingResult = None
+    individualRiskingResult = None,
+    isEmailSent = false
   )

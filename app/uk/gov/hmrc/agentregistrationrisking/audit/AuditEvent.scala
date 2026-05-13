@@ -22,8 +22,8 @@ import play.api.libs.json.OFormat
 import play.api.libs.json.OWrites
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 
 sealed trait AuditEvent:
 

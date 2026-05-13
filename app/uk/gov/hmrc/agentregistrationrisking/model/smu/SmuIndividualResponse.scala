@@ -68,9 +68,8 @@ object SmuIndividualResponse:
       personReference = ipd.personReference,
       // TODO update this once we have implemented resubmission flags
       resubmission = false,
-      passedIdentityVerification = ipd.getPassedIv,
-      // TODO update this once we have details provided by applicant feature
-      detailsProvidedByApplicant = false,
+      passedIdentityVerification = ipd.passedIv.contains(true),
+      detailsProvidedByApplicant = ipd.providedByApplicant.contains(true),
       individualName = ipd.individualName,
       individualDateOfBirth =
         ipd.getDateOfBirth match

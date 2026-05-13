@@ -16,24 +16,20 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-import java.time.Instant
-
-final case class ApplicationForRisking(
-  applicationReference: ApplicationReference, // primary Key
-  riskingFileName: Option[RiskingFileName], // foreign Key to RiskingFile
-  agentApplication: AgentApplication, // snapshot of the AgentAPplication when sent for risking
-  createdAt: Instant,
-  lastUpdatedAt: Instant,
-  entityRiskingResult: Option[EntityRiskingResult],
-  isSubscribed: Boolean,
-  isEmailSent: Boolean,
-  overallStatus: OverallStatus
+/** Represents the overall status for the [[ApplicationForRisking]] class.
+  *
+  * @param riskingOutcome
+  *   the outcome of the risking process
+  * @param emailsProcessed
+  *   whether all required emails have been sent for this application after computed riskingOutcome
+  */
+final case class OverallStatus(
+  riskingOutcome: Option[RiskingOutcome],
+  emailsProcessed: Boolean
 )
 
-object ApplicationForRisking:
-  given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
+object OverallStatus:
+  given OFormat[OverallStatus] = Json.format[OverallStatus]

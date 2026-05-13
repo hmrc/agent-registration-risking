@@ -54,7 +54,8 @@ trait TdIndividualForRisking:
     individualProvidedDetails = individualProvidedDetails,
     createdAt = instant,
     lastUpdatedAt = instant,
-    individualRiskingResult = None
+    individualRiskingResult = None,
+    isEmailSent = false
   )
 
   // nothing changes from data perspective
@@ -79,7 +80,7 @@ trait TdIndividualForRisking:
       ))
     )
 
-    def applicationFailedNonFixable: IndividualForRisking = submittedForRisking.copy(
+    def failedNonFixable: IndividualForRisking = submittedForRisking.copy(
       individualRiskingResult = Some(IndividualRiskingResult(
         failures = List(
           TdFailures.individualFailures.fixable2,
@@ -88,3 +89,5 @@ trait TdIndividualForRisking:
         receivedAt = instant.minus(2, ChronoUnit.DAYS)
       ))
     )
+
+    def failedNonFixableEmailSent: IndividualForRisking = failedNonFixable.copy(isEmailSent = true)

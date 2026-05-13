@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.risking
+package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-enum RiskingOutcome:
+import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
+import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 
-  case FailedNonFixable
-  case FailedFixable
-  case Approved
+trait TdEmail:
+
+  val sendEmailRequest: SendEmailRequest = SendEmailRequest(
+    to = Seq(EmailAddress("agent@example.com")),
+    templateId = EmailTemplateId.RegistrationSuccess,
+    parameters = Map(
+      "agencyName" -> "Test Agency",
+      "arn" -> "TARN0000001"
+    )
+  )

@@ -83,7 +83,7 @@ extends RequestAwareLogging:
       _ = logger.info("Sent ApplicationsTransferredToRiskingAuditEvent")
       _ <- riskingFileRepo.upsert(riskingFileWithContent.riskingFile)
       _ = logger.info(s"Persisted risking file: ${riskingFileWithContent.riskingFile}")
-      _ <- applicationForRiskingRepo.updateRiskingFileId(
+      _ <- applicationForRiskingRepo.updateRiskingFileName(
         applicationReferences = applicationReferences,
         riskingFileName = riskingFileName
       )

@@ -34,3 +34,36 @@ object ProcessInSequence:
       ) =>
         acc.flatMap(list => f(item).map(_ :: list))
     .map(_.reverse)
+
+  /** Processes a sequence of items sequentially, applying an asynchronous function to each item in order, without stopping on failures.
+    *
+    * Unlike `processInSequence`, this method does not stop processing when an item fails. Instead, it continues processing all items in the sequence. When an
+    * item's processing fails, the `onFailure` hook is called with the exception and the failed item, allowing for custom error handling (e.g., logging).
+    *
+    * This is particularly useful when you need to process a batch of items and want to ensure all items are attempted, even if some fail, while still being
+    * notified of failures.
+    *
+    * @param items
+    *   The sequence of items to process.
+    * @param f
+    *   The asynchronous function to apply to each item. Failures are caught and handled via the onFailure hook.
+    * @param onFailure
+    *   A callback function invoked when processing of an item fails. It receives the exception and the item that failed.
+    * @return
+    *   A Future containing the count of successfully processed items.
+    */
+  def processAllInSequence[Item, Result](
+    items: Seq[Item]
+  )(
+    f: Item => Future[Result]
+  )(
+    onFailure: (
+      Throwable,
+      Item
+    ) => Unit
+  )(using
+    ExecutionContext
+  ): Future[Int] = processInSequence(items)(i =>
+    f(i).map(_ => true).recover:
+      case ex => onFailure(ex, i); false
+  ).map(_.count(identity))
