@@ -48,8 +48,8 @@ trait TdIndividualsForRisking {
     applicationReference = applicationReference,
     individualData = TdIndividualData.make(
       applicationReference = applicationReference,
-      personReference = PersonReference(s"PREF_${seed}01"),
-      seed = seed
+      personReference = PersonReference(s"PREF_${seed}_01"),
+      seed = s"${seed}_01"
     )
   )
 
@@ -58,8 +58,8 @@ trait TdIndividualsForRisking {
     applicationReference = applicationReference,
     individualData = TdIndividualData.make(
       applicationReference = applicationReference,
-      personReference = PersonReference(s"PREF_${seed}02"),
-      seed = seed
+      personReference = PersonReference(s"PREF_${seed}_02"),
+      seed = s"${seed}_02"
     )
   )
 

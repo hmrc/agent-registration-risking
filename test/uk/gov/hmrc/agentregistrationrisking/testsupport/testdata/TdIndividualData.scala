@@ -52,7 +52,7 @@ object TdIndividualData:
         1,
         1
       )),
-      telephoneNumber = TelephoneNumber(s"01234567890"),
+      telephoneNumber = TelephoneNumber(s"01234567-${random.nextInt(1000)}"),
       emailAddress = EmailAddress(s"individual_email_$seed@test.com"),
       individualNino = IndividualNino.Provided(Nino(s"AB123456C_$seed")),
       individualSaUtr = IndividualSaUtr.Provided(SaUtr(s"1234567895_$seed")),
