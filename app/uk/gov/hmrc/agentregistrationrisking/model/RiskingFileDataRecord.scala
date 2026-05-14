@@ -27,6 +27,8 @@ import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.convertBooleanToStringRepresentation
@@ -34,40 +36,39 @@ import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asMinervaDat
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.amls.AmlsEvidenceUrl
 
-
 import java.time.LocalDate
 
 final case class RiskingFileDataRecord(
-                                        recordType: RecordType,
-                                        resubmission: Boolean,
-                                        applicationReference: Option[ApplicationReference],
-                                        applicantName: Option[ApplicantName],
-                                        applicantPhone: Option[TelephoneNumber],
-                                        applicantEmail: Option[EmailAddress],
-                                        entityType: Option[BusinessType],
-                                        entityIdentifier: Option[Utr],
-                                        crn: Option[Crn],
-                                        vrns: String,
-                                        payeRefs: String,
-                                        amlSupervisoryBody: Option[AmlsCode],
-                                        amlRegNumber: Option[AmlsRegistrationNumber],
-                                        amlExpiryDate: Option[LocalDate],
-                                        amlEvidence: Option[AmlsEvidenceData],
-                                        personReference: Option[PersonReference],
-                                        individualCompaniesHouseName: Option[String],
-                                        individualCompaniesHouseDateOfBirth: Option[LocalDate],
-                                        individualProvidedName: Option[IndividualName],
-                                        individualProvidedDateOfBirth: Option[IndividualDateOfBirth],
-                                        individualNino: Option[IndividualNino],
-                                        individualSaUtr: Option[IndividualSaUtr],
-                                        individualPhoneNumber: Option[TelephoneNumber],
-                                        individualEmail: Option[EmailAddress],
-                                        providedByApplicant: Option[Boolean],
-                                        passedIV: Option[Boolean]
-                                      ) {
+  recordType: RecordType,
+  resubmission: Boolean,
+  applicationReference: Option[ApplicationReference],
+  applicantName: Option[ApplicantName],
+  applicantPhone: Option[TelephoneNumber],
+  applicantEmail: Option[EmailAddress],
+  entityType: Option[BusinessType],
+  entityIdentifier: Option[Utr],
+  crn: Option[Crn],
+  vrns: String,
+  payeRefs: String,
+  amlSupervisoryBody: Option[AmlsCode],
+  amlRegNumber: Option[AmlsRegistrationNumber],
+  amlExpiryDate: Option[LocalDate],
+  amlEvidence: Option[AmlsEvidenceUrl],
+  personReference: Option[PersonReference],
+  individualCompaniesHouseName: Option[String],
+  individualCompaniesHouseDateOfBirth: Option[LocalDate],
+  individualProvidedName: Option[IndividualName],
+  individualProvidedDateOfBirth: Option[IndividualDateOfBirth],
+  individualNino: Option[IndividualNino],
+  individualSaUtr: Option[IndividualSaUtr],
+  individualPhoneNumber: Option[TelephoneNumber],
+  individualEmail: Option[EmailAddress],
+  providedByApplicant: Option[Boolean],
+  passedIV: Option[Boolean]
+) {
 
   def toPipeDelimitedString: String =
-    val fields = Seq(
+    val fields: Seq[String] = Seq(
       "01",
       recordType.toString,
       convertBooleanToStringRepresentation(resubmission),
@@ -83,7 +84,7 @@ final case class RiskingFileDataRecord(
       amlSupervisoryBody.map(_.value).getOrElse(""),
       amlRegNumber.map(_.value).getOrElse(""),
       amlExpiryDate.map(asMinervaDate).getOrElse(""),
-      amlEvidence.map(_.fileUploadReference.value).getOrElse(""),
+      amlEvidence.map(_.value).getOrElse(""),
       personReference.map(_.value).getOrElse(""),
       individualCompaniesHouseName.getOrElse(""),
       individualCompaniesHouseDateOfBirth.map(_.toString).getOrElse(""),
@@ -122,26 +123,27 @@ final case class RiskingFileDataRecord(
 object RiskingFileDataRecord:
 
   def fromApplicationForRisking(
-                                 applicationForRisking: ApplicationForRisking,
-                                 amlsEvidenceBaseUrl: String
-                               ): RiskingFileDataRecord =
-    val app = applicationForRisking.applicationData
+    applicationForRisking: ApplicationForRisking,
+    amlsEvidenceBaseUrl: String
+  ): RiskingFileDataRecord =
+    val applicationData: ApplicationData = applicationForRisking.applicationData
+    val contactDetails: ApplicantContactDetailsData = applicationData.applicantContactDetails
     RiskingFileDataRecord(
       recordType = RecordType.Entity,
-      resubmission = applicationForRisking.entityRiskingResult.isDefined, // TODO: this has to be recomputed
-      applicationReference = Some(app.applicationReference),
-      applicantName = Some(app.applicantContactDetails.applicantName),
-      applicantPhone = Some(app.applicantContactDetails.telephoneNumber),
-      applicantEmail = Some(app.applicantContactDetails.applicantEmailAddress),
-      entityType = Some(app.businessType),
-      entityIdentifier = Some(app.utr),
-      crn = app.crn,
-      vrns = app.vrns.map(_.value).mkString(","),
-      payeRefs = app.payeRefs.map(_.value).mkString(","),
-      amlSupervisoryBody = Some(app.amlsDetails.supervisoryBody),
-      amlRegNumber = Some(app.amlsDetails.amlsRegistrationNumber),
+      resubmission = applicationForRisking.entityRiskingResult.isDefined,
+      applicationReference = Some(applicationData.applicationReference),
+      applicantName = Some(contactDetails.applicantName),
+      applicantPhone = Some(contactDetails.telephoneNumber),
+      applicantEmail = Some(contactDetails.applicantEmailAddress),
+      entityType = Some(applicationData.businessType),
+      entityIdentifier = Some(applicationData.utr),
+      crn = applicationData.crn,
+      vrns = applicationData.vrns.map(_.value).mkString(","),
+      payeRefs = applicationData.payeRefs.map(_.value).mkString(","),
+      amlSupervisoryBody = Some(applicationData.amlsDetails.supervisoryBody),
+      amlRegNumber = Some(applicationData.amlsDetails.amlsRegistrationNumber),
       amlExpiryDate = None, // we don't capture the AML expiry date in the application
-      amlEvidence = app.getAmlsDetails.amlsEvidence.map(_.makeRiskingUrl(amlsEvidenceBaseUrl)),
+      amlEvidence = applicationData.amlsDetails.amlsEvidence.map(_.makeAmlsEvidenceUrl(amlsEvidenceBaseUrl)),
       personReference = None,
       individualCompaniesHouseName = None,
       individualCompaniesHouseDateOfBirth = None,
@@ -184,7 +186,6 @@ object RiskingFileDataRecord:
       individualEmail = Some(individualData.emailAddress),
       providedByApplicant = Some(individualData.providedByApplicant),
       passedIV = Some(individualData.passedIv)
-
     )
 
   private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
@@ -195,11 +196,10 @@ object RiskingFileDataRecord:
       case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
       case _ => None
 
-  implicit val format: OFormat[RiskingFileDataRecord] = Json.format[RiskingFileDataRecord]
-
-  extension (amlsEvidence: AmlsEvidence)
-    def makeRiskingUrl(baseUrl: String): AmlsEvidenceUrl =
-      val baseUrlNormalised =
-        if baseUrl.endsWith("/") then baseUrl
+  extension (amlsEvidence: AmlsEvidenceData)
+    def makeAmlsEvidenceUrl(baseUrl: String): AmlsEvidenceUrl =
+      val baseUrlNormalised: String =
+        if baseUrl.endsWith("/")
+        then baseUrl
         else s"$baseUrl/"
       AmlsEvidenceUrl(s"$baseUrlNormalised${amlsEvidence.fileUploadReference.value}")
