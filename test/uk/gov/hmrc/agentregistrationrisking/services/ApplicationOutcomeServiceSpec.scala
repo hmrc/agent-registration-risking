@@ -35,7 +35,7 @@ extends ISpec:
     "auditing.enabled" -> true
   )
 
-  private lazy val service: ApplicationOutcomeService = app.injector.instanceOf[ApplicationOutcomeService]
+  private lazy val applicationOutcomeService: ApplicationOutcomeService = app.injector.instanceOf[ApplicationOutcomeService]
   private lazy val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private lazy val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
@@ -69,7 +69,7 @@ extends ISpec:
         failedNonFixable
       )
 
-      service.processOverallOutcomes().futureValue
+      applicationOutcomeService.processOverallOutcomes().futureValue
 
       eventually:
         AuditStubs.verifyAuditSent(
@@ -93,7 +93,7 @@ extends ISpec:
       AuditStubs.stubAuditWrite()
       insertApplicationsWithIndividuals(failedNonFixable, notReady)
 
-      service.processOverallOutcomes().futureValue
+      applicationOutcomeService.processOverallOutcomes().futureValue
 
       eventually:
         AuditStubs.verifyAuditSent(
