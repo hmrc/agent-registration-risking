@@ -65,35 +65,35 @@ extends RequestAwareLogging:
 
   def run(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
-    logger.info(s"Building risking file and sending it to minerva started ...")
+    logger.warn(s"Building risking file and sending it to minerva started ...")
     val instant: Instant = Instant.now(clock)
     for
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForSubmission()
-      _ = logger.info(s"Found ${applications.size} applications ready for submission")
+      _ = logger.warn(s"Found ${applications.size} applications ready for submission")
       applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
       individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
-      _ = logger.info(s"Found ${individuals.size} corresponding individuals")
+      _ = logger.warn(s"Found ${individuals.size} corresponding individuals")
       riskingFileWithContent: RiskingFileWithContent = riskingFileService.buildRiskingFileWithContent(
         applications = applications,
         individuals = individuals,
         instant = instant
       )
       riskingFileName: RiskingFileName = riskingFileWithContent.riskingFile.riskingFileName
-      _ = logger.info(s"Generated risking file: $riskingFileName, ${riskingFileWithContent.numberOfRecords} records")
+      _ = logger.warn(s"Generated risking file: $riskingFileName, ${riskingFileWithContent.numberOfRecords} records")
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.uploadRiskingFile(riskingFileWithContent)
-      _ = logger.info(s"Uploaded risking file to object store: ${objectSummary.location}")
+      _ = logger.warn(s"Uploaded risking file to object store: ${objectSummary.location}")
       _ = auditService.sendApplicationsTransferredToRiskingEvent(applicationReferences)
-      _ = logger.info("Sent ApplicationsTransferredToRiskingAuditEvent")
+      _ = logger.warn("Sent ApplicationsTransferredToRiskingAuditEvent")
       _ <- riskingFileRepo.upsert(riskingFileWithContent.riskingFile)
-      _ = logger.info(s"Persisted risking file: ${riskingFileWithContent.riskingFile}")
+      _ = logger.warn(s"Persisted risking file: ${riskingFileWithContent.riskingFile}")
       _ <- applicationForRiskingRepo.updateRiskingFileName(
         applicationReferences = applicationReferences,
         riskingFileName = riskingFileName
       )
-      _ = logger.info(s"Updated applications as submitted for risking in $riskingFileName")
+      _ = logger.warn(s"Updated applications as submitted for risking in $riskingFileName")
       _ <- sdesProxyService.notifySdesFileReady(objectSummary)
-      _ = logger.info(s"Sent notification to SDES")
-      _ = logger.info(
+      _ = logger.warn(s"Sent notification to SDES")
+      _ = logger.warn(
         s"""Risking file built and sent to minerva successfully:
            | ${riskingFileWithContent.riskingFile}
            | ${riskingFileWithContent.numberOfRecords} records
