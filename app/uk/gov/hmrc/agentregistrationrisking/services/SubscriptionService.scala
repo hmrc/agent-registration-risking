@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
+import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFactsRequest
@@ -42,7 +43,8 @@ class SubscriptionService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   hipConnector: HipConnector,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
-  clock: Clock
+  clock: Clock,
+  auditService: AuditService
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -119,4 +121,6 @@ extends RequestAwareLogging:
         )
       )
       _ = logger.info(s"Allocated enrolment to group: ${agentApplication.applicationReference}")
+      _ = auditService.sendCreateAgentServicesAccountEvent(agentApplication, arn)
+      _ = logger.info("Sent CreatedAgentServicesAccountAuditEvent")
     yield ()
