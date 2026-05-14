@@ -37,9 +37,9 @@ extends ISpec:
     "auditing.enabled" -> true
   )
 
-  private lazy val riskingResultsService: RiskingResultsService = app.injector.instanceOf[RiskingResultsService]
-  private lazy val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-  private lazy val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  private val riskingResultsService: RiskingResultsService = app.injector.instanceOf[RiskingResultsService]
+  private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
   private given RequestHeader = tdAll.fakeBackendRequest
 
@@ -57,8 +57,8 @@ extends ISpec:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    applicationForRiskingRepo.collection.drop().toFuture().futureValue
-    individualForRiskingRepo.collection.drop().toFuture().futureValue
+    applicationForRiskingRepo.collection.drop().toFuture.futureValue
+    individualForRiskingRepo.collection.drop().toFuture.futureValue
     ()
 
   "processResultsFiles" - {

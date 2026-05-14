@@ -33,11 +33,12 @@ extends ISpec:
     "auditing.enabled" -> true
   )
 
-  private lazy val auditService: AuditService = app.injector.instanceOf[AuditService]
+  private val auditService: AuditService = app.injector.instanceOf[AuditService]
   private given RequestHeader = tdAll.fakeBackendRequest
 
   private val td = tdAll.tdRiskingInstancesInStates.approved
   private val applicationReference = td.application.applicationReference
+  private val applicationData = td.application.applicationData
   private val individual = td.individual1
 
   "sendRiskingResponseEntityEvent" - {
@@ -191,6 +192,49 @@ extends ISpec:
           detail = Json.obj(
             "applicationReference" -> applicationReference.value,
             "determination" -> "FixableFailure"
+          )
+        )
+  }
+
+  "sendApplicationsTransferredToRiskingEvent" - {
+
+    "sends ApplicationsTransferredToRisking with the transferred application references" in:
+      AuditStubs.stubAuditWrite()
+
+      val applicationReferences = Seq(
+        td.application.applicationReference,
+        tdAll.tdRiskingInstancesInStates.failedFixable.application.applicationReference
+      )
+
+      auditService.sendApplicationsTransferredToRiskingEvent(applicationReferences)
+
+      eventually:
+        AuditStubs.verifyAuditSent(
+          auditType = "ApplicationsTransferredToRisking",
+          detail = Json.obj(
+            "applicationReferences" -> Json.arr(applicationReferences.map(_.value)*)
+          )
+        )
+  }
+
+  "sendCreateAgentServicesAccountEvent" - {
+
+    "sends CreateAgentServicesAccount with the application reference, ARN, UTR and business name" in:
+      AuditStubs.stubAuditWrite()
+
+      auditService.sendCreateAgentServicesAccountEvent(applicationData, tdAll.arn)
+
+      eventually:
+        AuditStubs.verifyAuditSent(
+          auditType = "CreateAgentServicesAccount",
+          detail = Json.obj(
+            "applicationReference" -> applicationData.applicationReference.value,
+            "agentReferenceNumber" -> tdAll.arn.value,
+            "utr" -> applicationData.utr.value,
+            "businessName" -> Json.obj(
+              "agentBusinessName" -> applicationData.agentDetails.businessName.agentBusinessName,
+              "otherAgentBusinessName" -> applicationData.agentDetails.businessName.otherAgentBusinessName.value
+            )
           )
         )
   }

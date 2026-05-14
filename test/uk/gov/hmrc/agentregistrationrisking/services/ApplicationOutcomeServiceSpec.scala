@@ -35,9 +35,9 @@ extends ISpec:
     "auditing.enabled" -> true
   )
 
-  private lazy val applicationOutcomeService: ApplicationOutcomeService = app.injector.instanceOf[ApplicationOutcomeService]
-  private lazy val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-  private lazy val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  private val applicationOutcomeService: ApplicationOutcomeService = app.injector.instanceOf[ApplicationOutcomeService]
+  private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
   private given RequestHeader = tdAll.fakeBackendRequest
 
@@ -50,8 +50,8 @@ extends ISpec:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    applicationForRiskingRepo.collection.drop().toFuture().futureValue
-    individualForRiskingRepo.collection.drop().toFuture().futureValue
+    applicationForRiskingRepo.collection.drop().toFuture.futureValue
+    individualForRiskingRepo.collection.drop().toFuture.futureValue
     ()
 
   private def insertApplicationsWithIndividuals(tds: TdApplicationWithIndividuals*): Unit = tds.foreach: td =>
