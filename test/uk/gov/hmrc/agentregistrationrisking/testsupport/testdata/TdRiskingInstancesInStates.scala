@@ -84,7 +84,7 @@ object TdRiskingInstancesInStates:
   case object readyForSubmission
   extends TdApplicationWithIndividuals:
 
-    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val tdRisking: TdRisking = TdRiskingInstances.tdRisking
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.readyForSubmission
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission

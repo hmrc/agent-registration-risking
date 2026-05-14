@@ -25,10 +25,10 @@ import java.time.Instant
 object TdIndividualsForRisking:
 
   def make(
-    instantParam: Instant,
-    seedParam: String,
-    applicationReferenceParam: ApplicationReference
-  ): TdIndividualsForRisking =
+            instantParam: Instant,
+            seedParam: String,
+            applicationReferenceParam: ApplicationReference
+          ): TdIndividualsForRisking =
 
     new TdIndividualsForRisking
       with TdInstant:
