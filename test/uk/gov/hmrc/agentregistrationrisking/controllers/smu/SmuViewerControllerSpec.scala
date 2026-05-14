@@ -44,7 +44,7 @@ with RequestAwareLogging:
       url = path(personReference)
     )
 
-  "return NoCOntent if there is no underlying records" in:
+  "return NoContent if there is no underlying records" in:
     given Request[?] = tdAll.backendRequest
     AuthStubs.stubAuthorise()
 
