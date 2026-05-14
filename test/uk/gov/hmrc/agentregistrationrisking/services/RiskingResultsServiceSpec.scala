@@ -37,14 +37,14 @@ extends ISpec:
     "auditing.enabled" -> true
   )
 
-  private lazy val service: RiskingResultsService = app.injector.instanceOf[RiskingResultsService]
+  private lazy val riskingResultsService: RiskingResultsService = app.injector.instanceOf[RiskingResultsService]
   private lazy val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private lazy val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
   private given RequestHeader = tdAll.fakeBackendRequest
 
   // `failRecordArrayFileMatchingApp` carries records for these references; the DB records below are aligned to them
-  // so the service can match and update them.
+  // so the riskingResultsService can match and update them.
   private val applicationReference = tdAll.matchingApplicationReference
   private val personReference = tdAll.matchingPersonReference
 
@@ -73,7 +73,7 @@ extends ISpec:
       ObjectStoreStubs.stubObjectStoreUploadFromUrl(tdAll.testFileName)
       AuditStubs.stubAuditWrite()
 
-      service.processResultsFiles().futureValue
+      riskingResultsService.processResultsFiles().futureValue
 
       eventually:
         AuditStubs.verifyAuditSent(
@@ -108,7 +108,7 @@ extends ISpec:
       ObjectStoreStubs.stubObjectStoreUploadFromUrl(tdAll.testFileName)
       AuditStubs.stubAuditWrite()
 
-      service.processResultsFiles().futureValue
+      riskingResultsService.processResultsFiles().futureValue
 
       AuditStubs.verifyNoAuditSent()
   }
