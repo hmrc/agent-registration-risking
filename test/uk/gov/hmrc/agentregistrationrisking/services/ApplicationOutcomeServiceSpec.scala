@@ -54,17 +54,20 @@ extends ISpec:
     individualForRiskingRepo.collection.drop().toFuture().futureValue
     ()
 
-  private def insertApplicationsWithIndividuals(tds: TdApplicationWithIndividuals*): Unit =
-    tds.foreach: td =>
-      applicationForRiskingRepo.upsert(td.application).futureValue
-      individualForRiskingRepo.upsert(td.individual1).futureValue
-      individualForRiskingRepo.upsert(td.individual2).futureValue
+  private def insertApplicationsWithIndividuals(tds: TdApplicationWithIndividuals*): Unit = tds.foreach: td =>
+    applicationForRiskingRepo.upsert(td.application).futureValue
+    individualForRiskingRepo.upsert(td.individual1).futureValue
+    individualForRiskingRepo.upsert(td.individual2).futureValue
 
   "processOverallOutcomes" - {
 
     "sends a RiskingDetermination audit event and persists the computed outcome for each ready application" in:
       AuditStubs.stubAuditWrite()
-      insertApplicationsWithIndividuals(approved, failedFixable, failedNonFixable)
+      insertApplicationsWithIndividuals(
+        approved,
+        failedFixable,
+        failedNonFixable
+      )
 
       service.processOverallOutcomes().futureValue
 

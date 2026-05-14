@@ -46,7 +46,11 @@ extends ISpec:
       AuditStubs.stubAuditWrite()
 
       auditService.sendRiskingResponseEntityEvent(
-        RiskingResult.ForEntity(applicationReference, failures = List.empty, rawFailures = List.empty)
+        RiskingResult.ForEntity(
+          applicationReference,
+          failures = List.empty,
+          rawFailures = List.empty
+        )
       )
 
       eventually:
@@ -96,7 +100,11 @@ extends ISpec:
 
       auditService.sendRiskingResponseIndividualEvent(
         individual,
-        RiskingResult.ForIndividual(individual.personReference, failures = List.empty, rawFailures = List.empty)
+        RiskingResult.ForIndividual(
+          individual.personReference,
+          failures = List.empty,
+          rawFailures = List.empty
+        )
       )
 
       eventually:

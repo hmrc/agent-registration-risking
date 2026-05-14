@@ -22,34 +22,32 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object AuditStubs:
-  
+
   private val auditUrl: String = "/write/audit"
   private val auditMergedUrl: String = "/write/audit/merged"
 
-  def stubAuditWrite(): Unit =
-    List(auditUrl, auditMergedUrl).foreach: url =>
-      StubMaker.make(
-        httpMethod = StubMaker.HttpMethod.POST,
-        urlPattern = wm.urlEqualTo(url),
-        responseStatus = 204
-      )
+  def stubAuditWrite(): Unit = List(auditUrl, auditMergedUrl).foreach: url =>
+    StubMaker.make(
+      httpMethod = StubMaker.HttpMethod.POST,
+      urlPattern = wm.urlEqualTo(url),
+      responseStatus = 204
+    )
 
   def verifyAuditSent(
     auditType: String,
     detail: JsValue,
     count: Int = 1
-  ): Unit =
-    wm.verify(
-      count,
-      wm.postRequestedFor(wm.urlEqualTo(auditUrl))
-        .withRequestBody(wm.equalToJson(
-          Json.stringify(Json.obj(
-            "auditType" -> auditType,
-            "detail" -> detail
-          )),
-          true, // ignoreArrayOrder
-          true // ignoreExtraElements
-        ))
-    )
-  
+  ): Unit = wm.verify(
+    count,
+    wm.postRequestedFor(wm.urlEqualTo(auditUrl))
+      .withRequestBody(wm.equalToJson(
+        Json.stringify(Json.obj(
+          "auditType" -> auditType,
+          "detail" -> detail
+        )),
+        true, // ignoreArrayOrder
+        true // ignoreExtraElements
+      ))
+  )
+
   def verifyNoAuditSent(): Unit = wm.verify(0, wm.postRequestedFor(wm.urlEqualTo(auditUrl)))
