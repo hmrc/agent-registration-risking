@@ -38,6 +38,11 @@ class AuthorisedRequest[A](
 )
 extends WrappedRequest[A](request)
 
+class BasicAuthorisedRequest[A](
+  request: Request[A]
+)
+extends WrappedRequest[A](request)
+
 @Singleton
 class AuthorisedAction @Inject() (
   af: AuthorisedFunctions,
@@ -82,3 +87,19 @@ with RequestAwareLogging:
     val supportedCredentialRoles: Set[CredentialRole] = Set(User, Admin)
     val credentialRole: CredentialRole = maybeCredentialRole.getOrElse(throw RuntimeException("Retrievals for CredentialRole is missing"))
     !supportedCredentialRoles.contains(credentialRole)
+
+@Singleton
+class BasicAuthorisedAction @Inject() (
+  af: AuthorisedFunctions,
+  cc: MessagesControllerComponents
+)
+extends ActionRefiner[Request, BasicAuthorisedRequest]:
+
+  override protected def refine[A](request: Request[A]): Future[Either[Result, BasicAuthorisedRequest[A]]] =
+    given Request[A] = request
+    given ExecutionContext = cc.executionContext
+
+    af.authorised().apply:
+      Future.successful(Right(new BasicAuthorisedRequest(request)))
+
+  override protected def executionContext: ExecutionContext = cc.executionContext
