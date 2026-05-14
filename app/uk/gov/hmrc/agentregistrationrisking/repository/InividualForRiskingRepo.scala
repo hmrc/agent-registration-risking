@@ -66,12 +66,6 @@ extends Repo[PersonReference, IndividualForRisking](
     )
     .toFuture()
 
-  def findByApplicationReferences(applicationReferences: Seq[ApplicationReference]): Future[Seq[IndividualForRisking]] = collection
-    .find(
-      filter = Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value))
-    )
-    .toFuture()
-
   def updateEmailSent(personReference: PersonReference): Future[UpdateResult] = collection
     .updateOne(
       Filters.eq(FieldNames.personReference, personReference.value),

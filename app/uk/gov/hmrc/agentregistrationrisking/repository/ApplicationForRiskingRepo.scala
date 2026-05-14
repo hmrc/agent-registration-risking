@@ -61,9 +61,13 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
+  def findReadyForSubmission2(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
     .toFuture()
+
+  def findReadyForSubmission(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.exists(FieldNames.riskingFileName, false) // ready for submissions don't have set riskingFileId
+  )
 
   def findReadyToBeSubscribed(): Future[Seq[ApplicationForRisking]] = collection
     .find(
