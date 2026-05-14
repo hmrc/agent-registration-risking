@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import com.softwaremill.quicklens.*
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import org.mongodb.scala.Document
@@ -23,6 +24,8 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.crypto.AgentApplicationEncryption
+import uk.gov.hmrc.agentregistration.shared.crypto.IndividualProvidedDetailsEncryption
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepoHelp.given
@@ -43,7 +46,9 @@ import scala.concurrent.duration.FiniteDuration
 final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig,
-  clock: Clock
+  clock: Clock,
+  agentApplicationEncryption: AgentApplicationEncryption,
+  individualProvidedDetailsEncryption: IndividualProvidedDetailsEncryption
 )(using ec: ExecutionContext)
 extends Repo[ApplicationReference, ApplicationForRisking](
   collectionName = "application-for-risking",
@@ -56,6 +61,18 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   replaceIndexes = true
 ):
 
+  override protected def encryptForStorage(
+    a: ApplicationForRisking
+  ): ApplicationForRisking = a.modify(_.agentApplication).using(agentApplicationEncryption.encrypt)
+
+  override protected def decryptFromStorage(
+    a: ApplicationForRisking
+  ): ApplicationForRisking = a.modify(_.agentApplication).using(agentApplicationEncryption.decrypt)
+
+  private def decryptIndividual(
+    i: IndividualForRisking
+  ): IndividualForRisking = i.modify(_.individualProvidedDetails).using(individualProvidedDetailsEncryption.decrypt)
+
   // ═══════════════════════════════════════════════════════════════════════════════
   //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
   //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
@@ -64,6 +81,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findReadyForSubmission(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
     .toFuture()
+    .map(_.map(decryptFromStorage))
 
   def findReadyToBeSubscribed(): Future[Seq[ApplicationForRisking]] = collection
     .find(
@@ -73,6 +91,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       )
     )
     .toFuture()
+    .map(_.map(decryptFromStorage))
 
   def findReadyToSetRiskingOutcome(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
@@ -127,8 +146,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .map:
       _.map: (doc: Document) =>
         val json = Json.parse(doc.toJson(relaxedJson))
-        val app = json.as[ApplicationForRisking]
-        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
+        val app = decryptFromStorage(json.as[ApplicationForRisking])
+        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]].map(decryptIndividual)
         ApplicationWithIndividuals(app, individuals)
 
   def updateRiskingFileName(
@@ -154,6 +173,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   ): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.eq(FieldNames.riskingFileName, riskingFileName.value))
     .toFuture()
+    .map(_.map(decryptFromStorage))
 
   def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
     .find(
@@ -163,6 +183,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         Filters.eq(FieldNames.isEmailSent, false)
       )
     ).toFuture()
+    .map(_.map(decryptFromStorage))
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...

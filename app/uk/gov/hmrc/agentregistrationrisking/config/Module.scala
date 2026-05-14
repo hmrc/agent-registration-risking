@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.config
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
+import uk.gov.hmrc.agentregistration.shared.crypto.FieldLevelEncryptionConfig
 import uk.gov.hmrc.agentregistrationrisking.scheduler.RiskingSchedulerInitializer
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.auth.core.AuthorisedFunctions
@@ -42,3 +43,11 @@ extends AbstractModule:
   def authorisedFunctions(ac: AuthConnector): AuthorisedFunctions =
     new AuthorisedFunctions:
       override def authConnector: AuthConnector = ac
+
+  @Provides
+  @Singleton
+  def fieldLevelEncryptionConfig(appConfig: AppConfig): FieldLevelEncryptionConfig = FieldLevelEncryptionConfig(
+    enabled = appConfig.FieldLevelEncryption.enabled,
+    key = appConfig.FieldLevelEncryption.key,
+    previousKeys = appConfig.FieldLevelEncryption.previousKeys
+  )

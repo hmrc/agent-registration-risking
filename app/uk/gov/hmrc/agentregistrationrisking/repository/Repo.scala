@@ -59,12 +59,16 @@ extends PlayMongoRepository[A](
   extraCodecs = extraCodecs
 ):
 
+  protected def encryptForStorage(a: A): A = a
+
+  protected def decryptFromStorage(a: A): A = a
+
   /** Update or Insert (UpSert)
     */
   def upsert(a: A): Future[Unit] = collection
     .replaceOne(
       filter = Filters.eq(idString.idField, idString.idString(idExtractor.id(a))),
-      replacement = a,
+      replacement = encryptForStorage(a),
       options = ReplaceOptions().upsert(true)
     )
     .toFuture()
@@ -75,6 +79,7 @@ extends PlayMongoRepository[A](
       filter = Filters.eq(idString.idField, idString.idString(i))
     )
     .headOption()
+    .map(_.map(decryptFromStorage))
 
   def removeById(i: ID): Future[Option[DeleteResult]] = collection
     .deleteOne(
@@ -88,6 +93,7 @@ extends PlayMongoRepository[A](
     filter = Filters.eq(idString.idField, idString.idString(i)),
     update = update
   ).headOption()
+    .map(_.map(decryptFromStorage))
 
 object Repo:
 

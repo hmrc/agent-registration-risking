@@ -57,6 +57,12 @@ class AppConfig @Inject() (
   object ApplicationForRiskingRepo:
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
 
+  object FieldLevelEncryption:
+
+    val enabled: Boolean = config.get[Boolean]("field-level-encryption.enabled")
+    val key: String = config.get[String]("field-level-encryption.key")
+    val previousKeys: Seq[String] = config.get[Seq[String]]("field-level-encryption.previousKeys")
+
   object SdesProxy:
 
     val baseUrl: String = servicesConfig.baseUrl("secure-data-exchange-proxy")
