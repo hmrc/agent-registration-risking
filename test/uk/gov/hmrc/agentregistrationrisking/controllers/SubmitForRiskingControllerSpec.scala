@@ -50,7 +50,7 @@ extends ControllerSpec:
     val td = tdAll.tdRiskingInstancesInStates.readyForSubmission
 
     val submitRequest: SubmitForRiskingRequest = td.tdRisking.submitForRiskingRequest
-    val applicationReference: ApplicationReference = submitRequest.agentApplication.applicationReference
+    val applicationReference: ApplicationReference = submitRequest.applicationData.applicationReference
 
     val applicationForRiskingSubmitted: ApplicationForRisking = td.application
     val individualForRiskingSubmitted1: IndividualForRisking = td.individual1

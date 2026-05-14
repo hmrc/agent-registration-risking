@@ -70,7 +70,7 @@ trait TdRisking:
   )
 
   def submitForRiskingRequest: SubmitForRiskingRequest = SubmitForRiskingRequest(
-    agentApplication = applicationData,
+    applicationData = applicationData,
     individuals = List(
       tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualData,
       tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualData

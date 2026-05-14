@@ -76,10 +76,7 @@ object TdApplicationData:
           agentTelephoneNumber = s"agentTelephoneNumber_$seed",
           otherAgentTelephoneNumber = Some(s"otherAgentTelephoneNumber_$seed")
         ),
-        agentEmailAddress = AgentEmailAddress(
-          agentEmailAddress = s"agentemail@$seed.com",
-          otherAgentEmailAddress = Some(s"otheragentemail@$seed.com")
-        ),
+        agentEmailAddress = EmailAddress(s"agentemail@$seed.com"),
         agentCorrespondenceAddress = AgentCorrespondenceAddress(
           addressLine1 = s"addressline1_$seed",
           addressLine2 = Some(s"addressline2_$seed"),
@@ -87,7 +84,6 @@ object TdApplicationData:
           countryCode = "GB"
         )
       ),
-      deceasedCheckResult = CheckResult.Pass,
       vrns = List(Vrn(s"vrn_$seed")),
       payeRefs = List(PayeRef(s"payeref_$seed")),
       crn = Some(Crn(s"crn_$seed")),
