@@ -51,7 +51,7 @@ class SmuViewerController @Inject() (
 )
 extends BackendController(cc):
 
-  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.authorised.async: request =>
+  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.basicAuthorised.async: request =>
     for
       maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findById(personReference)
       maybeApp: Option[ApplicationForRisking] <-

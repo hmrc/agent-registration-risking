@@ -70,20 +70,8 @@ with Logging:
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
       implicit request =>
-        val instant: Instant = Instant.now(clock)
         for
-          // Dangerous copy/pasted code from RiskingRunner.run() ... TODO: this should be removed as it is easy to forget to maintain this code
-          applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForSubmission()
-          _ = logger.info(s"Found ${applications.size} applications ready for submission")
-          applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
-          individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
-          _ = logger.info(s"Found ${individuals.size} corresponding individuals")
-          riskingFileWithContent: RiskingFileWithContent = riskingFileService.buildRiskingFileWithContent(
-            applications,
-            individuals,
-            instant
-          )
-          _ = logger.info(s"Generated risking file: ${riskingFileWithContent.riskingFile.riskingFileName}, ${riskingFileWithContent.numberOfRecords} records")
+          (riskingFileWithContent, _) <- riskingRunner.buildRiskingFile()
           s: String = riskingFileWithContent.riskingFileContent
         yield Ok(s)
 

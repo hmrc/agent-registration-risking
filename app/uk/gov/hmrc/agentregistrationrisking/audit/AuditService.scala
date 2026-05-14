@@ -19,10 +19,13 @@ package uk.gov.hmrc.agentregistrationrisking.audit
 import play.api.libs.json.OWrites
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
+import uk.gov.hmrc.agentregistrationrisking.audit.ApplicationsTransferredToRisking.CreateAgentServicesAccount
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
@@ -71,6 +74,18 @@ extends RequestAwareLogging:
     val event = RiskingDetermination(
       applicationReference = applicationReference,
       determination = AuditOutcome.fromRiskingOutcome(outcome)
+    )
+    send(event)
+
+  def sendCreateAgentServicesAccountEvent(
+    agentApplication: ApplicationData,
+    arn: Arn
+  )(using RequestHeader): Unit =
+    val event = CreateAgentServicesAccount(
+      applicationReference = agentApplication.applicationReference,
+      agentReferenceNumber = arn,
+      utr = agentApplication.utr,
+      businessName = agentApplication.agentDetails.businessName
     )
     send(event)
 
