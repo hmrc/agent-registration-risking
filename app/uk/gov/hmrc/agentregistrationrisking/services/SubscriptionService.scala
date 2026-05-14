@@ -18,6 +18,9 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -54,33 +57,33 @@ extends RequestAwareLogging:
       _ = logger.info(s"Found $applicationCount applications ready to subscribe")
       subscriptionSuccessCount <-
         ProcessInSequence.processAllInSequence(applications)(subscribeApplication):
-          case (ex, application) => logger.error(s"Failed to subscribe agent: ${application.agentApplication.applicationReference.value}", ex)
+          case (ex, application) => logger.error(s"Failed to subscribe agent: ${application.applicationData.applicationReference.value}", ex)
       _ = logger.info(s"Subscribed $subscriptionSuccessCount/$applicationCount applications")
     yield ()
 
   private def subscribeApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
     logger.info(s"Subscribing application: ${application.applicationReference} ...")
     for
-      _ <- subscribeAgent(application.agentApplication)
+      _ <- subscribeAgent(application.applicationData)
       _ <- applicationForRiskingRepo.upsert(application.copy(isSubscribed = true, lastUpdatedAt = Instant.now(clock)))
       _ = logger.info(s"Application subscribed: ${application.applicationReference}")
     yield ()
 
-  private def subscribeAgent(agentApplication: AgentApplication)(using RequestHeader): Future[Unit] =
-    val agentDetails = agentApplication.getAgentDetails
-    val amlsDetails = agentApplication.getAmlsDetails
+  private def subscribeAgent(agentApplication: ApplicationData)(using RequestHeader): Future[Unit] =
+    val agentDetails: AgentDetailsData = agentApplication.agentDetails
+    val amlsDetails: AmlsDetailsData = agentApplication.amlsDetails
     val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(
       name = agentDetails.businessName.getAgentBusinessName,
-      addr1 = agentDetails.getAgentCorrespondenceAddress.addressLine1,
-      addr2 = agentDetails.getAgentCorrespondenceAddress.addressLine2.getOrElse(""),
-      addr3 = agentDetails.getAgentCorrespondenceAddress.addressLine3,
-      addr4 = agentDetails.getAgentCorrespondenceAddress.addressLine4,
-      postcode = agentDetails.getAgentCorrespondenceAddress.postalCode,
-      country = agentDetails.getAgentCorrespondenceAddress.countryCode,
-      phone = Some(agentDetails.getTelephoneNumber.agentTelephoneNumber),
-      email = agentDetails.getAgentEmailAddress.getEmailAddress,
+      addr1 = agentDetails.agentCorrespondenceAddress.addressLine1,
+      addr2 = agentDetails.agentCorrespondenceAddress.addressLine2.getOrElse(""),
+      addr3 = agentDetails.agentCorrespondenceAddress.addressLine3,
+      addr4 = agentDetails.agentCorrespondenceAddress.addressLine4,
+      postcode = agentDetails.agentCorrespondenceAddress.postalCode,
+      country = agentDetails.agentCorrespondenceAddress.countryCode,
+      phone = Some(agentDetails.telephoneNumber.agentTelephoneNumber),
+      email = agentDetails.agentEmailAddress,
       supervisoryBody = Some(amlsDetails.supervisoryBody.value),
-      membershipNumber = Some(amlsDetails.getRegistrationNumber.value),
+      membershipNumber = Some(amlsDetails.amlsRegistrationNumber.value),
       evidenceObjectReference = None,
       updateDetailsStatus = "ACCEPTED",
       amlSupervisionUpdateStatus = "ACCEPTED",
@@ -98,7 +101,7 @@ extends RequestAwareLogging:
 
     for
       arn <- hipConnector.subscribeToAgentServices(
-        safeId = agentApplication.getSafeId,
+        safeId = agentApplication.safeId,
         subscribeAgentRequest = subscribeAgentRequest
       )
       _ = logger.info(s"Subscribed to agent services: ${agentApplication.applicationReference}")

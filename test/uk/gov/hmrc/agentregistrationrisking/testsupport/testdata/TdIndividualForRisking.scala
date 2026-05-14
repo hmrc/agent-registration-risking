@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
+
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
 
@@ -29,29 +30,29 @@ object TdIndividualForRisking:
   def make(
     instant: Instant,
     applicationReference: ApplicationReference,
-    individualProvidedDetails: IndividualProvidedDetails
+    individualData: IndividualData
   ): TdIndividualForRisking =
     def instantParam: Instant = instant
     def applicationReferenceParam: ApplicationReference = applicationReference
-    def individualProvidedDetailsParam: IndividualProvidedDetails = individualProvidedDetails
+    def individualDataParam: IndividualData = individualData
 
     new TdIndividualForRisking:
       override def instant: Instant = instantParam
-      override def personReference: PersonReference = individualProvidedDetails.personReference
+      override def personReference: PersonReference = individualData.personReference
       override def applicationReference: ApplicationReference = applicationReferenceParam
-      override def individualProvidedDetails: IndividualProvidedDetails = individualProvidedDetailsParam
+      override def individualData: IndividualData = individualDataParam
 
 trait TdIndividualForRisking:
 
   def instant: Instant
   def personReference: PersonReference
   def applicationReference: ApplicationReference
-  def individualProvidedDetails: IndividualProvidedDetails
+  def individualData: IndividualData
 
   def readyForSubmission: IndividualForRisking = IndividualForRisking(
     personReference = personReference,
     applicationReference = applicationReference,
-    individualProvidedDetails = individualProvidedDetails,
+    individualData = individualData,
     createdAt = instant,
     lastUpdatedAt = instant,
     individualRiskingResult = None,

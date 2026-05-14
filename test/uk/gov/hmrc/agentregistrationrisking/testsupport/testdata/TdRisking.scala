@@ -16,74 +16,79 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
-import uk.gov.hmrc.agentregistration.shared.AgentApplicationLlp
+import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
+import uk.gov.hmrc.agentregistration.shared.AmlsCode
+import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
+import uk.gov.hmrc.agentregistration.shared.CheckResult
+import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistration.shared.BusinessType
+import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.GroupId
+import uk.gov.hmrc.agentregistration.shared.InternalUserId
+import uk.gov.hmrc.agentregistration.shared.TelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.PayeRef
+import uk.gov.hmrc.agentregistration.shared.SafeId
+import uk.gov.hmrc.agentregistration.shared.Utr
+import uk.gov.hmrc.agentregistration.shared.Vrn
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddress
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistration.shared.upload.FileUploadReference
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import uk.gov.hmrc.auth.core.retrieve.Credentials
 
 import java.time.Instant
 import scala.util.Random
 
 trait TdRisking:
 
-  def agentApplication: AgentApplication
-  def personReferencePrefix: String
+  def seed: String
+  def personReferencePrefix: String = s"PERSON_REF_$seed"
+
+  def applicationData: ApplicationData = TdApplicationData.make(seed)
   def instant: Instant
   def riskingFileName: RiskingFileName
 
   def tdApplicationForRisking: TdApplicationForRisking = TdApplicationForRisking.make(
     instant = instant,
     riskingFileName = riskingFileName,
-    agentApplication = agentApplication
+    applicationData = applicationData
   )
 
   def tdIndividualsForRisking: TdIndividualsForRisking = TdIndividualsForRisking.make(
     instantParam = instant,
-    personReferencePrefixParam = personReferencePrefix,
-    applicationReferenceParam = agentApplication.applicationReference
+    seed,
+    applicationReferenceParam = applicationData.applicationReference
   )
 
   def submitForRiskingRequest: SubmitForRiskingRequest = SubmitForRiskingRequest(
-    agentApplication = agentApplication,
+    applicationData = applicationData,
     individuals = List(
-      tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualProvidedDetails,
-      tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualProvidedDetails
+      tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualData,
+      tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualData
     )
   )
 
 object TdRisking:
 
   def make(
-    instant: Instant,
-    agentApplication: AgentApplication,
-    personReferencePrefix: String,
-    riskingFileName: RiskingFileName
+    seed: String,
+    instant: Instant = TdInstant.instant
   ): TdRisking =
-    val instantParam: Instant = instant
-    val agentApplicationParam: AgentApplication = agentApplication
-    val personReferencePrefixParam: String = personReferencePrefix
-    val riskingFileNameParam: RiskingFileName = riskingFileName
-    new TdRisking:
-      override def instant: Instant = instantParam
-      override def agentApplication: AgentApplication = agentApplicationParam
-      override def personReferencePrefix: String = personReferencePrefixParam
-      override def riskingFileName: RiskingFileName = riskingFileNameParam
 
-  def make(
-    seed: String
-  ): TdRisking =
+    val instantP: Instant = instant
+    val seedP = seed
     val random: Random = new scala.util.Random(seed.hashCode)
-    val instant: Instant = Instant.parse("2059-11-26T16:33:51Z").plusSeconds(random.nextInt(1000000))
-    val application: AgentApplicationLlp =
-      TdApplicationsFactory
-        .make(ApplicationReference(s"APPREF_$seed"))
-        .agentApplicationLlp
-        .afterDeclarationSubmitted
 
-    make(
-      instant = instant,
-      agentApplication = application,
-      personReferencePrefix = s"PREF_$seed",
-      riskingFileName = RiskingFileName.make(instant)
-    )
+    new TdRisking:
+      override def seed: String = seedP
+      override def instant: Instant = instantP
+      override def riskingFileName: RiskingFileName = RiskingFileName.make(instantP)

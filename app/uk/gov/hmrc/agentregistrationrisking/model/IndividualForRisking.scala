@@ -18,10 +18,10 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
 import java.time.Instant
@@ -29,17 +29,12 @@ import java.time.Instant
 final case class IndividualForRisking(
   personReference: PersonReference, // primary Key
   applicationReference: ApplicationReference, // foreign Key to ApplicationForRisking
-  individualProvidedDetails: IndividualProvidedDetails,
+  individualData: IndividualData,
   createdAt: Instant,
   lastUpdatedAt: Instant,
   individualRiskingResult: Option[IndividualRiskingResult],
   isEmailSent: Boolean
-):
-
-  // values that we do not store at the moment
-  def providedByApplicant: Boolean = false
-  def companiesHouseName = None
-  def companiesHouseDateOfBirth = None
+)
 
 object IndividualForRisking:
   given format: OFormat[IndividualForRisking] = Json.format[IndividualForRisking]

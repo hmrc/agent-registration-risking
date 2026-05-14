@@ -16,18 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
+import java.time.ZoneId
 
-import java.time.Instant
-
-object TdRiskingInstances:
-
-  val tdRisking1: TdRisking = TdRisking.make("R1")
-  val tdRisking2: TdRisking = TdRisking.make("R2")
-  val tdRisking3: TdRisking = TdRisking.make("R3")
-  val tdRisking4: TdRisking = TdRisking.make("R4")
-  val tdRisking5: TdRisking = TdRisking.make("R5")
-  val tdRisking6: TdRisking = TdRisking.make("R6")
-  val tdRisking7: TdRisking = TdRisking.make("R7")
-  val tdRisking8: TdRisking = TdRisking.make("R8")
+object TdZoneId:
+  val zoneId: ZoneId = ZoneId.of("UTC")

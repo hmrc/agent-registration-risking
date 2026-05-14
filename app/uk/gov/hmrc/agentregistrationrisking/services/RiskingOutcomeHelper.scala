@@ -99,8 +99,8 @@ object RiskingOutcomeHelper:
           .individualRiskingResult
           .map(individualRiskingResult =>
             RiskedIndividual(
-              personReference = individual.individualProvidedDetails.personReference,
-              individualName = individual.individualProvidedDetails.individualName,
+              personReference = individual.individualData.personReference,
+              individualName = individual.individualData.individualName,
               failures = individualRiskingResult.failures
             )
           )
