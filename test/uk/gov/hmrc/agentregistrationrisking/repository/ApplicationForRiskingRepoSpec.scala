@@ -26,13 +26,13 @@ class ApplicationForRiskingRepoSpec
 extends ISpec:
 
   "findReadyForSubmission should return all applications which don't have riskingFileId, which means they aren't submitted to minerva yet" in:
-    val applications: Seq[ApplicationForRisking] =
+    val applications: Seq[ApplicationWithIndividuals] =
       applicationForRiskingRepo
         .findReadyForSubmission()
         .futureValue
     applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.readyForSubmission.application,
-      TdRiskingInstancesInStates.readyForSubmission2.application
+      TdRiskingInstancesInStates.readyForSubmission.applicationWithIndividuals,
+      TdRiskingInstancesInStates.readyForSubmission2.applicationWithIndividuals
     )
 
   "findReadyToBeSubscribed should return all applications which are approved but not subscribed yet" in:

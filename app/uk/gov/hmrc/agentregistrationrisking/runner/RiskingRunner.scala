@@ -63,29 +63,43 @@ class RiskingRunner @Inject() (
 )
 extends RequestAwareLogging:
 
+  type RiskingFileWithApplicationReferences =
+    (
+      riskingFileWithContent: RiskingFileWithContent,
+      applicationReferences: Seq[ApplicationReference]
+    )
+
+  def buildRiskingFile()(using requestHeader: RequestHeader): Future[RiskingFileWithApplicationReferences] =
+    val instant: Instant = Instant.now(clock)
+    for
+      applications: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findReadyForSubmission()
+      individuals: Seq[IndividualForRisking] = applications.flatMap(_.individuals)
+      applicationReferences: Seq[ApplicationReference] = applications.map(_.application.applicationReference)
+      _ = logger.info(s"Found ${applications.size}+${individuals.size} applications and corresponding individuals ready for submission")
+      riskingFileWithContent: RiskingFileWithContent = riskingFileService.buildRiskingFileWithContent(
+        applications = applications.map(_.application),
+        individuals = individuals,
+        instant = instant
+      )
+      _ = logger.info(s"Generated risking file: ${riskingFileWithContent.riskingFile.riskingFileName}, ${riskingFileWithContent.numberOfRecords} records")
+    yield (riskingFileWithContent, applicationReferences)
+
   def run(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
     logger.info(s"Building risking file and sending it to minerva started ...")
     val instant: Instant = Instant.now(clock)
     for
-      applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForSubmission()
-      _ = logger.info(s"Found ${applications.size} applications ready for submission")
-      applicationReferences: Seq[ApplicationReference] = applications.map(_.applicationReference)
-      individuals: Seq[IndividualForRisking] <- individualForRiskingRepo.findByApplicationReferences(applicationReferences)
-      _ = logger.info(s"Found ${individuals.size} corresponding individuals")
-      riskingFileWithContent: RiskingFileWithContent = riskingFileService.buildRiskingFileWithContent(
-        applications = applications,
-        individuals = individuals,
-        instant = instant
-      )
-      riskingFileName: RiskingFileName = riskingFileWithContent.riskingFile.riskingFileName
-      _ = logger.info(s"Generated risking file: $riskingFileName, ${riskingFileWithContent.numberOfRecords} records")
+      (
+        riskingFileWithContent: RiskingFileWithContent,
+        applicationReferences: Seq[ApplicationReference]
+      ) <- buildRiskingFile()
       objectSummary: ObjectSummaryWithMd5 <- objectStoreService.uploadRiskingFile(riskingFileWithContent)
       _ = logger.info(s"Uploaded risking file to object store: ${objectSummary.location}")
       _ = auditService.sendApplicationsTransferredToRiskingEvent(applicationReferences)
       _ = logger.info("Sent ApplicationsTransferredToRiskingAuditEvent")
       _ <- riskingFileRepo.upsert(riskingFileWithContent.riskingFile)
       _ = logger.info(s"Persisted risking file: ${riskingFileWithContent.riskingFile}")
+      riskingFileName = riskingFileWithContent.riskingFile.riskingFileName
       _ <- applicationForRiskingRepo.updateRiskingFileName(
         applicationReferences = applicationReferences,
         riskingFileName = riskingFileName

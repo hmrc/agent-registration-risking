@@ -13,3 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package uk.gov.hmrc.agentregistrationrisking.testsupport
+
+import scala.util.Random
+
+object RandomHelper:
+
+  import java.security.MessageDigest
+  import java.nio.ByteBuffer
+
+  private def seedFromString(s: String): Int = {
+    val bytes = MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
+    ByteBuffer.wrap(bytes).getInt
+  }
+
+  def makeRandom(seed: String): Random = new scala.util.Random(RandomHelper.seedFromString(seed))

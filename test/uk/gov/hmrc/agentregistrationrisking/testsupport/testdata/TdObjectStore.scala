@@ -56,6 +56,13 @@ trait TdObjectStore { dependencies: TdInstant =>
     "lastModified" -> dependencies.instant
   )
 
+  def objectStorePutObjectResponse(uploadedPath: String): JsObject = Json.obj(
+    "location" -> uploadedPath,
+    "contentLength" -> sizeInBytes,
+    "contentMD5" -> contentMd5,
+    "lastModified" -> dependencies.instant
+  )
+
   def objectStoreListObjectsResponse(uploadedPath: String): JsObject = Json.obj(
     "location" -> uploadedPath,
     "contentLength" -> sizeInBytes,
