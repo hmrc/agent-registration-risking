@@ -48,35 +48,15 @@ extends ISpec:
       tdAll.tdRiskingInstancesInStates.readyForSubmission2.application.applicationReference
     )
 
-    riskingFileWithContent.riskingFileContent shouldBe
-      """00|ARR|SAS|20591125|163351
-        |01|Entity|N|APPREF_readyForSubmission|applicantname_readyForSubmission|01234567890|applicantemail@readyForSubmission.com|LimitedPartnership|utr_readyForSubmission|crn_readyForSubmission|vrn_readyForSubmission|payeref_readyForSubmission|amlscode_readyForSubmission|amlsregistrationnumber_readyForSubmission||http://localhost:22203/agent-helpdesk/amls-evidence/amls_fileupload_refreadyForSubmission|||||||||||
-        |01|Entity|N|APPREF_readyForSubmission2|applicantname_readyForSubmission2|01234567890|applicantemail@readyForSubmission2.com|ScottishLimitedPartnership|utr_readyForSubmission2|crn_readyForSubmission2|vrn_readyForSubmission2|payeref_readyForSubmission2|amlscode_readyForSubmission2|amlsregistrationnumber_readyForSubmission2||http://localhost:22203/agent-helpdesk/amls-evidence/amls_fileupload_refreadyForSubmission2|||||||||||
-        |01|Individual|N||||||||vrn_readyForSubmission_01|payeref_readyForSubmission_01|||||PREF_readyForSubmission_01|||IndividualName_readyForSubmission_01|01-01-2013|AB123456C_readyForSubmission_01|1234567895_readyForSubmission_01|01234567-169|individual_email_readyForSubmission_01@test.com|N|Y
-        |01|Individual|N||||||||vrn_readyForSubmission_02|payeref_readyForSubmission_02|||||PREF_readyForSubmission_02|||IndividualName_readyForSubmission_02|01-01-1981|AB123456C_readyForSubmission_02|1234567895_readyForSubmission_02|01234567-988|individual_email_readyForSubmission_02@test.com|N|N
-        |01|Individual|N||||||||vrn_readyForSubmission2_01|payeref_readyForSubmission2_01|||||PREF_readyForSubmission2_01|||IndividualName_readyForSubmission2_01|01-01-1984|AB123456C_readyForSubmission2_01|1234567895_readyForSubmission2_01|01234567-617|individual_email_readyForSubmission2_01@test.com|N|N
-        |01|Individual|N||||||||vrn_readyForSubmission2_02|payeref_readyForSubmission2_02|||||PREF_readyForSubmission2_02|||IndividualName_readyForSubmission2_02|01-01-1992|AB123456C_readyForSubmission2_02|1234567895_readyForSubmission2_02|01234567-436|individual_email_readyForSubmission2_02@test.com|N|N
-        |99|6
-        |""".stripMargin
+    riskingFileWithContent.riskingFileContent shouldBe expectedFileContent
 
   "build risking file and sent to minerva" in:
     given request: Request[?] = tdAll.backendRequest
 
-    val fileContent: String =
-      """00|ARR|SAS|20591125|163351
-        |01|Entity|N|APPREF_readyForSubmission|applicantname_readyForSubmission|01234567890|applicantemail@readyForSubmission.com|LimitedPartnership|utr_readyForSubmission|crn_readyForSubmission|vrn_readyForSubmission|payeref_readyForSubmission|amlscode_readyForSubmission|amlsregistrationnumber_readyForSubmission||http://localhost:22203/agent-helpdesk/amls-evidence/amls_fileupload_refreadyForSubmission|||||||||||
-        |01|Entity|N|APPREF_readyForSubmission2|applicantname_readyForSubmission2|01234567890|applicantemail@readyForSubmission2.com|ScottishLimitedPartnership|utr_readyForSubmission2|crn_readyForSubmission2|vrn_readyForSubmission2|payeref_readyForSubmission2|amlscode_readyForSubmission2|amlsregistrationnumber_readyForSubmission2||http://localhost:22203/agent-helpdesk/amls-evidence/amls_fileupload_refreadyForSubmission2|||||||||||
-        |01|Individual|N||||||||vrn_readyForSubmission_01|payeref_readyForSubmission_01|||||PREF_readyForSubmission_01|||IndividualName_readyForSubmission_01|01-01-2013|AB123456C_readyForSubmission_01|1234567895_readyForSubmission_01|01234567-169|individual_email_readyForSubmission_01@test.com|N|Y
-        |01|Individual|N||||||||vrn_readyForSubmission_02|payeref_readyForSubmission_02|||||PREF_readyForSubmission_02|||IndividualName_readyForSubmission_02|01-01-1981|AB123456C_readyForSubmission_02|1234567895_readyForSubmission_02|01234567-988|individual_email_readyForSubmission_02@test.com|N|N
-        |01|Individual|N||||||||vrn_readyForSubmission2_01|payeref_readyForSubmission2_01|||||PREF_readyForSubmission2_01|||IndividualName_readyForSubmission2_01|01-01-1984|AB123456C_readyForSubmission2_01|1234567895_readyForSubmission2_01|01234567-617|individual_email_readyForSubmission2_01@test.com|N|N
-        |01|Individual|N||||||||vrn_readyForSubmission2_02|payeref_readyForSubmission2_02|||||PREF_readyForSubmission2_02|||IndividualName_readyForSubmission2_02|01-01-1992|AB123456C_readyForSubmission2_02|1234567895_readyForSubmission2_02|01234567-436|individual_email_readyForSubmission2_02@test.com|N|N
-        |99|6
-        |""".stripMargin
-
     ObjectStoreStubs.stubPutObject(
       bucket = "sdes",
       fileName = "asa_risking_file_version1_0_4_20591125_163351.txt",
-      fileContent = fileContent
+      fileContent = expectedFileContent
     )
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
     riskingRunner.run().futureValue
@@ -87,6 +67,17 @@ extends ISpec:
     val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
 
     applicationForRiskingRepo.findReadyForSubmission().futureValue shouldBe List.empty withClue "no more records to submit at this stage"
+
+  private val expectedFileContent: String =
+    """00|ARR|SAS|20591125|163351
+      |01|Entity|N|APPREF_readyForSubmission|applicantname_readyForSubmission|01234567890|applicantemail@readyForSubmission.com|GeneralPartnership|utr_readyForSubmission|crn_readyForSubmission|vrn_readyForSubmission|payeref_readyForSubmission|amlscode_readyForSubmission|amlsregistrationnumber_readyForSubmission||http://localhost:22203/agent-helpdesk/amls-evidence/amls_fileupload_refreadyForSubmission|||||||||||
+      |01|Entity|N|APPREF_readyForSubmission2|applicantname_readyForSubmission2|01234567890|applicantemail@readyForSubmission2.com|ScottishPartnership|utr_readyForSubmission2|crn_readyForSubmission2|vrn_readyForSubmission2|payeref_readyForSubmission2|amlscode_readyForSubmission2|amlsregistrationnumber_readyForSubmission2||http://localhost:22203/agent-helpdesk/amls-evidence/amls_fileupload_refreadyForSubmission2|||||||||||
+      |01|Individual|N||||||||vrn_readyForSubmission_01|payeref_readyForSubmission_01|||||PREF_readyForSubmission_01|||IndividualName_readyForSubmission_01|01-01-2013|AB123456C_readyForSubmission_01|1234567895_readyForSubmission_01|01234567-169|individual_email_readyForSubmission_01@test.com|N|Y
+      |01|Individual|N||||||||vrn_readyForSubmission_02|payeref_readyForSubmission_02|||||PREF_readyForSubmission_02|||IndividualName_readyForSubmission_02|01-01-1981|AB123456C_readyForSubmission_02|1234567895_readyForSubmission_02|01234567-988|individual_email_readyForSubmission_02@test.com|N|N
+      |01|Individual|N||||||||vrn_readyForSubmission2_01|payeref_readyForSubmission2_01|||||PREF_readyForSubmission2_01|||IndividualName_readyForSubmission2_01|01-01-1984|AB123456C_readyForSubmission2_01|1234567895_readyForSubmission2_01|01234567-617|individual_email_readyForSubmission2_01@test.com|N|N
+      |01|Individual|N||||||||vrn_readyForSubmission2_02|payeref_readyForSubmission2_02|||||PREF_readyForSubmission2_02|||IndividualName_readyForSubmission2_02|01-01-1992|AB123456C_readyForSubmission2_02|1234567895_readyForSubmission2_02|01234567-436|individual_email_readyForSubmission2_02@test.com|N|N
+      |99|6
+      |""".stripMargin
 
   override def beforeEach(): Unit =
     super.beforeEach()
