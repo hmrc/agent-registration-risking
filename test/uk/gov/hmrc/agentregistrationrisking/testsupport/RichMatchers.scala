@@ -25,6 +25,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Millis
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 object RichMatchers
 extends RichMatchers
@@ -44,3 +46,5 @@ extends Matchers,
     timeout = scaled(Span(3, Seconds)),
     interval = scaled(Span(300, Millis))
   )
+
+  extension [T: Writes](t: T) def prettyPrintJson: String = Json.prettyPrint(Json.toJson(t))

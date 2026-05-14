@@ -23,6 +23,8 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication.IsIncorporated
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.*
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 
 import java.time.LocalDate
 
@@ -32,8 +34,8 @@ import java.time.LocalDate
   * This case class aggregates individual provided details and agent application details.
   */
 final case class SmuIndividualResponse(
-  individual: SmuIndividualResponse.Individual,
-  entity: SmuIndividualResponse.Entity
+  individual: SmuIndividualResponse.IndividualForSmuViewer,
+  entity: SmuIndividualResponse.EntityForSmuViewer
 )
 
 object SmuIndividualResponse:
@@ -41,11 +43,11 @@ object SmuIndividualResponse:
   given format: OFormat[SmuIndividualResponse] = Json.format[SmuIndividualResponse]
 
   def make(
-    ipd: IndividualProvidedDetails,
-    aa: AgentApplication
-  ) = SmuIndividualResponse(Individual.make(ipd), Entity.make(aa))
+    ipd: IndividualData,
+    aa: ApplicationData
+  ) = SmuIndividualResponse(IndividualForSmuViewer.make(ipd), EntityForSmuViewer.make(aa))
 
-  final case class Individual(
+  final case class IndividualForSmuViewer(
     personReference: PersonReference,
     resubmission: Boolean,
     passedIdentityVerification: Boolean,
@@ -54,89 +56,85 @@ object SmuIndividualResponse:
     individualDateOfBirth: LocalDate,
     individualNino: Option[Nino],
     individualSaUtr: Option[SaUtr],
-    payeRefs: Option[List[PayeRef]],
-    vrns: Option[List[Vrn]],
+    payeRefs: List[PayeRef],
+    vrns: List[Vrn],
     telephoneNumber: TelephoneNumber,
     emailAddress: EmailAddress
   )
 
-  object Individual:
+  object IndividualForSmuViewer:
 
-    given format: OFormat[Individual] = Json.format[Individual]
+    given format: OFormat[IndividualForSmuViewer] = Json.format[IndividualForSmuViewer]
 
-    private[SmuIndividualResponse] def make(ipd: IndividualProvidedDetails): Individual = Individual(
-      personReference = ipd.personReference,
+    private[SmuIndividualResponse] def make(individual: IndividualData): IndividualForSmuViewer = IndividualForSmuViewer(
+      personReference = individual.personReference,
       // TODO update this once we have implemented resubmission flags
       resubmission = false,
-      passedIdentityVerification = ipd.passedIv.contains(true),
-      detailsProvidedByApplicant = ipd.providedByApplicant.contains(true),
-      individualName = ipd.individualName,
+      passedIdentityVerification = individual.passedIv,
+      detailsProvidedByApplicant = individual.providedByApplicant,
+      individualName = individual.individualName,
       individualDateOfBirth =
-        ipd.getDateOfBirth match
+        individual.individualDateOfBirth match
           case IndividualDateOfBirth.Provided(date) => date
           case IndividualDateOfBirth.FromCitizensDetails(date) => date
           case IndividualDateOfBirth.ApplicantProvided(date) => date
       ,
       individualNino =
-        ipd.individualNino match
-          case Some(IndividualNino.Provided(nino)) => Some(nino)
-          case Some(IndividualNino.FromAuth(nino)) => Some(nino)
-          case _ => None
+        individual.individualNino match
+          case IndividualNino.Provided(nino) => Some(nino)
+          case IndividualNino.FromAuth(nino) => Some(nino)
+          case IndividualNino.NotProvided => None
       ,
       individualSaUtr =
-        ipd.individualSaUtr match {
-          case Some(IndividualSaUtr.Provided(saUtr)) => Some(saUtr)
-          case Some(IndividualSaUtr.FromAuth(saUtr)) => Some(saUtr)
-          case Some(IndividualSaUtr.FromCitizenDetails(saUtr)) => Some(saUtr)
-          case _ => None
-        },
-      payeRefs = ipd.payeRefs,
-      vrns = ipd.vrns,
-      telephoneNumber = ipd.getTelephoneNumber,
-      emailAddress = ipd.getEmailAddress.emailAddress
+        individual.individualSaUtr match
+          case IndividualSaUtr.Provided(saUtr) => Some(saUtr)
+          case IndividualSaUtr.FromAuth(saUtr) => Some(saUtr)
+          case IndividualSaUtr.FromCitizenDetails(saUtr) => Some(saUtr)
+          case IndividualSaUtr.NotProvided => None
+      ,
+      payeRefs = individual.payeRefs,
+      vrns = individual.vrns,
+      telephoneNumber = individual.telephoneNumber,
+      emailAddress = individual.emailAddress
     )
 
-  final case class Entity(
+  final case class EntityForSmuViewer(
     applicationReference: ApplicationReference,
     resubmission: Boolean,
     applicantName: ApplicantName,
     businessType: BusinessType,
     utr: Utr,
-    payeRefs: Option[List[PayeRef]],
-    vrns: Option[List[Vrn]],
+    payeRefs: List[PayeRef],
+    vrns: List[Vrn],
     crn: Option[Crn],
     amlsSupervisoryBody: AmlsCode,
     amlsRegNumber: AmlsRegistrationNumber,
     amlsExpiryDate: Option[LocalDate],
     amlsEvidenceReferenceId: Option[String],
-    applicantPhone: Option[TelephoneNumber],
-    applicantEmail: Option[EmailAddress]
+    applicantPhone: TelephoneNumber,
+    applicantEmail: EmailAddress
   )
 
-  object Entity:
+  object EntityForSmuViewer:
 
-    given format: OFormat[Entity] = Json.format[Entity]
+    given format: OFormat[EntityForSmuViewer] = Json.format[EntityForSmuViewer]
 
     private[SmuIndividualResponse] def make(
-      aa: AgentApplication
-    ): Entity = Entity(
+      aa: ApplicationData
+    ): EntityForSmuViewer = EntityForSmuViewer(
       applicationReference = aa.applicationReference,
       // TODO update this once we have implemented resubmission flags
       resubmission = false,
-      applicantName = aa.getApplicantContactDetails.applicantName,
+      applicantName = aa.applicantContactDetails.applicantName,
       businessType = aa.businessType,
-      utr = aa.getUtr,
+      utr = aa.utr,
       payeRefs = aa.payeRefs,
       vrns = aa.vrns,
-      crn =
-        aa match
-          case aa: IsIncorporated => Some(aa.getCrn)
-          case _ => None
-      ,
-      amlsSupervisoryBody = aa.getAmlsDetails.supervisoryBody,
-      amlsRegNumber = aa.getAmlsDetails.getRegistrationNumber,
+      crn = aa.crn,
+      amlsSupervisoryBody = aa.amlsDetails.supervisoryBody,
+      amlsRegNumber = aa.amlsDetails.amlsRegistrationNumber,
       amlsExpiryDate = None,
-      amlsEvidenceReferenceId = aa.getAmlsDetails.amlsEvidence.map(_.fileUploadReference.value),
-      applicantPhone = aa.applicantContactDetails.map(_.getTelephoneNumber),
-      applicantEmail = aa.applicantContactDetails.map(_.getVerifiedEmail)
+      amlsEvidenceReferenceId = aa.amlsDetails.amlsEvidence.map(_.fileUploadReference.value),
+      applicantPhone = aa.applicantContactDetails.telephoneNumber,
+      applicantEmail = aa.applicantContactDetails.applicantEmailAddress
     )

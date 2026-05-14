@@ -22,8 +22,11 @@ import play.api.libs.json.OFormat
 import play.api.libs.json.OWrites
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistration.shared.Utr
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
+import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
 
 sealed trait AuditEvent:
 
@@ -89,4 +92,16 @@ final case class ApplicationsTransferredToRisking(
 extends AuditEvent
 
 object ApplicationsTransferredToRisking:
+
   given OWrites[ApplicationsTransferredToRisking] = Json.writes[ApplicationsTransferredToRisking]
+
+  final case class CreateAgentServicesAccount(
+    applicationReference: ApplicationReference,
+    agentReferenceNumber: Arn,
+    utr: Utr,
+    businessName: AgentBusinessName
+  )
+  extends AuditEvent
+
+  object CreateAgentServicesAccount:
+    given OWrites[CreateAgentServicesAccount] = Json.writes[CreateAgentServicesAccount]

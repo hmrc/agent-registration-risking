@@ -23,7 +23,7 @@ import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path
 
-trait TdObjectStore { dependencies: TdRiskingBase =>
+trait TdObjectStore { dependencies: TdInstant =>
 
   def fileName: String = "asa_risking_file_version1_0_4_20591125_163351.txt"
 

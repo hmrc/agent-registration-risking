@@ -26,46 +26,41 @@ object TdIndividualsForRisking:
 
   def make(
     instantParam: Instant,
-    personReferencePrefixParam: String,
+    seedParam: String,
     applicationReferenceParam: ApplicationReference
   ): TdIndividualsForRisking =
+
     new TdIndividualsForRisking
-      with TdRiskingBase:
+      with TdInstant:
+      override def seed: String = seedParam
       override def instant: Instant = instantParam
-      override def personReferencePrefix: String = personReferencePrefixParam
       override def applicationReference: ApplicationReference = applicationReferenceParam
 
 trait TdIndividualsForRisking {
-  dependencies: TdRiskingBase =>
+  dependencies: TdInstant =>
 
   def instant: Instant
   def applicationReference: ApplicationReference
-  def personReferencePrefix: String
+  def seed: String
 
   def tdIndividualForRisking1: TdIndividualForRisking = TdIndividualForRisking.make(
     instant = dependencies.instant,
     applicationReference = applicationReference,
-    individualProvidedDetails =
-      TdIndividualProvidedDetailsFactory
-        .make(
-          applicationReference = applicationReference,
-          personReference = PersonReference(s"${personReferencePrefix}01")
-        )
-        .providedDetails
-        .afterFinished
+    individualData = TdIndividualData.make(
+      applicationReference = applicationReference,
+      personReference = PersonReference(s"PREF_${seed}01"),
+      seed = seed
+    )
   )
 
   def tdIndividualForRisking2: TdIndividualForRisking = TdIndividualForRisking.make(
     instant = dependencies.instant,
     applicationReference = applicationReference,
-    individualProvidedDetails =
-      TdIndividualProvidedDetailsFactory
-        .make(
-          applicationReference = applicationReference,
-          personReference = PersonReference(s"${personReferencePrefix}02")
-        )
-        .providedDetails
-        .afterFinished
+    individualData = TdIndividualData.make(
+      applicationReference = applicationReference,
+      personReference = PersonReference(s"PREF_${seed}02"),
+      seed = seed
+    )
   )
 
 }

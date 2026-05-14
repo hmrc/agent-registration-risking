@@ -95,7 +95,7 @@ object RiskingProgressController:
             individual.individualRiskingResult.map: result =>
               RiskedIndividual(
                 personReference = individual.personReference,
-                individualName = individual.individualProvidedDetails.individualName,
+                individualName = individual.individualData.individualName,
                 failures = result.failures
               )
           .sequence

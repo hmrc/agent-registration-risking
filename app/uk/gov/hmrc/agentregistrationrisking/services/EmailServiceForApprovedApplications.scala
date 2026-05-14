@@ -19,6 +19,8 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
@@ -70,13 +72,13 @@ extends RequestAwareLogging:
     yield ()
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
-    val agentApplication = application.agentApplication
-    val agentDetails = agentApplication.getAgentDetails
+    val agentApplication: ApplicationData = application.applicationData
+    val agentDetails: AgentDetailsData = agentApplication.agentDetails
     SendEmailRequest(
-      to = Seq(EmailAddress(agentDetails.getAgentEmailAddress.getEmailAddress)),
+      to = Seq(agentDetails.agentEmailAddress),
       templateId = emailTemplateId,
       parameters = Map(
-        "agentName" -> agentApplication.getApplicantContactDetails.applicantName.value,
+        "agentName" -> agentApplication.applicantContactDetails.applicantName.value,
         "applicationRef" -> agentApplication.applicationReference.value,
         "businessName" -> agentDetails.businessName.getAgentBusinessName
       )

@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -50,7 +50,7 @@ extends ControllerSpec:
     val td = tdAll.tdRiskingInstancesInStates.readyForSubmission
 
     val submitRequest: SubmitForRiskingRequest = td.tdRisking.submitForRiskingRequest
-    val applicationReference: ApplicationReference = submitRequest.agentApplication.applicationReference
+    val applicationReference: ApplicationReference = submitRequest.applicationData.applicationReference
 
     val applicationForRiskingSubmitted: ApplicationForRisking = td.application
     val individualForRiskingSubmitted1: IndividualForRisking = td.individual1
@@ -78,7 +78,7 @@ extends ControllerSpec:
     applicationForRiskingRepo
       .findById(applicationReference)
       .futureValue
-      .value shouldBe applicationForRiskingSubmitted withClue " no prior records in mongo for this application"
+      .value shouldBe applicationForRiskingSubmitted
 
     individualForRiskingRepo
       .findByApplicationReference(applicationReference)
