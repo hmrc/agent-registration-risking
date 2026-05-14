@@ -38,6 +38,7 @@ object WartRemoverSettings {
       Wart.Null,
       Wart.NonUnitStatements,
       Wart.PublicInference,
+      Wart.IterableOps,
       Wart.ThreadSleep
     ),
     wartremoverExcluded ++= (Compile / routes).value ++

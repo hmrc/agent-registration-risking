@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
+import uk.gov.hmrc.agentregistrationrisking.testsupport.RandomHelper
 
 import java.time.LocalDate
 import scala.util.Random
@@ -41,7 +42,7 @@ object TdIndividualData:
     personReference: PersonReference,
     seed: String
   ): IndividualData =
-    val random = new scala.util.Random(seed.hashCode)
+    val random: Random = RandomHelper.makeRandom(seed)
     IndividualData(
       personReference = personReference,
       individualName = IndividualName(s"IndividualName_$seed"),
@@ -52,7 +53,7 @@ object TdIndividualData:
         1,
         1
       )),
-      telephoneNumber = TelephoneNumber(s"01234567890"),
+      telephoneNumber = TelephoneNumber(s"01234567-${random.nextInt(1000)}"),
       emailAddress = EmailAddress(s"individual_email_$seed@test.com"),
       individualNino = IndividualNino.Provided(Nino(s"AB123456C_$seed")),
       individualSaUtr = IndividualSaUtr.Provided(SaUtr(s"1234567895_$seed")),

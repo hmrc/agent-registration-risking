@@ -98,6 +98,30 @@ object ObjectStoreStubs:
     responseBody = Json.prettyPrint(TdAll.tdAll.objectStoreUploadFromUrlResponse(uploadedFilePath))
   )
 
+  def stubPutObject(
+    fileName: String,
+    owner: String = "agent-registration-risking",
+    directory: String = objectStoreBucketName,
+    fileContent: Option[String] = None
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.PUT,
+    urlPattern = wm.urlEqualTo(s"/object-store/object/$owner/$directory/$fileName"),
+    requestBody = fileContent.map(wm.equalTo),
+    responseStatus = 200,
+    responseBody = Json.prettyPrint(TdAll.tdAll.objectStorePutObjectResponse(s"$owner/$directory/$fileName"))
+  )
+
+  def verifyPutObject(
+    fileName: String,
+    owner: String = "agent-registration-risking",
+    directory: String = objectStoreBucketName,
+    count: Int = 1
+  ): Unit = StubMaker.verify(
+    httpMethod = StubMaker.HttpMethod.PUT,
+    urlPattern = wm.urlEqualTo(s"/object-store/object/$owner/$directory/$fileName"),
+    count = count
+  )
+
   def stubObjectStoreUploadFromUrlFailure: StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(s"/object-store/ops/upload-from-url"),
