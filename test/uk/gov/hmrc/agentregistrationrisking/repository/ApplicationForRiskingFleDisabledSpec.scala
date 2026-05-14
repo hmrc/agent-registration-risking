@@ -55,21 +55,23 @@ extends ISpec:
     individualRepo.collection.drop().toFuture().futureValue
     ()
 
-  "with FLE disabled the agentApplication PII is stored as plaintext" in:
+  "with FLE disabled the applicationData PII is stored as plaintext" in:
     repo.upsert(record).futureValue
 
     val rawJson: String = rawDocumentFor(record).toJson()
-    val agentApp = record.agentApplication
-    val contact = agentApp.getApplicantContactDetails
-    val agentDetails = agentApp.getAgentDetails
-    val correspondence = agentDetails.agentCorrespondenceAddress.value
+    val data = record.applicationData
+    val contact = data.applicantContactDetails
+    val agentDetails = data.agentDetails
+    val correspondence = agentDetails.agentCorrespondenceAddress
 
-    rawJson should include(agentApp.internalUserId.value) withClue "internalUserId plaintext"
-    rawJson should include(agentApp.groupId.value) withClue "groupId plaintext"
-    rawJson should include(agentApp.applicantCredentials.providerId) withClue "providerId plaintext"
+    rawJson should include(data.internalUserId.value) withClue "internalUserId plaintext"
+    rawJson should include(data.groupId.value) withClue "groupId plaintext"
+    rawJson should include(data.applicantCredentials.providerId) withClue "providerId plaintext"
     rawJson should include(contact.applicantName.value) withClue "applicantName plaintext"
-    rawJson should include(contact.telephoneNumber.value.value) withClue "applicant telephoneNumber plaintext"
-    rawJson should include(contact.applicantEmailAddress.value.emailAddress.value) withClue "applicant email plaintext"
+    rawJson should include(contact.telephoneNumber.value) withClue "applicant telephoneNumber plaintext"
+    rawJson should include(contact.applicantEmailAddress.value) withClue "applicant email plaintext"
+    rawJson should include(data.amlsDetails.amlsRegistrationNumber.value) withClue "amlsRegistrationNumber plaintext"
+    rawJson should include(data.amlsDetails.amlsEvidence.value.fileName) withClue "amls evidence fileName plaintext"
     rawJson should include(agentDetails.businessName.agentBusinessName) withClue "agentBusinessName plaintext"
     rawJson should include(correspondence.addressLine1) withClue "agent correspondence addressLine1 plaintext"
 

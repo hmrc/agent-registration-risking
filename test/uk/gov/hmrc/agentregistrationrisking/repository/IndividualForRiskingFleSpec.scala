@@ -49,26 +49,24 @@ extends ISpec:
     repo.collection.drop().toFuture().futureValue
     ()
 
-  // Exhaustive per-PII-path coverage (including IndividualNino/IndividualSaUtr variants) lives in IndividualProvidedDetailsEncryptionSpec in the
-  // agent-registration repo (the transform is shared source, synced from there). This spec proves the repo wiring actually runs that transform —
-  // including list and sealed-trait paths — on every write.
-  "with FLE enabled the individualProvidedDetails PII is encrypted at rest" in:
+  // This spec proves the repo wiring runs the IndividualDataEncryption transform — including list and sealed-trait paths — on every write.
+  "with FLE enabled the individualData PII is encrypted at rest" in:
     repo.upsert(record).futureValue
 
     val rawJson: String = rawDocumentFor(record).toJson()
-    val details = record.individualProvidedDetails
+    val details = record.individualData
 
     rawJson should not include details.individualName.value withClue "individualName encrypted"
-    rawJson should not include details.getTelephoneNumber.value withClue "telephoneNumber encrypted"
-    rawJson should not include details.getEmailAddress.emailAddress.value withClue "emailAddress encrypted"
-    details.getNino match
+    rawJson should not include details.telephoneNumber.value withClue "telephoneNumber encrypted"
+    rawJson should not include details.emailAddress.value withClue "emailAddress encrypted"
+    details.individualNino match
       case IndividualNino.Provided(nino) => rawJson should not include nino.value withClue "nino encrypted"
       case other => fail(s"fixture expected IndividualNino.Provided, got $other")
-    details.getSaUtr match
+    details.individualSaUtr match
       case IndividualSaUtr.Provided(saUtr) => rawJson should not include saUtr.value withClue "saUtr encrypted"
       case other => fail(s"fixture expected IndividualSaUtr.Provided, got $other")
-    details.vrns.value.foreach(vrn => rawJson should not include vrn.value withClue "vrn encrypted element-wise")
-    details.payeRefs.value.foreach(payeRef => rawJson should not include payeRef.value withClue "payeRef encrypted element-wise")
+    details.vrns.foreach(vrn => rawJson should not include vrn.value withClue "vrn encrypted element-wise")
+    details.payeRefs.foreach(payeRef => rawJson should not include payeRef.value withClue "payeRef encrypted element-wise")
 
     rawJson should include(record.personReference.value) withClue "personReference stays plaintext (search key)"
     rawJson should include(record.applicationReference.value) withClue "applicationReference stays plaintext (search key)"
@@ -88,5 +86,5 @@ extends ISpec:
     val record2 = TdRiskingInstancesInStates.approved.individual2
     repo.insertMany(List(record, record2)).futureValue
 
-    rawDocumentFor(record).toJson() should not include record.individualProvidedDetails.individualName.value withClue "insertMany encrypts at rest"
+    rawDocumentFor(record).toJson() should not include record.individualData.individualName.value withClue "insertMany encrypts at rest"
     repo.findByApplicationReference(record.applicationReference).futureValue.toSet shouldBe Set(record, record2)

@@ -37,8 +37,8 @@ import scala.concurrent.duration.FiniteDuration
 import IndividualForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.crypto.IndividualProvidedDetailsEncryption
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
@@ -51,7 +51,7 @@ final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig,
   clock: Clock,
-  individualProvidedDetailsEncryption: IndividualProvidedDetailsEncryption
+  individualDataEncryption: IndividualDataEncryption
 )(using ec: ExecutionContext)
 extends Repo[PersonReference, IndividualForRisking](
   collectionName = IndividualForRiskingRepo.collectionName,
@@ -63,11 +63,11 @@ extends Repo[PersonReference, IndividualForRisking](
 
   override protected def encryptForStorage(
     a: IndividualForRisking
-  ): IndividualForRisking = a.modify(_.individualProvidedDetails).using(individualProvidedDetailsEncryption.encrypt)
+  ): IndividualForRisking = a.modify(_.individualData).using(individualDataEncryption.encrypt)
 
   override protected def decryptFromStorage(
     a: IndividualForRisking
-  ): IndividualForRisking = a.modify(_.individualProvidedDetails).using(individualProvidedDetailsEncryption.decrypt)
+  ): IndividualForRisking = a.modify(_.individualData).using(individualDataEncryption.decrypt)
 
   def insertMany(
     individualForRiskingList: List[IndividualForRisking]

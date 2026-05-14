@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared.crypto
+package uk.gov.hmrc.agentregistrationrisking.crypto
 
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.crypto.Crypted
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
@@ -26,10 +27,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FieldLevelEncryption @Inject() (config: FieldLevelEncryptionConfig):
+class FieldLevelEncryption @Inject() (appConfig: AppConfig):
 
   def encrypt(plain: String): String =
-    if config.enabled
+    if appConfig.FieldLevelEncryption.enabled
     then
       crypto
         .encrypt(PlainText(plain))
@@ -37,7 +38,7 @@ class FieldLevelEncryption @Inject() (config: FieldLevelEncryptionConfig):
     else plain
 
   def decrypt(encrypted: String): String =
-    if config.enabled
+    if appConfig.FieldLevelEncryption.enabled
     then
       crypto
         .decrypt(Crypted(encrypted))
@@ -45,6 +46,6 @@ class FieldLevelEncryption @Inject() (config: FieldLevelEncryptionConfig):
     else encrypted
 
   private val crypto: Encrypter & Decrypter = SymmetricCryptoFactory.composeCrypto(
-    currentCrypto = SymmetricCryptoFactory.aesCrypto(config.key),
-    previousDecrypters = config.previousKeys.map(SymmetricCryptoFactory.aesCrypto)
+    currentCrypto = SymmetricCryptoFactory.aesCrypto(appConfig.FieldLevelEncryption.key),
+    previousDecrypters = appConfig.FieldLevelEncryption.previousKeys.map(SymmetricCryptoFactory.aesCrypto)
   )

@@ -52,17 +52,17 @@ extends ISpec:
     repo.collection.drop().toFuture().futureValue
     ()
 
-  "with FLE disabled the individualProvidedDetails PII is stored as plaintext" in:
+  "with FLE disabled the individualData PII is stored as plaintext" in:
     repo.upsert(record).futureValue
 
     val rawJson: String = rawDocumentFor(record).toJson()
-    val details = record.individualProvidedDetails
+    val details = record.individualData
 
     rawJson should include(details.individualName.value) withClue "individualName plaintext"
-    rawJson should include(details.getTelephoneNumber.value) withClue "telephoneNumber plaintext"
-    rawJson should include(details.getEmailAddress.emailAddress.value) withClue "emailAddress plaintext"
-    details.vrns.value.foreach(vrn => rawJson should include(vrn.value) withClue "vrn plaintext")
-    details.payeRefs.value.foreach(payeRef => rawJson should include(payeRef.value) withClue "payeRef plaintext")
+    rawJson should include(details.telephoneNumber.value) withClue "telephoneNumber plaintext"
+    rawJson should include(details.emailAddress.value) withClue "emailAddress plaintext"
+    details.vrns.foreach(vrn => rawJson should include(vrn.value) withClue "vrn plaintext")
+    details.payeRefs.foreach(payeRef => rawJson should include(payeRef.value) withClue "payeRef plaintext")
 
   "with FLE disabled findById returns the model unchanged" in:
     repo.upsert(record).futureValue

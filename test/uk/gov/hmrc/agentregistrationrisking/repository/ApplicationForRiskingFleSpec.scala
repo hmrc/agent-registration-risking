@@ -50,24 +50,24 @@ extends ISpec:
     individualRepo.collection.drop().toFuture().futureValue
     ()
 
-  // Exhaustive per-PII-path coverage of the encryption transform lives in AgentApplicationEncryptionSpec in the agent-registration repo
-  // (the transform is shared source, synced from there). This spec proves the repo wiring actually runs that transform — including
-  // nested/optional paths — on every write.
-  "with FLE enabled the agentApplication PII is encrypted at rest" in:
+  // This spec proves the repo wiring runs the ApplicationDataEncryption transform — including nested/optional paths — on every write.
+  "with FLE enabled the applicationData PII is encrypted at rest" in:
     repo.upsert(record).futureValue
 
     val rawJson: String = rawDocumentFor(record).toJson()
-    val agentApp = record.agentApplication
-    val contact = agentApp.getApplicantContactDetails
-    val agentDetails = agentApp.getAgentDetails
-    val correspondence = agentDetails.agentCorrespondenceAddress.value
+    val data = record.applicationData
+    val contact = data.applicantContactDetails
+    val agentDetails = data.agentDetails
+    val correspondence = agentDetails.agentCorrespondenceAddress
 
-    rawJson should not include agentApp.internalUserId.value withClue "internalUserId encrypted"
-    rawJson should not include agentApp.groupId.value withClue "groupId encrypted"
-    rawJson should not include agentApp.applicantCredentials.providerId withClue "providerId encrypted"
+    rawJson should not include data.internalUserId.value withClue "internalUserId encrypted"
+    rawJson should not include data.groupId.value withClue "groupId encrypted"
+    rawJson should not include data.applicantCredentials.providerId withClue "providerId encrypted"
     rawJson should not include contact.applicantName.value withClue "applicantName encrypted"
-    rawJson should not include contact.telephoneNumber.value.value withClue "applicant telephoneNumber encrypted"
-    rawJson should not include contact.applicantEmailAddress.value.emailAddress.value withClue "applicant email encrypted"
+    rawJson should not include contact.telephoneNumber.value withClue "applicant telephoneNumber encrypted"
+    rawJson should not include contact.applicantEmailAddress.value withClue "applicant email encrypted"
+    rawJson should not include data.amlsDetails.amlsRegistrationNumber.value withClue "amlsRegistrationNumber encrypted"
+    rawJson should not include data.amlsDetails.amlsEvidence.value.fileName withClue "amls evidence fileName encrypted"
     rawJson should not include agentDetails.businessName.agentBusinessName withClue "agentBusinessName encrypted"
     rawJson should not include correspondence.addressLine1 withClue "agent correspondence addressLine1 encrypted"
     rawJson should not include correspondence.addressLine2.value withClue "agent correspondence addressLine2 encrypted"

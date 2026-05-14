@@ -24,9 +24,9 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.crypto.AgentApplicationEncryption
-import uk.gov.hmrc.agentregistration.shared.crypto.IndividualProvidedDetailsEncryption
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.crypto.ApplicationDataEncryption
+import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
@@ -35,7 +35,6 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.toBison
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
-import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -46,9 +45,8 @@ import scala.concurrent.duration.FiniteDuration
 final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig,
-  clock: Clock,
-  agentApplicationEncryption: AgentApplicationEncryption,
-  individualProvidedDetailsEncryption: IndividualProvidedDetailsEncryption
+  applicationDataEncryption: ApplicationDataEncryption,
+  individualDataEncryption: IndividualDataEncryption
 )(using ec: ExecutionContext)
 extends Repo[ApplicationReference, ApplicationForRisking](
   collectionName = "application-for-risking",
@@ -63,15 +61,15 @@ extends Repo[ApplicationReference, ApplicationForRisking](
 
   override protected def encryptForStorage(
     a: ApplicationForRisking
-  ): ApplicationForRisking = a.modify(_.agentApplication).using(agentApplicationEncryption.encrypt)
+  ): ApplicationForRisking = a.modify(_.applicationData).using(applicationDataEncryption.encrypt)
 
   override protected def decryptFromStorage(
     a: ApplicationForRisking
-  ): ApplicationForRisking = a.modify(_.agentApplication).using(agentApplicationEncryption.decrypt)
+  ): ApplicationForRisking = a.modify(_.applicationData).using(applicationDataEncryption.decrypt)
 
   private def decryptIndividual(
     i: IndividualForRisking
-  ): IndividualForRisking = i.modify(_.individualProvidedDetails).using(individualProvidedDetailsEncryption.decrypt)
+  ): IndividualForRisking = i.modify(_.individualData).using(individualDataEncryption.decrypt)
 
   // ═══════════════════════════════════════════════════════════════════════════════
   //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
