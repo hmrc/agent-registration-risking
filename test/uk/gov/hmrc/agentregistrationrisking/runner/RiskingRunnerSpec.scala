@@ -84,6 +84,10 @@ extends ISpec:
     ObjectStoreStubs.verifyPutObject("sdes", "asa_risking_file_version1_0_4_20591125_163351.txt")
     SdesProxyStubs.verifySdesFileReady()
 
+    val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+
+    applicationForRiskingRepo.findReadyForSubmission().futureValue shouldBe List.empty withClue "no more records to submit at this stage"
+
   override def beforeEach(): Unit =
     super.beforeEach()
     primeDb()
