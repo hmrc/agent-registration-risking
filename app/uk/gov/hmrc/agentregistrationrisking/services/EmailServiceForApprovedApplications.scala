@@ -75,7 +75,7 @@ extends RequestAwareLogging:
     val agentApplication: ApplicationData = application.applicationData
     val agentDetails: AgentDetailsData = agentApplication.agentDetails
     SendEmailRequest(
-      to = Seq(agentDetails.agentEmailAddress.getEmailAddress),
+      to = Seq(agentDetails.agentEmailAddress),
       templateId = emailTemplateId,
       parameters = Map(
         "agentName" -> agentApplication.applicantContactDetails.applicantName.value,

@@ -108,13 +108,13 @@ extends RequestAwareLogging:
       .emailAddress
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
-    val agentApplication = application.applicationData
+    val applicationData = application.applicationData
     SendEmailRequest(
-      to = Seq(agentApplication.agentDetails.agentEmailAddress.getEmailAddress),
+      to = Seq(applicationData.agentDetails.agentEmailAddress),
       templateId = emailTemplateId,
       parameters = Map(
-        "agentName" -> agentApplication.applicantContactDetails.applicantName.value,
-        "applicationRef" -> agentApplication.applicationReference.value
+        "agentName" -> applicationData.applicantContactDetails.applicantName.value,
+        "applicationRef" -> applicationData.applicationReference.value
       )
     )
 

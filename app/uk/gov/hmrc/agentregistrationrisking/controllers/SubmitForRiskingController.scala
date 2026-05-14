@@ -63,9 +63,9 @@ extends BackendController(cc):
     submitForRiskingRequest: SubmitForRiskingRequest,
     createdAt: Instant
   ): ApplicationForRisking = ApplicationForRisking(
-    applicationReference = submitForRiskingRequest.agentApplication.applicationReference,
+    applicationReference = submitForRiskingRequest.applicationData.applicationReference,
     riskingFileName = None,
-    applicationData = submitForRiskingRequest.agentApplication,
+    applicationData = submitForRiskingRequest.applicationData,
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
     entityRiskingResult = None,
@@ -82,7 +82,7 @@ extends BackendController(cc):
     createdAt: Instant
   ) = submitForRiskingRequest.individuals.map(individualProvidedDetails =>
     makeIndividualForRisking(
-      applicationReference = submitForRiskingRequest.agentApplication.applicationReference,
+      applicationReference = submitForRiskingRequest.applicationData.applicationReference,
       individualData = individualProvidedDetails,
       createdAt = createdAt
     )
