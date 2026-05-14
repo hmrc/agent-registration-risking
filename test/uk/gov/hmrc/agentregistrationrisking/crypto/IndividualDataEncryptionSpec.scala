@@ -53,7 +53,7 @@ extends ISpec:
 
     "emailAddress is encrypted" in:
       encrypted.emailAddress.value shouldBe encrypt(individualData.emailAddress.value)
-    
+
     "vrns are encrypted element-wise" in:
       encrypted.vrns.map(_.value) shouldBe individualData.vrns.map(v => encrypt(v.value))
 
@@ -83,7 +83,7 @@ extends ISpec:
 
     "IndividualSaUtr.NotProvided is unchanged" in:
       individualDataEncryption.encrypt(individualData.copy(individualSaUtr = IndividualSaUtr.NotProvided)).individualSaUtr shouldBe IndividualSaUtr.NotProvided
-    
+
   }
 
   "IndividualDataEncryption round-trips and does not leak plaintext PII" - {

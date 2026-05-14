@@ -72,7 +72,9 @@ extends ISpec:
       encrypted.agentDetails.telephoneNumber.agentTelephoneNumber shouldBe encrypt(applicationData.agentDetails.telephoneNumber.agentTelephoneNumber)
 
     "agentDetails.telephoneNumber.otherAgentTelephoneNumber is encrypted" in:
-      encrypted.agentDetails.telephoneNumber.otherAgentTelephoneNumber.value shouldBe encrypt(applicationData.agentDetails.telephoneNumber.otherAgentTelephoneNumber.value)
+      encrypted.agentDetails.telephoneNumber.otherAgentTelephoneNumber.value shouldBe encrypt(
+        applicationData.agentDetails.telephoneNumber.otherAgentTelephoneNumber.value
+      )
 
     "agentDetails.agentEmailAddress is encrypted" in:
       encrypted.agentDetails.agentEmailAddress.value shouldBe encrypt(applicationData.agentDetails.agentEmailAddress.value)
@@ -81,10 +83,14 @@ extends ISpec:
       encrypted.agentDetails.agentCorrespondenceAddress.addressLine1 shouldBe encrypt(applicationData.agentDetails.agentCorrespondenceAddress.addressLine1)
 
     "agentDetails.agentCorrespondenceAddress.addressLine2 is encrypted" in:
-      encrypted.agentDetails.agentCorrespondenceAddress.addressLine2.value shouldBe encrypt(applicationData.agentDetails.agentCorrespondenceAddress.addressLine2.value)
+      encrypted.agentDetails.agentCorrespondenceAddress.addressLine2.value shouldBe encrypt(
+        applicationData.agentDetails.agentCorrespondenceAddress.addressLine2.value
+      )
 
     "agentDetails.agentCorrespondenceAddress.postalCode is encrypted" in:
-      encrypted.agentDetails.agentCorrespondenceAddress.postalCode.value shouldBe encrypt(applicationData.agentDetails.agentCorrespondenceAddress.postalCode.value)
+      encrypted.agentDetails.agentCorrespondenceAddress.postalCode.value shouldBe encrypt(
+        applicationData.agentDetails.agentCorrespondenceAddress.postalCode.value
+      )
 
     "vrns are encrypted element-wise" in:
       encrypted.vrns.map(_.value) shouldBe applicationData.vrns.map(v => encrypt(v.value))
