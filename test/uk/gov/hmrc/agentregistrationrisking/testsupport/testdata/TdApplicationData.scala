@@ -41,20 +41,18 @@ import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetails
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
 import uk.gov.hmrc.agentregistration.shared.upload.FileUploadReference
-import uk.gov.hmrc.agentregistrationrisking.testsupport.RandomHelper
 import uk.gov.hmrc.auth.core.retrieve.Credentials
 
 object TdApplicationData:
 
   @SuppressWarnings(Array("org.wartremover.warts.SeqApply"))
   def make(seed: String): ApplicationData =
-
-    val random: scala.util.Random = RandomHelper.makeRandom(seed)
+    val random: scala.util.Random = new scala.util.Random(seed.hashCode)
     ApplicationData(
       applicationReference = ApplicationReference(s"APPREF_$seed"),
       internalUserId = InternalUserId(s"INTERNAL_USER_ID_$seed"),
       applicantCredentials = Credentials(providerId = s"providerid_$seed", providerType = s"providertype_$seed"),
-      businessType = BusinessType.values(random.nextInt(BusinessType.values.size - 1)),
+      businessType = BusinessType.values.sortBy(_.toString).apply(random.nextInt(BusinessType.values.size - 1)),
       groupId = GroupId(s"groupid_$seed"),
       applicantContactDetails = ApplicantContactDetailsData(
         applicantName = ApplicantName(s"applicantname_$seed"),
