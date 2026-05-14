@@ -17,7 +17,13 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import java.time.Instant
+import java.time.LocalDate
 
-trait TdRiskingBase:
+trait TdInstant:
 
+  // TODO: make date varying
   def instant: Instant = Instant.parse("2059-11-25T16:33:51Z")
+  def localDate: LocalDate = LocalDate.parse("2059-11-25")
+
+object TdInstant
+extends TdInstant

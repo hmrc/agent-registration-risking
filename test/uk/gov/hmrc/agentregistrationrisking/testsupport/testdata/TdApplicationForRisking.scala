@@ -27,35 +27,37 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import com.softwaremill.quicklens.modify
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 
 object TdApplicationForRisking:
 
   def make(
     instant: Instant,
     riskingFileName: RiskingFileName,
-    agentApplication: AgentApplication
+    applicationData: ApplicationData
   ): TdApplicationForRisking =
+
     val instantParam: Instant = instant
     val riskingFileNameParam: RiskingFileName = riskingFileName
-    val agentApplicationParam: AgentApplication = agentApplication
+    val applicationDataParam: ApplicationData = applicationData
 
     new TdApplicationForRisking:
       override def instant: Instant = instantParam
       override def riskingFileName: RiskingFileName = riskingFileNameParam
-      override def applicationReference: ApplicationReference = agentApplicationParam.applicationReference
-      override def agentApplication: AgentApplication = agentApplicationParam
+      override def applicationReference: ApplicationReference = applicationDataParam.applicationReference
+      override def applicationData: ApplicationData = applicationDataParam
 
 trait TdApplicationForRisking:
 
   def instant: Instant
   def riskingFileName: RiskingFileName
   def applicationReference: ApplicationReference
-  def agentApplication: AgentApplication
+  def applicationData: ApplicationData
 
   def readyForSubmission: ApplicationForRisking = ApplicationForRisking(
     applicationReference = applicationReference,
     riskingFileName = None,
-    agentApplication = agentApplication,
+    applicationData = applicationData,
     createdAt = instant,
     lastUpdatedAt = instant,
     entityRiskingResult = None,
@@ -70,7 +72,7 @@ trait TdApplicationForRisking:
   def submittedForRisking: ApplicationForRisking = readyForSubmission
     .copy(
       riskingFileName = Some(riskingFileName),
-      lastUpdatedAt = instant.plus(1, ChronoUnit.DAYS)
+      lastUpdatedAt = instant
     )
 
   object receivedRiskingResults:
@@ -78,7 +80,7 @@ trait TdApplicationForRisking:
     val approved: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(
         failures = List.empty,
-        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+        receivedAt = instant
       ))
     )
 
@@ -100,7 +102,7 @@ trait TdApplicationForRisking:
           TdFailures.entityFailures.fixable1,
           TdFailures.entityFailures.fixable2
         ),
-        receivedAt = instant.minus(2, ChronoUnit.DAYS)
+        receivedAt = instant
       ))
     )
 
@@ -115,7 +117,7 @@ trait TdApplicationForRisking:
             TdFailures.entityFailures.fixable2,
             TdFailures.entityFailures.nonFixable2
           ),
-          receivedAt = instant.minus(2, ChronoUnit.DAYS)
+          receivedAt = instant
         ))
       )
 

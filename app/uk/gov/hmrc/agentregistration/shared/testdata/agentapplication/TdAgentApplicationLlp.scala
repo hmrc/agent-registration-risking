@@ -26,6 +26,10 @@ import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantEmailAddress
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLessOfficers
 import uk.gov.hmrc.agentregistration.shared.lists.SixOrMoreOfficers
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.testdata.TdGrsBusinessDetails
 
@@ -152,6 +156,37 @@ trait TdAgentApplicationLlp { dependencies: (TdBase & TdGrsBusinessDetails) =>
       applicationExpiresAt = None
     )
 
+    val applicationData: ApplicationData =
+      val a: AgentApplicationLlp = afterDeclarationSubmitted
+      ApplicationData(
+        applicationReference = dependencies.applicationReference,
+        internalUserId = dependencies.internalUserId,
+        applicantCredentials = dependencies.credentials,
+        businessType = BusinessType.Partnership.LimitedLiabilityPartnership,
+        groupId = dependencies.groupId,
+        applicantContactDetails = ApplicantContactDetailsData(
+          applicantName = dependencies.applicantName,
+          telephoneNumber = dependencies.telephoneNumber,
+          applicantEmailAddress = dependencies.applicantEmailAddress
+        ),
+        amlsDetails = AmlsDetailsData(
+          supervisoryBody = dependencies.amlsCode,
+          amlsRegistrationNumber = dependencies.amlsRegistrationNumber,
+          amlsEvidence = None
+        ),
+        agentDetails = AgentDetailsData(
+          businessName = dependencies.agentBusinessName,
+          telephoneNumber = dependencies.agentTelephoneNumber,
+          agentEmailAddress = dependencies.applicantEmailAddress,
+          agentCorrespondenceAddress = dependencies.chroAddress
+        ),
+        vrns = List(dependencies.vrn),
+        payeRefs = List(dependencies.payeRef),
+        crn = Some(dependencies.crn),
+        utr = a.getUtr,
+        safeId = a.getSafeId
+      )
+
     val afterSentForRisking: AgentApplicationLlp = afterDeclarationSubmitted.copy(
       userRole = Some(UserRole.Partner),
       businessDetails = Some(BusinessDetailsLlp(
@@ -199,6 +234,30 @@ trait TdAgentApplicationLlp { dependencies: (TdBase & TdGrsBusinessDetails) =>
       hasOtherRelevantIndividuals = Some(true),
       vrns = Some(List(Vrn("123456789"), Vrn("123456789"))),
       payeRefs = Some(List(PayeRef("123/AB12345"), PayeRef("123/AB12345")))
+    )
+
+    /** Variant of [[afterDeclarationSubmitted]] with every optional agent field populated. Used by encryption tests to exercise paths like
+      * `otherAgentBusinessName`, `otherAgentTelephoneNumber`, `otherAgentEmailAddress` which the default fixture leaves as `None`.
+      */
+    val afterDeclarationSubmittedWithAllOptionalFields: AgentApplicationLlp = afterDeclarationSubmitted.copy(
+      agentDetails = Some(AgentDetails(
+        businessName = AgentBusinessName(
+          agentBusinessName = "Test LLP Trading Name",
+          otherAgentBusinessName = Some("Other LLP Trading Name")
+        ),
+        telephoneNumber = Some(AgentTelephoneNumber(
+          agentTelephoneNumber = dependencies.telephoneNumber.value,
+          otherAgentTelephoneNumber = Some("+44 1234 567890")
+        )),
+        agentEmailAddress = Some(AgentVerifiedEmailAddress(
+          emailAddress = AgentEmailAddress(
+            agentEmailAddress = dependencies.applicantEmailAddress.value,
+            otherAgentEmailAddress = Some("other.address@example.com")
+          ),
+          isVerified = true
+        )),
+        agentCorrespondenceAddress = Some(dependencies.chroAddress)
+      ))
     )
 
 }

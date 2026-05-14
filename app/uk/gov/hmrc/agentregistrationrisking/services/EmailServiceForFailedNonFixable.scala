@@ -61,7 +61,7 @@ extends RequestAwareLogging:
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application: ApplicationForRisking = applicationWithIndividuals.application
     val individuals: Seq[IndividualForRisking] =
-      application.agentApplication.businessType match
+      application.applicationData.businessType match
         case BusinessType.SoleTrader => applicationWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
         case _ => applicationWithIndividuals.individuals
 
@@ -100,34 +100,30 @@ extends RequestAwareLogging:
     individual: IndividualForRisking,
     application: ApplicationForRisking
   ): Boolean =
-    val maybeTheSame: Option[Boolean] =
-      for
-        applicantContactDetails <- application.agentApplication.applicantContactDetails
-        applicantEmailAddress <- applicantContactDetails.applicantEmailAddress.map(_.emailAddress)
-        individualEmail <- individual.individualProvidedDetails.emailAddress.map(_.emailAddress)
-      yield (applicantEmailAddress.value === individualEmail.value)
-
-    maybeTheSame.getOrElse(false)
+    application
+      .applicationData
+      .applicantContactDetails
+      .applicantEmailAddress === individual
+      .individualData
+      .emailAddress
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
-    val agentApplication = application.agentApplication
+    val applicationData = application.applicationData
     SendEmailRequest(
-      to = Seq(EmailAddress(agentApplication.getAgentDetails.getAgentEmailAddress.getEmailAddress)),
+      to = Seq(applicationData.agentDetails.agentEmailAddress),
       templateId = emailTemplateId,
       parameters = Map(
-        "agentName" -> agentApplication.getApplicantContactDetails.applicantName.value,
-        "applicationRef" -> agentApplication.applicationReference.value
+        "agentName" -> applicationData.applicantContactDetails.applicantName.value,
+        "applicationRef" -> applicationData.applicationReference.value
       )
     )
 
   private def makeSendEmailRequest(
     individual: IndividualForRisking
-  ): SendEmailRequest =
-    val individualDetails = individual.individualProvidedDetails
-    SendEmailRequest(
-      to = Seq(individualDetails.getEmailAddress.emailAddress),
-      templateId = EmailTemplateId.IndividualNonFixableFailure,
-      parameters = Map(
-        "individualName" -> individualDetails.individualName.value
-      )
+  ): SendEmailRequest = SendEmailRequest(
+    to = Seq(individual.individualData.emailAddress),
+    templateId = EmailTemplateId.IndividualNonFixableFailure,
+    parameters = Map(
+      "individualName" -> individual.individualData.individualName.value
     )
+  )
