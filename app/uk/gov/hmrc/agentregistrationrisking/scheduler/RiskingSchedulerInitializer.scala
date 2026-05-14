@@ -35,11 +35,11 @@ extends Logging:
 
   private def initialize(): Unit =
     if appConfig.Scheduler.enabled then
-      logger.info("Bootstrapping risking scheduler")
+      logger.warn("Bootstrapping risking scheduler")
       scheduler.scheduleDaily(
         "risking",
         appConfig.Scheduler.time,
         () => riskingRunner.run()
       )
     else
-      logger.info("risking not scheduled as it is not enabled")
+      logger.warn("risking not scheduled as it is not enabled")

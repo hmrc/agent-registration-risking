@@ -66,12 +66,12 @@ extends Logging:
     executor.schedule(
       new Runnable:
         def run(): Unit = lockServiceFor(name).withLock {
-          logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
+          logger.warn(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
           job()
         }.onComplete { result =>
           result match
             case Success(Some(_)) => logger.debug(s"Scheduled task $name completed successfully")
-            case Success(None) => logger.info(s"Scheduled task $name skipped - already running on another instance")
+            case Success(None) => logger.warn(s"Scheduled task $name skipped - already running on another instance")
             case Failure(e) => logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
           scheduleDaily(
             name,
@@ -83,7 +83,7 @@ extends Logging:
       delayMillis,
       TimeUnit.MILLISECONDS
     )
-    logger.info(s"$name scheduled for ${nextRun.toString}")
+    logger.warn(s"$name scheduled for ${nextRun.toString}")
     ()
 
   private def nextRunTime(timeOfDay: LocalTime): ZonedDateTime =
