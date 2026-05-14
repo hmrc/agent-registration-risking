@@ -81,7 +81,7 @@ extends RequestAwareLogging:
       postcode = agentDetails.agentCorrespondenceAddress.postalCode,
       country = agentDetails.agentCorrespondenceAddress.countryCode,
       phone = Some(agentDetails.telephoneNumber.agentTelephoneNumber),
-      email = agentDetails.agentEmailAddress.getEmailAddress,
+      email = agentDetails.agentEmailAddress,
       supervisoryBody = Some(amlsDetails.supervisoryBody.value),
       membershipNumber = Some(amlsDetails.amlsRegistrationNumber.value),
       evidenceObjectReference = None,
