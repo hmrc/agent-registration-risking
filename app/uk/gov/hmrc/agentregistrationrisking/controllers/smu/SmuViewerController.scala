@@ -51,7 +51,8 @@ class SmuViewerController @Inject() (
 )
 extends BackendController(cc):
 
-  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.authorised.async: request =>
+  // TODO: This needs to have a dedicated stride role endpoint
+  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.default.async: request =>
     for
       maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findById(personReference)
       maybeApp: Option[ApplicationForRisking] <-
