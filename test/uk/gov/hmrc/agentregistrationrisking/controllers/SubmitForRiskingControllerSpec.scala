@@ -78,8 +78,7 @@ extends ControllerSpec:
     applicationForRiskingRepo
       .findById(applicationReference)
       .futureValue
-      .value
-      .prettyPrintJson shouldBe applicationForRiskingSubmitted.prettyPrintJson
+      .value shouldBe applicationForRiskingSubmitted
 
     individualForRiskingRepo
       .findByApplicationReference(applicationReference)
