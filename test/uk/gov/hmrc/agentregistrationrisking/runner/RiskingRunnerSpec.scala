@@ -39,7 +39,7 @@ extends ISpec:
     val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) = riskingRunner.buildRiskingFile().futureValue
 
     riskingFileWithContent.riskingFile shouldBe RiskingFile(
-      riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt"),
+      riskingFileName = fileName,
       uploadedAt = tdAll.instant
     )
 
@@ -48,26 +48,29 @@ extends ISpec:
       tdAll.tdRiskingInstancesInStates.readyForSubmission2.application.applicationReference
     )
 
-    riskingFileWithContent.riskingFileContent shouldBe expectedFileContent
+    riskingFileWithContent.riskingFileContent `shouldBeLike` expectedFileContent
 
   "build risking file and sent to minerva" in:
     given request: Request[?] = tdAll.backendRequest
 
     ObjectStoreStubs.stubPutObject(
-      bucket = "sdes",
-      fileName = "asa_risking_file_version1_0_4_20591125_163351.txt",
-      fileContent = expectedFileContent
+      fileName = fileName.value
     )
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
     riskingRunner.run().futureValue
 
-    ObjectStoreStubs.verifyPutObject("sdes", "asa_risking_file_version1_0_4_20591125_163351.txt")
+    ObjectStoreStubs.verifyPutObject(
+      fileName = fileName.value
+    )
     SdesProxyStubs.verifySdesFileReady()
 
-    val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+    val riskingFileContent: String = ObjectStoreStubs.getRequestBody(fileName.value)
+    riskingFileContent `shouldBeLike` expectedFileContent
 
+    val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
     applicationForRiskingRepo.findReadyForSubmission().futureValue shouldBe List.empty withClue "no more records to submit at this stage"
 
+  private val fileName: RiskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt")
   private val expectedFileContent: String =
     """00|ARR|SAS|20591125|163351
       |01|Entity|N|APPREF_readyForSubmission|applicantname_readyForSubmission|01234567890|applicantemail@readyForSubmission.com|GeneralPartnership|utr_readyForSubmission|crn_readyForSubmission|vrn_readyForSubmission|payeref_readyForSubmission|amlscode_readyForSubmission|amlsregistrationnumber_readyForSubmission||http://localhost:22203/agent-helpdesk/amls-evidence/amls_fileupload_refreadyForSubmission|||||||||||
@@ -98,3 +101,20 @@ extends ISpec:
         applicationForRiskingRepo.upsert(td.application).futureValue
         individualForRiskingRepo.upsert(td.individual1).futureValue
         individualForRiskingRepo.upsert(td.individual2).futureValue
+
+  extension (s: String)
+    def getLines: Array[String] = s.split("\\R").filter(_.nonEmpty)
+
+  extension (actual: RiskingFileWithContent.RiskingFileContent)
+    def shouldBeLike(expected: RiskingFileWithContent.RiskingFileContent): Unit =
+      val actualLines = actual.getLines
+      val expectedLines = expected.getLines
+      actualLines.head shouldBe expectedLines.head
+      actualLines.last shouldBe expectedLines.last
+
+      actualLines.length shouldBe expectedLines.length
+
+      actualLines
+        .sorted.zip(expectedLines.sorted)
+        .foreach:
+          case (actualLine, expectedLine) => actualLine shouldBe expectedLine

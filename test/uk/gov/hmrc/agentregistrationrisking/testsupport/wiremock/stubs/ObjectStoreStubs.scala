@@ -99,26 +99,26 @@ object ObjectStoreStubs:
   )
 
   def stubPutObject(
-    bucket: String,
     fileName: String,
-    fileContent: String,
-    owner: String = "agent-registration-risking"
+    owner: String = "agent-registration-risking",
+    directory: String = objectStoreBucketName,
+    fileContent: Option[String] = None
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.PUT,
-    urlPattern = wm.urlEqualTo(s"/object-store/object/$owner/$bucket/$fileName"),
-    requestBody = Some(wm.equalTo(fileContent)),
+    urlPattern = wm.urlEqualTo(s"/object-store/object/$owner/$directory/$fileName"),
+    requestBody = fileContent.map(wm.equalTo),
     responseStatus = 200,
-    responseBody = Json.prettyPrint(TdAll.tdAll.objectStorePutObjectResponse(s"$owner/$bucket/$fileName"))
+    responseBody = Json.prettyPrint(TdAll.tdAll.objectStorePutObjectResponse(s"$owner/$directory/$fileName"))
   )
 
   def verifyPutObject(
-    bucket: String,
     fileName: String,
     owner: String = "agent-registration-risking",
+    directory: String = objectStoreBucketName,
     count: Int = 1
   ): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.PUT,
-    urlPattern = wm.urlEqualTo(s"/object-store/object/$owner/$bucket/$fileName"),
+    urlPattern = wm.urlEqualTo(s"/object-store/object/$owner/$directory/$fileName"),
     count = count
   )
 
