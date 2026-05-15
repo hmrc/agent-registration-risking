@@ -46,7 +46,7 @@ with RequestAwareLogging:
 
   "return NoContent if there is no underlying records" in:
     given Request[?] = tdAll.backendRequest
-    AuthStubs.stubAuthorise()
+    AuthStubs.stubAuthorise(requestBodyJson = AuthStubs.expectedRequestBodyMinimal)
 
     val response: HttpResponse =
       httpClient
@@ -56,10 +56,11 @@ with RequestAwareLogging:
 
     response.status shouldBe Status.NO_CONTENT
     response.body shouldBe ""
+    AuthStubs.verifyAuthorise()
 
   "find individual by person reference returns Ok and SmuIndividualResponse as Json body" in:
     given Request[?] = tdAll.backendRequest
-    AuthStubs.stubAuthorise()
+    AuthStubs.stubAuthorise(requestBodyJson = AuthStubs.expectedRequestBodyMinimal)
 
     val individual: IndividualForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.individual1
     val application: ApplicationForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.application
@@ -116,6 +117,7 @@ with RequestAwareLogging:
 
     val smuViewerIndividualResponse: SmuIndividualResponse = json.as[SmuIndividualResponse]
     response.json.as[SmuIndividualResponse] shouldBe smuViewerIndividualResponse
+    AuthStubs.verifyAuthorise()
 
   override def beforeEach(): Unit =
     super.beforeEach()

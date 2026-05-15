@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock as wm
 import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status
+import play.api.libs.json.JsObject
 import uk.gov.hmrc.agentregistration.shared.InternalUserId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
@@ -27,21 +28,12 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 object AuthStubs:
 
   def stubAuthorise(
+    requestBodyJson: String = expectedRequestBody,
     responseBody: String = responseBodyAsCleanAgent()
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlMatching("/auth/authorise"),
-    requestBody = Some(expectedRequestBody),
-    responseStatus = Status.OK,
-    responseBody = responseBody
-  )
-
-  def stubAuthoriseIndividual(
-    responseBody: String = responseBodyAsIndividual()
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlMatching("/auth/authorise"),
-    requestBody = Some(expectedRequestBodyIndividual),
+    requestBody = Some(wm.equalToJson(requestBodyJson)),
     responseStatus = Status.OK,
     responseBody = responseBody
   )
@@ -65,7 +57,7 @@ object AuthStubs:
        }
     """
 
-  private def responseBodyAsIndividual(): String = {
+  private def responseBodyAsIndividual(): String =
     // language=JSON
     s"""
     {
@@ -82,9 +74,8 @@ object AuthStubs:
      "internalId": "123456789"
     }
     """
-  }
 
-  private val expectedRequestBody: StringValuePattern = wm.equalToJson(
+  private val expectedRequestBody: String =
     // language=JSON
     """
     {
@@ -102,9 +93,17 @@ object AuthStubs:
       ]
     }
     """
-  )
 
-  private val expectedRequestBodyIndividual: StringValuePattern = wm.equalToJson(
+  val expectedRequestBodyMinimal: String =
+    // language=JSON
+    """
+    {
+      "authorise": [],
+      "retrieve": []
+    }
+    """
+
+  private val expectedRequestBodyIndividual: String =
     // language=JSON
     """
     {
@@ -124,4 +123,3 @@ object AuthStubs:
       ]
     }
     """
-  )
