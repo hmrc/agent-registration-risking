@@ -24,7 +24,6 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
 import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
-import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import javax.inject.Inject
@@ -35,7 +34,6 @@ import scala.concurrent.Future
 @Singleton
 class EmailServiceForSubmissionConfirmations @Inject() (
   emailConnector: EmailConnector,
-  applicationForRiskingRepo: ApplicationForRiskingRepo,
   appConfig: AppConfig
 )(using ExecutionContext)
 extends RequestAwareLogging:
