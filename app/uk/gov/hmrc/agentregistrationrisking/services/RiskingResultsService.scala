@@ -87,8 +87,6 @@ extends RequestAwareLogging:
       _ = logger.info(s"Downloaded and parsed risking results file: ${availableFile.filename} (${riskingResults.size} records)")
       numberOfUpdates <- ProcessInSequence.processInSequence(riskingResults)(processRiskingResult).map(_.size)
       _ = logger.info(s"Updated matching $numberOfUpdates applications and individuals with retrieved risking results")
-      uploadResult: ObjectSummaryWithMd5 <- uploadRiskingResultFileToObjectStoreForBackup(availableFile)
-      _ = logger.info(s"Uploaded RiskingResultsFile to object store as backup and evidence: $uploadResult")
     yield ()
 
   private def uploadRiskingResultFileToObjectStoreForBackup(file: AvailableFile)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
