@@ -17,11 +17,18 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
-import uk.gov.hmrc.objectstore.client.*
+import uk.gov.hmrc.objectstore.client.ObjectListing
+import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.PresignedDownloadUrl
+import uk.gov.hmrc.objectstore.client.RetentionPeriod
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 
@@ -57,16 +64,17 @@ extends RequestAwareLogging:
       contentType = Some("plain/text"),
       contentMd5 = None // defaults to None, and will be calculated
       // owner  =  // defaults to 'appName' configuration
-    ) // returns Future[ObjectSummaryWithMd5]
+    )
 
-  def uploadRiskingResultsFileFromUrl(
-    downloadUrl: URL,
-    fileName: String
-  )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.uploadFromUrl(
-    from = downloadUrl,
-    to = receivedResultsFilesPath.file(fileName = fileName),
+  def uploadRiskingResultsFile(
+    riskingResultRecords: RiskingResultRecords
+  )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.putObject(
+    path = receivedResultsFilesPath.file(fileName = riskingResultRecords.fileName),
+    content = riskingResultRecords.rawContent,
     retentionPeriod = RetentionPeriod.SixMonths, // TODO: how long do we need to keep these files?
-    contentType = Some("plain/text")
+    contentType = Some("plain/text"),
+    contentMd5 = None // defaults to None, and will be calculated
+    // owner  =  // defaults to 'appName' configuration
   )
 
   def listObjects(using request: RequestHeader): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)

@@ -70,7 +70,7 @@ extends ISpec:
       SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.testAvailableFile))
       ObjectStoreStubs.stubObjectStoreListObjects(processedFileNames = List.empty)
       ObjectStoreStubs.stubDownloadMinervaFile(tdAll.testDownloadUrl, tdAll.failRecordArrayFileMatchingApp)
-      ObjectStoreStubs.stubObjectStoreUploadFromUrl(tdAll.testFileName)
+      ObjectStoreStubs.stubPutObject(tdAll.testFileName, directory = "processed-results-files")
       AuditStubs.stubAuditWrite()
 
       riskingResultsService.processResultsFiles().futureValue
@@ -105,7 +105,7 @@ extends ISpec:
       SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.testAvailableFile))
       ObjectStoreStubs.stubObjectStoreListObjects(processedFileNames = List.empty)
       ObjectStoreStubs.stubDownloadMinervaFile(tdAll.testDownloadUrl, tdAll.failRecordArrayFileMatchingApp)
-      ObjectStoreStubs.stubObjectStoreUploadFromUrl(tdAll.testFileName)
+      ObjectStoreStubs.stubPutObject(tdAll.testFileName, directory = "processed-results-files")
       AuditStubs.stubAuditWrite()
 
       riskingResultsService.processResultsFiles().futureValue
