@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForSubmissionConfirmations
 
 import java.time.Clock
 import java.time.Instant
@@ -41,7 +42,8 @@ class SubmitForRiskingController @Inject() (
   actions: Actions,
   cc: ControllerComponents,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  emailServiceForSubmissionConfirmations: EmailServiceForSubmissionConfirmations
 )(using
   ExecutionContext,
   Clock
@@ -54,9 +56,11 @@ extends BackendController(cc):
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
           val now = Instant.now(summon[Clock])
+          val application = makeApplicationForRisking(request.body, now)
           for
-            _ <- applicationForRiskingRepo.upsert(makeApplicationForRisking(request.body, now))
+            _ <- applicationForRiskingRepo.upsert(application)
             _ <- individualForRiskingRepo.insertMany(makeIndividualForRiskingList(request.body, now))
+            _ <- emailServiceForSubmissionConfirmations.sendSubmissionConfirmationEmail(application)
           yield Created
 
   private def makeApplicationForRisking(

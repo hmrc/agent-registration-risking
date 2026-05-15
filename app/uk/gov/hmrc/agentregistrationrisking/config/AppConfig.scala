@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesSrn
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.nio.charset.StandardCharsets
 import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
@@ -76,3 +77,15 @@ class AppConfig @Inject() (
     val outboundServerToken: SdesServerToken = SdesServerToken(ConfigHelper.getConfString("secure-data-exchange-proxy.outbound.server-token", servicesConfig))
     val srn: SdesSrn = SdesSrn(ConfigHelper.getConfString("secure-data-exchange-proxy.srn", servicesConfig))
     val objectStoreLocationPrefix: String = ConfigHelper.getConfString("secure-data-exchange-proxy.object-store-location-prefix", servicesConfig)
+
+  object Email:
+
+    val applicationProcessingTime: String = Base64.decode(config.get[String]("email.application-processing-time"))
+
+  object Base64 {
+
+    private val decoder = java.util.Base64.getDecoder
+
+    def decode(encoded: String): String = new String(decoder.decode(encoded), StandardCharsets.UTF_8)
+
+  }
