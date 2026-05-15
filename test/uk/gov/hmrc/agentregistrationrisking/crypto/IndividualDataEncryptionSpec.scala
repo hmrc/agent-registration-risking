@@ -38,42 +38,42 @@ extends ISpec:
   private def encrypt(plain: String): String = fieldLevelEncryption.encrypt(plain)
 
   private val individualData: IndividualData = TdRiskingInstancesInStates.approved.individual1.individualData
-  private val encrypted: IndividualData = individualDataEncryption.encrypt(individualData)
+  private val encryptedIndividualData: IndividualData = individualDataEncryption.encrypt(individualData)
 
   "IndividualDataEncryption.encrypt sets ciphertext on every PII field" - {
 
     "individualName is encrypted" in:
-      encrypted.individualName.value shouldBe encrypt(individualData.individualName.value)
+      encryptedIndividualData.individualName.value shouldBe encrypt(individualData.individualName.value)
 
     "internalUserId is encrypted" in:
-      encrypted.internalUserId.value shouldBe encrypt(individualData.internalUserId.value)
+      encryptedIndividualData.internalUserId.value shouldBe encrypt(individualData.internalUserId.value)
 
     "telephoneNumber is encrypted" in:
-      encrypted.telephoneNumber.value shouldBe encrypt(individualData.telephoneNumber.value)
+      encryptedIndividualData.telephoneNumber.value shouldBe encrypt(individualData.telephoneNumber.value)
 
     "emailAddress is encrypted" in:
-      encrypted.emailAddress.value shouldBe encrypt(individualData.emailAddress.value)
+      encryptedIndividualData.emailAddress.value shouldBe encrypt(individualData.emailAddress.value)
 
     "vrns are encrypted element-wise" in:
-      encrypted.vrns.map(_.value) shouldBe individualData.vrns.map(v => encrypt(v.value))
+      encryptedIndividualData.vrns.map(_.value) shouldBe individualData.vrns.map(v => encrypt(v.value))
 
     "payeRefs are encrypted element-wise" in:
-      encrypted.payeRefs.map(_.value) shouldBe individualData.payeRefs.map(p => encrypt(p.value))
+      encryptedIndividualData.payeRefs.map(_.value) shouldBe individualData.payeRefs.map(p => encrypt(p.value))
   }
 
   "IndividualDataEncryption.encrypt leaves non-PII / search-key fields untouched" - {
 
     "personReference stays plaintext (search key)" in:
-      encrypted.personReference shouldBe individualData.personReference
+      encryptedIndividualData.personReference shouldBe individualData.personReference
 
     "isPersonOfControl stays plaintext" in:
-      encrypted.isPersonOfControl shouldBe individualData.isPersonOfControl
+      encryptedIndividualData.isPersonOfControl shouldBe individualData.isPersonOfControl
 
     "individualDateOfBirth stays plaintext (not a String-backed field)" in:
-      encrypted.individualDateOfBirth shouldBe individualData.individualDateOfBirth
+      encryptedIndividualData.individualDateOfBirth shouldBe individualData.individualDateOfBirth
 
     "passedIv stays plaintext" in:
-      encrypted.passedIv shouldBe individualData.passedIv
+      encryptedIndividualData.passedIv shouldBe individualData.passedIv
   }
 
   "IndividualDataEncryption handles every IndividualNino / IndividualSaUtr branch" - {
@@ -92,7 +92,7 @@ extends ISpec:
       individualDataEncryption.decrypt(individualDataEncryption.encrypt(individualData)) shouldBe individualData
 
     "rendered JSON of the encrypted individualData contains no plaintext PII" in:
-      val rendered = Json.toJson(encrypted).toString
+      val rendered: String = Json.toJson(encryptedIndividualData).toString
       val plaintextPii: List[String] =
         List(
           individualData.individualName.value,

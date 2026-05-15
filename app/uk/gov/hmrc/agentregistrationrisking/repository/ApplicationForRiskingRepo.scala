@@ -22,6 +22,7 @@ import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
 import play.api.libs.json.Json
+import play.api.libs.json.JsValue
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
@@ -119,10 +120,10 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .map:
       _.map: (doc: Document) =>
         given OFormat[IndividualForRisking] = individualDataEncryption.formats
-        val json = Json.parse(doc.toJson(relaxedJson))
-        val app = json.as[ApplicationForRisking](applicationDataEncryption.formats)
-        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
-        ApplicationWithIndividuals(app, individuals)
+        val jsValue: JsValue = Json.parse(doc.toJson(relaxedJson))
+        val applicationForRisking: ApplicationForRisking = jsValue.as[ApplicationForRisking](applicationDataEncryption.formats)
+        val individualsForRisking: Seq[IndividualForRisking] = (jsValue \ "individuals").as[Seq[IndividualForRisking]]
+        ApplicationWithIndividuals(applicationForRisking, individualsForRisking)
 
   def updateRiskingFileName(
     applicationReferences: Seq[ApplicationReference],
@@ -136,7 +137,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
     .toFuture()
     .map(_ => ())
-
 
   def findByRiskingFileName(
     riskingFileName: RiskingFileName

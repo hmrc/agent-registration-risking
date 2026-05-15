@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 class RiskingFileRepoSpec
 extends ISpec:
 
-  private lazy val repo: RiskingFileRepo = app.injector.instanceOf[RiskingFileRepo]
+  private lazy val riskingFileRepo: RiskingFileRepo = app.injector.instanceOf[RiskingFileRepo]
 
   private val riskingFile: RiskingFile = RiskingFile(
     riskingFileName = RiskingFileName("asa_risking_file_version1_0_4_20591125_163351.txt"),
@@ -36,23 +36,23 @@ extends ISpec:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    repo.collection.drop().toFuture().futureValue
+    riskingFileRepo.collection.drop().toFuture().futureValue
     ()
 
   "upsert then findById round-trips the record unchanged" in:
-    repo.upsert(riskingFile).futureValue
-    repo.findById(riskingFile.riskingFileName).futureValue.value shouldBe riskingFile
+    riskingFileRepo.upsert(riskingFile).futureValue
+    riskingFileRepo.findById(riskingFile.riskingFileName).futureValue.value shouldBe riskingFile
 
   "findById returns None when nothing is stored" in:
-    repo.findById(riskingFile.riskingFileName).futureValue shouldBe None
+    riskingFileRepo.findById(riskingFile.riskingFileName).futureValue shouldBe None
 
   "upsert replaces an existing record" in:
-    repo.upsert(riskingFile).futureValue
-    val updated = riskingFile.copy(uploadedAt = frozenInstant.plusSeconds(60))
-    repo.upsert(updated).futureValue
-    repo.findById(riskingFile.riskingFileName).futureValue.value shouldBe updated
+    riskingFileRepo.upsert(riskingFile).futureValue
+    val updatedRiskingFile: RiskingFile = riskingFile.copy(uploadedAt = frozenInstant.plusSeconds(60))
+    riskingFileRepo.upsert(updatedRiskingFile).futureValue
+    riskingFileRepo.findById(riskingFile.riskingFileName).futureValue.value shouldBe updatedRiskingFile
 
   "removeById deletes the record" in:
-    repo.upsert(riskingFile).futureValue
-    repo.removeById(riskingFile.riskingFileName).futureValue
-    repo.findById(riskingFile.riskingFileName).futureValue shouldBe None
+    riskingFileRepo.upsert(riskingFile).futureValue
+    riskingFileRepo.removeById(riskingFile.riskingFileName).futureValue
+    riskingFileRepo.findById(riskingFile.riskingFileName).futureValue shouldBe None

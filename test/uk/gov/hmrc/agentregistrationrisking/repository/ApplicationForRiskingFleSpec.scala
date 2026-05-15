@@ -19,8 +19,13 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.Filters
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddress
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 
 class ApplicationForRiskingFleSpec
@@ -30,58 +35,58 @@ extends ISpec:
     "field-level-encryption.enabled" -> true
   )
 
-  private lazy val repo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-  private lazy val individualRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  private lazy val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  private lazy val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
-  private val td = TdRiskingInstancesInStates.approved
-  private val record: ApplicationForRisking = td.application
+  private val td: TdApplicationWithIndividuals = TdRiskingInstancesInStates.approved
+  private val applicationForRisking: ApplicationForRisking = td.application
 
-  private def rawDocumentFor(record: ApplicationForRisking): Document =
+  private def rawDocumentFor(applicationForRisking: ApplicationForRisking): Document =
     mongoComponent.database
       .getCollection("application-for-risking")
-      .find(Filters.eq("applicationReference", record.applicationReference.value))
+      .find(Filters.eq("applicationReference", applicationForRisking.applicationReference.value))
       .first()
       .toFuture()
       .futureValue
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    repo.collection.drop().toFuture().futureValue
-    individualRepo.collection.drop().toFuture().futureValue
+    applicationForRiskingRepo.collection.drop().toFuture().futureValue
+    individualForRiskingRepo.collection.drop().toFuture().futureValue
     ()
 
   // This spec proves the repo wiring runs the ApplicationDataEncryption transform — including nested/optional paths — on every write.
   "with FLE enabled the applicationData PII is encrypted at rest" in:
-    repo.upsert(record).futureValue
+    applicationForRiskingRepo.upsert(applicationForRisking).futureValue
 
-    val rawJson: String = rawDocumentFor(record).toJson()
-    val data = record.applicationData
-    val contact = data.applicantContactDetails
-    val agentDetails = data.agentDetails
-    val correspondence = agentDetails.agentCorrespondenceAddress
+    val rawJson: String = rawDocumentFor(applicationForRisking).toJson()
+    val applicationData: ApplicationData = applicationForRisking.applicationData
+    val applicantContactDetailsData: ApplicantContactDetailsData = applicationData.applicantContactDetails
+    val agentDetailsData: AgentDetailsData = applicationData.agentDetails
+    val agentCorrespondenceAddress: AgentCorrespondenceAddress = agentDetailsData.agentCorrespondenceAddress
 
-    rawJson should not include data.internalUserId.value withClue "internalUserId encrypted"
-    rawJson should not include data.groupId.value withClue "groupId encrypted"
-    rawJson should not include data.applicantCredentials.providerId withClue "providerId encrypted"
-    rawJson should not include contact.applicantName.value withClue "applicantName encrypted"
-    rawJson should not include contact.telephoneNumber.value withClue "applicant telephoneNumber encrypted"
-    rawJson should not include contact.applicantEmailAddress.value withClue "applicant email encrypted"
-    rawJson should not include data.amlsDetails.amlsRegistrationNumber.value withClue "amlsRegistrationNumber encrypted"
-    rawJson should not include data.amlsDetails.amlsEvidence.value.fileName withClue "amls evidence fileName encrypted"
-    rawJson should not include agentDetails.businessName.agentBusinessName withClue "agentBusinessName encrypted"
-    rawJson should not include correspondence.addressLine1 withClue "agent correspondence addressLine1 encrypted"
-    rawJson should not include correspondence.addressLine2.value withClue "agent correspondence addressLine2 encrypted"
-    rawJson should not include correspondence.postalCode.value withClue "agent correspondence postalCode encrypted"
+    rawJson should not include applicationData.internalUserId.value withClue "internalUserId encrypted"
+    rawJson should not include applicationData.groupId.value withClue "groupId encrypted"
+    rawJson should not include applicationData.applicantCredentials.providerId withClue "providerId encrypted"
+    rawJson should not include applicantContactDetailsData.applicantName.value withClue "applicantName encrypted"
+    rawJson should not include applicantContactDetailsData.telephoneNumber.value withClue "applicant telephoneNumber encrypted"
+    rawJson should not include applicantContactDetailsData.applicantEmailAddress.value withClue "applicant email encrypted"
+    rawJson should not include applicationData.amlsDetails.amlsRegistrationNumber.value withClue "amlsRegistrationNumber encrypted"
+    rawJson should not include applicationData.amlsDetails.amlsEvidence.value.fileName withClue "amls evidence fileName encrypted"
+    rawJson should not include agentDetailsData.businessName.agentBusinessName withClue "agentBusinessName encrypted"
+    rawJson should not include agentCorrespondenceAddress.addressLine1 withClue "agent correspondence addressLine1 encrypted"
+    rawJson should not include agentCorrespondenceAddress.addressLine2.value withClue "agent correspondence addressLine2 encrypted"
+    rawJson should not include agentCorrespondenceAddress.postalCode.value withClue "agent correspondence postalCode encrypted"
 
-    rawJson should include(record.applicationReference.value) withClue "applicationReference stays plaintext (search key)"
+    rawJson should include(applicationForRisking.applicationReference.value) withClue "applicationReference stays plaintext (search key)"
 
   "with FLE enabled findById round-trips to plaintext" in:
-    repo.upsert(record).futureValue
-    repo.findById(record.applicationReference).futureValue.value shouldBe record
+    applicationForRiskingRepo.upsert(applicationForRisking).futureValue
+    applicationForRiskingRepo.findById(applicationForRisking.applicationReference).futureValue.value shouldBe applicationForRisking
 
   "with FLE enabled the aggregation path returns decrypted application+individuals" in:
-    repo.upsert(record).futureValue
-    individualRepo.upsert(td.individual1).futureValue
-    individualRepo.upsert(td.individual2).futureValue
+    applicationForRiskingRepo.upsert(applicationForRisking).futureValue
+    individualForRiskingRepo.upsert(td.individual1).futureValue
+    individualForRiskingRepo.upsert(td.individual2).futureValue
 
-    repo.findApplicationsAwaitingOverallOutcome().futureValue should contain only td.applicationWithIndividuals
+    applicationForRiskingRepo.findApplicationsAwaitingOverallOutcome().futureValue should contain only td.applicationWithIndividuals
