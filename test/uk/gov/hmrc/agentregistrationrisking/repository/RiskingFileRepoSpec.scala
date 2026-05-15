@@ -21,8 +21,8 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 
-/** RiskingFileRepo holds no PII so it does not override the storage-encryption hooks — it is the only repo that exercises the identity-default
-  * `encryptForStorage` / `decryptFromStorage` in the base `Repo`. These tests pin that the default path is a genuine no-op round-trip.
+/** RiskingFileRepo holds no PII so its Mongo `domainFormat` is the plain `RiskingFile.format` (no encryption wrapper). These tests pin the round-trip via that
+  * unwrapped path.
   */
 class RiskingFileRepoSpec
 extends ISpec:

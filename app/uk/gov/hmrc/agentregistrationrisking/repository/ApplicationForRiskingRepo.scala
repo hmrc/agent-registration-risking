@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
-import com.softwaremill.quicklens.*
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.crypto.ApplicationDataEncryption
@@ -53,33 +53,15 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   mongoComponent = mongoComponent,
   indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
   extraCodecs = Seq(
-    Codecs.playFormatCodec(ApplicationForRisking.format),
+    Codecs.playFormatCodec(applicationDataEncryption.formats),
     Codecs.playFormatCodec(RiskingOutcome.format)
   ),
   replaceIndexes = true
-):
-
-  override protected def encryptForStorage(
-    a: ApplicationForRisking
-  ): ApplicationForRisking = a.modify(_.applicationData).using(applicationDataEncryption.encrypt)
-
-  override protected def decryptFromStorage(
-    a: ApplicationForRisking
-  ): ApplicationForRisking = a.modify(_.applicationData).using(applicationDataEncryption.decrypt)
-
-  private def decryptIndividual(
-    i: IndividualForRisking
-  ): IndividualForRisking = i.modify(_.individualData).using(individualDataEncryption.decrypt)
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
-  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
-  // ═══════════════════════════════════════════════════════════════════════════════
+)(using domainFormat = applicationDataEncryption.formats):
 
   def findReadyForSubmission2(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
     .toFuture()
-    .map(_.map(decryptFromStorage))
 
   def findReadyForSubmission(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.exists(FieldNames.riskingFileName, false) // ready for submissions don't have set riskingFileId
@@ -93,7 +75,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       )
     )
     .toFuture()
-    .map(_.map(decryptFromStorage))
 
   def findReadyToSetRiskingOutcome(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
@@ -102,11 +83,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     ),
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
-  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
-  // ═══════════════════════════════════════════════════════════════════════════════
 
   def findRequiringEmailProcessingForFailedNonFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
@@ -122,11 +98,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     ),
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
-  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
-  // ═══════════════════════════════════════════════════════════════════════════════
 
   private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
 
@@ -147,9 +118,10 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .toFuture()
     .map:
       _.map: (doc: Document) =>
+        given OFormat[IndividualForRisking] = individualDataEncryption.formats
         val json = Json.parse(doc.toJson(relaxedJson))
-        val app = decryptFromStorage(json.as[ApplicationForRisking])
-        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]].map(decryptIndividual)
+        val app = json.as[ApplicationForRisking](applicationDataEncryption.formats)
+        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
         ApplicationWithIndividuals(app, individuals)
 
   def updateRiskingFileName(
@@ -165,17 +137,12 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .toFuture()
     .map(_ => ())
 
-  // ═══════════════════════════════════════════════════════════════════════════════
-  //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
-  //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
-  // ═══════════════════════════════════════════════════════════════════════════════
 
   def findByRiskingFileName(
     riskingFileName: RiskingFileName
   ): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.eq(FieldNames.riskingFileName, riskingFileName.value))
     .toFuture()
-    .map(_.map(decryptFromStorage))
 
   def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
     .find(
@@ -185,7 +152,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         Filters.eq(FieldNames.isEmailSent, false)
       )
     ).toFuture()
-    .map(_.map(decryptFromStorage))
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
