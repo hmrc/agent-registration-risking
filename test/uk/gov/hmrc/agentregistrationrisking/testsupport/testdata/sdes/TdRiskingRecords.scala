@@ -38,15 +38,18 @@ trait TdRiskingRecords:
     testFileSize
   )
 
+  val matchingApplicationReference: ApplicationReference = ApplicationReference("ABC123456")
+  val matchingPersonReference: PersonReference = PersonReference("1234567890")
+
   val passRecordArrayFileWithNonExistentApp: JsArray = Json.arr(
     Json.obj(
       "recordType" -> Entity,
-      "applicationReference" -> "ABC123456",
+      "applicationReference" -> matchingApplicationReference.value,
       "failures" -> Json.arr()
     ),
     Json.obj(
       "recordType" -> Individual,
-      "personReference" -> "1234567890",
+      "personReference" -> matchingPersonReference.value,
       "failures" -> Json.arr()
     ),
     Json.obj(
@@ -59,12 +62,12 @@ trait TdRiskingRecords:
   val passRecordArrayFile: JsArray = Json.arr(
     Json.obj(
       "recordType" -> Entity,
-      "applicationReference" -> "ABC123456",
+      "applicationReference" -> matchingApplicationReference.value,
       "failures" -> Json.arr()
     ),
     Json.obj(
       "recordType" -> Individual,
-      "personReference" -> "1234567890",
+      "personReference" -> matchingPersonReference.value,
       "failures" -> Json.arr()
     )
   )
@@ -72,7 +75,7 @@ trait TdRiskingRecords:
   val failRecordArrayFileMatchingApp: JsArray = Json.arr(
     Json.obj(
       "recordType" -> Entity,
-      "applicationReference" -> "ABC123456",
+      "applicationReference" -> matchingApplicationReference.value,
       "failures" -> Json.arr(
         Json.obj(
           "reasonCode" -> "3.2",
@@ -84,7 +87,7 @@ trait TdRiskingRecords:
     ),
     Json.obj(
       "recordType" -> Individual,
-      "personReference" -> "1234567890",
+      "personReference" -> matchingPersonReference.value,
       "failures" -> Json.arr(
         Json.obj(
           "reasonCode" -> "4.1",
@@ -201,7 +204,7 @@ trait TdRiskingRecords:
 
   val passRecord1 = RiskingResultRecord(
     recordType = RecordType.Entity,
-    applicationReference = Some(ApplicationReference("ABC123456")),
+    applicationReference = Some(matchingApplicationReference),
     failures = Some(List.empty),
     personReference = None
   )
@@ -210,5 +213,5 @@ trait TdRiskingRecords:
     recordType = RecordType.Individual,
     applicationReference = None,
     failures = Some(List.empty),
-    personReference = Some(PersonReference("1234567890"))
+    personReference = Some(matchingPersonReference)
   )
