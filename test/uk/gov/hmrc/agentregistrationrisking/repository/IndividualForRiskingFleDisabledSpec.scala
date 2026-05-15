@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.Filters
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
@@ -35,42 +36,45 @@ extends ISpec:
     "field-level-encryption.enabled" -> false
   )
 
-  private lazy val repo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  private lazy val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
-  private val record: IndividualForRisking = TdRiskingInstancesInStates.approved.individual1
+  private val individualForRisking: IndividualForRisking = TdRiskingInstancesInStates.approved.individual1
 
-  private def rawDocumentFor(record: IndividualForRisking): Document =
+  private def rawDocumentFor(individualForRisking: IndividualForRisking): Document =
     mongoComponent.database
       .getCollection("individual-for-risking")
-      .find(Filters.eq("personReference", record.personReference.value))
+      .find(Filters.eq("personReference", individualForRisking.personReference.value))
       .first()
       .toFuture()
       .futureValue
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    repo.collection.drop().toFuture().futureValue
+    individualForRiskingRepo.collection.drop().toFuture().futureValue
     ()
 
   "with FLE disabled the individualData PII is stored as plaintext" in:
-    repo.upsert(record).futureValue
+    individualForRiskingRepo.upsert(individualForRisking).futureValue
 
-    val rawJson: String = rawDocumentFor(record).toJson()
-    val details = record.individualData
+    val rawJson: String = rawDocumentFor(individualForRisking).toJson()
+    val individualData: IndividualData = individualForRisking.individualData
 
-    rawJson should include(details.individualName.value) withClue "individualName plaintext"
-    rawJson should include(details.telephoneNumber.value) withClue "telephoneNumber plaintext"
-    rawJson should include(details.emailAddress.value) withClue "emailAddress plaintext"
-    details.vrns.foreach(vrn => rawJson should include(vrn.value) withClue "vrn plaintext")
-    details.payeRefs.foreach(payeRef => rawJson should include(payeRef.value) withClue "payeRef plaintext")
+    rawJson should include(individualData.individualName.value) withClue "individualName plaintext"
+    rawJson should include(individualData.telephoneNumber.value) withClue "telephoneNumber plaintext"
+    rawJson should include(individualData.emailAddress.value) withClue "emailAddress plaintext"
+    individualData.vrns.foreach(vrn => rawJson should include(vrn.value) withClue "vrn plaintext")
+    individualData.payeRefs.foreach(payeRef => rawJson should include(payeRef.value) withClue "payeRef plaintext")
 
   "with FLE disabled findById returns the model unchanged" in:
-    repo.upsert(record).futureValue
-    repo.findById(record.personReference).futureValue.value shouldBe record
+    individualForRiskingRepo.upsert(individualForRisking).futureValue
+    individualForRiskingRepo.findById(individualForRisking.personReference).futureValue.value shouldBe individualForRisking
 
   "with FLE disabled findByApplicationReference returns the individuals unchanged" in:
-    val record2 = TdRiskingInstancesInStates.approved.individual2
-    repo.upsert(record).futureValue
-    repo.upsert(record2).futureValue
+    val individualForRisking2: IndividualForRisking = TdRiskingInstancesInStates.approved.individual2
+    individualForRiskingRepo.upsert(individualForRisking).futureValue
+    individualForRiskingRepo.upsert(individualForRisking2).futureValue
 
-    repo.findByApplicationReference(record.applicationReference).futureValue.toSet shouldBe Set(record, record2)
+    individualForRiskingRepo.findByApplicationReference(individualForRisking.applicationReference).futureValue.toSet shouldBe Set(
+      individualForRisking,
+      individualForRisking2
+    )

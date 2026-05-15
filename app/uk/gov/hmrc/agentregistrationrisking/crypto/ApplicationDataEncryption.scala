@@ -17,7 +17,9 @@
 package uk.gov.hmrc.agentregistrationrisking.crypto
 
 import com.softwaremill.quicklens.*
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,8 +27,16 @@ import javax.inject.Singleton
 @Singleton
 class ApplicationDataEncryption @Inject() (fieldLevelEncryption: FieldLevelEncryption):
 
+  val formats: OFormat[ApplicationForRisking] = OFormat[ApplicationForRisking](
+    r = ApplicationForRisking.format.map[ApplicationForRisking](decrypt),
+    w = ApplicationForRisking.format.contramap[ApplicationForRisking](encrypt)
+  )
+
   def encrypt(data: ApplicationData): ApplicationData = transform(data, fieldLevelEncryption.encrypt)
   def decrypt(data: ApplicationData): ApplicationData = transform(data, fieldLevelEncryption.decrypt)
+
+  def encrypt(a: ApplicationForRisking): ApplicationForRisking = a.modify(_.applicationData).using(encrypt)
+  def decrypt(a: ApplicationForRisking): ApplicationForRisking = a.modify(_.applicationData).using(decrypt)
 
   private def transform(
     data: ApplicationData,

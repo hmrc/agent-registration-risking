@@ -21,6 +21,7 @@ import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.Filters
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
@@ -32,59 +33,67 @@ extends ISpec:
     "field-level-encryption.enabled" -> true
   )
 
-  private lazy val repo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  private lazy val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
-  private val record: IndividualForRisking = TdRiskingInstancesInStates.approved.individual1
+  private val individualForRisking: IndividualForRisking = TdRiskingInstancesInStates.approved.individual1
 
-  private def rawDocumentFor(record: IndividualForRisking): Document =
+  private def rawDocumentFor(individualForRisking: IndividualForRisking): Document =
     mongoComponent.database
       .getCollection("individual-for-risking")
-      .find(Filters.eq("personReference", record.personReference.value))
+      .find(Filters.eq("personReference", individualForRisking.personReference.value))
       .first()
       .toFuture()
       .futureValue
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    repo.collection.drop().toFuture().futureValue
+    individualForRiskingRepo.collection.drop().toFuture().futureValue
     ()
 
   // This spec proves the repo wiring runs the IndividualDataEncryption transform — including list and sealed-trait paths — on every write.
   "with FLE enabled the individualData PII is encrypted at rest" in:
-    repo.upsert(record).futureValue
+    individualForRiskingRepo.upsert(individualForRisking).futureValue
 
-    val rawJson: String = rawDocumentFor(record).toJson()
-    val details = record.individualData
+    val rawJson: String = rawDocumentFor(individualForRisking).toJson()
+    val individualData: IndividualData = individualForRisking.individualData
 
-    rawJson should not include details.individualName.value withClue "individualName encrypted"
-    rawJson should not include details.telephoneNumber.value withClue "telephoneNumber encrypted"
-    rawJson should not include details.emailAddress.value withClue "emailAddress encrypted"
-    details.individualNino match
+    rawJson should not include individualData.individualName.value withClue "individualName encrypted"
+    rawJson should not include individualData.telephoneNumber.value withClue "telephoneNumber encrypted"
+    rawJson should not include individualData.emailAddress.value withClue "emailAddress encrypted"
+    individualData.individualNino match
       case IndividualNino.Provided(nino) => rawJson should not include nino.value withClue "nino encrypted"
       case other => fail(s"fixture expected IndividualNino.Provided, got $other")
-    details.individualSaUtr match
+    individualData.individualSaUtr match
       case IndividualSaUtr.Provided(saUtr) => rawJson should not include saUtr.value withClue "saUtr encrypted"
       case other => fail(s"fixture expected IndividualSaUtr.Provided, got $other")
-    details.vrns.foreach(vrn => rawJson should not include vrn.value withClue "vrn encrypted element-wise")
-    details.payeRefs.foreach(payeRef => rawJson should not include payeRef.value withClue "payeRef encrypted element-wise")
+    individualData.vrns.foreach(vrn => rawJson should not include vrn.value withClue "vrn encrypted element-wise")
+    individualData.payeRefs.foreach(payeRef => rawJson should not include payeRef.value withClue "payeRef encrypted element-wise")
 
-    rawJson should include(record.personReference.value) withClue "personReference stays plaintext (search key)"
-    rawJson should include(record.applicationReference.value) withClue "applicationReference stays plaintext (search key)"
+    rawJson should include(individualForRisking.personReference.value) withClue "personReference stays plaintext (search key)"
+    rawJson should include(individualForRisking.applicationReference.value) withClue "applicationReference stays plaintext (search key)"
 
   "with FLE enabled findById round-trips to plaintext" in:
-    repo.upsert(record).futureValue
-    repo.findById(record.personReference).futureValue.value shouldBe record
+    individualForRiskingRepo.upsert(individualForRisking).futureValue
+    individualForRiskingRepo.findById(individualForRisking.personReference).futureValue.value shouldBe individualForRisking
 
   "with FLE enabled findByApplicationReference returns decrypted individuals" in:
-    val record2 = TdRiskingInstancesInStates.approved.individual2
-    repo.upsert(record).futureValue
-    repo.upsert(record2).futureValue
+    val individualForRisking2: IndividualForRisking = TdRiskingInstancesInStates.approved.individual2
+    individualForRiskingRepo.upsert(individualForRisking).futureValue
+    individualForRiskingRepo.upsert(individualForRisking2).futureValue
 
-    repo.findByApplicationReference(record.applicationReference).futureValue.toSet shouldBe Set(record, record2)
+    individualForRiskingRepo.findByApplicationReference(individualForRisking.applicationReference).futureValue.toSet shouldBe Set(
+      individualForRisking,
+      individualForRisking2
+    )
 
   "with FLE enabled insertMany encrypts at rest and round-trips" in:
-    val record2 = TdRiskingInstancesInStates.approved.individual2
-    repo.insertMany(List(record, record2)).futureValue
+    val individualForRisking2: IndividualForRisking = TdRiskingInstancesInStates.approved.individual2
+    individualForRiskingRepo.insertMany(List(individualForRisking, individualForRisking2)).futureValue
 
-    rawDocumentFor(record).toJson() should not include record.individualData.individualName.value withClue "insertMany encrypts at rest"
-    repo.findByApplicationReference(record.applicationReference).futureValue.toSet shouldBe Set(record, record2)
+    rawDocumentFor(
+      individualForRisking
+    ).toJson() should not include individualForRisking.individualData.individualName.value withClue "insertMany encrypts at rest"
+    individualForRiskingRepo.findByApplicationReference(individualForRisking.applicationReference).futureValue.toSet shouldBe Set(
+      individualForRisking,
+      individualForRisking2
+    )
