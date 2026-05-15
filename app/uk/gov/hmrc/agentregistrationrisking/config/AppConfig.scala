@@ -76,3 +76,6 @@ class AppConfig @Inject() (
     val outboundServerToken: SdesServerToken = SdesServerToken(ConfigHelper.getConfString("secure-data-exchange-proxy.outbound.server-token", servicesConfig))
     val srn: SdesSrn = SdesSrn(ConfigHelper.getConfString("secure-data-exchange-proxy.srn", servicesConfig))
     val objectStoreLocationPrefix: String = ConfigHelper.getConfString("secure-data-exchange-proxy.object-store-location-prefix", servicesConfig)
+
+  object Email:
+    val applicationProcessingTime: String = config.get[String]("email.application-processing-time")

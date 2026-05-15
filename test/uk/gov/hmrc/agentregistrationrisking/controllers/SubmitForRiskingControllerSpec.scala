@@ -20,12 +20,15 @@ import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EmailStubs
 
 class SubmitForRiskingControllerSpec
 extends ControllerSpec:
@@ -55,6 +58,16 @@ extends ControllerSpec:
     val applicationForRiskingSubmitted: ApplicationForRisking = td.application
     val individualForRiskingSubmitted1: IndividualForRisking = td.individual1
     val individualForRiskingSubmitted2: IndividualForRisking = td.individual2
+
+    EmailStubs.stubSendEmail(SendEmailRequest(
+      to = Seq(submitRequest.applicationData.agentDetails.agentEmailAddress),
+      templateId = EmailTemplateId.SubmissionConfirmation,
+      parameters = Map(
+        "agentName" -> submitRequest.applicationData.applicantContactDetails.applicantName.value,
+        "applicationRef" -> applicationReference.value,
+        "applicationProcessingTime" -> "35 working days"
+      )
+    ))
 
     applicationForRiskingRepo
       .findById(applicationReference)
