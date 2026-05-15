@@ -36,4 +36,4 @@ object AdditionalInfo:
   given OFormat[AdditionalInfo] = Json.format[AdditionalInfo]
 
 object Failure:
-  given reads: Reads[Failure] = Json.reads[Failure]
+  given OFormat[Failure] = Json.format[Failure]

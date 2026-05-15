@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
@@ -38,3 +40,7 @@ object RiskingResult:
     rawFailures: List[Failure]
   )
   extends RiskingResult
+
+  given OFormat[ForIndividual] = Json.format[ForIndividual]
+  given OFormat[ForEntity] = Json.format[ForEntity]
+  given OFormat[RiskingResult] = Json.format[RiskingResult]
