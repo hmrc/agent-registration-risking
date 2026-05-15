@@ -30,4 +30,4 @@ final case class Failure(
 )
 
 object Failure:
-  given reads: Reads[Failure] = Json.reads[Failure]
+  given OFormat[Failure] = Json.format[Failure]
