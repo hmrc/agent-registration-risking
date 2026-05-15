@@ -101,3 +101,4 @@ extends ControllerSpec:
     )
 
     AuthStubs.verifyAuthorise()
+    EmailStubs.verifySendEmail()

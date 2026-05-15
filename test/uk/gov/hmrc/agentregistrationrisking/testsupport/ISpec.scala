@@ -74,8 +74,7 @@ extends AnyFreeSpecLike,
       "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
       "microservice.services.hip.port" -> WireMockSupport.port,
       "microservice.services.hip.authorization-token" -> "test-hip-auth-token",
-      "microservice.services.enrolment-store-proxy.port" -> WireMockSupport.port,
-      "email.application-processing-time" -> "MzUgd29ya2luZyBkYXlz"
+      "microservice.services.enrolment-store-proxy.port" -> WireMockSupport.port
     ) ++ configOverrides
 
   protected def configOverrides: Map[String, Any] = Map[String, Any]()
