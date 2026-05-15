@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import com.softwaremill.quicklens.*
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
@@ -37,6 +38,7 @@ import IndividualForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
@@ -48,7 +50,8 @@ object IndividualForRiskingRepo:
 final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig,
-  clock: Clock
+  clock: Clock,
+  individualDataEncryption: IndividualDataEncryption
 )(using ec: ExecutionContext)
 extends Repo[PersonReference, IndividualForRisking](
   collectionName = IndividualForRiskingRepo.collectionName,
@@ -58,13 +61,31 @@ extends Repo[PersonReference, IndividualForRisking](
   replaceIndexes = true
 ):
 
-  def insertMany(individualForRiskingList: List[IndividualForRisking]): Future[Unit] = collection.insertMany(individualForRiskingList).toFuture().map(_ => ())
+  override protected def encryptForStorage(
+    a: IndividualForRisking
+  ): IndividualForRisking = a.modify(_.individualData).using(individualDataEncryption.encrypt)
+
+  override protected def decryptFromStorage(
+    a: IndividualForRisking
+  ): IndividualForRisking = a.modify(_.individualData).using(individualDataEncryption.decrypt)
+
+  def insertMany(
+    individualForRiskingList: List[IndividualForRisking]
+  ): Future[Unit] = collection.insertMany(individualForRiskingList.map(encryptForStorage)).toFuture().map(_ => ())
 
   def findByApplicationReference(applicationReference: ApplicationReference): Future[Seq[IndividualForRisking]] = collection
     .find(
       filter = Filters.eq(FieldNames.applicationReference, applicationReference.value)
     )
     .toFuture()
+    .map(_.map(decryptFromStorage))
+
+  def findByApplicationReferences(applicationReferences: Seq[ApplicationReference]): Future[Seq[IndividualForRisking]] = collection
+    .find(
+      filter = Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value))
+    )
+    .toFuture()
+    .map(_.map(decryptFromStorage))
 
   def updateEmailSent(personReference: PersonReference): Future[UpdateResult] = collection
     .updateOne(

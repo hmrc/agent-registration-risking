@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import com.softwaremill.quicklens.*
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import org.mongodb.scala.Document
@@ -24,6 +25,8 @@ import org.mongodb.scala.model.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.crypto.ApplicationDataEncryption
+import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
@@ -32,7 +35,6 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.toBison
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
-import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -43,7 +45,8 @@ import scala.concurrent.duration.FiniteDuration
 final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig,
-  clock: Clock
+  applicationDataEncryption: ApplicationDataEncryption,
+  individualDataEncryption: IndividualDataEncryption
 )(using ec: ExecutionContext)
 extends Repo[ApplicationReference, ApplicationForRisking](
   collectionName = "application-for-risking",
@@ -56,6 +59,18 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   replaceIndexes = true
 ):
 
+  override protected def encryptForStorage(
+    a: ApplicationForRisking
+  ): ApplicationForRisking = a.modify(_.applicationData).using(applicationDataEncryption.encrypt)
+
+  override protected def decryptFromStorage(
+    a: ApplicationForRisking
+  ): ApplicationForRisking = a.modify(_.applicationData).using(applicationDataEncryption.decrypt)
+
+  private def decryptIndividual(
+    i: IndividualForRisking
+  ): IndividualForRisking = i.modify(_.individualData).using(individualDataEncryption.decrypt)
+
   // ═══════════════════════════════════════════════════════════════════════════════
   //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
   //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
@@ -64,6 +79,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findReadyForSubmission2(): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
     .toFuture()
+    .map(_.map(decryptFromStorage))
 
   def findReadyForSubmission(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.exists(FieldNames.riskingFileName, false) // ready for submissions don't have set riskingFileId
@@ -77,6 +93,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       )
     )
     .toFuture()
+    .map(_.map(decryptFromStorage))
 
   def findReadyToSetRiskingOutcome(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
@@ -131,8 +148,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .map:
       _.map: (doc: Document) =>
         val json = Json.parse(doc.toJson(relaxedJson))
-        val app = json.as[ApplicationForRisking]
-        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]]
+        val app = decryptFromStorage(json.as[ApplicationForRisking])
+        val individuals = (json \ "individuals").as[Seq[IndividualForRisking]].map(decryptIndividual)
         ApplicationWithIndividuals(app, individuals)
 
   def updateRiskingFileName(
@@ -158,6 +175,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   ): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.eq(FieldNames.riskingFileName, riskingFileName.value))
     .toFuture()
+    .map(_.map(decryptFromStorage))
 
   def findSubscribedReadyForSuccessEmail(): Future[Seq[ApplicationForRisking]] = collection
     .find(
@@ -167,6 +185,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         Filters.eq(FieldNames.isEmailSent, false)
       )
     ).toFuture()
+    .map(_.map(decryptFromStorage))
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...
