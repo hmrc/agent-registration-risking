@@ -20,6 +20,7 @@ import play.api.mvc.RequestHeader
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
@@ -63,14 +64,13 @@ extends RequestAwareLogging:
       contentType = Some("plain/text"),
       contentMd5 = None // defaults to None, and will be calculated
       // owner  =  // defaults to 'appName' configuration
-    ) // returns Future[ObjectSummaryWithMd5]
+    )
 
   def uploadRiskingResultsFile(
-    riskingResults: Seq[RiskingResult],
-    fileName: String
+    riskingResultRecords: RiskingResultRecords
   )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.putObject(
-    path = receivedResultsFilesPath.file(fileName = fileName),
-    content = Json.toJson(riskingResults).toString,
+    path = receivedResultsFilesPath.file(fileName = riskingResultRecords.fileName),
+    content = riskingResultRecords.rawContent,
     retentionPeriod = RetentionPeriod.SixMonths, // TODO: how long do we need to keep these files?
     contentType = Some("plain/text"),
     contentMd5 = None // defaults to None, and will be calculated

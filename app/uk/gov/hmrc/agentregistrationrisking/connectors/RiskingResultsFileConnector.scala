@@ -20,6 +20,7 @@ import play.api.http.Status.OK
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.http.client.HttpClientV2
 
@@ -33,7 +34,7 @@ class RiskingResultsFileConnector @Inject() (
 )(using ExecutionContext)
 extends Connector:
 
-  def getRiskingResultRecords(availableFile: AvailableFile)(using RequestHeader): Future[List[RiskingResultRecord]] =
+  def getRiskingResultRecords(availableFile: AvailableFile)(using RequestHeader): Future[RiskingResultRecords] =
     val fileLocation: URL = new URI(availableFile.downloadURL).toURL
     httpClient
       .get(fileLocation)
@@ -41,7 +42,12 @@ extends Connector:
       .execute[HttpResponse]
       .map: response =>
         response.status match
-          case OK => response.json.as[List[RiskingResultRecord]]
+          case OK =>
+            RiskingResultRecords(
+              fileName = availableFile.filename,
+              records = response.json.as[List[RiskingResultRecord]],
+              rawContent = response.body
+            )
           case _ =>
             Errors.throwUpstreamErrorResponse(
               httpMethod = "GET",

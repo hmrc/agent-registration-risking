@@ -65,7 +65,7 @@ extends RequestAwareLogging:
     for
       riskingResults <- riskingResultsFileConnector
         .getRiskingResultRecords(availableFile = availableFile)
-        .map(_.map(RiskingResultParser.parseRiskingResult))
+        .map(_.records.map(RiskingResultParser.parseRiskingResult))
       _ = logger.info(s"Downloaded and parsed risking results file: ${availableFile.filename} (${riskingResults.size} records)")
       numberOfUpdates <- ProcessInSequence.processInSequence(riskingResults)(processRiskingResult).map(_.size)
       _ = logger.info(s"Updated matching $numberOfUpdates applications and individuals with retrieved risking results")

@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
@@ -81,27 +82,14 @@ extends RequestAwareLogging:
   private def processResultsFile(availableFile: AvailableFile)(using request: RequestHeader): Future[Unit] =
     logger.info(s"Processing RiskingResultsFile: ${availableFile.filename}, size:${availableFile.fileSize}...")
     for
-      riskingResults: Seq[RiskingResult] <- riskingResultsFileConnector
-        .getRiskingResultRecords(availableFile = availableFile)
-        .map(_.map(RiskingResultParser.parseRiskingResult))
-      _ = logger.info(s"Downloaded and parsed risking results file: ${availableFile.filename} (${riskingResults.size} records)")
+      riskingResultRecords: RiskingResultRecords <- riskingResultsFileConnector.getRiskingResultRecords(availableFile = availableFile)
+      riskingResults = riskingResultRecords.records.map(RiskingResultParser.parseRiskingResult)
+      _ = logger.info(s"Downloaded and parsed risking results file: ${riskingResultRecords.fileName} (${riskingResults.size} records)")
       numberOfUpdates <- ProcessInSequence.processInSequence(riskingResults)(processRiskingResult).map(_.size)
       _ = logger.info(s"Updated matching $numberOfUpdates applications and individuals with retrieved risking results")
-      uploadResult: ObjectSummaryWithMd5 <- uploadRiskingResultFileToObjectStoreForBackup(riskingResults, availableFile.filename)
+      uploadResult: ObjectSummaryWithMd5 <- objectStoreService.uploadRiskingResultsFile(riskingResultRecords)
       _ = logger.info(s"Uploaded RiskingResultsFile to object store as backup and evidence: $uploadResult")
     yield ()
-
-  private def uploadRiskingResultFileToObjectStoreForBackup(
-    riskingResults: Seq[RiskingResult],
-    fileName: String
-  )(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
-    for
-      uploadResult <- objectStoreService.uploadRiskingResultsFile(
-        riskingResults = riskingResults,
-        fileName = fileName
-      )
-      _ = logger.info(s"Uploaded file to object store: $fileName")
-    yield uploadResult
 
   private def parseDownloadUrl(file: AvailableFile): Future[URL] = Future:
     Uri
