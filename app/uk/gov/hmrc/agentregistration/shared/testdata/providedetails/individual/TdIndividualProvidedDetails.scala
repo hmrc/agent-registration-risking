@@ -166,7 +166,6 @@ trait TdIndividualProvidedDetails { dependencies: TdBase =>
       personReference = dependencies.personReference,
       individualName = dependencies.individualName,
       isPersonOfControl = true,
-      internalUserId = dependencies.internalUserId,
       individualDateOfBirth = dependencies.dateOfBirthProvided,
       telephoneNumber = dependencies.telephoneNumber,
       emailAddress = dependencies.individualEmailAddress,
@@ -174,7 +173,8 @@ trait TdIndividualProvidedDetails { dependencies: TdBase =>
       individualSaUtr = dependencies.saUtrProvided,
       vrns = List(dependencies.vrn),
       payeRefs = List(dependencies.payeRef),
-      passedIv = true
+      passedIv = true,
+      providedByApplicant = dependencies.providedByApplicant
     )
 
     object soleTrader:

@@ -45,9 +45,6 @@ extends ISpec:
     "individualName is encrypted" in:
       encryptedIndividualData.individualName.value shouldBe encrypt(individualData.individualName.value)
 
-    "internalUserId is encrypted" in:
-      encryptedIndividualData.internalUserId.value shouldBe encrypt(individualData.internalUserId.value)
-
     "telephoneNumber is encrypted" in:
       encryptedIndividualData.telephoneNumber.value shouldBe encrypt(individualData.telephoneNumber.value)
 
@@ -96,7 +93,6 @@ extends ISpec:
       val plaintextPii: List[String] =
         List(
           individualData.individualName.value,
-          individualData.internalUserId.value,
           individualData.telephoneNumber.value,
           individualData.emailAddress.value
         ) ++

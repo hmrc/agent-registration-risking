@@ -45,7 +45,6 @@ class IndividualDataEncryption @Inject() (fieldLevelEncryption: FieldLevelEncryp
     cryptoOp: String => String
   ): IndividualData = data
     .modify(_.individualName.value).using(cryptoOp)
-    .modify(_.internalUserId.value).using(cryptoOp)
     .modify(_.telephoneNumber.value).using(cryptoOp)
     .modify(_.emailAddress.value).using(cryptoOp)
     .modify(_.individualNino).using(transformIndividualNino(_, cryptoOp))
