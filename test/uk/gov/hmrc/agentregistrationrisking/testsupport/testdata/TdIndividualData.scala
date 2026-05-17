@@ -47,7 +47,6 @@ object TdIndividualData:
       personReference = personReference,
       individualName = IndividualName(s"IndividualName_$seed"),
       isPersonOfControl = random.nextBoolean(),
-      internalUserId = InternalUserId(s"InternalUserId_$seed"),
       individualDateOfBirth = IndividualDateOfBirth.Provided(LocalDate.of(
         1980 + random.nextInt(40),
         1,
@@ -59,5 +58,6 @@ object TdIndividualData:
       individualSaUtr = IndividualSaUtr.Provided(SaUtr(s"1234567895_$seed")),
       vrns = List(Vrn(s"vrn_$seed")),
       payeRefs = List(PayeRef(s"payeref_$seed")),
-      passedIv = random.nextBoolean()
+      passedIv = random.nextBoolean(),
+      providedByApplicant = false
     )
