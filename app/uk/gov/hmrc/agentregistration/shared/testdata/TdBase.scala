@@ -90,7 +90,6 @@ trait TdBase:
   def dateOfBirthFromCitizenDetails: IndividualDateOfBirth.FromCitizensDetails = IndividualDateOfBirth.FromCitizensDetails(dateOfBirth)
   def dateOfBirthProvided = IndividualDateOfBirth.Provided(dateOfBirth)
   def fullName: FullName = FullName(firstName = "ST Name", lastName = "ST Lastname")
-  def providedByApplicant: Boolean = false
 
   def applicantEmailAddress: EmailAddress = EmailAddress("user@test.com")
   def individualEmailAddress: EmailAddress = EmailAddress("member@test.com")
@@ -190,18 +189,22 @@ trait TdBase:
   )
   def businessPartnerRecordResponse: BusinessPartnerRecordResponse = BusinessPartnerRecordResponse(
     organisationName = Some("Test Company Name"),
+    agentReferenceNumber = None,
     individualName = None,
     address = bprRegisteredAddress,
     primaryPhoneNumber = Some(bprPrimaryTelephoneNumber),
-    emailAddress = Some(bprEmailAddress)
+    emailAddress = Some(bprEmailAddress),
+    isAnASAgent = false
   )
 
   def businessPartnerRecordResponseSoleTrader: BusinessPartnerRecordResponse = BusinessPartnerRecordResponse(
     organisationName = None,
+    agentReferenceNumber = None,
     individualName = Some(individualName.value),
     address = bprRegisteredAddress,
     primaryPhoneNumber = Some(bprPrimaryTelephoneNumber),
-    emailAddress = Some(bprEmailAddress)
+    emailAddress = Some(bprEmailAddress),
+    isAnASAgent = false
   )
 
   def fiveOrFewerKeyIndividuals: FiveOrLess = FiveOrLess(
@@ -257,3 +260,5 @@ trait TdBase:
     vrns = List.empty,
     payeRefs = List.empty
   )
+
+  def arn: Arn = Arn("TARN0000001")
