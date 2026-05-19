@@ -44,21 +44,21 @@ import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
-                                                  mongoComponent: MongoComponent,
-                                                  appConfig: AppConfig,
-                                                  applicationDataEncryption: ApplicationDataEncryption,
-                                                  individualDataEncryption: IndividualDataEncryption
-                                                )(using ec: ExecutionContext)
-  extends Repo[ApplicationReference, ApplicationForRisking](
-    collectionName = "application-for-risking",
-    mongoComponent = mongoComponent,
-    indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
-    extraCodecs = Seq(
-      Codecs.playFormatCodec(applicationDataEncryption.formats),
-      Codecs.playFormatCodec(RiskingOutcome.format)
-    ),
-    replaceIndexes = true
-  )(using domainFormat = applicationDataEncryption.formats):
+  mongoComponent: MongoComponent,
+  appConfig: AppConfig,
+  applicationDataEncryption: ApplicationDataEncryption,
+  individualDataEncryption: IndividualDataEncryption
+)(using ec: ExecutionContext)
+extends Repo[ApplicationReference, ApplicationForRisking](
+  collectionName = "application-for-risking",
+  mongoComponent = mongoComponent,
+  indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
+  extraCodecs = Seq(
+    Codecs.playFormatCodec(applicationDataEncryption.formats),
+    Codecs.playFormatCodec(RiskingOutcome.format)
+  ),
+  replaceIndexes = true
+)(using domainFormat = applicationDataEncryption.formats):
 
   def unsetFileName(): Future[Unit] = collection.updateMany(
     filter = Filters.empty(),
@@ -108,9 +108,9 @@ final class ApplicationForRiskingRepo @Inject() (
   private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
 
   private def findApplicationWithIndividuals(
-                                              applicationFilter: Bson,
-                                              individualForAllFilter: Bson = Filters.empty() // the filter must apply "forall" individuals otherwise entire ApplicationWithIndividuals is discarded
-                                            ): Future[Seq[ApplicationWithIndividuals]] = collection
+    applicationFilter: Bson,
+    individualForAllFilter: Bson = Filters.empty() // the filter must apply "forall" individuals otherwise entire ApplicationWithIndividuals is discarded
+  ): Future[Seq[ApplicationWithIndividuals]] = collection
     .aggregate[Document](Seq(
       Aggregates.filter(applicationFilter),
       Aggregates.lookup(
@@ -131,9 +131,9 @@ final class ApplicationForRiskingRepo @Inject() (
         ApplicationWithIndividuals(applicationForRisking, individualsForRisking)
 
   def updateRiskingFileName(
-                             applicationReferences: Seq[ApplicationReference],
-                             riskingFileName: RiskingFileName
-                           ): Future[Unit] = collection
+    applicationReferences: Seq[ApplicationReference],
+    riskingFileName: RiskingFileName
+  ): Future[Unit] = collection
     .updateMany(
       Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value)*),
       Updates.combine(
@@ -144,8 +144,8 @@ final class ApplicationForRiskingRepo @Inject() (
     .map(_ => ())
 
   def findByRiskingFileName(
-                             riskingFileName: RiskingFileName
-                           ): Future[Seq[ApplicationForRisking]] = collection
+    riskingFileName: RiskingFileName
+  ): Future[Seq[ApplicationForRisking]] = collection
     .find(Filters.eq(FieldNames.riskingFileName, riskingFileName.value))
     .toFuture()
 
