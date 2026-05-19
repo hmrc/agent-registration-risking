@@ -69,7 +69,11 @@ extends ISpec:
       TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals
+      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3IndividualsOnly1Failing.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3IndividualsWith2Failing.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeEntityOnlyNoIndividualNonFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeSoleTraderApplicantIsIndividual.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   "findApplicationsAwaitingOverallOutcome" in:
@@ -110,5 +114,4 @@ extends ISpec:
       .all
       .foreach: td =>
         applicationForRiskingRepo.upsert(td.application).futureValue
-        individualForRiskingRepo.upsert(td.individual1).futureValue
-        individualForRiskingRepo.upsert(td.individual2).futureValue
+        td.individuals.foreach(individualForRiskingRepo.upsert(_).futureValue)
