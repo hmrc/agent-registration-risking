@@ -14,94 +14,124 @@
  * limitations under the License.
  */
 
-//
-//package uk.gov.hmrc.agentregistrationrisking.controllers.smu
-//
-//import uk.gov.hmrc.agentregistration.shared.AmlsCode
-//import uk.gov.hmrc.agentregistration.shared.AmlsDetails
-//import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
-//import uk.gov.hmrc.agentregistration.shared.amls.AmlsEvidence
-//import uk.gov.hmrc.agentregistration.shared.upload.FileUploadReference
-//import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-//import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
-//import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-//import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
-//import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.tdRisking
-//import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
-//import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
-//import uk.gov.hmrc.objectstore.client.Path.File
-//
-//class SmuViewerControllerSpec
-//extends ControllerSpec
-//with RequestAwareLogging:
-//  "find individual by person reference returns Ok and SmuIndividualResponse as Json body" in:
-//    given Request[?] = tdAll.backendRequest
-//    AuthStubs.stubAuthorise()
-//    val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
-//    val individualForRisking: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission
-//    individualForRiskingRepo.upsert(individualForRisking).futureValue
-//    val applicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
-//    val agentApplication = tdRisking.tdApplicationForRisking.submittedForRisking.agentApplication.asLlpApplication.copy(amlsDetails =
-//      Some(AmlsDetails(
-//        supervisoryBody = AmlsCode("ACCA"),
-//        amlsRegistrationNumber = Some(AmlsRegistrationNumber("12345")),
-//        amlsEvidence = Some(AmlsEvidence(
-//          fileUploadReference = FileUploadReference("send-me-12345"),
-//          fileName = "amls-evidence-file-123",
-//          objectStoreLocation = File("uri")
-//        ))
-//      ))
-//    )
-//    val applicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking.copy(
-//      applicationReference = individualForRisking.applicationReference,
-//      agentApplication = agentApplication
-//    )
-//    applicationForRiskingRepo.upsert(applicationForRisking).futureValue
-//
-//    individualForRiskingRepo.findById(
-//      individualForRisking.individualProvidedDetails.personReference
-//    ).futureValue.value shouldBe individualForRisking withClue "sanity check"
-//
-//    applicationForRiskingRepo.findById(
-//      applicationForRisking.applicationReference
-//    ).futureValue.value shouldBe applicationForRisking withClue "sanity check"
-//
-//    val response: HttpResponse =
-//      httpClient
-//        .get(
-//          url"$baseUrl/agent-registration-risking/smu-viewer/individual/by-person-reference/${individualForRisking.individualProvidedDetails.personReference.value}"
-//        )
-//        .execute[HttpResponse]
-//        .futureValue
-//
-//    response.status shouldBe Status.OK
-//    response.json shouldBe
-//      Json.parse(
-//        s"""{
-//           |"individual":{
-//           |  "personReference":"PREFGENP02",
-//           |  "resubmission":false,
-//           |  "passedIdentityVerification":true,
-//           |  "detailsProvidedByApplicant":false,
-//           |  "individualName":"Test Name",
-//           |  "individualDateOfBirth":"2000-01-01",
-//           |  "individualNino":"AB123456C",
-//           |  "individualSaUtr":"1234567895",
-//           |  "payeRefs":["123/AB12345"],
-//           |  "vrns":["123456789"],
-//           |  "telephoneNumber":"(+44) 10794554342",
-//           |  "emailAddress":"member@test.com"
-//           |},
-//           |"entity":{
-//           |  "applicationReference":"APPGENPAR1",
-//           |  "resubmission":false,
-//           |  "applicantName":"Alice Smith",
-//           |  "businessType":"GeneralPartnership",
-//           |  "utr":"1234567895",
-//           |  "amlsSupervisoryBody":"HMRC",
-//           |  "amlsRegNumber":"XAML00000123456",
-//           |  "applicantPhone":"(+44) 10794554342",
-//           |  "applicantEmail":"user@test.com"
-//           |  }
-//           |} """.stripMargin
-//      )
+package uk.gov.hmrc.agentregistrationrisking.controllers.smu
+
+import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.smu.SmuIndividualResponse
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
+import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+import play.api.mvc.Call
+
+import java.net.URL
+
+class SmuViewerControllerSpec
+extends ControllerSpec
+with RequestAwareLogging:
+
+  def path(personReference: PersonReference) = s"/agent-registration-risking/smu-viewer/individual/by-person-reference/${personReference.value}"
+  def url(personReference: PersonReference): URL = url"${baseUrl + path(personReference)}"
+
+  "routes should have correct paths and methods" in:
+    val personReference: PersonReference = tdAll.tdRiskingInstancesInStates.submittedForRisking.individual1.personReference
+    val call: Call = routes.SmuViewerController.findIndividualByPersonReference(personReference)
+    call shouldBe Call(
+      method = "GET",
+      url = path(personReference)
+    )
+
+  "return NoContent if there is no underlying records" in:
+    given Request[?] = tdAll.backendRequest
+    AuthStubs.stubAuthorise(requestBodyJson = AuthStubs.expectedRequestBodyMinimal)
+
+    val response: HttpResponse =
+      httpClient
+        .get(url(PersonReference("NOSUCH_REF")))
+        .execute[HttpResponse]
+        .futureValue
+
+    response.status shouldBe Status.NO_CONTENT
+    response.body shouldBe ""
+    AuthStubs.verifyAuthorise()
+
+  "find individual by person reference returns Ok and SmuIndividualResponse as Json body" in:
+    given Request[?] = tdAll.backendRequest
+    AuthStubs.stubAuthorise(requestBodyJson = AuthStubs.expectedRequestBodyMinimal)
+
+    val individual: IndividualForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.individual1
+    val application: ApplicationForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.application
+
+    val response: HttpResponse =
+      httpClient
+        .get(url(individual.personReference))
+        .execute[HttpResponse]
+        .futureValue
+
+    response.status shouldBe Status.OK
+    val json = Json.parse(
+      // language=JSON
+      s"""{
+         |  "individual": {
+         |    "personReference": "PREF_submittedForRisking_01",
+         |    "resubmission": false,
+         |    "passedIdentityVerification": true,
+         |    "detailsProvidedByApplicant": false,
+         |    "individualName": "IndividualName_submittedForRisking_01",
+         |    "individualDateOfBirth": "1998-01-01",
+         |    "individualNino": "AB123456C_submittedForRisking_01",
+         |    "individualSaUtr": "1234567895_submittedForRisking_01",
+         |    "payeRefs": [
+         |      "payeref_submittedForRisking_01"
+         |    ],
+         |    "vrns": [
+         |      "vrn_submittedForRisking_01"
+         |    ],
+         |    "telephoneNumber": "01234567-201",
+         |    "emailAddress": "individual_email_submittedForRisking_01@test.com"
+         |  },
+         |  "entity": {
+         |    "applicationReference": "APPREF_submittedForRisking",
+         |    "resubmission": false,
+         |    "applicantName": "applicantname_submittedForRisking",
+         |    "businessType": "ScottishPartnership",
+         |    "utr": "utr_submittedForRisking",
+         |    "payeRefs": [
+         |      "payeref_submittedForRisking"
+         |    ],
+         |    "vrns": [
+         |      "vrn_submittedForRisking"
+         |    ],
+         |    "crn": "crn_submittedForRisking",
+         |    "amlsSupervisoryBody": "amlscode_submittedForRisking",
+         |    "amlsRegNumber": "amlsregistrationnumber_submittedForRisking",
+         |    "amlsEvidenceReferenceId": "amls_fileupload_refsubmittedForRisking",
+         |    "applicantPhone": "01234567890",
+         |    "applicantEmail": "applicantemail@submittedForRisking.com"
+         |  }
+         |}""".stripMargin
+    )
+
+    val smuViewerIndividualResponse: SmuIndividualResponse = json.as[SmuIndividualResponse]
+    response.json.as[SmuIndividualResponse] shouldBe smuViewerIndividualResponse
+    AuthStubs.verifyAuthorise()
+
+  override def beforeEach(): Unit =
+    super.beforeEach()
+    primeDb()
+
+  val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
+  val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+
+  private def primeDb(): Unit =
+    dropDatabase()
+    tdAll
+      .tdRiskingInstancesInStates
+      .all
+      .foreach: td =>
+        applicationForRiskingRepo.upsert(td.application).futureValue
+        individualForRiskingRepo.upsert(td.individual1).futureValue
+        individualForRiskingRepo.upsert(td.individual2).futureValue

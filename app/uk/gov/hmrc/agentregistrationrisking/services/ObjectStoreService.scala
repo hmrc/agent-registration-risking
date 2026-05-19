@@ -24,7 +24,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
-import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path
@@ -46,13 +45,13 @@ import scala.concurrent.Future
 
 @Singleton
 class ObjectStoreService @Inject() (
-  playObjectStoreClient: PlayObjectStoreClient,
-  appConfig: AppConfig
-)(using
-  ExecutionContext,
-  Clock
-)
-extends RequestAwareLogging:
+                                     playObjectStoreClient: PlayObjectStoreClient,
+                                     appConfig: AppConfig
+                                   )(using
+                                     ExecutionContext,
+                                     Clock
+                                   )
+  extends RequestAwareLogging:
 
   private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
   private val receivedResultsFilesPath = Path.Directory("processed-results-files")
@@ -81,8 +80,8 @@ extends RequestAwareLogging:
     )
 
   def uploadRiskingResultsFile(
-    riskingResultRecords: RiskingResultRecords
-  )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.putObject(
+                                riskingResultRecords: RiskingResultRecords
+                              )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.putObject(
     path = receivedResultsFilesPath.file(fileName = riskingResultRecords.fileName),
     content = riskingResultRecords.rawContent,
     retentionPeriod = RetentionPeriod.SixMonths, // TODO: how long do we need to keep these files?
@@ -94,8 +93,8 @@ extends RequestAwareLogging:
   def listObjects(using request: RequestHeader): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)
 
   def generatePreSignedDownloadUrl(
-    objectStorePath: Path.Directory,
-    objectStoreFileName: String
-  )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
+                                    objectStorePath: Path.Directory,
+                                    objectStoreFileName: String
+                                  )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
     path = Path.Directory("sdes").file(fileName = objectStoreFileName)
   )

@@ -90,6 +90,7 @@ trait TdBase:
   def dateOfBirthFromCitizenDetails: IndividualDateOfBirth.FromCitizensDetails = IndividualDateOfBirth.FromCitizensDetails(dateOfBirth)
   def dateOfBirthProvided = IndividualDateOfBirth.Provided(dateOfBirth)
   def fullName: FullName = FullName(firstName = "ST Name", lastName = "ST Lastname")
+  def providedByApplicant: Boolean = false
 
   def applicantEmailAddress: EmailAddress = EmailAddress("user@test.com")
   def individualEmailAddress: EmailAddress = EmailAddress("member@test.com")
