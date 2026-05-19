@@ -59,6 +59,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   replaceIndexes = true
 ):
 
+  def unsetFileName(): Future[Unit] = collection.updateMany(
+    filter = Filters.empty(),
+    update = Updates.unset(FieldNames.riskingFileName)
+  ).toFuture().map(_ => ())
+
   override protected def encryptForStorage(
     a: ApplicationForRisking
   ): ApplicationForRisking = a.modify(_.applicationData).using(applicationDataEncryption.encrypt)
@@ -75,11 +80,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   //  CRITICAL: ALL QUERIES MUST BE TESTED IN REPOSITORY SPEC
   //  Untested queries can cause Production data corruption/loss and Difficult recovery !!!!!!!!!!
   // ═══════════════════════════════════════════════════════════════════════════════
-
-  def findReadyForSubmission2(): Future[Seq[ApplicationForRisking]] = collection
-    .find(Filters.exists(FieldNames.riskingFileName, false)) // ready for submissions don't have set riskingFileId
-    .toFuture()
-    .map(_.map(decryptFromStorage))
 
   def findReadyForSubmission(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.exists(FieldNames.riskingFileName, false) // ready for submissions don't have set riskingFileId

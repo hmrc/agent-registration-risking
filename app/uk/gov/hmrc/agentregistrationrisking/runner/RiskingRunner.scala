@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.runner
 
+import org.mongodb.scala.SingleObservableFuture
 import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import play.api.mvc.request.RemoteConnection
@@ -83,6 +84,18 @@ extends RequestAwareLogging:
       )
       _ = logger.info(s"Generated risking file: ${riskingFileWithContent.riskingFile.riskingFileName}, ${riskingFileWithContent.numberOfRecords} records")
     yield (riskingFileWithContent, applicationReferences)
+
+  def reset(): Future[Unit] =
+    given RequestHeader = EmptyRequest.emptyRequestHeader
+    logger.info(s"Resetting... ")
+    for
+      _ <- objectStoreService.deleteSdesFiles()
+      _ = logger.info(s"dropping riskingFileRepo collection... ")
+      _ <- riskingFileRepo.collection.drop().toFuture()
+      _ = logger.info(s"unsetting fileName...")
+      _ <- applicationForRiskingRepo.unsetFileName()
+      _ = logger.info(s"Reset complete")
+    yield ()
 
   def run(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
