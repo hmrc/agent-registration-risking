@@ -20,6 +20,7 @@ import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.*
@@ -60,10 +61,11 @@ extends RequestAwareLogging:
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application: ApplicationForRisking = applicationWithIndividuals.application
+    val individualsWithNonFixableFailure: Seq[IndividualForRisking] = applicationWithIndividuals.individuals.filter(hasNonFixableFailure)
     val individuals: Seq[IndividualForRisking] =
       application.applicationData.businessType match
-        case BusinessType.SoleTrader => applicationWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
-        case _ => applicationWithIndividuals.individuals
+        case BusinessType.SoleTrader => individualsWithNonFixableFailure.filterNot(isIndividualTheApplicant(_, application))
+        case _ => individualsWithNonFixableFailure
 
     for
       updatedApplication <- process(application)
@@ -106,6 +108,12 @@ extends RequestAwareLogging:
       .applicantEmailAddress === individual
       .individualData
       .emailAddress
+
+  private def hasNonFixableFailure(individual: IndividualForRisking): Boolean = individual
+    .individualRiskingResult
+    .exists(_.failures.exists:
+      case _: IndividualFailure.NonFixable => true
+      case _ => false)
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
     val applicationData = application.applicationData

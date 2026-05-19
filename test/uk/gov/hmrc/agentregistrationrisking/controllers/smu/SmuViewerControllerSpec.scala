@@ -133,4 +133,5 @@ with RequestAwareLogging:
       .all
       .foreach: td =>
         applicationForRiskingRepo.upsert(td.application).futureValue
-        td.individuals.foreach(individualForRiskingRepo.upsert(_).futureValue)
+        individualForRiskingRepo.upsert(td.individual1).futureValue
+        individualForRiskingRepo.upsert(td.individual2).futureValue
