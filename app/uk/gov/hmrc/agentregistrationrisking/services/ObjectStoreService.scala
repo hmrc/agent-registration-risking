@@ -17,11 +17,10 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
+import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
 import uk.gov.hmrc.objectstore.client.ObjectListing
@@ -55,6 +54,19 @@ extends RequestAwareLogging:
 
   private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
   private val receivedResultsFilesPath = Path.Directory("processed-results-files")
+
+  def deleteSdesFiles()(using request: RequestHeader) =
+    for
+      objectListing: ObjectListing <- playObjectStoreClient.listObjects(Path.Directory("sdes"))
+      _ = logger.info(s"Deleting objects from object store:...\n ${objectListing.objectSummaries.mkString("\n")}")
+      _ <-
+        ProcessInSequence.processAllInSequence(objectListing.objectSummaries)(objectSummary =>
+          playObjectStoreClient
+            .deleteObject(objectSummary.location)
+            .map(_ => logger.info(s"Deleted ${objectSummary}"))
+        ):
+          case (throwable, item) => logger.error(s"Failed to delete $item", throwable)
+    yield ()
 
   def uploadRiskingFile(riskingFileWithContent: RiskingFileWithContent)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
     playObjectStoreClient.putObject[RiskingFileWithContent.RiskingFileContent](
