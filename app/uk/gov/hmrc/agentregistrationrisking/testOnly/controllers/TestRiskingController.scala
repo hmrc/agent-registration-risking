@@ -65,7 +65,10 @@ with Logging:
   def runRisking: Action[AnyContent] = Action
     .async:
       implicit request =>
-        riskingRunner.run().map(_ => Ok)
+        for
+          _ <- riskingRunner.reset()
+          _ <- riskingRunner.run()
+        yield Ok
 
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
