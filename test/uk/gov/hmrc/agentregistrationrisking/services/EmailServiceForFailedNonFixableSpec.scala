@@ -70,7 +70,7 @@ extends ISpec:
   "processEmails" - {
 
     "sends 1 applicant email and 1 individual email when only 1 of 3 individuals has a NonFixable failure" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3IndividualsOnly1Failing
+      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3Individuals1NonFixable
       EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
       EmailStubs.stubSendEmail(expectedIndividualEmail(td.individual1))
       insert(td)
@@ -80,7 +80,7 @@ extends ISpec:
       EmailStubs.verifySendEmail(count = 2)
 
     "sends 1 applicant email and 2 individual emails when 2 of 3 individuals have a NonFixable failure" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3IndividualsWith2Failing
+      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3Individuals2NonFixable
       EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
       EmailStubs.stubSendEmail(expectedIndividualEmail(td.individual1))
       EmailStubs.stubSendEmail(expectedIndividualEmail(td.individual2))
@@ -91,7 +91,7 @@ extends ISpec:
       EmailStubs.verifySendEmail(count = 3)
 
     "sends only the applicant email when the entity failure is NonFixable but no individual has a NonFixable failure" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeEntityOnlyNoIndividualNonFixable
+      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcome
       EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
       insert(td)
 
@@ -116,7 +116,7 @@ extends ISpec:
       EmailStubs.verifySendEmail(count = 1)
 
     "sends only the applicant email when SoleTrader and the only individual is the applicant" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeSoleTraderApplicantIsIndividual
+      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeSoleTrader
       EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
       insert(td)
 

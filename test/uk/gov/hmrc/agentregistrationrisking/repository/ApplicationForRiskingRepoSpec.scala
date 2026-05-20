@@ -70,10 +70,9 @@ extends ISpec:
       TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3IndividualsOnly1Failing.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3IndividualsWith2Failing.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeEntityOnlyNoIndividualNonFixable.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeSoleTraderApplicantIsIndividual.applicationWithIndividuals
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3Individuals1NonFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3Individuals2NonFixable.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcomeSoleTrader.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   "findApplicationsAwaitingOverallOutcome" in:
