@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
@@ -25,8 +27,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EmailStubs
 
 class EmailServiceForFailedNonFixableSpec
@@ -44,9 +45,12 @@ extends ISpec:
     individualRepo.collection.drop().toFuture.futureValue
     ()
 
-  private def insert(td: TdApplicationWithIndividuals): Unit =
-    applicationRepo.upsert(td.application).futureValue
-    td.individuals.foreach(individualRepo.upsert(_).futureValue)
+  private case class TestCase(
+    description: String,
+    application: ApplicationForRisking,
+    individuals: Seq[IndividualForRisking],
+    expectedEmails: Seq[SendEmailRequest]
+  )
 
   private def expectedApplicantEmail(application: ApplicationForRisking): SendEmailRequest =
     val data = application.applicationData
@@ -67,60 +71,80 @@ extends ISpec:
     )
   )
 
+  private val tdRisking = TdRisking.make("EmailServiceForFailedNonFixableSpec")
+  private val tdApp = tdRisking.tdApplicationForRisking.receivedRiskingResults
+  private val tdInd1 = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults
+  private val tdInd2 = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults
+  private val tdInd3 = tdRisking.tdIndividualsForRisking.tdIndividualForRisking3.receivedRiskingResults
+
+  private val soleTraderApp = tdApp.failedNonFixableAfterOutcome
+    .modify(_.applicationData.businessType)
+    .setTo(BusinessType.SoleTrader)
+  private val soleTraderInd1 = tdInd1.failedNonFixable
+    .modify(_.individualData.emailAddress)
+    .setTo(soleTraderApp.applicationData.applicantContactDetails.applicantEmailAddress)
+
   "processEmails" - {
 
-    "sends 1 applicant email and 1 individual email when only 1 of 3 individuals has a NonFixable failure" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3Individuals1NonFixable
-      EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
-      EmailStubs.stubSendEmail(expectedIndividualEmail(td.individual1))
-      insert(td)
+    List(
+      TestCase(
+        description = "sends 1 applicant email and 1 individual email when only 1 of 3 individuals has a NonFixable failure",
+        application = tdApp.failedNonFixableAfterOutcome,
+        individuals = Seq(
+          tdInd1.failedNonFixable,
+          tdInd2.approved,
+          tdInd3.approved
+        ),
+        expectedEmails = Seq(
+          expectedApplicantEmail(tdApp.failedNonFixableAfterOutcome),
+          expectedIndividualEmail(tdInd1.failedNonFixable)
+        )
+      ),
+      TestCase(
+        description = "sends 1 applicant email and 2 individual emails when 2 of 3 individuals have a NonFixable failure",
+        application = tdApp.failedNonFixableAfterOutcome,
+        individuals = Seq(
+          tdInd1.failedNonFixable,
+          tdInd2.failedNonFixable,
+          tdInd3.approved
+        ),
+        expectedEmails = Seq(
+          expectedApplicantEmail(tdApp.failedNonFixableAfterOutcome),
+          expectedIndividualEmail(tdInd1.failedNonFixable),
+          expectedIndividualEmail(tdInd2.failedNonFixable)
+        )
+      ),
+      TestCase(
+        description = "sends only the applicant email when the entity failure is NonFixable but no individual has a NonFixable failure",
+        application = tdApp.failedNonFixableAfterOutcome,
+        individuals = Seq(tdInd1.failedFixable, tdInd2.approved),
+        expectedEmails = Seq(expectedApplicantEmail(tdApp.failedNonFixableAfterOutcome))
+      ),
+      TestCase(
+        description = "sends no emails when the application has already been processed (emailsProcessed = true)",
+        application = tdApp.failedNonFixableAfterEmailsProcessed,
+        individuals = Seq(tdInd1.failedNonFixableEmailSent, tdInd2.failedNonFixableEmailSent),
+        expectedEmails = Seq.empty
+      ),
+      TestCase(
+        description = "sends only the remaining individual email when one individual was already emailed in a prior run",
+        application = tdApp.failedNonFixableAfterEmailSent,
+        individuals = Seq(tdInd1.failedNonFixableEmailSent, tdInd2.failedNonFixable),
+        expectedEmails = Seq(expectedIndividualEmail(tdInd2.failedNonFixable))
+      ),
+      TestCase(
+        description = "sends only the applicant email when SoleTrader and the only individual is the applicant",
+        application = soleTraderApp,
+        individuals = Seq(soleTraderInd1),
+        expectedEmails = Seq(expectedApplicantEmail(soleTraderApp))
+      )
+    ).foreach: tc =>
+      tc.description in:
+        tc.expectedEmails.foreach(EmailStubs.stubSendEmail(_))
+        applicationRepo.upsert(tc.application).futureValue
+        tc.individuals.foreach(individualRepo.upsert(_).futureValue)
 
-      emailService.processEmails().futureValue
+        emailService.processEmails().futureValue
 
-      EmailStubs.verifySendEmail(count = 2)
-
-    "sends 1 applicant email and 2 individual emails when 2 of 3 individuals have a NonFixable failure" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeWith3Individuals2NonFixable
-      EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
-      EmailStubs.stubSendEmail(expectedIndividualEmail(td.individual1))
-      EmailStubs.stubSendEmail(expectedIndividualEmail(td.individual2))
-      insert(td)
-
-      emailService.processEmails().futureValue
-
-      EmailStubs.verifySendEmail(count = 3)
-
-    "sends only the applicant email when the entity failure is NonFixable but no individual has a NonFixable failure" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcome
-      EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
-      insert(td)
-
-      emailService.processEmails().futureValue
-
-      EmailStubs.verifySendEmail(count = 1)
-
-    "sends no emails when the application has already been processed (emailsProcessed = true)" in:
-      insert(TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed)
-
-      emailService.processEmails().futureValue
-
-      EmailStubs.verifySendEmail(count = 0)
-
-    "sends only the remaining individual email when one individual was already emailed in a prior run" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent
-      EmailStubs.stubSendEmail(expectedIndividualEmail(td.individual2))
-      insert(td)
-
-      emailService.processEmails().futureValue
-
-      EmailStubs.verifySendEmail(count = 1)
-
-    "sends only the applicant email when SoleTrader and the only individual is the applicant" in:
-      val td = TdRiskingInstancesInStates.failedNonFixableAfterOutcomeSoleTrader
-      EmailStubs.stubSendEmail(expectedApplicantEmail(td.application))
-      insert(td)
-
-      emailService.processEmails().futureValue
-
-      EmailStubs.verifySendEmail(count = 1)
+        EmailStubs.verifySendEmail(count = tc.expectedEmails.size)
   }
