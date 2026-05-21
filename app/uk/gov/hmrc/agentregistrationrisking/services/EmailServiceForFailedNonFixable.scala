@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcome
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -60,10 +61,11 @@ extends RequestAwareLogging:
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application: ApplicationForRisking = applicationWithIndividuals.application
+    val individualsWithNonFixableFailure: Seq[IndividualForRisking] = applicationWithIndividuals.individuals.filter(hasNonFixableFailure)
     val individuals: Seq[IndividualForRisking] =
       application.applicationData.businessType match
-        case BusinessType.SoleTrader => applicationWithIndividuals.individuals.filterNot(isIndividualTheApplicant(_, application))
-        case _ => applicationWithIndividuals.individuals
+        case BusinessType.SoleTrader => individualsWithNonFixableFailure.filterNot(isIndividualTheApplicant(_, application))
+        case _ => individualsWithNonFixableFailure
 
     for
       updatedApplication <- process(application)
@@ -106,6 +108,10 @@ extends RequestAwareLogging:
       .applicantEmailAddress === individual
       .individualData
       .emailAddress
+
+  private def hasNonFixableFailure(individual: IndividualForRisking): Boolean = individual
+    .individualRiskingResult
+    .exists(_.failures.outcome === RiskingOutcome.FailedNonFixable)
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
     val applicationData = application.applicationData

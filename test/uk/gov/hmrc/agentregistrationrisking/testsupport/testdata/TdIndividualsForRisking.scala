@@ -63,4 +63,14 @@ trait TdIndividualsForRisking {
     )
   )
 
+  def tdIndividualForRisking3: TdIndividualForRisking = TdIndividualForRisking.make(
+    instant = dependencies.instant,
+    applicationReference = applicationReference,
+    individualData = TdIndividualData.make(
+      applicationReference = applicationReference,
+      personReference = PersonReference(s"PREF_${seed}_03"),
+      seed = s"${seed}_03"
+    )
+  )
+
 }
