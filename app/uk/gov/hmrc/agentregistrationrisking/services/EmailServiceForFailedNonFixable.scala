@@ -20,12 +20,12 @@ import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcome
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -111,9 +111,7 @@ extends RequestAwareLogging:
 
   private def hasNonFixableFailure(individual: IndividualForRisking): Boolean = individual
     .individualRiskingResult
-    .exists(_.failures.exists:
-      case _: IndividualFailure.NonFixable => true
-      case _ => false)
+    .exists(_.failures.outcome === RiskingOutcome.FailedNonFixable)
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
     val applicationData = application.applicationData
