@@ -82,6 +82,10 @@ class AppConfig @Inject() (
 
     val applicationProcessingTime: String = Base64.decode(config.get[String]("email.application-processing-time"))
 
+  object FailureMessage:
+
+    val daysToDisplayErrorMessage: Int = config.get[Int]("failure-message.days-to-display-error-message")
+
   object Base64 {
 
     private val decoder = java.util.Base64.getDecoder
