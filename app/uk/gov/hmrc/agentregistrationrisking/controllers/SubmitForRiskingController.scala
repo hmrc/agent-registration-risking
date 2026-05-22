@@ -78,7 +78,8 @@ extends BackendController(cc):
     overallStatus = OverallStatus(
       riskingOutcome = None,
       emailsProcessed = false
-    )
+    ),
+    failureMessageExpiryDate = None
   )
 
   private def makeIndividualForRiskingList(

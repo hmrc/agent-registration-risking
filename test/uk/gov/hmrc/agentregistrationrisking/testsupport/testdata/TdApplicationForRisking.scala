@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 
+import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import com.softwaremill.quicklens.modify
@@ -54,6 +55,8 @@ trait TdApplicationForRisking:
   def applicationReference: ApplicationReference
   def applicationData: ApplicationData
 
+  def failureMessageExpiryDate: Instant = instant.plus(Duration.ofDays(45))
+
   def readyForSubmission: ApplicationForRisking = ApplicationForRisking(
     applicationReference = applicationReference,
     riskingFileName = None,
@@ -66,7 +69,8 @@ trait TdApplicationForRisking:
     overallStatus = OverallStatus(
       riskingOutcome = None,
       emailsProcessed = false
-    )
+    ),
+    failureMessageExpiryDate = None
   )
 
   def submittedForRisking: ApplicationForRisking = readyForSubmission
@@ -109,6 +113,8 @@ trait TdApplicationForRisking:
     val failedFixableAfterOutcome: ApplicationForRisking = failedFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedFixable))
+      .modify(_.failureMessageExpiryDate)
+      .setTo(Some(failureMessageExpiryDate))
 
     val failedNonFixable: ApplicationForRisking = submittedForRisking
       .copy(
@@ -124,6 +130,8 @@ trait TdApplicationForRisking:
     val failedNonFixableAfterOutcome: ApplicationForRisking = failedNonFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedNonFixable))
+      .modify(_.failureMessageExpiryDate)
+      .setTo(Some(failureMessageExpiryDate))
 
     val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome.copy(
       isEmailSent = true

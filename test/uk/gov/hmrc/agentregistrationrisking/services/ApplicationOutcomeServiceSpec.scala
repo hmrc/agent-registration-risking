@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import org.mongodb.scala.SingleObservableFuture
 import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
@@ -26,6 +27,9 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuditStubs
+
+import java.time.Duration
+import java.time.Instant
 
 class ApplicationOutcomeServiceSpec
 extends ISpec:
@@ -89,6 +93,40 @@ extends ISpec:
       outcomeOf(failedFixable) shouldBe Some(RiskingOutcome.FailedFixable)
       outcomeOf(failedNonFixable) shouldBe Some(RiskingOutcome.FailedNonFixable)
 
+    "sets failureMessageExpiryDate to (now + 45 days) when the computed outcome is FailedFixable" in:
+      AuditStubs.stubAuditWrite()
+      insertApplicationsWithIndividuals(failedFixable)
+
+      applicationOutcomeService.processOverallOutcomes().futureValue
+
+      failureMessageExpiryDateOf(failedFixable) shouldBe Some(frozenInstant.plus(Duration.ofDays(45)))
+
+    "sets failureMessageExpiryDate to (now + 45 days) when the computed outcome is FailedNonFixable" in:
+      AuditStubs.stubAuditWrite()
+      insertApplicationsWithIndividuals(failedNonFixable)
+
+      applicationOutcomeService.processOverallOutcomes().futureValue
+
+      failureMessageExpiryDateOf(failedNonFixable) shouldBe Some(frozenInstant.plus(Duration.ofDays(45)))
+
+    "leaves failureMessageExpiryDate unset when the computed outcome is Approved" in:
+      AuditStubs.stubAuditWrite()
+      insertApplicationsWithIndividuals(approved)
+
+      applicationOutcomeService.processOverallOutcomes().futureValue
+
+      failureMessageExpiryDateOf(approved) shouldBe None
+
+    "does not set outcome or failureMessageExpiryDate when only some individuals have results yet" in:
+      AuditStubs.stubAuditWrite()
+      val partiallyRisked = TdRiskingInstancesInStates.partiallyRisked.failedNonFixable_failedFixable_submitted
+      insertApplicationsWithIndividuals(partiallyRisked)
+
+      applicationOutcomeService.processOverallOutcomes().futureValue
+
+      outcomeOf(partiallyRisked) shouldBe None
+      failureMessageExpiryDateOf(partiallyRisked) shouldBe None
+
     "does not send a RiskingDetermination or set an outcome for an application that is not ready" in:
       AuditStubs.stubAuditWrite()
       insertApplicationsWithIndividuals(failedNonFixable, notReady)
@@ -110,9 +148,16 @@ extends ISpec:
   }
 
   private def outcomeOf(td: TdApplicationWithIndividuals): Option[RiskingOutcome] =
+    persisted(td)
+      .overallStatus
+      .riskingOutcome
+
+  private def failureMessageExpiryDateOf(td: TdApplicationWithIndividuals): Option[Instant] =
+    persisted(td)
+      .failureMessageExpiryDate
+
+  private def persisted(td: TdApplicationWithIndividuals): ApplicationForRisking =
     applicationForRiskingRepo
       .findById(td.application.applicationReference)
       .futureValue
       .value
-      .overallStatus
-      .riskingOutcome

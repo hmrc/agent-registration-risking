@@ -19,11 +19,15 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -32,7 +36,9 @@ import scala.concurrent.Future
 @Singleton
 class ApplicationOutcomeService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  auditService: AuditService
+  auditService: AuditService,
+  appConfig: AppConfig,
+  clock: Clock
 )(using
   ExecutionContext
 )
@@ -64,7 +70,15 @@ extends RequestAwareLogging:
           .application
           .modify(_.overallStatus.riskingOutcome)
           .setTo(Some(outcome))
+          .modify(_.failureMessageExpiryDate)
+          .setTo(failureMessageExpiryDateFor(outcome))
         applicationForRiskingRepo
           .upsert(applicationForRisking)
           .map: _ =>
             auditService.sendRiskingDeterminationEvent(applicationForRisking.applicationReference, outcome)
+
+  private def failureMessageExpiryDateFor(outcome: RiskingOutcome): Option[Instant] =
+    outcome match
+      case RiskingOutcome.FailedFixable | RiskingOutcome.FailedNonFixable =>
+        Some(Instant.now(clock).plus(Duration.ofDays(appConfig.FailureMessage.daysToDisplayErrorMessage.toLong)))
+      case RiskingOutcome.Approved => None

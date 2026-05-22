@@ -33,7 +33,8 @@ final case class ApplicationForRisking(
   entityRiskingResult: Option[EntityRiskingResult],
   isSubscribed: Boolean,
   isEmailSent: Boolean,
-  overallStatus: OverallStatus
+  overallStatus: OverallStatus,
+  failureMessageExpiryDate: Option[Instant]
 )
 
 object ApplicationForRisking:

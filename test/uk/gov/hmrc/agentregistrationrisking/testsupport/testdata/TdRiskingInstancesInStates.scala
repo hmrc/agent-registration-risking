@@ -204,7 +204,8 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = None
     )
 
   case object failedFixableAfterOutcome
@@ -235,7 +236,8 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = None
     )
 
   case object failedNonFixable
@@ -263,7 +265,8 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = None
     )
 
   case object failedNonFixableAfterOutcome
@@ -291,7 +294,8 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
     )
 
   case object failedNonFixableAfter1EmailSent
@@ -319,7 +323,8 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
     )
 
   case object failedNonFixableAfter2EmailsSent
@@ -347,7 +352,8 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
     )
 
   case object failedNonFixableAfterAllEmailsSent
@@ -375,7 +381,8 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
     )
 
   case object failedNonFixableAfterAllEmailsProcessed
@@ -408,5 +415,6 @@ object TdRiskingInstancesInStates:
           failures = individual2.individualRiskingResult.value.failures
         )
       ),
-      riskingCompletedDate = TdInstant.localDate
+      riskingCompletedDate = TdInstant.localDate,
+      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
     )
