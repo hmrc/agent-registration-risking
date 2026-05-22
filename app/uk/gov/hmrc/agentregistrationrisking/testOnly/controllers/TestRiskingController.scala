@@ -66,7 +66,6 @@ with Logging:
     .async:
       implicit request =>
         for
-          _ <- riskingRunner.reset()
           _ <- riskingRunner.run()
         yield Ok
 

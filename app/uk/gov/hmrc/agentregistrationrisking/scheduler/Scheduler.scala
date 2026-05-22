@@ -70,13 +70,13 @@ extends Logging:
           job()
         }.onComplete { result =>
           result match
-            case Success(Some(_)) => logger.debug(s"Scheduled task $name completed successfully")
-            case Success(None) => logger.info(s"Scheduled task $name skipped - already running on another instance")
-            case Failure(e) => logger.error(s"Scheduled task $name failed with exception: ${e.getMessage}", e)
+            case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
+            case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
+            case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
           scheduleDaily(
-            name,
-            timeOfDay,
-            job
+            name = name,
+            timeOfDay = timeOfDay,
+            job = job
           )
         }
       ,
