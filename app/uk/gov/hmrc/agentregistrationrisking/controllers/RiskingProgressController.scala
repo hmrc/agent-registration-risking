@@ -32,6 +32,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome.*
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationForRiskingService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper
 
+import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -102,17 +103,23 @@ object RiskingProgressController:
       latestDate <- applicationWithIndividuals.riskingCompletedDate
     yield
       val riskingCompletedDate = latestDate.atZone(displayZone).toLocalDate
+      val failureMessageExpiryDate: Option[LocalDate] = applicationWithIndividuals
+        .application
+        .failureMessageExpiryDate
+        .map(_.atZone(displayZone).toLocalDate)
       outcome match
         case Approved => RiskingProgress.Approved
         case FailedFixable =>
           RiskingProgress.FailedFixable(
             riskedEntity = riskedEntity,
             riskedIndividuals = riskedIndividuals,
-            riskingCompletedDate = riskingCompletedDate
+            riskingCompletedDate = riskingCompletedDate,
+            failureMessageExpiryDate = failureMessageExpiryDate
           )
         case FailedNonFixable =>
           RiskingProgress.FailedNonFixable(
             riskedEntity = riskedEntity,
             riskedIndividuals = riskedIndividuals,
-            riskingCompletedDate = riskingCompletedDate
+            riskingCompletedDate = riskingCompletedDate,
+            failureMessageExpiryDate = failureMessageExpiryDate
           )

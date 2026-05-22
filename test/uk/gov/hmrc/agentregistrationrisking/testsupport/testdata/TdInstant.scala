@@ -25,5 +25,7 @@ trait TdInstant:
   def instant: Instant = Instant.parse("2059-11-25T16:33:51Z")
   def localDate: LocalDate = LocalDate.parse("2059-11-25")
 
+  def failureMessageExpiryLocalDate: LocalDate = LocalDate.parse("2060-01-09")
+
 object TdInstant
 extends TdInstant
