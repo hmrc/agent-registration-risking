@@ -1,7 +1,7 @@
 import uk.gov.hmrc.DefaultBuildSettings
 
 ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "3.6.1"
+ThisBuild / scalaVersion := "3.6.4"
 ThisBuild / scalacOptions += "-Wconf:msg=Flag.*repeatedly:s"
 val playPort: Int = 22203
 ThisBuild / scalafmtOnCompile := true

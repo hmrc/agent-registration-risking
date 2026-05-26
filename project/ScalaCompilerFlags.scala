@@ -9,7 +9,8 @@ object ScalaCompilerFlags {
     "-Wconf:src=html/.*:silent", // Suppress warnings in all `.html` template files
     "-Wconf:src=.*conf/.*\\.routes:silent", // Suppress warnings specifically for .routes files in conf directory
     "-Wconf:src=.*\\.scala\\.html:silent", // Suppress warnings specifically for Play template files
-    "-Wconf:src=target/.*:s"
+    "-Wconf:src=target/.*:s",
+    "-experimental" // Required for NamedTuples
   )
 
   val strictScalaCompilerOptions: Seq[String] = Seq(
