@@ -23,6 +23,8 @@ import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.util.Failure
+import scala.util.Success
 
 @Singleton
 class RiskingSchedulerInitializer @Inject() (
@@ -38,13 +40,9 @@ extends Logging:
     if appConfig.Scheduler.enabled then
       logger.info("Bootstrapping risking scheduler")
       scheduler.scheduleDaily(
-        "risking",
+        "generating and sending risking file",
         appConfig.Scheduler.time,
-        () =>
-          for
-            _ <- riskingRunner.reset()
-            _ <- riskingRunner.run()
-          yield ()
+        () => riskingRunner.run()
       )
     else
       logger.info("risking not scheduled as it is not enabled")
