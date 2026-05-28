@@ -96,6 +96,11 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
 
+  def deleteAll: Future[Unit] = collection
+    .deleteMany(Document())
+    .toFuture()
+    .map(_ => ())
+
   private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
 
   private def findApplicationWithIndividuals(

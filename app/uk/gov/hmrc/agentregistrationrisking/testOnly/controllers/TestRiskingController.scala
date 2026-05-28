@@ -77,6 +77,14 @@ with Logging:
           s: String = riskingFileWithContent.riskingFileContent
         yield Ok(s)
 
+  def deleteAllApplications: Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          _ <- applicationForRiskingRepo.deleteAll
+          _ <- individualForRiskingRepo.deleteAll
+        yield NoContent
+
   private def generateRandomName(): String =
     val firstNames = List(
       "John",
