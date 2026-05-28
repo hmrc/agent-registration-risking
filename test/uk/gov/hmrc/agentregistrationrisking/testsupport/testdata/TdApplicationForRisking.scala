@@ -55,7 +55,7 @@ trait TdApplicationForRisking:
   def applicationReference: ApplicationReference
   def applicationData: ApplicationData
 
-  def failureMessageExpiryDate: Instant = instant.plus(Duration.ofDays(45))
+  def correctiveActionExpiryDate: Instant = instant.plus(Duration.ofDays(45))
 
   def readyForSubmission: ApplicationForRisking = ApplicationForRisking(
     applicationReference = applicationReference,
@@ -70,7 +70,7 @@ trait TdApplicationForRisking:
       riskingOutcome = None,
       emailsProcessed = false
     ),
-    failureMessageExpiryDate = None
+    correctiveActionExpiryDate = None
   )
 
   def submittedForRisking: ApplicationForRisking = readyForSubmission
@@ -113,8 +113,8 @@ trait TdApplicationForRisking:
     val failedFixableAfterOutcome: ApplicationForRisking = failedFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedFixable))
-      .modify(_.failureMessageExpiryDate)
-      .setTo(Some(failureMessageExpiryDate))
+      .modify(_.correctiveActionExpiryDate)
+      .setTo(Some(correctiveActionExpiryDate))
 
     val failedNonFixable: ApplicationForRisking = submittedForRisking
       .copy(
@@ -130,8 +130,8 @@ trait TdApplicationForRisking:
     val failedNonFixableAfterOutcome: ApplicationForRisking = failedNonFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedNonFixable))
-      .modify(_.failureMessageExpiryDate)
-      .setTo(Some(failureMessageExpiryDate))
+      .modify(_.correctiveActionExpiryDate)
+      .setTo(Some(correctiveActionExpiryDate))
 
     val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome.copy(
       isEmailSent = true

@@ -82,9 +82,9 @@ class AppConfig @Inject() (
 
     val applicationProcessingTime: String = Base64.decode(config.get[String]("email.application-processing-time"))
 
-  object FailureMessage:
+  object CorrectiveAction:
 
-    val daysToDisplayErrorMessage: Int = config.get[Int]("failure-message.days-to-display-error-message")
+    val daysToTakeCorrectiveAction: Int = config.get[Int]("corrective-action.days-to-take-corrective-action")
 
   object Base64 {
 

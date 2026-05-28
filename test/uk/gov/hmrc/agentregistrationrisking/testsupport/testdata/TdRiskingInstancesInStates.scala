@@ -205,7 +205,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = None
+      correctiveActionExpiryDate = None
     )
 
   case object failedFixableAfterOutcome
@@ -237,7 +237,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = None
+      correctiveActionExpiryDate = None
     )
 
   case object failedNonFixable
@@ -266,7 +266,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = None
+      correctiveActionExpiryDate = None
     )
 
   case object failedNonFixableAfterOutcome
@@ -295,7 +295,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
+      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
     )
 
   case object failedNonFixableAfter1EmailSent
@@ -324,7 +324,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
+      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
     )
 
   case object failedNonFixableAfter2EmailsSent
@@ -353,7 +353,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
+      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
     )
 
   case object failedNonFixableAfterAllEmailsSent
@@ -382,7 +382,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
+      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
     )
 
   case object failedNonFixableAfterAllEmailsProcessed
@@ -416,5 +416,5 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      failureMessageExpiryDate = Some(TdInstant.failureMessageExpiryLocalDate)
+      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
     )
