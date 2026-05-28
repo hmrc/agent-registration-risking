@@ -26,6 +26,7 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
@@ -53,6 +54,7 @@ class TestRiskingController @Inject() (
   riskingRunner: RiskingRunner,
   sdesProxyService: SdesProxyService,
   riskingFileService: RiskingFileService,
+  riskingFileRepo: RiskingFileRepo,
   appConfig: AppConfig
 )(using
   clock: Clock
@@ -83,6 +85,7 @@ with Logging:
         for
           _ <- applicationForRiskingRepo.deleteAll
           _ <- individualForRiskingRepo.deleteAll
+          _ <- riskingFileRepo.deleteAll
         yield NoContent
 
   private def generateRandomName(): String =
