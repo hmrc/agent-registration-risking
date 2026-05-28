@@ -117,7 +117,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       _.map: (doc: Document) =>
         given OFormat[IndividualForRisking] = individualDataEncryption.formats
         val jsValue: JsValue = Json.parse(doc.toJson(relaxedJson))
-        val applicationForRisking: ApplicationForRisking = jsValue.as[ApplicationForRisking](applicationDataEncryption.formats)
+        val applicationForRisking: ApplicationForRisking = jsValue.as[ApplicationForRisking](using applicationDataEncryption.formats)
         val individualsForRisking: Seq[IndividualForRisking] = (jsValue \ "individuals").as[Seq[IndividualForRisking]]
         ApplicationWithIndividuals(applicationForRisking, individualsForRisking)
 

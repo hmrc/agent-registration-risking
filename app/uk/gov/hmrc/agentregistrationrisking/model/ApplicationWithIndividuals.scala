@@ -30,7 +30,7 @@ final case class ApplicationWithIndividuals(
     import cats.data.NonEmptyList
     import cats.implicits.*
     import cats.kernel.Order
-    given Order[Instant] = Order.fromOrdering(Ordering[Instant])
+    given Order[Instant] = Order.fromOrdering(using Ordering[Instant])
     for
       appDate <- application.entityRiskingResult.map(_.receivedAt)
       individualDates <- individuals.map(_.individualRiskingResult.map(_.receivedAt)).toList.sequence
