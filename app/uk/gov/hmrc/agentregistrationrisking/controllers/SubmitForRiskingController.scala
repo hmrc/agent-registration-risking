@@ -79,7 +79,7 @@ extends BackendController(cc):
       riskingOutcome = None,
       emailsProcessed = false
     ),
-    failureMessageExpiryDate = None
+    correctiveActionExpiryDate = None
   )
 
   private def makeIndividualForRiskingList(

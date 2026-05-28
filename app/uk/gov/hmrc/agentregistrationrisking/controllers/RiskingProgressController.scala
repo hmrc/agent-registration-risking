@@ -103,9 +103,9 @@ object RiskingProgressController:
       latestDate <- applicationWithIndividuals.riskingCompletedDate
     yield
       val riskingCompletedDate = latestDate.atZone(displayZone).toLocalDate
-      val failureMessageExpiryDate: Option[LocalDate] = applicationWithIndividuals
+      val correctiveActionExpiryDate: Option[LocalDate] = applicationWithIndividuals
         .application
-        .failureMessageExpiryDate
+        .correctiveActionExpiryDate
         .map(_.atZone(displayZone).toLocalDate)
       outcome match
         case Approved => RiskingProgress.Approved
@@ -114,12 +114,12 @@ object RiskingProgressController:
             riskedEntity = riskedEntity,
             riskedIndividuals = riskedIndividuals,
             riskingCompletedDate = riskingCompletedDate,
-            failureMessageExpiryDate = failureMessageExpiryDate
+            correctiveActionExpiryDate = correctiveActionExpiryDate
           )
         case FailedNonFixable =>
           RiskingProgress.FailedNonFixable(
             riskedEntity = riskedEntity,
             riskedIndividuals = riskedIndividuals,
             riskingCompletedDate = riskingCompletedDate,
-            failureMessageExpiryDate = failureMessageExpiryDate
+            correctiveActionExpiryDate = correctiveActionExpiryDate
           )

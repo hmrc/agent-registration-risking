@@ -70,15 +70,15 @@ extends RequestAwareLogging:
           .application
           .modify(_.overallStatus.riskingOutcome)
           .setTo(Some(outcome))
-          .modify(_.failureMessageExpiryDate)
-          .setTo(failureMessageExpiryDateFor(outcome))
+          .modify(_.correctiveActionExpiryDate)
+          .setTo(correctiveActionExpiryDateFor(outcome))
         applicationForRiskingRepo
           .upsert(applicationForRisking)
           .map: _ =>
             auditService.sendRiskingDeterminationEvent(applicationForRisking.applicationReference, outcome)
 
-  private def failureMessageExpiryDateFor(outcome: RiskingOutcome): Option[Instant] =
+  private def correctiveActionExpiryDateFor(outcome: RiskingOutcome): Option[Instant] =
     outcome match
       case RiskingOutcome.FailedFixable | RiskingOutcome.FailedNonFixable =>
-        Some(Instant.now(clock).plus(Duration.ofDays(appConfig.FailureMessage.daysToDisplayErrorMessage.toLong)))
+        Some(Instant.now(clock).plus(Duration.ofDays(appConfig.CorrectiveAction.daysToTakeCorrectiveAction.toLong)))
       case RiskingOutcome.Approved => None
