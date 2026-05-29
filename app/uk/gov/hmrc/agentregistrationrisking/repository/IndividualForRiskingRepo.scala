@@ -43,9 +43,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
-object IndividualForRiskingRepo:
-  val collectionName: String = "individual-for-risking"
-
 @Singleton
 final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
@@ -86,10 +83,8 @@ extends Repo[PersonReference, IndividualForRisking](
       )
     ).toFuture()
 
-  def deleteAll: Future[Unit] = collection
-    .deleteMany(Document())
-    .toFuture()
-    .map(_ => ())
+object IndividualForRiskingRepo:
+  val collectionName: String = "individual-for-risking"
 
 object IndividualForRiskingRepoHelp:
 

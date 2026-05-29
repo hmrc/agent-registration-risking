@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
+import uk.gov.hmrc.agentregistrationrisking.testOnly.util.TestMongoCleanup
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
@@ -55,6 +56,7 @@ class TestRiskingController @Inject() (
   sdesProxyService: SdesProxyService,
   riskingFileService: RiskingFileService,
   riskingFileRepo: RiskingFileRepo,
+  testMongoCleanup: TestMongoCleanup,
   appConfig: AppConfig
 )(using
   clock: Clock
@@ -83,9 +85,9 @@ with Logging:
     .async:
       implicit request =>
         for
-          _ <- applicationForRiskingRepo.deleteAll
-          _ <- individualForRiskingRepo.deleteAll
-          _ <- riskingFileRepo.deleteAll
+          _ <- testMongoCleanup.deleteAllApplications
+          _ <- testMongoCleanup.deleteAllIndividuals
+          _ <- testMongoCleanup.deleteAllRiskingFiles
         yield NoContent
 
   private def generateRandomName(): String =

@@ -42,17 +42,15 @@ final class RiskingFileRepo @Inject() (
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends Repo[RiskingFileName, RiskingFile](
-  collectionName = "risking-file",
+  collectionName = RiskingFileRepo.collectionName,
   mongoComponent = mongoComponent,
   indexes = RiskingFileRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
   extraCodecs = Seq(Codecs.playFormatCodec(RiskingFile.format)),
   replaceIndexes = true
-):
+)
 
-  def deleteAll: Future[Unit] = collection
-    .deleteMany(Document())
-    .toFuture()
-    .map(_ => ())
+object RiskingFileRepo:
+  val collectionName = "risking-file"
 
 object RiskingFileRepoHelp:
 

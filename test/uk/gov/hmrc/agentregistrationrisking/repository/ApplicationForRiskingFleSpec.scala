@@ -43,7 +43,7 @@ extends ISpec:
 
   private def rawDocumentFor(applicationForRisking: ApplicationForRisking): Document =
     mongoComponent.database
-      .getCollection("application-for-risking")
+      .getCollection(applicationForRiskingRepo.collectionName)
       .find(Filters.eq("applicationReference", applicationForRisking.applicationReference.value))
       .first()
       .toFuture()

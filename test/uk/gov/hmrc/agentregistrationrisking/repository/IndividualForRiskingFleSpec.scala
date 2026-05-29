@@ -39,7 +39,7 @@ extends ISpec:
 
   private def rawDocumentFor(individualForRisking: IndividualForRisking): Document =
     mongoComponent.database
-      .getCollection("individual-for-risking")
+      .getCollection(individualForRiskingRepo.collectionName)
       .find(Filters.eq("personReference", individualForRisking.personReference.value))
       .first()
       .toFuture()
