@@ -26,8 +26,10 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import RiskingFileRepoHelp.given
+import org.mongodb.scala.Document
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
@@ -40,12 +42,15 @@ final class RiskingFileRepo @Inject() (
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends Repo[RiskingFileName, RiskingFile](
-  collectionName = "risking-file",
+  collectionName = RiskingFileRepo.collectionName,
   mongoComponent = mongoComponent,
   indexes = RiskingFileRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
   extraCodecs = Seq(Codecs.playFormatCodec(RiskingFile.format)),
   replaceIndexes = true
 )
+
+object RiskingFileRepo:
+  val collectionName = "risking-file"
 
 object RiskingFileRepoHelp:
 

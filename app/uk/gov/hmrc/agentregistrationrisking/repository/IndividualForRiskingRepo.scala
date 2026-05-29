@@ -34,6 +34,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import IndividualForRiskingRepoHelp.given
+import org.mongodb.scala.Document
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
@@ -41,9 +42,6 @@ import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
-
-object IndividualForRiskingRepo:
-  val collectionName: String = "individual-for-risking"
 
 @Singleton
 final class IndividualForRiskingRepo @Inject() (
@@ -84,6 +82,9 @@ extends Repo[PersonReference, IndividualForRisking](
         Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
       )
     ).toFuture()
+
+object IndividualForRiskingRepo:
+  val collectionName: String = "individual-for-risking"
 
 object IndividualForRiskingRepoHelp:
 

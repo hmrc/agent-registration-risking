@@ -50,7 +50,7 @@ final class ApplicationForRiskingRepo @Inject() (
   individualDataEncryption: IndividualDataEncryption
 )(using ec: ExecutionContext)
 extends Repo[ApplicationReference, ApplicationForRisking](
-  collectionName = "application-for-risking",
+  collectionName = ApplicationForRiskingRepo.collectionName,
   mongoComponent = mongoComponent,
   indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
   extraCodecs = Seq(
@@ -148,6 +148,9 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         Filters.eq(FieldNames.isEmailSent, false)
       )
     ).toFuture()
+
+object ApplicationForRiskingRepo:
+  val collectionName = "application-for-risking"
 
 // when named ApplicationForRiskingRepo, Scala 3 compiler complains
 // about cyclic reference error during compilation ...

@@ -12,13 +12,13 @@
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes
 #GET        /agent-registration-risking/test-only/create-application-for-risking/:numberOfIndividuals    uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.createTestApplicationForRisking(numberOfIndividuals: Int)
-GET        /agent-registration-risking/test-only/view-next-file-contents                                 uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.viewNextRiskingFileContents
-GET        /agent-registration-risking/test-only/run-risking                            uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.runRisking
+GET        /agent-registration-risking/test-only/view-next-file-contents                              uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.viewNextRiskingFileContents
+GET        /agent-registration-risking/test-only/run-risking                                          uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.runRisking
 
-GET        /files-available/list/:informationType                                                      uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.listAvailableFiles(informationType: String)
-GET        /agent-registration-risking/test-only/risking-results-file/:filename                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.downloadRiskingResultsFile(filename: RiskingResultsFileName)
-POST       /agent-registration-risking/test-only/risking-results-file/:filename                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.uploadRiskingResultsFile(filename: RiskingResultsFileName)
-DELETE     /agent-registration-risking/test-only/risking-results-file/:filename                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.deleteRiskingResultsFile(filename: RiskingResultsFileName)
+GET        /files-available/list/:informationType                                                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.listAvailableFiles(informationType: String)
+GET        /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.downloadRiskingResultsFile(filename: RiskingResultsFileName)
+POST       /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.uploadRiskingResultsFile(filename: RiskingResultsFileName)
+DELETE     /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.deleteRiskingResultsFile(filename: RiskingResultsFileName)
 POST       /agent-registration-risking/test-only/delete-all-risking-results-files                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.deleteAllRiskingResultsFiles()
 
-
+DELETE     /agent-registration-risking/test-only/applications                                         uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.deleteAllApplications                                       

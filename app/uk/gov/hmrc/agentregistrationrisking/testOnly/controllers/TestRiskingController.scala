@@ -26,9 +26,11 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
+import uk.gov.hmrc.agentregistrationrisking.testOnly.util.TestMongoCleanup
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
@@ -53,6 +55,8 @@ class TestRiskingController @Inject() (
   riskingRunner: RiskingRunner,
   sdesProxyService: SdesProxyService,
   riskingFileService: RiskingFileService,
+  riskingFileRepo: RiskingFileRepo,
+  testMongoCleanup: TestMongoCleanup,
   appConfig: AppConfig
 )(using
   clock: Clock
@@ -76,6 +80,15 @@ with Logging:
           (riskingFileWithContent, _) <- riskingRunner.buildRiskingFile()
           s: String = riskingFileWithContent.riskingFileContent
         yield Ok(s)
+
+  def deleteAllApplications: Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          _ <- testMongoCleanup.deleteAllApplications
+          _ <- testMongoCleanup.deleteAllIndividuals
+          _ <- testMongoCleanup.deleteAllRiskingFiles
+        yield NoContent
 
   private def generateRandomName(): String =
     val firstNames = List(
