@@ -65,10 +65,18 @@ class RiskingFileService @Inject() (appConfig: AppConfig):
       val allRecords: Seq[RiskingFileDataRecord] = applicationRecords ++ individualRecords
       val numberOfRecords: NumberOfRecords = allRecords.size
       val footerRow = s"99|$numberOfRecords\n"
+      val allRecordsNewLine: RiskingFileContent =
+        if allRecords.nonEmpty
+        then "\n"
+        else ""
       (
         allRecords
           .map(_.toPipeDelimitedString)
-          .mkString("", "\n", "\n"),
+          .mkString(
+            start = "",
+            sep = "\n",
+            end = allRecordsNewLine
+          ),
         footerRow,
         numberOfRecords
       )

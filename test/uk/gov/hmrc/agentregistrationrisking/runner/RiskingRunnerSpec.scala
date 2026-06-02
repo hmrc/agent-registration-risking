@@ -50,6 +50,26 @@ extends ISpec:
 
     riskingFileWithContent.riskingFileContent `shouldBeLike` expectedFileContent
 
+  "build empty risking file" in:
+    dropDatabase()
+
+    given request: Request[?] = tdAll.backendRequest
+    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) = riskingRunner.buildRiskingFile().futureValue
+
+    riskingFileWithContent.riskingFile shouldBe RiskingFile(
+      riskingFileName = fileName,
+      uploadedAt = tdAll.instant
+    )
+
+    applicationReferences shouldBe List.empty[ApplicationReference]
+
+    val expectedFileContentWhenNoRecords: String =
+      """00|ARR|SAS|20591125|163351
+        |99|0
+        |""".stripMargin
+
+    riskingFileWithContent.riskingFileContent `shouldBeLike` expectedFileContentWhenNoRecords
+
   "build risking file and sent to minerva" in:
     given request: Request[?] = tdAll.backendRequest
 
