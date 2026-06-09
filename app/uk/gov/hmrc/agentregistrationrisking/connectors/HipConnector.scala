@@ -47,7 +47,7 @@ extends Connector:
   private val originatingSystem: String = "MDTP-ASA"
   private val transmittingSystem: String = "HIP"
 
-  private val hipHeaders: Seq[(String, String)] = Seq(
+  private def hipHeaders: Seq[(String, String)] = Seq(
     "Authorization" -> s"Basic ${hipAuthToken.value}",
     "correlationid" -> correlationIdGenerator.nextCorrelationId.value,
     "X-Originating-System" -> originatingSystem,
