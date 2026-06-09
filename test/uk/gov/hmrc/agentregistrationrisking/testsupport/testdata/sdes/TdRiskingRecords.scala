@@ -21,7 +21,6 @@ import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.model.RecordType
 import uk.gov.hmrc.agentregistrationrisking.model.RecordType.*
-import uk.gov.hmrc.agentregistrationrisking.model.AdditionalInfo
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
@@ -158,15 +157,13 @@ trait TdRiskingRecords:
         "3.2",
         "AML check failed due to suspicious activity",
         "3",
-        "AMLS",
-        None
+        "AMLS"
       ),
       Failure(
         "4.1",
         "Outstanding returns overdue",
         "4",
-        "Overdue returns",
-        Some(AdditionalInfo(12500.75))
+        "Overdue returns"
       )
     )),
     None
@@ -180,8 +177,7 @@ trait TdRiskingRecords:
         "5.3",
         "Credit score below acceptable threshold",
         "5",
-        "Credit Risk Assessment",
-        None
+        "Credit Risk Assessment"
       )
     )),
     Some(PersonReference("personReference_002"))
@@ -195,8 +191,7 @@ trait TdRiskingRecords:
         "4.2",
         "Multiple overdue payments detected",
         "4",
-        "Overdue returns",
-        Some(AdditionalInfo(3200))
+        "Overdue returns"
       )
     )),
     Some(PersonReference("personReference_003"))

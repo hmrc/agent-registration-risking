@@ -74,8 +74,7 @@ extends ISpec:
             reasonCode = "8.1",
             reasonDescription = "Connected to a tax avoidance scheme",
             checkId = "8",
-            checkDescription = "Anti-avoidance",
-            additionalInfo = None
+            checkDescription = "Anti-avoidance"
           ))
         )
       )
@@ -130,8 +129,7 @@ extends ISpec:
             reasonCode = "4.1",
             reasonDescription = "One or more overdue SA returns",
             checkId = "4",
-            checkDescription = "Overdue returns",
-            additionalInfo = None
+            checkDescription = "Overdue returns"
           ))
         )
       )

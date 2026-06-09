@@ -26,14 +26,8 @@ final case class Failure(
   reasonCode: String,
   reasonDescription: String,
   checkId: String,
-  checkDescription: String,
-  additionalInfo: Option[AdditionalInfo]
+  checkDescription: String
 )
-
-final case class AdditionalInfo(value: Double)
-
-object AdditionalInfo:
-  given OFormat[AdditionalInfo] = Json.format[AdditionalInfo]
 
 object Failure:
   given reads: Reads[Failure] = Json.reads[Failure]
