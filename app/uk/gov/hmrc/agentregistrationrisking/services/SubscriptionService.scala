@@ -128,7 +128,7 @@ extends RequestAwareLogging:
       _ = logger.info("Sent CreatedAgentServicesAccountAuditEvent")
     yield ()
     
-  private def ensureCountryCode(country: String): String = 
+  private def ensureCountryCode(country: String)(using RequestHeader): String = 
     val gbCountries: Set[String] = Set(
       "GB",
       "GREAT BRITAIN",
