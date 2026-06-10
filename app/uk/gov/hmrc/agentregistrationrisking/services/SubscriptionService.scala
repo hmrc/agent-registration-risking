@@ -142,4 +142,6 @@ extends RequestAwareLogging:
     )
     if gbCountries.contains(country.toUpperCase) 
     then "GB"
-    else country.take(2).toUpperCase // this may or may not be a valid country code and may still be rejected by the API, but we have no better option for non-UK countries and the API will return a clear error if the code is invalid as opposed to a country code too long error
+    else 
+      logger.info(s"Non-UK country provided: $country. Attempting to use first two characters as country code.")
+      country.take(2).toUpperCase // this may or may not be a valid country code and may still be rejected by the API, but we have no better option for non-UK countries and the API will return a clear error if the code is invalid as opposed to a country code too long error
