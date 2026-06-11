@@ -127,8 +127,8 @@ extends RequestAwareLogging:
       _ = auditService.sendCreateAgentServicesAccountEvent(agentApplication, arn)
       _ = logger.info("Sent CreatedAgentServicesAccountAuditEvent")
     yield ()
-    
-  private def ensureCountryCode(country: String)(using RequestHeader): String = 
+
+  private def ensureCountryCode(country: String)(using RequestHeader): String =
     val gbCountries: Set[String] = Set(
       "GB",
       "GREAT BRITAIN",
@@ -140,8 +140,8 @@ extends RequestAwareLogging:
       "WALES",
       "NORTHERN IRELAND"
     )
-    if gbCountries.contains(country.toUpperCase) 
+    if gbCountries.contains(country.toUpperCase)
     then "GB"
-    else 
+    else
       logger.info(s"Non-UK country provided: $country. Attempting to use first two characters as country code.")
       country.take(2).toUpperCase // this may or may not be a valid country code and may still be rejected by the API, but we have no better option for non-UK countries and the API will return a clear error if the code is invalid as opposed to a country code too long error
