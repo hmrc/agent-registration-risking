@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant Caller
+    participant AuthorisedAction
+    participant AuthService as HMRC Auth Service
+    participant Controller as GetIndividualController
+    participant MongoDB as MongoDB (application-for-risking)
+
+    Caller->>Controller: GET /individual/{personReference}
+    Controller->>AuthorisedAction: andThen(authorisedAction)
+    AuthorisedAction->>AuthService: authorised(GovernmentGateway + AffinityGroup.Agent)
+    AuthService-->>AuthorisedAction: allEnrolments, credentialRole, internalId
+    alt Auth failed
+        AuthorisedAction-->>Caller: 401 Unauthorised
+    else Auth OK
+        AuthorisedAction-->>Controller: AuthorisedRequest
+        Controller->>MongoDB: findByPersonReference(personReference) — Filters.eq("individuals.personReference", value)
+        MongoDB-->>Controller: Option[ApplicationForRisking]
+        alt Application not found
+            Controller-->>Caller: 204 No Content
+        else Application found
+            Controller->>Controller: application.individuals.find(_.personReference === personReference)
+            alt Individual not found in list
+                Controller-->>Caller: 204 No Content
+            else Individual found
+                Controller->>Controller: toIndividualRiskingResponse(individual)
+                Controller-->>Caller: 200 OK (IndividualRiskingResponse JSON)
+            end
+        end
+    end
