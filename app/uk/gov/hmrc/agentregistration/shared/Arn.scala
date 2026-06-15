@@ -23,7 +23,7 @@ final case class Arn(value: String)
 
 object Arn:
 
-  given format: Format[Arn] = JsonFormatsFactory.makeValueClassFormat
+  given Format[Arn] = JsonFormatsFactory.makeValueClassFormat
 
   private val arnPattern = "^[A-Z]ARN[0-9]{7}$".r
 
