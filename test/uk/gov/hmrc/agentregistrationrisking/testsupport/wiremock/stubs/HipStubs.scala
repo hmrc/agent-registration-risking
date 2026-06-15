@@ -41,6 +41,23 @@ object HipStubs:
     responseBody = Json.stringify(Json.obj("error" -> "Internal Server Error"))
   )
 
+  def stubSubscribeToAgentServicesAlreadySubscribed(
+    safeId: SafeId,
+    arn: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${safeId.value}"),
+    responseStatus = 422,
+    responseBody =
+      s"""{
+         |  "errors": {
+         |    "processingDate": "2026-06-12T16:30:15Z",
+         |    "code": "061",
+         |    "text": "BP has already a valid Agent Subscription $arn"
+         |  }
+         |}""".stripMargin
+  )
+
   def verifySubscribeToAgentServices(count: Int = 1): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlMatching("/etmp/RESTAdapter/generic/agent/subscription/.*"),
