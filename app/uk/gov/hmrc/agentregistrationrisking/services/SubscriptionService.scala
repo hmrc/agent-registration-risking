@@ -121,7 +121,7 @@ extends RequestAwareLogging:
     arn: Arn,
     agentApplication: ApplicationData,
     subscribeAgentRequest: SubscribeAgentRequest
-  )(using RequestHeader): Future[Unit] = {
+  )(using RequestHeader): Future[Unit] =
     val knownFacts: Seq[KnownFact] = Seq(
       KnownFact(
         key = "AgencyPostcode",
@@ -147,7 +147,6 @@ extends RequestAwareLogging:
       )
       _ = logger.info(s"Allocated enrolment to group: ${agentApplication.applicationReference}")
     yield ()
-  }
 
   private def ensureCountryCode(country: String)(using RequestHeader): String =
     val gbCountries: Set[String] = Set(
