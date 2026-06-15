@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentregistration.shared.Utr
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
-import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
+import uk.gov.hmrc.agentregistration.shared.Arn
 
 sealed trait AuditEvent:
 

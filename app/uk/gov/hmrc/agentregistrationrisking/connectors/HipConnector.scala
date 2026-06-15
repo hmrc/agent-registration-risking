@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
+import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
 import uk.gov.hmrc.http.*

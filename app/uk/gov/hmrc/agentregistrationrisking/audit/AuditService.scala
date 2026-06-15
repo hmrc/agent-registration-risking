@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
+import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
