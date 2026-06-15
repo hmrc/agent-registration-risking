@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.AmlsCode
-import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsSupervisoryBodyCode
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsRegistrationNumber
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.BusinessType
 import uk.gov.hmrc.agentregistration.shared.CheckResult
@@ -60,7 +60,7 @@ object TdApplicationData:
         applicantEmailAddress = EmailAddress(s"applicantemail@$seed.com")
       ),
       amlsDetails = AmlsDetailsData(
-        supervisoryBody = AmlsCode(s"amlscode_$seed"),
+        supervisoryBody = AmlsSupervisoryBodyCode(s"amlscode_$seed"),
         amlsRegistrationNumber = AmlsRegistrationNumber(s"amlsregistrationnumber_$seed"),
         amlsEvidence = Some(AmlsEvidenceData(
           fileUploadReference = FileUploadReference(s"amls_fileupload_ref$seed"),

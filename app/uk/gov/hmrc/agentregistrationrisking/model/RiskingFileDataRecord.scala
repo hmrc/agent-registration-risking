@@ -26,6 +26,8 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsRegistrationNumber
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsSupervisoryBodyCode
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenceData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
@@ -50,7 +52,7 @@ final case class RiskingFileDataRecord(
   crn: Option[Crn],
   vrns: String,
   payeRefs: String,
-  amlSupervisoryBody: Option[AmlsCode],
+  amlSupervisoryBody: Option[AmlsSupervisoryBodyCode],
   amlRegNumber: Option[AmlsRegistrationNumber],
   amlExpiryDate: Option[LocalDate],
   amlEvidence: Option[AmlsEvidenceUrl],
