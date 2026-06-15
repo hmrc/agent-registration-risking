@@ -20,6 +20,7 @@ import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.agentregistration.shared.SafeId
 import uk.gov.hmrc.agentregistration.shared.util.Errors
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
@@ -75,6 +76,12 @@ extends Connector:
       .map { response =>
         response.status match {
           case CREATED => (response.json \ "success" \ "arn").as[Arn]
+          case UNPROCESSABLE_ENTITY if (response.json \ "errors" \ "code").as[String] === "061" =>
+            val arn = (response.json \ "errors" \ "text").as[String].split(" ").last
+            if (Arn.isValid(arn))
+              Arn(arn)
+            else
+              throw new RuntimeException(s"$arn is not a valid Arn")
           case status =>
             Errors.throwUpstreamErrorResponse(
               httpMethod = "POST",
