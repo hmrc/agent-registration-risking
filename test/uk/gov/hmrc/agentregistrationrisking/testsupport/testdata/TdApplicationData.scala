@@ -19,8 +19,8 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 import uk.gov.hmrc.agentregistration.shared.AmlsCode
 import uk.gov.hmrc.agentregistration.shared.AmlsRegistrationNumber
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistration.shared.BusinessType
-import uk.gov.hmrc.agentregistration.shared.CheckResult
 import uk.gov.hmrc.agentregistration.shared.Crn
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.GroupId
@@ -32,7 +32,6 @@ import uk.gov.hmrc.agentregistration.shared.Utr
 import uk.gov.hmrc.agentregistration.shared.Vrn
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddress
-import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
@@ -88,5 +87,6 @@ object TdApplicationData:
       payeRefs = List(PayeRef(s"payeref_$seed")),
       crn = Some(Crn(s"crn_$seed")),
       utr = Utr(s"utr_$seed"),
-      safeId = SafeId(s"safeid_$seed")
+      safeId = SafeId(s"safeid_$seed"),
+      arn = Some(Arn(s"arn_$seed"))
     )
