@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.Application
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
+import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -94,20 +95,41 @@ extends RequestAwareLogging:
       reriskStatus = "ACCEPTED"
     )
 
+    for
+      arn <-
+        if (agentApplication.arn.nonEmpty)
+          logger.info(s"Agent is already subscribed to agent services (skipping hip request): ${agentApplication.applicationReference}")
+          Future.successful(agentApplication.getArn)
+        else
+          hipConnector.subscribeToAgentServices(
+            safeId = agentApplication.safeId,
+            subscribeAgentRequest = subscribeAgentRequest
+          ).map(arn =>
+            logger.info(s"Subscribed to agent services: ${agentApplication.applicationReference}")
+            arn
+          )
+      _ <- enrolAgent(
+        arn,
+        agentApplication,
+        subscribeAgentRequest
+      )
+      _ = auditService.sendCreateAgentServicesAccountEvent(agentApplication, arn)
+      _ = logger.info("Sent CreatedAgentServicesAccountAuditEvent")
+    yield ()
+
+  private def enrolAgent(
+    arn: Arn,
+    agentApplication: ApplicationData,
+    subscribeAgentRequest: SubscribeAgentRequest
+  )(using RequestHeader): Future[Unit] =
     val knownFacts: Seq[KnownFact] = Seq(
       KnownFact(
         key = "AgencyPostcode",
         value = subscribeAgentRequest.postcode.getOrThrowExpectedDataMissing("postcode is required for UK subscriptions")
       )
     )
-
+    val enrolmentKey = s"HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}"
     for
-      arn <- hipConnector.subscribeToAgentServices(
-        safeId = agentApplication.safeId,
-        subscribeAgentRequest = subscribeAgentRequest
-      )
-      _ = logger.info(s"Subscribed to agent services: ${agentApplication.applicationReference}")
-      enrolmentKey = s"HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}"
       _ <- enrolmentStoreProxyConnector.addKnownFacts(
         enrolmentKey = enrolmentKey,
         knownFactsRequest = KnownFactsRequest(verifiers = knownFacts)
@@ -124,8 +146,6 @@ extends RequestAwareLogging:
         )
       )
       _ = logger.info(s"Allocated enrolment to group: ${agentApplication.applicationReference}")
-      _ = auditService.sendCreateAgentServicesAccountEvent(agentApplication, arn)
-      _ = logger.info("Sent CreatedAgentServicesAccountAuditEvent")
     yield ()
 
   private def ensureCountryCode(country: String)(using RequestHeader): String =

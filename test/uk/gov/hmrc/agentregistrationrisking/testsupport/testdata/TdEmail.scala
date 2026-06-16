@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
 import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
-import uk.gov.hmrc.agentregistrationrisking.model.hip.Arn
+import uk.gov.hmrc.agentregistration.shared.Arn
 
 trait TdEmail:
 
