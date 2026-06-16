@@ -20,6 +20,8 @@ import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.AgentApplication.IsIncorporated
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsRegistrationNumber
+import uk.gov.hmrc.agentregistration.shared.amls.AmlsSupervisoryBodyCode
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.*
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
@@ -107,7 +109,7 @@ object SmuIndividualResponse:
     payeRefs: List[PayeRef],
     vrns: List[Vrn],
     crn: Option[Crn],
-    amlsSupervisoryBody: AmlsCode,
+    amlsSupervisoryBody: AmlsSupervisoryBodyCode,
     amlsRegNumber: AmlsRegistrationNumber,
     amlsExpiryDate: Option[LocalDate],
     amlsEvidenceReferenceId: Option[String],
