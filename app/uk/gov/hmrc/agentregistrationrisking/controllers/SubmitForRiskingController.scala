@@ -56,7 +56,7 @@ extends BackendController(cc):
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
           val now = Instant.now(summon[Clock])
-          val application = makeApplicationForRisking(request.body, now)
+          val application: ApplicationForRisking = makeApplicationForRisking(request.body, now)
           for
             _ <- applicationForRiskingRepo.upsert(application)
             _ <- individualForRiskingRepo.insertMany(makeIndividualForRiskingList(request.body, now))

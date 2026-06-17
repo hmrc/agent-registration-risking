@@ -25,6 +25,7 @@ enum ApplicationState:
   case Started
   case GrsDataReceived
   case SentForRisking
+  case RiskingCompleted // outcomes are populated now
 
 object ApplicationState:
 

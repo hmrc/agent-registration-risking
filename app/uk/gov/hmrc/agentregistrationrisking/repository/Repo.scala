@@ -60,11 +60,21 @@ extends PlayMongoRepository[A](
 ):
 
   /** Update or Insert (UpSert) */
-  def upsert(a: A): Future[Unit] = collection
+  def update(a: A): Future[Unit] = collection
     .replaceOne(
       filter = Filters.eq(idString.idField, idString.idString(idExtractor.id(a))),
       replacement = a,
       options = ReplaceOptions().upsert(true)
+    )
+    .toFuture()
+    .map(_ => ())
+
+  /** Update or Insert (UpSert) */
+  def insert(a: A): Future[Unit] = collection
+    .replaceOne(
+      filter = Filters.eq(idString.idField, idString.idString(idExtractor.id(a))),
+      replacement = a,
+      options = ReplaceOptions()
     )
     .toFuture()
     .map(_ => ())

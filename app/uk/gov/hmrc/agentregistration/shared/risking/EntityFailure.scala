@@ -16,13 +16,26 @@
 
 package uk.gov.hmrc.agentregistration.shared.risking
 
-import scala.annotation.nowarn
+import uk.gov.hmrc.agentregistration.shared.util.DisjointUnions
 
 sealed trait EntityFailure
 
 object EntityFailure:
 
   export EntityFailureFormats.format
+
+  type IsAmls = (_3._1.type | _3._2.type | _3._3.type | _3._4.type | _3._5.type) & Fixable
+
+  type IsNotAmls =
+    (_4._1.type | _4._2.type | _4._3.type | _4._4.type
+      | _5._1.type | _5._2.type | _5._3.type | _5._4.type | _5._5.type | _5._6.type | _5._7.type
+      | _8._5.type | _8._7.type) & Fixable
+
+  DisjointUnions.prove[
+    Fixable,
+    IsAmls,
+    IsNotAmls
+  ]
 
   sealed trait Fixable
   extends EntityFailure
@@ -163,7 +176,6 @@ object EntityFailureFormats:
     }
   )
 
-  @nowarn()
   given format: OFormat[EntityFailure] =
     // Note: using implicit val instead of given due to Scala compiler bug with given and Play JSON macros
     implicit val _3_1: OFormat[EntityFailure._3._1.type] = Json.format[EntityFailure._3._1.type]
@@ -188,10 +200,5 @@ object EntityFailureFormats:
     implicit val _8_5: OFormat[EntityFailure._8._5.type] = Json.format[EntityFailure._8._5.type]
     implicit val _8_6: OFormat[EntityFailure._8._6.type] = Json.format[EntityFailure._8._6.type]
     implicit val _8_7: OFormat[EntityFailure._8._7.type] = Json.format[EntityFailure._8._7.type]
-
-    val dontDeleteMe = """
-       |Don't delete me.
-       |I will emit a warning so `@nowarn` can be applied to address below
-       |`Unreachable case except for null` problem emited by Play Json macro"""
 
     Json.format[EntityFailure]
