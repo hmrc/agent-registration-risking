@@ -18,11 +18,12 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
+import uk.gov.hmrc.agentregistration.shared.Arn
+import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
-import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
@@ -72,19 +73,20 @@ extends RequestAwareLogging:
       _ = logger.info(s"Application subscribed: ${application.applicationReference}")
     yield ()
 
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   private def subscribeAgent(agentApplication: ApplicationData)(using RequestHeader): Future[Unit] =
     val agentDetails: AgentDetailsData = agentApplication.agentDetails
     val amlsDetails: AmlsDetailsData = agentApplication.amlsDetails
     val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(
-      name = agentDetails.businessName.getAgentBusinessName,
-      addr1 = agentDetails.agentCorrespondenceAddress.addressLine1,
-      addr2 = agentDetails.agentCorrespondenceAddress.addressLine2.getOrElse(""),
-      addr3 = agentDetails.agentCorrespondenceAddress.addressLine3,
-      addr4 = agentDetails.agentCorrespondenceAddress.addressLine4,
-      postcode = agentDetails.agentCorrespondenceAddress.postalCode,
+      name = ensureFieldLength(agentDetails.businessName.getAgentBusinessName, 40).asInstanceOf[String],
+      addr1 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine1, 35).asInstanceOf[String],
+      addr2 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine2.getOrElse(""), 35).asInstanceOf[String],
+      addr3 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine3, 35).asInstanceOf[Option[String]],
+      addr4 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine4, 35).asInstanceOf[Option[String]],
+      postcode = ensureFieldLength(agentDetails.agentCorrespondenceAddress.postalCode, 10).asInstanceOf[Option[String]],
       country = ensureCountryCode(agentDetails.agentCorrespondenceAddress.countryCode),
-      phone = Some(agentDetails.telephoneNumber.agentTelephoneNumber),
-      email = agentDetails.agentEmailAddress,
+      phone = ensureFieldLength(Some(agentDetails.telephoneNumber.agentTelephoneNumber), 24).asInstanceOf[Option[String]],
+      email = ensureFieldLength(agentDetails.agentEmailAddress, 132).asInstanceOf[EmailAddress],
       supervisoryBody = Some(amlsDetails.supervisoryBody.value),
       membershipNumber = Some(amlsDetails.amlsRegistrationNumber.value),
       evidenceObjectReference = None,
@@ -165,3 +167,13 @@ extends RequestAwareLogging:
     else
       logger.info(s"Non-UK country provided: $country. Attempting to use first two characters as country code.")
       country.take(2).toUpperCase // this may or may not be a valid country code and may still be rejected by the API, but we have no better option for non-UK countries and the API will return a clear error if the code is invalid as opposed to a country code too long error
+
+  private def ensureFieldLength(
+    field: String | Option[String] | EmailAddress,
+    max: Int
+  ): String | Option[String] | EmailAddress =
+    field match {
+      case str: String => str.take(max)
+      case opt: Option[String] => opt.map(_.take(max))
+      case email: EmailAddress => EmailAddress(email.value.take(max))
+    }
