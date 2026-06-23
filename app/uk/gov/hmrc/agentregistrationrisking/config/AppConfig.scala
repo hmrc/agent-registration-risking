@@ -46,6 +46,7 @@ class AppConfig @Inject() (
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
   val hipBaseUrl: String = servicesConfig.baseUrl("hip")
   val hipAuthToken: HipAuthToken = HipAuthToken(config.get[String]("microservice.services.hip.authorization-token"))
+  val internalAuthToken: String = config.get[String]("internal-auth.token")
 
   object AmlsEvidence:
     val baseUrl: String = ConfigHelper.readConfigAsValidUrlString("urls.agent-helpdesk-amls-evidence", config)
