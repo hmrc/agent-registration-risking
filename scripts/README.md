@@ -2,30 +2,50 @@
 
 These scripts simulate risk results file processing.
 
-All scripts talk to `localhost:22203`, which in `application.conf` is configured as the `secure-data-exchange-proxy` host — but it's actually **this service itself** running locally with test-only routes enabled.
+By default all scripts talk to `localhost:22203`. To run against a remote environment set `BASE_URL`:
+
+```bash
+export BASE_URL=https://<qa-or-staging-host>
+```
 
 > **Note:** The service must be started with test-only routes enabled:
 > ```
 > sbt run -Dapplication.router=testOnlyDoNotUseInAppConf.Routes
 > ```
+> For QA/Staging this must be set in the service-manager profile:
+> ```
+> -Dapplication.router=testOnlyDoNotUseInAppConf.Routes
+> ```
 
 ---
 
-## The Flow
+## Two Flows
 
-### Prep
-1. Create an application in mongo
-2. Capture the Application and Individual References
-3. Update the risking results file with the relevant Application and Individual References plus the desired risk results
-4. Rename the risking file if already used (previously used files will be in the processed-results-files folder and won't be processed again)
+There are two ways to trigger risking depending on the environment.
 
-### Step 1 — Setup Object Store (`20-setup-object-store.sh`)
+### Local Flow (truer end-to-end test — includes object-store upload)
+
+Uses the production notification endpoint. The service goes through the full SDES-proxy loop: list files → download → process → upload to object-store.
+
+**Steps:** `20` → `15` → `50`
+
+### QA/Staging Flow (test-only — bypasses SDES proxy and HTTP download)
+
+Reads uploaded files directly from MongoDB. Avoids the SDES proxy and HTTP download which are not reliably accessible in higher environments.
+
+**Steps:** `15` → `55`
+
+---
+
+## Step by Step
+
+### Step 1 — Setup Object Store — **Local only** (`20-setup-object-store.sh`)
 
 ```bash
 ./20-setup-object-store.sh
 ```
 
-Registers an auth token (`1234`) with the locally running **object-store stub** (port 8464). This matches `internal-auth.token = "1234"` in `application.conf`. Must be run first before uploading any files.
+Registers the auth token with the locally running **object-store stub** (port 8470). **Not needed in QA/Staging.**
 
 ---
 
@@ -35,7 +55,7 @@ Registers an auth token (`1234`) with the locally running **object-store stub** 
 ./15-upload-risking-results-file.sh risking-results-1.json
 ```
 
-POSTs the JSON file body to the test-only endpoint, which stores the file in object-store under the service's namespace — simulating what the real SDES would do when delivering a file.
+POSTs the JSON file from your local machine to the test-only endpoint, storing it in MongoDB. Works in all environments.
 
 The **results files** (`risking-results-1.json`, `risking-results-2.json`, etc.) contain an array of `Entity` and `Individual` records with risking failure codes, for example:
 
@@ -60,50 +80,36 @@ The **results files** (`risking-results-1.json`, `risking-results-2.json`, etc.)
 
 ---
 
-### Step 3 — Send the "File Ready" Notification (`50-send-file-ready-notification.sh`)
+### Step 3a — Trigger via SDES notification — **Local only** (`50-send-file-ready-notification.sh`)
 
 ```bash
 ./50-send-file-ready-notification.sh
 ```
 
-POSTs `notification-file-ready.json` to the **real production endpoint** `/receive-sdes-notifications`. This is the trigger that tells the service a results file is ready to be pulled and processed.
+POSTs a "FileReady" notification to the production `/receive-sdes-notifications` endpoint. The service then fetches the file list from itself (via the SDES proxy config loop), downloads and processes the files, and uploads them to object-store as a backup.
 
-The notification payload looks like:
-
-```json
-{
-  "notification": "FileReady",
-  "filename": "file-name-whatever.json",
-  "checksumAlgorithm": "md5-whatever",
-  "checksum": "123456-whatever",
-  "correlationID": "correlationId-whatever",
-  "availableUntil": "2027-01-01T00:00:00.000Z-whatever",
-  "dateTime": "2027-01-01T00:00:00.000Z-whatever"
-}
-```
-
-The service then fetches the file from object-store by filename and processes the risking results.
+You must use a **unique filename** each time — files already uploaded to object-store won't be processed again.
 
 ---
 
-## Key Design Point: How the File is Pulled
+### Step 3b — Trigger directly from MongoDB — **QA/Staging** (`55-trigger-risking-from-mongo.sh`)
 
-The service does **not** receive the file contents in the notification. The notification only tells the service **a file is ready** (with a filename and checksum). After receiving the notification, the service:
+```bash
+BASE_URL=https://<staging-host> ./55-trigger-risking-from-mongo.sh
+```
 
-1. **Fetches the list of available files from object-store** (port 8464) using the internal auth token
-2. Parses and processes the unprocessed risking results
+Calls the test-only `/test-only/trigger-risking` endpoint. The service reads files directly from MongoDB, processes the risking results, and **deletes the file from MongoDB** once processed. No HTTP download, no proxy, no object-store upload.
 
-The test-only upload script (step 2) pre-loads the file into object-store so it's there when the service goes to fetch it after the notification arrives.
+Because files are deleted after processing, you **can reuse the same filename** across test runs.
 
 ---
 
 ## Supporting / Housekeeping Scripts
 
-| Script | Purpose |
-|---|---|
-| `10-list-available-files.sh` | Lists files currently staged in the SDES stub, filtered by information type (see `secure-data-exchange-proxy.inbound.information-type` in `application.conf`) |
-| `21-list-object-store-files.sh` | Directly lists files on disk at `/tmp/object-store/agent-registration-risking/` — the local object-store stub stores files here |
-| `11-delete-all-risking-results-files.sh` | Clears all staged results files via a test-only endpoint |
-| `12-delete-risking-results-file.sh` | Deletes a specific results file by name |
-
-Note: None of the above scripts clear the list of processed results files so you will need to give the results file a unique name each time you want to test a new file. The service will ignore any files that have already been processed.
+| Script | Purpose | Env |
+|---|---|---|
+| `10-list-available-files.sh` | Lists files currently staged (in MongoDB) | Any (respects `BASE_URL`) |
+| `11-delete-all-risking-results-files.sh` | Clears all staged results files | Any (respects `BASE_URL`) |
+| `12-delete-risking-results-file.sh` | Deletes a specific results file by name | Any (respects `BASE_URL`) |
+| `20-setup-object-store.sh` | Registers auth token with the local object-store stub | Local only |
+| `21-list-object-store-files.sh` | Lists files at `/tmp/object-store/agent-registration-risking/` | Local only |

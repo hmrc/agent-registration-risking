@@ -25,10 +25,13 @@ import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
+import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileContent
+import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultsFileContentsRepo
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.objectstore.client.ObjectListing
@@ -47,9 +50,28 @@ class TestOnlyRiskingResultsService @Inject() (
   individualForRiskingRepo: IndividualForRiskingRepo,
   objectStoreService: ObjectStoreService,
   riskingResultsFileConnector: RiskingResultsFileConnector,
+  riskingResultsFileContentsRepo: RiskingResultsFileContentsRepo,
   clock: Clock
 )(using ExecutionContext)
 extends RequestAwareLogging:
+
+  // Processes files directly from MongoDB — no HTTP download, no proxy needed.
+  // Used in place of the production notification flow in QA/Staging.
+  // Files are deleted from the repo once processed so they cannot be reprocessed.
+  def processResultsFilesFromMongo()(using request: RequestHeader): Future[Unit] =
+    for
+      allFiles <- riskingResultsFileContentsRepo.findAll()
+      _ = logger.info(s"Found ${allFiles.size} RiskingResultsFile(s) in MongoDB to process")
+      _ <- ProcessInSequence.processInSequence(allFiles)(processAndDeleteFileFromMongo).map(_.size)
+    yield ()
+
+  private def processAndDeleteFileFromMongo(fileContent: RiskingResultsFileContent)(using request: RequestHeader): Future[Unit] =
+    logger.info(s"Processing RiskingResultsFile from MongoDB: ${fileContent.riskingResultsFileName.value}")
+    val riskingResults = fileContent.content.as[List[RiskingResultRecord]].map(RiskingResultParser.parseRiskingResult)
+    for
+      _ <- ProcessInSequence.processInSequence(riskingResults)(processRiskingResult)
+      _ <- riskingResultsFileContentsRepo.removeById(fileContent.riskingResultsFileName)
+    yield ()
 
   def processResultsFilesSkipUpload()(using request: RequestHeader): Future[Unit] =
     logger.info(s"Processing RiskingResultsFile(s) (test-only skip-upload mode) ...")

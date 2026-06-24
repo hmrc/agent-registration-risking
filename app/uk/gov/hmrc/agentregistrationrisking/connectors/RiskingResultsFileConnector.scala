@@ -39,7 +39,6 @@ extends Connector:
     httpClient
       .get(fileLocation)
       .withProxy
-      .setHeader("Authorization" -> s"Token ${appConfig.internalAuthToken}")
       .execute[HttpResponse]
       .map: response =>
         response.status match

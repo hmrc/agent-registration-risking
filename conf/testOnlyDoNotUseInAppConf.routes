@@ -20,5 +20,6 @@ GET        /agent-registration-risking/test-only/risking-results-file/:filename 
 POST       /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.uploadRiskingResultsFile(filename: RiskingResultsFileName)
 DELETE     /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.deleteRiskingResultsFile(filename: RiskingResultsFileName)
 POST       /agent-registration-risking/test-only/delete-all-risking-results-files                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.deleteAllRiskingResultsFiles()
+POST       /agent-registration-risking/test-only/trigger-risking                                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.triggerRisking()
 
 DELETE     /agent-registration-risking/test-only/applications                                         uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.deleteAllApplications                                       
