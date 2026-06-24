@@ -25,14 +25,14 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 class CompletedRiskingSpec
 extends UnitSpec:
 
-  "serialize/deserialize approved" in:
-    Json.toJson(Fixture.completedRiskingApproved) shouldBe Fixture.completedRiskingApprovedJson
-    Fixture.completedRiskingApprovedJson.as[CompletedRisking] shouldBe Fixture.completedRiskingApproved
+  "serialize/deserialize" in:
+    Json.toJson(Fixture.completedRisking) shouldBe Fixture.completedRiskingApprovedJson
+    Fixture.completedRiskingApprovedJson.as[CompletedRisking] shouldBe Fixture.completedRisking
 
   object Fixture:
 
     val tdRisking: TdRisking = TdRisking.make("CompletedRiskingSpec")
-    val completedRiskingApproved: CompletedRisking = TdCompletedRisking.makeCompletedRisking(
+    val completedRisking: CompletedRisking = TdCompletedRisking.makeCompletedRisking(
       completedRiskingId = CompletedRiskingId("CR_123"),
       completedAt = tdRisking.instant,
       riskingFile = tdRisking.riskingFile,
@@ -40,18 +40,18 @@ extends UnitSpec:
         tdRisking
           .tdApplicationForRisking
           .receivedRiskingResults
-          .approvedAfterEmailsProcessed,
+          .failedNonFixableAfterEmailsProcessed,
       individuals = Seq(
         tdRisking
           .tdIndividualsForRisking
           .tdIndividualForRisking1
           .receivedRiskingResults
-          .approved,
+          .failedNonFixableEmailSent,
         tdRisking
           .tdIndividualsForRisking
           .tdIndividualForRisking2
           .receivedRiskingResults
-          .approved
+          .failedFixable
       )
     )
 
@@ -120,15 +120,23 @@ extends UnitSpec:
         |    "createdAt": "2059-11-25T16:33:51Z",
         |    "lastUpdatedAt": "2059-11-25T16:33:51Z",
         |    "entityRiskingResult": {
-        |      "failures": [],
+        |      "failures": [
+        |        {
+        |          "type": "_3._2"
+        |        },
+        |        {
+        |          "type": "_8._4"
+        |        }
+        |      ],
         |      "receivedAt": "2059-11-25T16:33:51Z"
         |    },
-        |    "isSubscribed": true,
+        |    "isSubscribed": false,
         |    "isEmailSent": true,
         |    "overallStatus": {
-        |      "riskingOutcome": "Approved",
+        |      "riskingOutcome": "FailedNonFixable",
         |      "emailsProcessed": true
-        |    }
+        |    },
+        |    "correctiveActionExpiryDate": "2060-01-09T16:33:51Z"
         |  },
         |  "individuals": [
         |    {
@@ -164,10 +172,17 @@ extends UnitSpec:
         |      "createdAt": "2059-11-25T16:33:51Z",
         |      "lastUpdatedAt": "2059-11-25T16:33:51Z",
         |      "individualRiskingResult": {
-        |        "failures": [],
+        |        "failures": [
+        |          {
+        |            "type": "_4._3"
+        |          },
+        |          {
+        |            "type": "_7"
+        |          }
+        |        ],
         |        "receivedAt": "2059-11-23T16:33:51Z"
         |      },
-        |      "isEmailSent": false
+        |      "isEmailSent": true
         |    },
         |    {
         |      "personReference": "PREF_CompletedRiskingSpec_02",
@@ -202,12 +217,19 @@ extends UnitSpec:
         |      "createdAt": "2059-11-25T16:33:51Z",
         |      "lastUpdatedAt": "2059-11-25T16:33:51Z",
         |      "individualRiskingResult": {
-        |        "failures": [],
+        |        "failures": [
+        |          {
+        |            "type": "_4._1"
+        |          },
+        |          {
+        |            "type": "_4._3"
+        |          }
+        |        ],
         |        "receivedAt": "2059-11-23T16:33:51Z"
         |      },
         |      "isEmailSent": false
         |    }
         |  ]
-        |}
+        |} 
         |""".stripMargin
     )
