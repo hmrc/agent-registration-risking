@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistration.shared
+package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
-enum ApplicationState:
+import java.time.Instant
+import javax.inject.Singleton
 
-  case Started
-  case GrsDataReceived
-  case SentForRisking
-  case SentToMinerva
-  case RiskingCompleted // outcomes are populated now
+final case class CompletedRisking(
+  _id: CompletedRiskingId,
+  completedAt: Instant,
+  riskingFile: RiskingFile,
+  application: ApplicationForRisking,
+  individuals: Seq[IndividualForRisking]
+):
+  val completedRiskingId: CompletedRiskingId = _id
 
-object ApplicationState:
-
-  given Format[ApplicationState] = JsonFormatsFactory.makeEnumFormat[ApplicationState]
-
-  extension (as: ApplicationState)
-    def sentForRisking: Boolean = as === ApplicationState.SentForRisking
+object CompletedRisking:
+  given format: OFormat[CompletedRisking] = Json.format[CompletedRisking]

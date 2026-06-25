@@ -84,6 +84,7 @@ extends RequestAwareLogging:
         individuals = individuals,
         instant = instant
       )
+
       _ = logger.info(s"Generated risking file: ${riskingFileWithContent.riskingFile.riskingFileName}, ${riskingFileWithContent.numberOfRecords} records")
     yield (riskingFileWithContent, applicationReferences)
 

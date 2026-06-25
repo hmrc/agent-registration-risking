@@ -58,6 +58,9 @@ class AppConfig @Inject() (
   object ApplicationForRiskingRepo:
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
 
+  object CompletedRiskingRepo:
+    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.completed-risking-ttl", servicesConfig)
+
   object FieldLevelEncryption:
 
     val enabled: Boolean = config.get[Boolean]("field-level-encryption.enabled")
@@ -77,6 +80,7 @@ class AppConfig @Inject() (
     val outboundServerToken: SdesServerToken = SdesServerToken(ConfigHelper.getConfString("secure-data-exchange-proxy.outbound.server-token", servicesConfig))
     val srn: SdesSrn = SdesSrn(ConfigHelper.getConfString("secure-data-exchange-proxy.srn", servicesConfig))
     val objectStoreLocationPrefix: String = ConfigHelper.getConfString("secure-data-exchange-proxy.object-store-location-prefix", servicesConfig)
+    val useProxyForDownloads: Boolean = config.getOptional[Boolean]("microservice.services.secure-data-exchange-proxy.use-proxy-for-downloads").getOrElse(true)
 
   object Email:
 
