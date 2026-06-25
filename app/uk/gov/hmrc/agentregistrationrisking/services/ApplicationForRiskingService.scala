@@ -21,11 +21,13 @@ import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.CompletedRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -35,11 +37,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import cats.data.OptionT
+import cats.implicits.*
+
+import scala.util.chaining.*
 
 @Singleton
 class ApplicationForRiskingService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  completedRiskingRepo: CompletedRiskingRepo
 )(using
   ExecutionContext,
   Clock
@@ -53,8 +60,13 @@ extends RequestAwareLogging:
       applicationWithIndividuals: Option[ApplicationWithIndividuals] = maybeApplication.map(ApplicationWithIndividuals(_, individualForRisking))
     yield applicationWithIndividuals
 
-  import cats.data.OptionT
-  import cats.implicits.*
+  def getApplicationWithIndividualsFromCompletedRisking(applicationReference: ApplicationReference): Future[Option[ApplicationWithIndividuals]] =
+    completedRiskingRepo
+      .findRecent(applicationReference)
+      .pipe(OptionT.apply)
+      .map: (completedRisking: CompletedRisking) =>
+        ApplicationWithIndividuals(completedRisking.application, completedRisking.individuals)
+      .value
 
   def getApplicationWithIndividuals(personReference: PersonReference): Future[Option[ApplicationWithIndividuals]] =
     (for
@@ -63,3 +75,11 @@ extends RequestAwareLogging:
       individuals: Seq[IndividualForRisking] <- OptionT.liftF(individualForRiskingRepo.findByApplicationReference(individual.applicationReference))
       applicationWithIndividuals: ApplicationWithIndividuals = ApplicationWithIndividuals(application, individuals)
     yield applicationWithIndividuals).value
+
+  def getApplicationWithIndividualsFromCompletedRisking(personReference: PersonReference): Future[Option[ApplicationWithIndividuals]] =
+    completedRiskingRepo
+      .findRecent(personReference)
+      .pipe(OptionT.apply)
+      .map: (completedRisking: CompletedRisking) =>
+        ApplicationWithIndividuals(completedRisking.application, completedRisking.individuals.filter(_.personReference === personReference))
+      .value
