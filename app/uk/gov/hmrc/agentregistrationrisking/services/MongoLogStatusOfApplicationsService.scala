@@ -23,7 +23,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class MongoLogApplicationsStatusService @Inject() (
+class MongoLogStatusOfApplicationsService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo
 )(using ExecutionContext)
 extends Logging:

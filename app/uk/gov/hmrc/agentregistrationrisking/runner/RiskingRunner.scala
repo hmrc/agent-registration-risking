@@ -30,7 +30,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.services.MongoLogApplicationsStatusService
+import uk.gov.hmrc.agentregistrationrisking.services.MongoLogStatusOfApplicationsService
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
@@ -58,7 +58,7 @@ class RiskingRunner @Inject() (
   riskingFileRepo: RiskingFileRepo,
   riskingFileService: RiskingFileService,
   auditService: AuditService,
-  mongoLogApplicationsStatusService: MongoLogApplicationsStatusService
+  mongoLogStatusOfApplicationsService: MongoLogStatusOfApplicationsService
 )(using
   appConfig: AppConfig,
   ec: ExecutionContext,
@@ -118,5 +118,5 @@ extends RequestAwareLogging:
            | $objectSummary
            |""".stripMargin
       )
-      _ = mongoLogApplicationsStatusService.logApprovedNotSubscribedApplicationCount()
+      _ = mongoLogStatusOfApplicationsService.logApprovedNotSubscribedApplicationCount()
     yield ()
