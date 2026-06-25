@@ -45,3 +45,11 @@ object FieldNames:
   val isSubscribed: String = "isSubscribed"
 
   val isEmailSent: String = "isEmailSent"
+
+  object CompletedRisking:
+
+    val completedRiskingId: String = "_id"
+    val applicationReference: String = s"application.$applicationReference"
+    val applicationReferenceIndex: String = applicationReference + "Index"
+    val completedAt: String = completedAt
+    val completedAtIndex: String = completedAt + "Index"
