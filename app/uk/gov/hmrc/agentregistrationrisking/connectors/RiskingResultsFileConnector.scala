@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
-import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
 import java.net.URI
 import javax.inject.Inject
@@ -36,9 +36,10 @@ extends Connector:
 
   def getRiskingResultRecords(availableFile: AvailableFile)(using RequestHeader): Future[RiskingResultRecords] =
     val fileLocation: URL = new URI(availableFile.downloadURL).toURL
-    val getRequest = httpClient.get(fileLocation)
-    val getRequestWithOptionalProxy =
-      if appConfig.SdesProxy.useProxyForDownloads then getRequest.withProxy
+    val getRequest: RequestBuilder = httpClient.get(fileLocation)
+    val getRequestWithOptionalProxy: RequestBuilder =
+      if appConfig.SdesProxy.useProxyForDownloads
+      then getRequest.withProxy
       else getRequest
 
     getRequestWithOptionalProxy
