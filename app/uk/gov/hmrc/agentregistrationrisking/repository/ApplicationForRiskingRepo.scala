@@ -149,6 +149,14 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       )
     ).toFuture()
 
+  def findApprovedNotSubscribed(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
+        Filters.eq(FieldNames.isSubscribed, false)
+      )
+    ).toFuture()
+
 object ApplicationForRiskingRepo:
   val collectionName = "application-for-risking"
 
