@@ -36,9 +36,12 @@ extends Connector:
 
   def getRiskingResultRecords(availableFile: AvailableFile)(using RequestHeader): Future[RiskingResultRecords] =
     val fileLocation: URL = new URI(availableFile.downloadURL).toURL
-    httpClient
-      .get(fileLocation)
-      .withProxy
+    val getRequest = httpClient.get(fileLocation)
+    val getRequestWithOptionalProxy =
+      if appConfig.SdesProxy.useProxyForDownloads then getRequest.withProxy
+      else getRequest
+
+    getRequestWithOptionalProxy
       .execute[HttpResponse]
       .map: response =>
         response.status match

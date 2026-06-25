@@ -32,14 +32,9 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
-import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
-import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
-import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
-import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileContent
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultsFileContentsRepo
-import uk.gov.hmrc.agentregistrationrisking.testOnly.services.TestOnlyRiskingResultsService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
@@ -66,12 +61,7 @@ class SdesTestOnlyController @Inject() (
   sdesProxyService: SdesProxyService,
   appConfig: AppConfig,
   configuration: Configuration,
-  riskingResultsFileContentsRepo: RiskingResultsFileContentsRepo,
-  testOnlyRiskingResultsService: TestOnlyRiskingResultsService,
-  applicationOutcomeService: ApplicationOutcomeService,
-  subscriptionService: SubscriptionService,
-  emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
-  emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable
+  riskingResultsFileContentsRepo: RiskingResultsFileContentsRepo
 )(using clock: Clock)
 extends BackendController(cc)
 with Logging:
@@ -163,15 +153,3 @@ with Logging:
           .drop()
           .toFuture
           .map(_ => Ok(""))
-
-  def triggerRisking(): Action[AnyContent] = actions
-    .default
-    .async:
-      implicit request =>
-        for
-          _ <- testOnlyRiskingResultsService.processResultsFilesFromMongo()
-          _ <- applicationOutcomeService.processOverallOutcomes()
-          _ <- subscriptionService.processSubscriptions()
-          _ <- emailServiceForApprovedApplications.processEmails()
-          _ <- emailServiceForFailedNonFixable.processEmails()
-        yield Ok("")
