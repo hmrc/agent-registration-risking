@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 
 import java.time.Instant
@@ -30,6 +31,11 @@ trait TdRisking:
   def applicationData: ApplicationData = TdApplicationData.make(seed)
   def instant: Instant
   def riskingFileName: RiskingFileName
+
+  def riskingFile: RiskingFile = RiskingFile(
+    riskingFileName = riskingFileName,
+    uploadedAt = instant
+  )
 
   def tdApplicationForRisking: TdApplicationForRisking = TdApplicationForRisking.make(
     instant = instant,
