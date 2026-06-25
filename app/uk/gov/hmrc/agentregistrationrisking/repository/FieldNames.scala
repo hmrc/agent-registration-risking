@@ -53,5 +53,5 @@ object FieldNames:
     val applicationReferenceIndex: String = applicationReference + "Index"
     val personReference: String = "individuals.personReference"
     val personReferenceIndex: String = "individuals_personReferenceIndex"
-    val completedAt: String = completedAt
+    val completedAt: String = "completedAt"
     val completedAtIndex: String = completedAt + "Index"
