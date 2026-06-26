@@ -94,6 +94,30 @@ extends ISpec:
 
     applications.toSet shouldBe Set(TdRiskingInstancesInStates.approvedAfterSubscribed.application)
 
+  "findReadyToNotifyBackend returns every application whose risking outcome has been computed and which has not yet been notified to the backend, regardless of subsequent subscription or email-processing state" in:
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findReadyToNotifyBackend()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.approvedAfterOutcome.applicationWithIndividuals,
+      TdRiskingInstancesInStates.approvedAfterSubscribed.applicationWithIndividuals,
+      TdRiskingInstancesInStates.approvedAfterEmailSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.approvedAfterEmailsProcessed.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedFixableAfterOutcome.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
+    ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 

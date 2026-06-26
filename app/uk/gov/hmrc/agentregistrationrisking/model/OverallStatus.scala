@@ -19,16 +19,10 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-/** Represents the overall status for the [[ApplicationForRisking]] class.
-  *
-  * @param riskingOutcome
-  *   the outcome of the risking process
-  * @param emailsProcessed
-  *   whether all required emails have been sent for this application after computed riskingOutcome
-  */
 final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],
-  emailsProcessed: Boolean
+  emailsProcessed: Boolean,
+  backendNotified: Boolean
 )
 
 object OverallStatus:

@@ -23,6 +23,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
+import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
@@ -38,7 +39,8 @@ class SdesNotificationController @Inject() (
   applicationOutcomeService: ApplicationOutcomeService,
   subscriptionService: SubscriptionService,
   emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
-  emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable
+  emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable,
+  backendNotificationService: BackendNotificationService
 )(using ExecutionContext)
 extends BackendController(cc):
 
@@ -66,4 +68,5 @@ extends BackendController(cc):
       _ <- subscriptionService.processSubscriptions()
       _ <- emailServiceForApprovedApplications.processEmails()
       _ <- emailServiceForFailedNonFixable.processEmails()
+      _ <- backendNotificationService.processBackendNotifications()
     yield ()).recover { case ex: Exception => logger.error(s"Error processing file ready notification", ex) }

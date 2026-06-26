@@ -149,6 +149,13 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       )
     ).toFuture()
 
+  def findReadyToNotifyBackend(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.exists(FieldNames.overallStatus.riskingOutcome),
+      Filters.eq(FieldNames.overallStatus.backendNotified, false)
+    )
+  )
+
 object ApplicationForRiskingRepo:
   val collectionName = "application-for-risking"
 
