@@ -153,7 +153,19 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findReadyToNotifyBackend(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
       Filters.exists(FieldNames.overallStatus.riskingOutcome),
-      Filters.eq(FieldNames.overallStatus.backendNotified, false)
+      Filters.eq(FieldNames.overallStatus.backendNotified, false),
+      Filters.or(
+        Filters.and(
+          Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
+          Filters.eq(FieldNames.isSubscribed, true),
+          Filters.eq(FieldNames.isEmailSent, true)
+        ),
+        Filters.and(
+          Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable.toBison),
+          Filters.eq(FieldNames.overallStatus.emailsProcessed, true)
+        ),
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedFixable.toBison)
+      )
     )
   )
 

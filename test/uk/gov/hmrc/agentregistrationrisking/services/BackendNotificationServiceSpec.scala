@@ -42,10 +42,11 @@ extends ISpec:
 
   private given RequestHeader = tdAll.fakeBackendRequest
 
-  private val approvedAfterOutcome = TdRiskingInstancesInStates.approvedAfterOutcome
+  private val approvedAfterEmailsProcessed = TdRiskingInstancesInStates.approvedAfterEmailsProcessed
   private val failedFixableAfterOutcome = TdRiskingInstancesInStates.failedFixableAfterOutcome
-  private val failedNonFixableAfterOutcome = TdRiskingInstancesInStates.failedNonFixableAfterOutcome
-  private val notReadyYet = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
+  private val failedNonFixableAfterAllEmailsProcessed = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed
+  private val outcomeNotComputed = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
+  private val approvedNotYetSubscribed = TdRiskingInstancesInStates.approvedAfterOutcome // outcome=Approved but isSubscribed=false — gate not met
 
   override def beforeEach(): Unit =
     super.beforeEach()
@@ -85,59 +86,67 @@ extends ISpec:
 
   "processBackendNotifications" - {
 
-    "notifies the backend for each application with a computed outcome and not yet notified, then marks it as notified" in:
+    "notifies the backend for each application whose outcome-specific upstream work is complete and which has not yet been notified, then marks it as notified" in:
       stubExpectedRequests(
-        approvedAfterOutcome,
+        approvedAfterEmailsProcessed,
         failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
+        failedNonFixableAfterAllEmailsProcessed
       )
       insertApplicationsWithIndividuals(
-        approvedAfterOutcome,
+        approvedAfterEmailsProcessed,
         failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
+        failedNonFixableAfterAllEmailsProcessed
       )
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailsProcessed.application.applicationReference)
       AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterOutcome.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterAllEmailsProcessed.application.applicationReference)
 
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true
+      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe true
       backendNotifiedOf(failedFixableAfterOutcome) shouldBe true
-      backendNotifiedOf(failedNonFixableAfterOutcome) shouldBe true
+      backendNotifiedOf(failedNonFixableAfterAllEmailsProcessed) shouldBe true
 
     "does not notify the backend for applications whose outcome has not been computed yet" in:
-      insertApplicationsWithIndividuals(notReadyYet)
+      insertApplicationsWithIndividuals(outcomeNotComputed)
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(notReadyYet.application.applicationReference, count = 0)
-      backendNotifiedOf(notReadyYet) shouldBe false
+      AgentRegistrationStubs.verifySendRiskingOutcome(outcomeNotComputed.application.applicationReference, count = 0)
+      backendNotifiedOf(outcomeNotComputed) shouldBe false
+
+    "does not notify the backend for an Approved application whose subscription has not completed yet" in:
+      insertApplicationsWithIndividuals(approvedNotYetSubscribed)
+
+      backendNotificationService.processBackendNotifications().futureValue
+
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedNotYetSubscribed.application.applicationReference, count = 0)
+      backendNotifiedOf(approvedNotYetSubscribed) shouldBe false withClue "outcome=Approved but isSubscribed=false → backend notification deferred"
 
     "does not notify the backend for applications already notified" in:
-      val alreadyNotified: ApplicationForRisking = approvedAfterOutcome
+      val alreadyNotified: ApplicationForRisking = approvedAfterEmailsProcessed
         .application
         .modify(_.overallStatus.backendNotified)
         .setTo(true)
       applicationForRiskingRepo.upsert(alreadyNotified).futureValue
-      individualForRiskingRepo.upsert(approvedAfterOutcome.individual1).futureValue
-      individualForRiskingRepo.upsert(approvedAfterOutcome.individual2).futureValue
+      individualForRiskingRepo.upsert(approvedAfterEmailsProcessed.individual1).futureValue
+      individualForRiskingRepo.upsert(approvedAfterEmailsProcessed.individual2).futureValue
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference, count = 0)
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true withClue "still notified — no change"
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailsProcessed.application.applicationReference, count = 0)
+      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe true withClue "still notified — no change"
 
     "leaves backendNotified unset when the backend call fails so the next run retries" in:
       AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
-        approvedAfterOutcome.application.applicationReference,
-        expectedRiskingOutcomeRequest(approvedAfterOutcome)
+        approvedAfterEmailsProcessed.application.applicationReference,
+        expectedRiskingOutcomeRequest(approvedAfterEmailsProcessed)
       )
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
+      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-      backendNotifiedOf(approvedAfterOutcome) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailsProcessed.application.applicationReference)
+      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
   }

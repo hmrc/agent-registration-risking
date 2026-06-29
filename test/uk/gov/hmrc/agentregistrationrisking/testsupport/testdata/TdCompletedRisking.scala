@@ -20,6 +20,7 @@ import org.scalatest.matchers.should.Matchers.shouldBe
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistrationrisking.model.*
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
 
 import java.time.Instant
