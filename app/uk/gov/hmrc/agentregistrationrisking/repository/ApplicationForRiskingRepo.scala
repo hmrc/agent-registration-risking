@@ -25,6 +25,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.crypto.ApplicationDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption

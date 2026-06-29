@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===

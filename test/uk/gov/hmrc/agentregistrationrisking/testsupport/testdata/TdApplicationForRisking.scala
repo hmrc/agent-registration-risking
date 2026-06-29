@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 
 import java.time.Duration
 import java.time.Instant

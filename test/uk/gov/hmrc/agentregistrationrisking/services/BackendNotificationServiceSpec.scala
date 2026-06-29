@@ -20,12 +20,12 @@ import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailures
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeApplication
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcome
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcomeForEntity
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
@@ -60,20 +60,18 @@ extends ISpec:
 
   private def expectedRiskingOutcomeRequest(td: TdApplicationWithIndividuals): RiskingOutcomeRequest =
     val applicationWithIndividuals = td.applicationWithIndividuals
-    val applicationOutcome: RiskingOutcomeApplication.Outcome =
-      applicationWithIndividuals.application.overallStatus.riskingOutcome.value match
-        case RiskingOutcome.Approved => RiskingOutcomeApplication.Outcome.Approved
-        case RiskingOutcome.FailedFixable => RiskingOutcomeApplication.Outcome.FailedFixable
-        case RiskingOutcome.FailedNonFixable => RiskingOutcomeApplication.Outcome.FailedNonFixable
+    val entityFailures = applicationWithIndividuals.application.entityRiskingResult.map(_.failures).getOrElse(List.empty)
     RiskingOutcomeRequest(
       riskingCompletedDate = applicationWithIndividuals.riskingCompletedDate.value.atZone(ZoneOffset.UTC).toLocalDate,
-      correctiveActionExpiryDate = applicationWithIndividuals.application.correctiveActionExpiryDate.map(_.atZone(ZoneOffset.UTC).toLocalDate),
-      applicationOutcome = applicationOutcome,
-      entityFailures = applicationWithIndividuals.application.entityRiskingResult.map(_.failures).getOrElse(Seq.empty),
+      applicationOutcome = applicationWithIndividuals.application.overallStatus.riskingOutcome.value,
+      entityFailures = entityFailures,
+      entityOutcome = entityFailures.outcomeForEntity,
       individualFailures = applicationWithIndividuals.individuals.map: individual =>
+        val individualFailureList = individual.individualRiskingResult.map(_.failures).getOrElse(List.empty)
         IndividualFailures(
           personReference = individual.individualData.personReference,
-          failures = individual.individualRiskingResult.map(_.failures).getOrElse(Seq.empty)
+          failures = individualFailureList,
+          riskingOutcome = individualFailureList.outcome
         )
     )
 

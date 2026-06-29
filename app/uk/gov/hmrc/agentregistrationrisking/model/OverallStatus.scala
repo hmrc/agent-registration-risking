@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 

@@ -19,13 +19,14 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailures
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeApplication
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.AgentRegistrationConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcome
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcomeForEntity
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -81,25 +82,18 @@ extends RequestAwareLogging:
             individual.individualRiskingResult.map: individualRiskingResult =>
               IndividualFailures(
                 personReference = individual.individualData.personReference,
-                failures = individualRiskingResult.failures
+                failures = individualRiskingResult.failures,
+                riskingOutcome = individualRiskingResult.failures.outcome
               )
           .sequence
       latestDate <- applicationWithIndividuals.riskingCompletedDate
-      riskingOutcome <- application.overallStatus.riskingOutcome
+      riskingOutcome: RiskingOutcome <- application.overallStatus.riskingOutcome
     yield
       val riskingCompletedDate: LocalDate = latestDate.atZone(ZoneOffset.UTC).toLocalDate
-      val correctiveActionExpiryDate: Option[LocalDate] = application.correctiveActionExpiryDate.map(_.atZone(ZoneOffset.UTC).toLocalDate)
       RiskingOutcomeRequest(
         riskingCompletedDate = riskingCompletedDate,
-        correctiveActionExpiryDate = correctiveActionExpiryDate,
-        applicationOutcome = riskingOutcome.asRiskingOutcomeApplicationOutcome,
+        applicationOutcome = riskingOutcome,
         entityFailures = entityRiskingResult.failures,
+        entityOutcome = entityRiskingResult.failures.outcomeForEntity,
         individualFailures = individualFailures
       )
-
-  extension (riskingOutcome: RiskingOutcome)
-    def asRiskingOutcomeApplicationOutcome: RiskingOutcomeApplication.Outcome =
-      riskingOutcome match
-        case RiskingOutcome.Approved => RiskingOutcomeApplication.Outcome.Approved
-        case RiskingOutcome.FailedFixable => RiskingOutcomeApplication.Outcome.FailedFixable
-        case RiskingOutcome.FailedNonFixable => RiskingOutcomeApplication.Outcome.FailedNonFixable

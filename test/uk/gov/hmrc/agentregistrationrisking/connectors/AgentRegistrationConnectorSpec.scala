@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.connectors
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeApplication
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegistrationStubs
@@ -34,9 +34,9 @@ extends ISpec:
   private val applicationReference: ApplicationReference = ApplicationReference("APPREF_TEST")
   private val riskingOutcomeRequest: RiskingOutcomeRequest = RiskingOutcomeRequest(
     riskingCompletedDate = LocalDate.of(2026, 6, 25),
-    correctiveActionExpiryDate = None,
-    applicationOutcome = RiskingOutcomeApplication.Outcome.Approved,
+    applicationOutcome = RiskingOutcome.Approved,
     entityFailures = Seq.empty,
+    entityOutcome = RiskingOutcome.Approved,
     individualFailures = Seq.empty
   )
 

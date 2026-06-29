@@ -27,8 +27,8 @@ import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress.ReceivedRisk
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome.*
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.*
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationForRiskingService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper
 
