@@ -58,23 +58,23 @@ extends RequestAwareLogging:
     yield ()
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
-    val application: ApplicationForRisking = applicationWithIndividuals.application
+    val applicationForRisking: ApplicationForRisking = applicationWithIndividuals.application
     buildRiskingOutcomeRequest(applicationWithIndividuals) match
       case None =>
-        logger.error(s"BUG: Missing risking data for application ${application.applicationReference} - this should not happen")
+        logger.error(s"BUG: Missing risking data for applicationForRisking ${applicationForRisking.applicationReference} - this should not happen")
         Future.unit
       case Some(riskingOutcomeRequest) =>
         for
-          _ <- agentRegistrationConnector.sendRiskingOutcome(application.applicationReference, riskingOutcomeRequest)
-          _ <- applicationForRiskingRepo.upsert(application.modify(_.overallStatus.backendNotified).setTo(true))
-          _ = logger.info(s"Notified backend for application ${application.applicationReference}")
+          _ <- agentRegistrationConnector.sendRiskingOutcome(applicationForRisking.applicationReference, riskingOutcomeRequest)
+          _ <- applicationForRiskingRepo.upsert(applicationForRisking.modify(_.overallStatus.backendNotified).setTo(true))
+          _ = logger.info(s"Notified backend for applicationForRisking ${applicationForRisking.applicationReference}")
         yield ()
 
   private def buildRiskingOutcomeRequest(applicationWithIndividuals: ApplicationWithIndividuals): Option[RiskingOutcomeRequest] =
     import cats.implicits.*
-    val application: ApplicationForRisking = applicationWithIndividuals.application
+    val applicationForRisking: ApplicationForRisking = applicationWithIndividuals.application
     for
-      entityRiskingResult <- application.entityRiskingResult
+      entityRiskingResult <- applicationForRisking.entityRiskingResult
       individualFailures: Seq[IndividualFailures] <-
         applicationWithIndividuals
           .individuals
@@ -87,7 +87,7 @@ extends RequestAwareLogging:
               )
           .sequence
       latestDate <- applicationWithIndividuals.riskingCompletedDate
-      riskingOutcome: RiskingOutcome <- application.overallStatus.riskingOutcome
+      riskingOutcome: RiskingOutcome <- applicationForRisking.overallStatus.riskingOutcome
     yield
       val riskingCompletedDate: LocalDate = latestDate.atZone(ZoneOffset.UTC).toLocalDate
       RiskingOutcomeRequest(
