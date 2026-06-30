@@ -23,7 +23,7 @@ import play.api.libs.json.OFormat
 final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],
   emailsProcessed: Boolean,
-  backendNotified: Boolean
+  backendNotified: Option[Boolean]
 )
 
 object OverallStatus:

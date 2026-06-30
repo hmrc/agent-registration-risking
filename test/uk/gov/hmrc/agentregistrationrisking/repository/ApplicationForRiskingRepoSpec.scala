@@ -94,7 +94,7 @@ extends ISpec:
 
     applications.toSet shouldBe Set(TdRiskingInstancesInStates.approvedAfterSubscribed.application)
 
-  "findReadyToNotifyBackend returns every application whose outcome-specific upstream work is complete and which has not yet been notified to the backend" in:
+  "findReadyToNotifyBackend returns every application whose outcome-specific upstream work is complete, all risking data (entity + every individual result) is present, and which has not yet been notified to the backend" in:
 
     val applications: Seq[ApplicationWithIndividuals] =
       applicationForRiskingRepo
@@ -105,11 +105,7 @@ extends ISpec:
       TdRiskingInstancesInStates.approvedAfterEmailSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.approvedAfterEmailsProcessed.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedFixableAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
+      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   "findReadyToNotifyBackend excludes Approved applications whose subscription has not completed yet" in:
@@ -126,6 +122,13 @@ extends ISpec:
     applications should not contain TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals
     applications should not contain TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals
     applications should not contain TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals
+
+  "findReadyToNotifyBackend excludes applications where some individuals are missing their individualRiskingResult (partially-risked)" in:
+    val applications: Set[ApplicationWithIndividuals] = applicationForRiskingRepo.findReadyToNotifyBackend().futureValue.toSet
+    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals
+    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals
+    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals
+    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]

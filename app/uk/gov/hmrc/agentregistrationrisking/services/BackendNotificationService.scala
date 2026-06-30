@@ -66,7 +66,7 @@ extends RequestAwareLogging:
       case Some(riskingOutcomeRequest) =>
         for
           _ <- agentRegistrationConnector.sendRiskingOutcome(applicationForRisking.applicationReference, riskingOutcomeRequest)
-          _ <- applicationForRiskingRepo.upsert(applicationForRisking.modify(_.overallStatus.backendNotified).setTo(true))
+          _ <- applicationForRiskingRepo.upsert(applicationForRisking.modify(_.overallStatus.backendNotified).setTo(Some(true)))
           _ = logger.info(s"Notified backend for applicationForRisking ${applicationForRisking.applicationReference}")
         yield ()
 

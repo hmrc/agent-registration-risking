@@ -79,7 +79,7 @@ extends ISpec:
   private def stubExpectedRequests(tds: TdApplicationWithIndividuals*): Unit = tds.foreach: td =>
     AgentRegistrationStubs.stubSendRiskingOutcome(td.application.applicationReference, expectedRiskingOutcomeRequest(td))
 
-  private def backendNotifiedOf(td: TdApplicationWithIndividuals): Boolean = persisted(td).overallStatus.backendNotified
+  private def backendNotifiedOf(td: TdApplicationWithIndividuals): Boolean = persisted(td).overallStatus.backendNotified.contains(true)
 
   private def persisted(td: TdApplicationWithIndividuals): ApplicationForRisking =
     applicationForRiskingRepo.findById(td.application.applicationReference).futureValue.value
@@ -128,7 +128,7 @@ extends ISpec:
       val alreadyNotified: ApplicationForRisking = approvedAfterEmailsProcessed
         .application
         .modify(_.overallStatus.backendNotified)
-        .setTo(true)
+        .setTo(Some(true))
       applicationForRiskingRepo.upsert(alreadyNotified).futureValue
       individualForRiskingRepo.upsert(approvedAfterEmailsProcessed.individual1).futureValue
       individualForRiskingRepo.upsert(approvedAfterEmailsProcessed.individual2).futureValue
@@ -149,4 +149,57 @@ extends ISpec:
 
       AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailsProcessed.application.applicationReference)
       backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
+
+    "does not notify the backend for applications missing entityRiskingResult (data inconsistency — would otherwise loop forever)" in:
+      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
+      applicationForRiskingRepo.collection
+        .updateOne(
+          org.mongodb.scala.model.Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
+          org.mongodb.scala.model.Updates.unset("entityRiskingResult")
+        )
+        .toFuture
+        .futureValue
+
+      backendNotificationService.processBackendNotifications().futureValue
+
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        approvedAfterEmailsProcessed.application.applicationReference,
+        count = 0
+      ) withClue "missing entityRiskingResult → record must be excluded by query, not allowed to reach process() and loop"
+
+    "does not notify the backend for applications where any individual is missing individualRiskingResult (data inconsistency — would otherwise loop forever)" in:
+      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
+      individualForRiskingRepo.collection
+        .updateOne(
+          org.mongodb.scala.model.Filters.eq("personReference", approvedAfterEmailsProcessed.individual2.personReference.value),
+          org.mongodb.scala.model.Updates.unset("individualRiskingResult")
+        )
+        .toFuture
+        .futureValue
+
+      backendNotificationService.processBackendNotifications().futureValue
+
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        approvedAfterEmailsProcessed.application.applicationReference,
+        count = 0
+      ) withClue "individual2 missing individualRiskingResult → record must be excluded by query, not allowed to reach process() and loop"
+
+    "notifies the backend for legacy applications persisted before the backendNotified field was added (field missing on the doc)" in:
+      stubExpectedRequests(approvedAfterEmailsProcessed)
+      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
+      // Simulate legacy doc: remove the overallStatus.backendNotified field from the persisted record
+      applicationForRiskingRepo.collection
+        .updateOne(
+          org.mongodb.scala.model.Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
+          org.mongodb.scala.model.Updates.unset("overallStatus.backendNotified")
+        )
+        .toFuture
+        .futureValue
+
+      backendNotificationService.processBackendNotifications().futureValue
+
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        approvedAfterEmailsProcessed.application.applicationReference
+      ) withClue "legacy doc (missing backendNotified) should be picked up and notified"
+      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe true withClue "after notify, backendNotified should be set"
   }

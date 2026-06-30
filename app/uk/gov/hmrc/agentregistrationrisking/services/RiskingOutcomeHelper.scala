@@ -17,8 +17,11 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import uk.gov.hmrc.agentregistration.shared.risking.*
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.{Approved, FailedFixable, FailedNonFixable}
-import uk.gov.hmrc.agentregistrationrisking.model.{ApplicationWithIndividuals, IndividualForRisking}
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.Approved
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.FailedFixable
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.FailedNonFixable
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 
 object RiskingOutcomeHelper:
 

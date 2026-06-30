@@ -69,7 +69,7 @@ trait TdApplicationForRisking:
     overallStatus = OverallStatus(
       riskingOutcome = None,
       emailsProcessed = false,
-      backendNotified = false
+      backendNotified = Some(false)
     ),
     correctiveActionExpiryDate = None
   )
