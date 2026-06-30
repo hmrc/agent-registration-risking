@@ -17,12 +17,8 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import uk.gov.hmrc.agentregistration.shared.risking.*
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
-
-import java.time.LocalDate
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.{Approved, FailedFixable, FailedNonFixable}
+import uk.gov.hmrc.agentregistrationrisking.model.{ApplicationWithIndividuals, IndividualForRisking}
 
 object RiskingOutcomeHelper:
 
@@ -70,7 +66,6 @@ object RiskingOutcomeHelper:
     o1: RiskingOutcome,
     o2: RiskingOutcome
   ): RiskingOutcome =
-    import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.*
     // Hint: a spoiled apple makes a spoiled basket
     (o1, o2) match
       // format: off
