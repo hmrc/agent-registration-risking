@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.model.{Filters, Updates}
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailures
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
@@ -154,8 +155,8 @@ extends ISpec:
       insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
       applicationForRiskingRepo.collection
         .updateOne(
-          org.mongodb.scala.model.Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
-          org.mongodb.scala.model.Updates.unset("entityRiskingResult")
+          Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
+          Updates.unset("entityRiskingResult")
         )
         .toFuture
         .futureValue
@@ -171,8 +172,8 @@ extends ISpec:
       insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
       individualForRiskingRepo.collection
         .updateOne(
-          org.mongodb.scala.model.Filters.eq("personReference", approvedAfterEmailsProcessed.individual2.personReference.value),
-          org.mongodb.scala.model.Updates.unset("individualRiskingResult")
+          Filters.eq("personReference", approvedAfterEmailsProcessed.individual2.personReference.value),
+          Updates.unset("individualRiskingResult")
         )
         .toFuture
         .futureValue
@@ -190,8 +191,8 @@ extends ISpec:
       // Simulate legacy doc: remove the overallStatus.backendNotified field from the persisted record
       applicationForRiskingRepo.collection
         .updateOne(
-          org.mongodb.scala.model.Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
-          org.mongodb.scala.model.Updates.unset("overallStatus.backendNotified")
+          Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
+          Updates.unset("overallStatus.backendNotified")
         )
         .toFuture
         .futureValue
