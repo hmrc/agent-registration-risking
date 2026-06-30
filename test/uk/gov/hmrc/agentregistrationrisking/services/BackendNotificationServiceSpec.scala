@@ -18,7 +18,8 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.model.{Filters, Updates}
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.Updates
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailures
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
@@ -47,7 +48,6 @@ extends ISpec:
   private val failedFixableAfterOutcome = TdRiskingInstancesInStates.failedFixableAfterOutcome
   private val failedNonFixableAfterAllEmailsProcessed = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed
   private val outcomeNotComputed = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
-  private val approvedNotYetSubscribed = TdRiskingInstancesInStates.approvedAfterOutcome // outcome=Approved but isSubscribed=false — gate not met
 
   override def beforeEach(): Unit =
     super.beforeEach()
@@ -87,7 +87,7 @@ extends ISpec:
 
   "processBackendNotifications" - {
 
-    "notifies the backend for each application whose outcome-specific upstream work is complete and which has not yet been notified, then marks it as notified" in:
+    "notifies the backend for each application that has a computed riskingOutcome and has not yet been notified, then marks it as notified" in:
       stubExpectedRequests(
         approvedAfterEmailsProcessed,
         failedFixableAfterOutcome,
@@ -116,14 +116,6 @@ extends ISpec:
 
       AgentRegistrationStubs.verifySendRiskingOutcome(outcomeNotComputed.application.applicationReference, count = 0)
       backendNotifiedOf(outcomeNotComputed) shouldBe false
-
-    "does not notify the backend for an Approved application whose subscription has not completed yet" in:
-      insertApplicationsWithIndividuals(approvedNotYetSubscribed)
-
-      backendNotificationService.processBackendNotifications().futureValue
-
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedNotYetSubscribed.application.applicationReference, count = 0)
-      backendNotifiedOf(approvedNotYetSubscribed) shouldBe false withClue "outcome=Approved but isSubscribed=false → backend notification deferred"
 
     "does not notify the backend for applications already notified" in:
       val alreadyNotified: ApplicationForRisking = approvedAfterEmailsProcessed

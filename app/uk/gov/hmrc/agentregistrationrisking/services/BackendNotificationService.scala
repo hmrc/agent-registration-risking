@@ -21,15 +21,19 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailures
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
+import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistrationrisking.connectors.AgentRegistrationConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcome
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcomeForEntity
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import javax.inject.Inject
@@ -59,41 +63,32 @@ extends RequestAwareLogging:
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val applicationForRisking: ApplicationForRisking = applicationWithIndividuals.application
-    buildRiskingOutcomeRequest(applicationWithIndividuals) match
-      case None =>
-        logger.error(s"BUG: Missing risking data for applicationForRisking ${applicationForRisking.applicationReference} - this should not happen")
-        Future.unit
-      case Some(riskingOutcomeRequest) =>
-        for
-          _ <- agentRegistrationConnector.sendRiskingOutcome(applicationForRisking.applicationReference, riskingOutcomeRequest)
-          _ <- applicationForRiskingRepo.upsert(applicationForRisking.modify(_.overallStatus.backendNotified).setTo(Some(true)))
-          _ = logger.info(s"Notified backend for applicationForRisking ${applicationForRisking.applicationReference}")
-        yield ()
-
-  private def buildRiskingOutcomeRequest(applicationWithIndividuals: ApplicationWithIndividuals): Option[RiskingOutcomeRequest] =
-    import cats.implicits.*
-    val applicationForRisking: ApplicationForRisking = applicationWithIndividuals.application
+    val riskingOutcomeRequest: RiskingOutcomeRequest = buildRiskingOutcomeRequest(applicationWithIndividuals)
     for
-      entityRiskingResult <- applicationForRisking.entityRiskingResult
-      individualFailures: Seq[IndividualFailures] <-
-        applicationWithIndividuals
-          .individuals
-          .map: individual =>
-            individual.individualRiskingResult.map: individualRiskingResult =>
-              IndividualFailures(
-                personReference = individual.individualData.personReference,
-                failures = individualRiskingResult.failures,
-                riskingOutcome = individualRiskingResult.failures.outcome
-              )
-          .sequence
-      latestDate <- applicationWithIndividuals.riskingCompletedDate
-      riskingOutcome: RiskingOutcome <- applicationForRisking.overallStatus.riskingOutcome
-    yield
-      val riskingCompletedDate: LocalDate = latestDate.atZone(ZoneOffset.UTC).toLocalDate
-      RiskingOutcomeRequest(
-        riskingCompletedDate = riskingCompletedDate,
-        applicationOutcome = riskingOutcome,
-        entityFailures = entityRiskingResult.failures,
-        entityOutcome = entityRiskingResult.failures.outcomeForEntity,
-        individualFailures = individualFailures
+      _ <- agentRegistrationConnector.sendRiskingOutcome(applicationForRisking.applicationReference, riskingOutcomeRequest)
+      _ <- applicationForRiskingRepo.upsert(applicationForRisking.modify(_.overallStatus.backendNotified).setTo(Some(true)))
+      _ = logger.info(s"Notified backend for applicationForRisking ${applicationForRisking.applicationReference}")
+    yield ()
+
+  private def buildRiskingOutcomeRequest(applicationWithIndividuals: ApplicationWithIndividuals): RiskingOutcomeRequest =
+    val applicationForRisking: ApplicationForRisking = applicationWithIndividuals.application
+    val entityRiskingResult: EntityRiskingResult = applicationForRisking.entityRiskingResult.getOrThrowExpectedDataMissing("entityRiskingResult")
+    val individualFailuresList: Seq[IndividualFailures] = applicationWithIndividuals.individuals.map: individual =>
+      val individualRiskingResult: IndividualRiskingResult = individual.individualRiskingResult.getOrThrowExpectedDataMissing(
+        s"individualRiskingResult for personReference [${individual.individualData.personReference.value}]"
       )
+      IndividualFailures(
+        personReference = individual.individualData.personReference,
+        failures = individualRiskingResult.failures,
+        riskingOutcome = individualRiskingResult.failures.outcome
+      )
+    val instant: Instant = applicationWithIndividuals.riskingCompletedDate.getOrThrowExpectedDataMissing("riskingCompletedDate")
+    val riskingOutcome: RiskingOutcome = applicationForRisking.overallStatus.riskingOutcome.getOrThrowExpectedDataMissing("riskingOutcome")
+    val riskingCompletedDate: LocalDate = instant.atZone(ZoneOffset.UTC).toLocalDate
+    RiskingOutcomeRequest(
+      riskingCompletedDate = riskingCompletedDate,
+      applicationOutcome = riskingOutcome,
+      entityFailures = entityRiskingResult.failures,
+      entityOutcome = entityRiskingResult.failures.outcomeForEntity,
+      individualFailures = individualFailuresList
+    )
