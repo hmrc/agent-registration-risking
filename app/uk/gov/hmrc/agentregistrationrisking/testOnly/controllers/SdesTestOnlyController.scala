@@ -31,11 +31,9 @@ import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
-import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileContent
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
-import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultFilesRepoHelp.FieldNames.riskingResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultsFileContentsRepo
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
