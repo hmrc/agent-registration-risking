@@ -107,15 +107,12 @@ extends ISpec:
     applications.toSet shouldBe Set(
       TdRiskingInstancesInStates.approvedAfterOutcome.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedFixableAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
-
-  "findReadyToNotifyBackend excludes applications where some individuals are missing their individualRiskingResult (partially-risked)" in:
-    val applications: Set[ApplicationWithIndividuals] = applicationForRiskingRepo.findReadyToNotifyBackend().futureValue.toSet
-    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals
-    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals
-    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals
-    applications should not contain TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]

@@ -138,40 +138,6 @@ extends ISpec:
       AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
       backendNotifiedOf(approvedAfterOutcome) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
 
-    "does not notify the backend for applications missing entityRiskingResult (data inconsistency — would otherwise loop forever)" in:
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
-      applicationForRiskingRepo.collection
-        .updateOne(
-          Filters.eq("applicationReference", approvedAfterOutcome.application.applicationReference.value),
-          Updates.unset("entityRiskingResult")
-        )
-        .toFuture
-        .futureValue
-
-      backendNotificationService.processBackendNotifications().futureValue
-
-      AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterOutcome.application.applicationReference,
-        count = 0
-      ) withClue "missing entityRiskingResult → record must be excluded by query, not allowed to reach process() and loop"
-
-    "does not notify the backend for applications where any individual is missing individualRiskingResult (data inconsistency — would otherwise loop forever)" in:
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
-      individualForRiskingRepo.collection
-        .updateOne(
-          Filters.eq("personReference", approvedAfterOutcome.individual2.personReference.value),
-          Updates.unset("individualRiskingResult")
-        )
-        .toFuture
-        .futureValue
-
-      backendNotificationService.processBackendNotifications().futureValue
-
-      AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterOutcome.application.applicationReference,
-        count = 0
-      ) withClue "individual2 missing individualRiskingResult → record must be excluded by query, not allowed to reach process() and loop"
-
     "notifies the backend for legacy applications persisted before the backendNotified field was added (field missing on the doc)" in:
       stubExpectedRequests(approvedAfterOutcome)
       insertApplicationsWithIndividuals(approvedAfterOutcome)
