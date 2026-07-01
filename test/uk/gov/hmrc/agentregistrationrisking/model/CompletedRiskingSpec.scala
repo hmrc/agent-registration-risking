@@ -135,7 +135,7 @@ extends UnitSpec:
         |    "overallStatus": {
         |      "riskingOutcome": "FailedNonFixable",
         |      "emailsProcessed": true,
-        |      "backendNotified": false
+        |      "backendNotified": true
         |    },
         |    "correctiveActionExpiryDate": "2060-01-09T16:33:51Z"
         |  },

@@ -17,14 +17,23 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 
 final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],
   emailsProcessed: Boolean,
-  backendNotified: Option[Boolean]
+  backendNotified: Boolean
 )
 
 object OverallStatus:
-  given OFormat[OverallStatus] = Json.format[OverallStatus]
+
+  given OFormat[OverallStatus] =
+    val reads: Reads[OverallStatus] =
+      (
+        (__ \ "riskingOutcome").readNullable[RiskingOutcome] and
+          (__ \ "emailsProcessed").read[Boolean] and
+          (__ \ "backendNotified").readNullable[Boolean].map(_.getOrElse(false))
+      )(OverallStatus.apply)
+    val writes: OWrites[OverallStatus] = Json.writes[OverallStatus]
+    OFormat(reads, writes)

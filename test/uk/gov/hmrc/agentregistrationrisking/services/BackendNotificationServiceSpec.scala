@@ -44,9 +44,9 @@ extends ISpec:
 
   private given RequestHeader = tdAll.fakeBackendRequest
 
-  private val approvedAfterEmailsProcessed = TdRiskingInstancesInStates.approvedAfterEmailsProcessed
+  private val approvedAfterOutcome = TdRiskingInstancesInStates.approvedAfterOutcome
   private val failedFixableAfterOutcome = TdRiskingInstancesInStates.failedFixableAfterOutcome
-  private val failedNonFixableAfterAllEmailsProcessed = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed
+  private val failedNonFixableAfterOutcome = TdRiskingInstancesInStates.failedNonFixableAfterOutcome
   private val outcomeNotComputed = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
 
   override def beforeEach(): Unit =
@@ -80,7 +80,7 @@ extends ISpec:
   private def stubExpectedRequests(tds: TdApplicationWithIndividuals*): Unit = tds.foreach: td =>
     AgentRegistrationStubs.stubSendRiskingOutcome(td.application.applicationReference, expectedRiskingOutcomeRequest(td))
 
-  private def backendNotifiedOf(td: TdApplicationWithIndividuals): Boolean = persisted(td).overallStatus.backendNotified.contains(true)
+  private def backendNotifiedOf(td: TdApplicationWithIndividuals): Boolean = persisted(td).overallStatus.backendNotified
 
   private def persisted(td: TdApplicationWithIndividuals): ApplicationForRisking =
     applicationForRiskingRepo.findById(td.application.applicationReference).futureValue.value
@@ -89,25 +89,25 @@ extends ISpec:
 
     "notifies the backend for each application that has a computed riskingOutcome and has not yet been notified, then marks it as notified" in:
       stubExpectedRequests(
-        approvedAfterEmailsProcessed,
+        approvedAfterOutcome,
         failedFixableAfterOutcome,
-        failedNonFixableAfterAllEmailsProcessed
+        failedNonFixableAfterOutcome
       )
       insertApplicationsWithIndividuals(
-        approvedAfterEmailsProcessed,
+        approvedAfterOutcome,
         failedFixableAfterOutcome,
-        failedNonFixableAfterAllEmailsProcessed
+        failedNonFixableAfterOutcome
       )
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailsProcessed.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
       AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterAllEmailsProcessed.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterOutcome.application.applicationReference)
 
-      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe true
+      backendNotifiedOf(approvedAfterOutcome) shouldBe true
       backendNotifiedOf(failedFixableAfterOutcome) shouldBe true
-      backendNotifiedOf(failedNonFixableAfterAllEmailsProcessed) shouldBe true
+      backendNotifiedOf(failedNonFixableAfterOutcome) shouldBe true
 
     "does not notify the backend for applications whose outcome has not been computed yet" in:
       insertApplicationsWithIndividuals(outcomeNotComputed)
@@ -118,36 +118,31 @@ extends ISpec:
       backendNotifiedOf(outcomeNotComputed) shouldBe false
 
     "does not notify the backend for applications already notified" in:
-      val alreadyNotified: ApplicationForRisking = approvedAfterEmailsProcessed
-        .application
-        .modify(_.overallStatus.backendNotified)
-        .setTo(Some(true))
-      applicationForRiskingRepo.upsert(alreadyNotified).futureValue
-      individualForRiskingRepo.upsert(approvedAfterEmailsProcessed.individual1).futureValue
-      individualForRiskingRepo.upsert(approvedAfterEmailsProcessed.individual2).futureValue
+      val approvedAfterBackendNotified = TdRiskingInstancesInStates.approvedAfterBackendNotified
+      insertApplicationsWithIndividuals(approvedAfterBackendNotified)
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailsProcessed.application.applicationReference, count = 0)
-      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe true withClue "still notified — no change"
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterBackendNotified.application.applicationReference, count = 0)
+      backendNotifiedOf(approvedAfterBackendNotified) shouldBe true withClue "still notified — no change"
 
     "leaves backendNotified unset when the backend call fails so the next run retries" in:
       AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
-        approvedAfterEmailsProcessed.application.applicationReference,
-        expectedRiskingOutcomeRequest(approvedAfterEmailsProcessed)
+        approvedAfterOutcome.application.applicationReference,
+        expectedRiskingOutcomeRequest(approvedAfterOutcome)
       )
-      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
+      insertApplicationsWithIndividuals(approvedAfterOutcome)
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailsProcessed.application.applicationReference)
-      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
+      backendNotifiedOf(approvedAfterOutcome) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
 
     "does not notify the backend for applications missing entityRiskingResult (data inconsistency — would otherwise loop forever)" in:
-      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
+      insertApplicationsWithIndividuals(approvedAfterOutcome)
       applicationForRiskingRepo.collection
         .updateOne(
-          Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
+          Filters.eq("applicationReference", approvedAfterOutcome.application.applicationReference.value),
           Updates.unset("entityRiskingResult")
         )
         .toFuture
@@ -156,15 +151,15 @@ extends ISpec:
       backendNotificationService.processBackendNotifications().futureValue
 
       AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterEmailsProcessed.application.applicationReference,
+        approvedAfterOutcome.application.applicationReference,
         count = 0
       ) withClue "missing entityRiskingResult → record must be excluded by query, not allowed to reach process() and loop"
 
     "does not notify the backend for applications where any individual is missing individualRiskingResult (data inconsistency — would otherwise loop forever)" in:
-      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
+      insertApplicationsWithIndividuals(approvedAfterOutcome)
       individualForRiskingRepo.collection
         .updateOne(
-          Filters.eq("personReference", approvedAfterEmailsProcessed.individual2.personReference.value),
+          Filters.eq("personReference", approvedAfterOutcome.individual2.personReference.value),
           Updates.unset("individualRiskingResult")
         )
         .toFuture
@@ -173,17 +168,17 @@ extends ISpec:
       backendNotificationService.processBackendNotifications().futureValue
 
       AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterEmailsProcessed.application.applicationReference,
+        approvedAfterOutcome.application.applicationReference,
         count = 0
       ) withClue "individual2 missing individualRiskingResult → record must be excluded by query, not allowed to reach process() and loop"
 
     "notifies the backend for legacy applications persisted before the backendNotified field was added (field missing on the doc)" in:
-      stubExpectedRequests(approvedAfterEmailsProcessed)
-      insertApplicationsWithIndividuals(approvedAfterEmailsProcessed)
+      stubExpectedRequests(approvedAfterOutcome)
+      insertApplicationsWithIndividuals(approvedAfterOutcome)
       // Simulate legacy doc: remove the overallStatus.backendNotified field from the persisted record
       applicationForRiskingRepo.collection
         .updateOne(
-          Filters.eq("applicationReference", approvedAfterEmailsProcessed.application.applicationReference.value),
+          Filters.eq("applicationReference", approvedAfterOutcome.application.applicationReference.value),
           Updates.unset("overallStatus.backendNotified")
         )
         .toFuture
@@ -192,7 +187,7 @@ extends ISpec:
       backendNotificationService.processBackendNotifications().futureValue
 
       AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterEmailsProcessed.application.applicationReference
+        approvedAfterOutcome.application.applicationReference
       ) withClue "legacy doc (missing backendNotified) should be picked up and notified"
-      backendNotifiedOf(approvedAfterEmailsProcessed) shouldBe true withClue "after notify, backendNotified should be set"
+      backendNotifiedOf(approvedAfterOutcome) shouldBe true withClue "after notify, backendNotified should be set"
   }

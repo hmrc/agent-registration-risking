@@ -42,8 +42,10 @@ extends ISpec:
         .findReadyToBeSubscribed()
         .futureValue
 
-    applications.size shouldBe 1 withClue applications.map(_.applicationReference.value).mkString(", ")
-    applications.toSet shouldBe Set(TdRiskingInstancesInStates.approvedAfterOutcome.application)
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.approvedAfterOutcome.application,
+      TdRiskingInstancesInStates.approvedAfterBackendNotified.application
+    ) withClue applications.map(_.applicationReference.value).mkString(", ")
 
   "findReadyToSetRiskingOutcome" in:
 
@@ -67,6 +69,7 @@ extends ISpec:
 
     applications.toSet shouldBe Set(
       TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterBackendNotified.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals
@@ -103,15 +106,8 @@ extends ISpec:
 
     applications.toSet shouldBe Set(
       TdRiskingInstancesInStates.approvedAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.approvedAfterSubscribed.applicationWithIndividuals,
-      TdRiskingInstancesInStates.approvedAfterEmailSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.approvedAfterEmailsProcessed.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedFixableAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.applicationWithIndividuals
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   "findReadyToNotifyBackend excludes applications where some individuals are missing their individualRiskingResult (partially-risked)" in:
