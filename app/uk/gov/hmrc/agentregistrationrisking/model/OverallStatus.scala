@@ -16,20 +16,24 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 
-/** Represents the overall status for the [[ApplicationForRisking]] class.
-  *
-  * @param riskingOutcome
-  *   the outcome of the risking process
-  * @param emailsProcessed
-  *   whether all required emails have been sent for this application after computed riskingOutcome
-  */
 final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],
-  emailsProcessed: Boolean
+  emailsProcessed: Boolean,
+  backendNotified: Boolean
 )
 
 object OverallStatus:
-  given OFormat[OverallStatus] = Json.format[OverallStatus]
+
+  given OFormat[OverallStatus] =
+    val reads: Reads[OverallStatus] =
+      (
+        (__ \ "riskingOutcome").readNullable[RiskingOutcome] and
+          (__ \ "emailsProcessed").read[Boolean] and
+          (__ \ "backendNotified").readNullable[Boolean].map(_.getOrElse(false))
+      )(OverallStatus.apply)
+    val writes: OWrites[OverallStatus] = Json.writes[OverallStatus]
+    OFormat(reads, writes)

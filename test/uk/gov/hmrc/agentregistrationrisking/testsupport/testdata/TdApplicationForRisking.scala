@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 
 import java.time.Duration
 import java.time.Instant
@@ -68,7 +68,8 @@ trait TdApplicationForRisking:
     isEmailSent = false,
     overallStatus = OverallStatus(
       riskingOutcome = None,
-      emailsProcessed = false
+      emailsProcessed = false,
+      backendNotified = false
     ),
     correctiveActionExpiryDate = None
   )
@@ -92,7 +93,11 @@ trait TdApplicationForRisking:
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.Approved))
 
-    val approvedAfterSubscribed: ApplicationForRisking = approvedAfterOutcome.copy(isSubscribed = true)
+    val approvedAfterBackendNotified: ApplicationForRisking = approvedAfterOutcome
+      .modify(_.overallStatus.backendNotified)
+      .setTo(true)
+
+    val approvedAfterSubscribed: ApplicationForRisking = approvedAfterBackendNotified.copy(isSubscribed = true)
 
     val approvedAfterEmailSent: ApplicationForRisking = approvedAfterSubscribed
       .copy(isEmailSent = true)
@@ -116,6 +121,10 @@ trait TdApplicationForRisking:
       .modify(_.correctiveActionExpiryDate)
       .setTo(Some(correctiveActionExpiryDate))
 
+    val failedFixableAfterBackendNotified: ApplicationForRisking = failedFixableAfterOutcome
+      .modify(_.overallStatus.backendNotified)
+      .setTo(true)
+
     val failedNonFixable: ApplicationForRisking = submittedForRisking
       .copy(
         entityRiskingResult = Some(EntityRiskingResult(
@@ -133,7 +142,11 @@ trait TdApplicationForRisking:
       .modify(_.correctiveActionExpiryDate)
       .setTo(Some(correctiveActionExpiryDate))
 
-    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome.copy(
+    val failedNonFixableAfterBackendNotified: ApplicationForRisking = failedNonFixableAfterOutcome
+      .modify(_.overallStatus.backendNotified)
+      .setTo(true)
+
+    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterBackendNotified.copy(
       isEmailSent = true
     )
 

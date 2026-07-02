@@ -25,6 +25,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.crypto.ApplicationDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
@@ -148,6 +149,16 @@ extends Repo[ApplicationReference, ApplicationForRisking](
         Filters.eq(FieldNames.isEmailSent, false)
       )
     ).toFuture()
+
+  def findReadyToNotifyBackend(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.exists(FieldNames.overallStatus.riskingOutcome),
+      Filters.or(
+        Filters.eq(FieldNames.overallStatus.backendNotified, false),
+        Filters.exists(FieldNames.overallStatus.backendNotified, false)
+      )
+    )
+  )
 
 object ApplicationForRiskingRepo:
   val collectionName = "application-for-risking"

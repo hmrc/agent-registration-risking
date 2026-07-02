@@ -134,7 +134,8 @@ extends UnitSpec:
         |    "isEmailSent": true,
         |    "overallStatus": {
         |      "riskingOutcome": "FailedNonFixable",
-        |      "emailsProcessed": true
+        |      "emailsProcessed": true,
+        |      "backendNotified": true
         |    },
         |    "correctiveActionExpiryDate": "2060-01-09T16:33:51Z"
         |  },
