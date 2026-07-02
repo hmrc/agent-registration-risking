@@ -1,5 +1,4 @@
 /*
- * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +21,8 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
+import uk.gov.hmrc.agentregistration.shared.risking.updates.UpdateApplicationStateSentToMinervaRequest
+
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object AgentRegistrationStubs:
@@ -64,5 +65,18 @@ object AgentRegistrationStubs:
   ): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(sendRiskingOutcomeUrl(applicationReference)),
+    count = count
+  )
+
+  def stubUpdateApplicationStateSentToMinerva(applicationReferences: Seq[ApplicationReference]): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlPathEqualTo("/agent-registration/risking-updates/sent-to-minerva"),
+    responseStatus = 200,
+    requestBody = Some(wm.equalToJson(Json.toJson(UpdateApplicationStateSentToMinervaRequest(applicationReferences)).toString))
+  )
+
+  def verifyUpdateApplicationStateSentToMinerva(count: Int = 1): Unit = StubMaker.verify(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlPathEqualTo("/agent-registration/risking-updates/sent-to-minerva"),
     count = count
   )

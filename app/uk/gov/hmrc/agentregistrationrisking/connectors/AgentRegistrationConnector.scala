@@ -68,7 +68,7 @@ extends Connector:
       .execute[HttpResponse]
       .map: response =>
         response.status match
-          case Status.NO_CONTENT => ()
+          case Status.OK => ()
           case other =>
             Errors.throwUpstreamErrorResponse(
               httpMethod = "POST",
@@ -76,6 +76,6 @@ extends Connector:
               status = other,
               response = response
             )
-      .andLogOnFailure("Failed to update user's Agent Application")
+      .andLogOnFailure("Failed to delete user's Agent Application")
 
-  private val baseUrl: String = appConfig.agentRegistrationBaseUrl
+  private val baseUrl: String = appConfig.agentRegistrationBaseUrl + "/agent-registration"

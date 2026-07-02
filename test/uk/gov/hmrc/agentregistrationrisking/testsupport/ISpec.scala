@@ -30,7 +30,6 @@ import play.api.test.TestServerFactory
 import play.core.server.ServerConfig
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdZoneId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport
@@ -39,7 +38,6 @@ import uk.gov.hmrc.mongo.test.MongoSupport
 
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
 import scala.concurrent.ExecutionContext
 
 trait ISpec
@@ -75,7 +73,9 @@ extends AnyFreeSpecLike,
       "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
       "microservice.services.hip.port" -> WireMockSupport.port,
       "microservice.services.hip.authorization-token" -> "test-hip-auth-token",
-      "microservice.services.enrolment-store-proxy.port" -> WireMockSupport.port
+      "microservice.services.enrolment-store-proxy.port" -> WireMockSupport.port,
+      "microservice.services.agent-registration.host" -> "localhost",
+      "microservice.services.agent-registration.port" -> WireMockSupport.port
     ) ++ configOverrides
 
   protected def configOverrides: Map[String, Any] = Map[String, Any]()

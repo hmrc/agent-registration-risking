@@ -27,7 +27,9 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
+import uk.gov.hmrc.agentregistrationrisking.services.AgentApplicationService
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegistrationStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 
@@ -78,6 +80,12 @@ extends ISpec:
     ObjectStoreStubs.stubPutObject(
       fileName = fileName.value
     )
+
+    AgentRegistrationStubs.stubUpdateApplicationStateSentToMinerva(Seq(
+      tdAll.tdRiskingInstancesInStates.readyForSubmission.application.applicationReference,
+      tdAll.tdRiskingInstancesInStates.readyForSubmission2.application.applicationReference
+    ))
+
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
     riskingFileUploadRunner.run().futureValue
 
@@ -85,6 +93,8 @@ extends ISpec:
       fileName = fileName.value
     )
     SdesProxyStubs.verifySdesFileReady()
+
+    AgentRegistrationStubs.verifyUpdateApplicationStateSentToMinerva()
 
     val riskingFileContent: String = ObjectStoreStubs.getRequestBody(fileName.value)
     riskingFileContent `shouldBeLike` expectedFileContent
