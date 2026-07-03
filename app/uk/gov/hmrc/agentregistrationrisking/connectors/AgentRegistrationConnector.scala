@@ -76,6 +76,6 @@ extends Connector:
               status = other,
               response = response
             )
-      .andLogOnFailure("Failed to delete user's Agent Application")
+      .andLogOnFailure("Failed to update user's Agent Application state")
 
   private val baseUrl: String = appConfig.agentRegistrationBaseUrl
