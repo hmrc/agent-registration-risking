@@ -153,7 +153,8 @@ object TdRiskingInstancesInStates:
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
   case object approvedAfterBackendNotified
-  extends TdApplicationWithIndividuals:
+  extends TdApplicationWithIndividuals,
+    TdCompletedRisking:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterBackendNotified
@@ -254,7 +255,8 @@ object TdRiskingInstancesInStates:
     )
 
   case object failedFixableAfterBackendNotified
-  extends TdApplicationWithIndividuals:
+  extends TdApplicationWithIndividuals,
+    TdCompletedRisking:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterBackendNotified
@@ -344,7 +346,8 @@ object TdRiskingInstancesInStates:
     )
 
   case object failedNonFixableAfterBackendNotified
-  extends TdApplicationWithIndividuals:
+  extends TdApplicationWithIndividuals,
+    TdCompletedRisking:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterBackendNotified

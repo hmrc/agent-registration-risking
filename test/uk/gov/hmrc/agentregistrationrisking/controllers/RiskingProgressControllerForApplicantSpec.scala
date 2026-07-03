@@ -20,21 +20,32 @@ import org.mongodb.scala.SingleObservableFuture
 import play.api.mvc.Call
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistration.shared.risking.RiskedEntity
+import uk.gov.hmrc.agentregistration.shared.risking.RiskedIndividual
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
+import uk.gov.hmrc.agentregistrationrisking.model.CompletedRiskingId
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.CompletedRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ControllerSpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdCompletedRisking
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdInstant
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
 
 import java.net.URL
+import java.time.ZoneId
 
 class RiskingProgressControllerForApplicantSpec
 extends ControllerSpec:
 
   val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
+  val completedRiskingRepo: CompletedRiskingRepo = app.injector.instanceOf[CompletedRiskingRepo]
 
   val pathForApplicant: String = s"/agent-registration-risking/risking-progress/for-applicant"
   val pathForIndividual: String = s"/agent-registration-risking/risking-progress/for-individual"
@@ -69,6 +80,67 @@ extends ControllerSpec:
 
     response.status shouldBe Status.NO_CONTENT
     response.body shouldBe ""
+    AuthStubs.verifyAuthorise()
+
+  "fallback to CompletedRisking if no data in ApplicationForRisking" in:
+    object Fixture:
+
+      val tdRisking: TdRisking = TdRisking.make("RiskingProgressControllerForApplicantSpec")
+      val seed: String = tdRisking.seed
+      val application: ApplicationForRisking =
+        tdRisking
+          .tdApplicationForRisking
+          .receivedRiskingResults
+          .failedNonFixableAfterEmailsProcessed
+
+      val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
+      val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedFixable
+
+      val completedRisking: CompletedRisking = TdCompletedRisking.makeCompletedRisking(
+        completedRiskingId = CompletedRiskingId(s"CompletedRiskingId_$seed"),
+        completedAt = tdRisking.instant,
+        riskingFile = tdRisking.riskingFile,
+        application = application,
+        individuals = Seq(individual1, individual2)
+      )
+
+      val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
+        riskedEntity = RiskedEntity(
+          applicationReference = application.applicationReference,
+          failures = application.entityRiskingResult.value.failures
+        ),
+        riskedIndividuals = Seq(
+          RiskedIndividual(
+            personReference = individual1.personReference,
+            individualName = individual1.individualData.individualName,
+            failures = individual1.individualRiskingResult.value.failures
+          ),
+          RiskedIndividual(
+            personReference = individual2.personReference,
+            individualName = individual2.individualData.individualName,
+            failures = individual2.individualRiskingResult.value.failures
+          )
+        ),
+        riskingCompletedDate = TdInstant.localDate,
+        correctiveActionExpiryDate = application.correctiveActionExpiryDate.map(_.atZone(ZoneId.of("Europe/London")).toLocalDate)
+      )
+
+    completedRiskingRepo.upsert(Fixture.completedRisking).futureValue
+    completedRiskingRepo.findRecent(Fixture.application.applicationReference).futureValue shouldBe Some(Fixture.completedRisking)
+
+    AuthStubs.stubAuthorise()
+    given Request[?] = tdAll.backendRequest
+    val applicationReference: ApplicationReference = Fixture.application.applicationReference
+    applicationForRiskingRepo.findById(applicationReference).futureValue shouldBe None withClue " no prior records in mongo for this application"
+    val riskingStatusForApplicantResponse: HttpResponse =
+      httpClient
+        .get(riskingProgressForApplicantUrl(applicationReference))
+        .execute[HttpResponse]
+        .futureValue
+    riskingStatusForApplicantResponse.status shouldBe Status.OK
+    val riskingStatusForApplicant: RiskingProgress = riskingStatusForApplicantResponse.json.as[RiskingProgress]
+    riskingStatusForApplicant shouldBe Fixture.riskingProgressForApplicant
+
     AuthStubs.verifyAuthorise()
 
   tdAll

@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.Sorts
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
@@ -30,6 +32,8 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import CompletedRiskingRepoHelp.given
 import org.mongodb.scala.Document
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRiskingId
@@ -47,7 +51,21 @@ extends Repo[CompletedRiskingId, CompletedRisking](
   indexes = CompletedRiskingRepoHelp.indexes(appConfig.CompletedRiskingRepo.ttl),
   extraCodecs = Seq(Codecs.playFormatCodec(CompletedRisking.format)),
   replaceIndexes = true
-)
+):
+
+  def findRecent(applicationReference: ApplicationReference): Future[Option[CompletedRisking]] = collection
+    .find(filter = Filters.eq(FieldNames.CompletedRisking.applicationReference, applicationReference.value))
+    .sort(Sorts.descending(FieldNames.CompletedRisking.completedAt))
+    .limit(1)
+    .toFuture()
+    .map(_.headOption)
+
+  def findRecent(personReference: PersonReference): Future[Option[CompletedRisking]] = collection
+    .find(filter = Filters.eq(FieldNames.CompletedRisking.personReference, personReference.value))
+    .sort(Sorts.descending(FieldNames.CompletedRisking.completedAt))
+    .limit(1)
+    .toFuture()
+    .map(_.headOption)
 
 object CompletedRiskingRepo:
   val collectionName = "completed-risking"
@@ -68,7 +86,11 @@ object CompletedRiskingRepoHelp:
       keys = Indexes.ascending(FieldNames.CompletedRisking.applicationReference),
       indexOptions = IndexOptions()
         .name(FieldNames.CompletedRisking.applicationReferenceIndex)
-        .unique(false)
+    ),
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.CompletedRisking.personReference),
+      indexOptions = IndexOptions()
+        .name(FieldNames.CompletedRisking.personReferenceIndex)
     ),
     IndexModel(
       keys = Indexes.ascending(FieldNames.CompletedRisking.completedAt),
