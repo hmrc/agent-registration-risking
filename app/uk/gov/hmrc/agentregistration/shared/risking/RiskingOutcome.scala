@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.risking
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
@@ -22,8 +22,8 @@ import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 enum RiskingOutcome:
 
   case Approved
-  case FailedNonFixable
   case FailedFixable
+  case FailedNonFixable
 
 object RiskingOutcome:
   given format: Format[RiskingOutcome] = JsonFormatsFactory.makeEnumFormat[RiskingOutcome]

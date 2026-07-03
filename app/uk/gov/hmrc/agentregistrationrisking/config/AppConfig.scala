@@ -41,6 +41,7 @@ class AppConfig @Inject() (
 ):
 
   val appName: String = config.get[String]("appName")
+  val agentRegistrationBaseUrl: String = servicesConfig.baseUrl("agent-registration")
   val emailBaseUrl: String = servicesConfig.baseUrl("email")
   val enrolmentStoreProxyBaseUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")

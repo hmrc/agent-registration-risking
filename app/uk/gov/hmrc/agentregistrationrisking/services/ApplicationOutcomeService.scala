@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService

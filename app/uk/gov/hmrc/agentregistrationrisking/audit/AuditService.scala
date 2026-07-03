@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.Application
 import uk.gov.hmrc.agentregistrationrisking.audit.ApplicationsTransferredToRisking.CreateAgentServicesAccount
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
