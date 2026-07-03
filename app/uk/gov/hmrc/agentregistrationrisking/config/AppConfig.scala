@@ -53,8 +53,9 @@ class AppConfig @Inject() (
 
   object Scheduler:
 
-    val enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
+    val riskingEnabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
     val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
+    val resultsEnabled: Boolean = config.getOptional[Boolean]("scheduler.results.enabled").getOrElse(false)
 
   object ApplicationForRiskingRepo:
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)

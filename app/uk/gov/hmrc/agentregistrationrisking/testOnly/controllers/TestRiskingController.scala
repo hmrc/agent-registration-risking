@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
-import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
+import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.agentregistrationrisking.testOnly.util.TestMongoCleanup
@@ -52,7 +52,7 @@ class TestRiskingController @Inject() (
   applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
-  riskingRunner: RiskingRunner,
+  riskingFileUploadRunner: RiskingFileUploadRunner,
   sdesProxyService: SdesProxyService,
   riskingFileService: RiskingFileService,
   riskingFileRepo: RiskingFileRepo,
@@ -70,14 +70,14 @@ with Logging:
     .async:
       implicit request =>
         for
-          _ <- riskingRunner.run()
+          _ <- riskingFileUploadRunner.run()
         yield Ok
 
   def viewNextRiskingFileContents: Action[AnyContent] = Action
     .async:
       implicit request =>
         for
-          (riskingFileWithContent, _) <- riskingRunner.buildRiskingFile()
+          (riskingFileWithContent, _) <- riskingFileUploadRunner.buildRiskingFile()
           s: String = riskingFileWithContent.riskingFileContent
         yield Ok(s)
 
