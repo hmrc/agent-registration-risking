@@ -23,6 +23,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.AgentApplicationService
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
@@ -48,7 +49,8 @@ class RiskingFileUploadRunner @Inject() (
   individualForRiskingRepo: IndividualForRiskingRepo,
   riskingFileRepo: RiskingFileRepo,
   riskingFileService: RiskingFileService,
-  auditService: AuditService
+  auditService: AuditService,
+  agentApplicationService: AgentApplicationService
 )(using
   appConfig: AppConfig,
   ec: ExecutionContext,
@@ -108,4 +110,6 @@ extends RequestAwareLogging:
            | $objectSummary
            |""".stripMargin
       )
+      _ <- agentApplicationService.updateApplicationStateSentToMinerva(applicationReferences)
+      _ = logger.info(s"Updated applications as sent to minerva")
     yield ()
