@@ -88,6 +88,15 @@ with Logging:
           .map(x => Json.prettyPrint(Json.toJson(x)))
           .map(Ok(_))
 
+  def notificationFileReady(): Action[JsValue] =
+    actions
+      .default
+      .apply(parse.json):
+        implicit request =>
+          val receivedNotification: String = Json.prettyPrint(request.body)
+          logger.info("Notification file ready:" + receivedNotification)
+          Ok(receivedNotification)
+
   private def downloadUrl(riskingResultsFileName: RiskingResultsFileName): String =
     thisBackendBaseUrl + routes.SdesTestOnlyController.downloadRiskingResultsFile(riskingResultsFileName)
 
