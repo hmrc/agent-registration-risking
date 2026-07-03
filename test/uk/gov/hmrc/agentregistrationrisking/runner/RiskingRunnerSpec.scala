@@ -36,7 +36,8 @@ extends ISpec:
 
   "build risking file" in:
     given request: Request[?] = tdAll.backendRequest
-    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) = riskingRunner.buildRiskingFile().futureValue
+    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) =
+      riskingFileUploadRunner.buildRiskingFile().futureValue
 
     riskingFileWithContent.riskingFile shouldBe RiskingFile(
       riskingFileName = fileName,
@@ -54,7 +55,8 @@ extends ISpec:
     dropDatabase()
 
     given request: Request[?] = tdAll.backendRequest
-    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) = riskingRunner.buildRiskingFile().futureValue
+    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) =
+      riskingFileUploadRunner.buildRiskingFile().futureValue
 
     riskingFileWithContent.riskingFile shouldBe RiskingFile(
       riskingFileName = fileName,
@@ -77,7 +79,7 @@ extends ISpec:
       fileName = fileName.value
     )
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
-    riskingRunner.run().futureValue
+    riskingFileUploadRunner.run().futureValue
 
     ObjectStoreStubs.verifyPutObject(
       fileName = fileName.value
@@ -106,7 +108,7 @@ extends ISpec:
     super.beforeEach()
     primeDb()
 
-  val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
+  val riskingFileUploadRunner: RiskingFileUploadRunner = app.injector.instanceOf[RiskingFileUploadRunner]
 
   val riskingFileRepo: RiskingFileRepo = app.injector.instanceOf[RiskingFileRepo]
   val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]

@@ -18,17 +18,13 @@ package uk.gov.hmrc.agentregistrationrisking.scheduler
 
 import play.api.Logging
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
 
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.util.Failure
-import scala.util.Success
 
 @Singleton
 class RiskingSchedulerInitializer @Inject() (
-  riskingRunner: RiskingRunner,
   scheduler: Scheduler,
   appConfig: AppConfig
 )(using ExecutionContext)
@@ -37,12 +33,16 @@ extends Logging:
   initialize()
 
   private def initialize(): Unit =
-    if appConfig.Scheduler.enabled then
+    if appConfig.Scheduler.riskingEnabled then
       logger.info("Bootstrapping risking scheduler")
-      scheduler.scheduleDaily(
-        "generating and sending risking file",
-        appConfig.Scheduler.time,
-        () => riskingRunner.run()
+      scheduler.scheduleDailyRiskingFileUpload(
+        appConfig.Scheduler.time
       )
     else
       logger.info("risking not scheduled as it is not enabled")
+
+    if appConfig.Scheduler.resultsEnabled then
+      logger.info("Bootstrapping results processing scheduler")
+      scheduler.scheduleHourlyResultsFileProcessing()
+    else
+      logger.info("results processing not scheduled as it is not enabled")
