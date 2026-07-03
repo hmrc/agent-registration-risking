@@ -34,15 +34,11 @@ import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
-import uk.gov.hmrc.agentregistrationrisking.runner.RiskingResultsFileProcessingRunner
 
 @Singleton
 class Scheduler @Inject() (
   clock: Clock,
-  mongoLockRepository: MongoLockRepository,
-  riskingFileUploadRunner: RiskingFileUploadRunner,
-  riskingResultsFileProcessingRunner: RiskingResultsFileProcessingRunner
+  mongoLockRepository: MongoLockRepository
 )(using ec: ExecutionContext)
 extends Logging:
 
@@ -57,12 +53,13 @@ extends Logging:
       override val lockRepository: LockRepository = mongoLockRepository
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  private def scheduleJob(
+  def scheduleDailyRiskingFileUpload(
     name: String,
-    nextRun: ZonedDateTime,
+    timeOfDay: LocalTime,
     job: () => Future[Unit]
   ): Unit =
 
+    val nextRun: ZonedDateTime = nextDailyRunTime(timeOfDay)
     val delayMillis: Long = nextRun.toInstant.toEpochMilli - now().toInstant.toEpochMilli
 
     executor.schedule(
@@ -75,9 +72,9 @@ extends Logging:
             case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
             case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
             case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
-          scheduleJob(
+          scheduleDailyRiskingFileUpload(
             name = name,
-            nextRun = nextRun,
+            timeOfDay = timeOfDay,
             job = job
           )
         }
@@ -89,26 +86,35 @@ extends Logging:
     ()
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  def scheduleDailyRiskingFileUpload(
-    timeOfDay: LocalTime
+  def scheduleHourlyResultsFileProcessing(
+    name: String,
+    job: () => Future[Unit]
   ): Unit =
 
-    val nextRun: ZonedDateTime = nextDailyRunTime(timeOfDay)
-    scheduleJob(
-      "generating and sending risking file",
-      nextRun,
-      () => riskingFileUploadRunner.run()
-    )
-
-  @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  def scheduleHourlyResultsFileProcessing(): Unit =
-
     val nextRun: ZonedDateTime = nextHourlyRunTime()
-    scheduleJob(
-      "processing new risking results files",
-      nextRun,
-      () => riskingResultsFileProcessingRunner.run()
+    val delayMillis: Long = nextRun.toInstant.toEpochMilli - now().toInstant.toEpochMilli
+
+    executor.schedule(
+      new Runnable:
+        def run(): Unit = lockServiceFor(name).withLock {
+          logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
+          job()
+        }.onComplete { result =>
+          result match
+            case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
+            case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
+            case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
+          scheduleHourlyResultsFileProcessing(
+            name = name,
+            job = job
+          )
+        }
+      ,
+      delayMillis,
+      TimeUnit.MILLISECONDS
     )
+    logger.info(s"$name scheduled for ${nextRun.toString}")
+    ()
 
   private def nextDailyRunTime(timeOfDay: LocalTime): ZonedDateTime =
     val currentTime: ZonedDateTime = now()
@@ -118,4 +124,4 @@ extends Logging:
     else
       today.plusDays(1)
 
-  private def nextHourlyRunTime(): ZonedDateTime = now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
+  private def nextHourlyRunTime(): ZonedDateTime = ZonedDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
