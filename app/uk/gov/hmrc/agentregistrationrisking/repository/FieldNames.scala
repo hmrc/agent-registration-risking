@@ -50,8 +50,8 @@ object FieldNames:
   object CompletedRisking:
 
     val completedRiskingId: String = "_id"
-    val applicationReference: String = s"application.$applicationReference"
-    val applicationReferenceIndex: String = applicationReference + "Index"
+    val applicationReference: String = s"application.applicationReference"
+    val applicationReferenceIndex: String = "application_applicationReferenceIndex"
     val personReference: String = "individuals.personReference"
     val personReferenceIndex: String = "individuals_personReferenceIndex"
     val completedAt: String = "completedAt"
