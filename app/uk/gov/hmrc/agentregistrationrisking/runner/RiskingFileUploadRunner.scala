@@ -111,4 +111,5 @@ extends RequestAwareLogging:
            |""".stripMargin
       )
       _ <- agentApplicationService.updateApplicationStateSentToMinerva(applicationReferences)
+      _ = logger.info(s"Updated applications as sent to minerva")
     yield ()
