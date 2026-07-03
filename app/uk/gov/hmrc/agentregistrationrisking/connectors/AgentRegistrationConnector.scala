@@ -59,7 +59,7 @@ extends Connector:
       .andLogOnFailure(s"Failed to send risking outcome for applicationReference [${applicationReference.value}]")
 
   def updateApplicationStatusSentForRisking(updateApplicationStateSentToMinervaRequest: UpdateApplicationStateSentToMinervaRequest)(using
-                                                                                                                                    RequestHeader
+    RequestHeader
   ): Future[Unit] =
     val url: URL = url"$baseUrl/agent-registration/risking-updates/sent-to-minerva"
     httpClient
@@ -78,4 +78,4 @@ extends Connector:
             )
       .andLogOnFailure("Failed to delete user's Agent Application")
 
-  private val baseUrl: String = appConfig.agentRegistrationBaseUrl + "/agent-registration"
+  private val baseUrl: String = appConfig.agentRegistrationBaseUrl
