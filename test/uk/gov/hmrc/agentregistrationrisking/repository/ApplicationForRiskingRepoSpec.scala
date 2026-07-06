@@ -17,10 +17,14 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.mongodb.scala.SingleObservableFuture
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
+
+import scala.concurrent.Future
 
 class ApplicationForRiskingRepoSpec
 extends ISpec:
@@ -113,6 +117,42 @@ extends ISpec:
       TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals,
       TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
+  "findAlreadyRiskedApplication" in:
+
+    val riskedApplication = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed
+
+    val application: Option[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findAlreadyRiskedApplication(riskedApplication.application.applicationReference)
+        .futureValue
+
+    application shouldBe Some(riskedApplication.applicationWithIndividuals)
+
+  "setOverallRiskingOutcomeToApprovedForApplication" in:
+
+    val riskedApplication = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.application
+
+    val initialState = applicationForRiskingRepo.findById(riskedApplication.applicationReference).futureValue
+
+    initialState.map(_.overallStatus) shouldBe Some(OverallStatus(
+      riskingOutcome = Some(RiskingOutcome.FailedNonFixable),
+      emailsProcessed = true,
+      backendNotified = true
+    ))
+
+    val application: Unit =
+      applicationForRiskingRepo
+        .setOverallRiskingOutcomeToApprovedForApplication(riskedApplication.applicationReference)
+        .futureValue
+
+    val modifiedState = applicationForRiskingRepo.findById(riskedApplication.applicationReference).futureValue
+
+    modifiedState.map(_.overallStatus) shouldBe Some(OverallStatus(
+      riskingOutcome = Some(RiskingOutcome.Approved),
+      emailsProcessed = false,
+      backendNotified = true
+    ))
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
