@@ -177,7 +177,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       Filters.eq(FieldNames.applicationReference, applicationReference.value),
       Updates.combine(
         Updates.set(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
-        Updates.set(FieldNames.overallStatus.emailsProcessed, false)
+        Updates.set(FieldNames.overallStatus.emailsProcessed, false),
+        Updates.set(FieldNames.overallStatus.backendNotified, false)
       )
     ).toFuture().map(_ => ())
   }

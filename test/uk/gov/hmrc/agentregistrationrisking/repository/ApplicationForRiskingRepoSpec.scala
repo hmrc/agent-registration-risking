@@ -151,7 +151,7 @@ extends ISpec:
     modifiedState.map(_.overallStatus) shouldBe Some(OverallStatus(
       riskingOutcome = Some(RiskingOutcome.Approved),
       emailsProcessed = false,
-      backendNotified = true
+      backendNotified = false
     ))
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
