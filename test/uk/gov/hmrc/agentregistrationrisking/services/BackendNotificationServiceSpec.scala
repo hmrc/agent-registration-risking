@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
@@ -38,10 +37,6 @@ import java.time.ZoneOffset
 class BackendNotificationServiceSpec
 extends ISpec:
 
-  override protected def configOverrides: Map[String, Any] = Map(
-    "features.fixable-failures" -> true
-  )
-
   private val backendNotificationService: BackendNotificationService = app.injector.instanceOf[BackendNotificationService]
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
@@ -50,9 +45,6 @@ extends ISpec:
 
   private val approvedAfterEmailSent = TdRiskingInstancesInStates.approvedAfterEmailSent
   private val failedNonFixableAfterEmailSent = TdRiskingInstancesInStates.failedNonFixableAfterEmailSent
-  private val approvedAfterOutcome = TdRiskingInstancesInStates.approvedAfterOutcome
-  private val failedFixableAfterOutcome = TdRiskingInstancesInStates.failedFixableAfterOutcome
-  private val failedNonFixableAfterOutcome = TdRiskingInstancesInStates.failedNonFixableAfterOutcome
   private val outcomeNotComputed = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
   private val emailsNotYetSent = TdRiskingInstancesInStates.approvedAfterSubscribed // outcome + subscribed, but emailSentAt still None so notify predicate excludes it
 
@@ -72,7 +64,6 @@ extends ISpec:
     val entityFailures = applicationWithIndividuals.application.entityRiskingResult.map(_.failures).getOrElse(List.empty)
     RiskingOutcomeRequest(
       riskingCompletedDate = applicationWithIndividuals.application.overallStatus.emailSentAt.value.atZone(ZoneOffset.UTC).toLocalDate,
-      riskingCompletedDate = applicationWithIndividuals.riskingCompletedDate.value.atZone(ZoneOffset.UTC).toLocalDate,
       applicationOutcome = applicationWithIndividuals.application.overallStatus.riskingOutcome.value,
       entityFailures = entityFailures,
       entityOutcome = entityFailures.outcomeForEntity,
@@ -96,35 +87,22 @@ extends ISpec:
   "processBackendNotifications" - {
 
     "notifies the backend for each application whose emails have been sent (emailSentAt exists) and has not yet been notified, then marks it as notified" in:
-    "notifies the backend for each application that has a computed riskingOutcome and has not yet been notified, then marks it as notified" in:
       stubExpectedRequests(
         approvedAfterEmailSent,
         failedNonFixableAfterEmailSent
-        approvedAfterOutcome,
-        failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
       )
       insertApplicationsWithIndividuals(
         approvedAfterEmailSent,
         failedNonFixableAfterEmailSent
-        approvedAfterOutcome,
-        failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
       )
 
       backendNotificationService.processBackendNotifications().futureValue
 
       AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
       AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterOutcome.application.applicationReference)
 
       backendNotifiedOf(approvedAfterEmailSent) shouldBe true
       backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe true
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true
-      backendNotifiedOf(failedFixableAfterOutcome) shouldBe true
-      backendNotifiedOf(failedNonFixableAfterOutcome) shouldBe true
 
     "does not notify the backend for applications whose outcome has not been computed yet" in:
       insertApplicationsWithIndividuals(outcomeNotComputed)
@@ -172,10 +150,7 @@ extends ISpec:
       insertApplicationsWithIndividuals(
         approvedAfterEmailSent,
         failedNonFixableAfterEmailSent
-        approvedAfterOutcome.application.applicationReference,
-        expectedRiskingOutcomeRequest(approvedAfterOutcome)
       )
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
 
       backendNotificationService.processBackendNotifications().futureValue
 
@@ -183,19 +158,14 @@ extends ISpec:
       AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
       backendNotifiedOf(approvedAfterEmailSent) shouldBe true withClue "the 202 call succeeded — its flag flips"
       backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe false withClue "the 500 call failed — its flag must not flip so the next scheduler run retries"
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-      backendNotifiedOf(approvedAfterOutcome) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
 
     "notifies the backend for legacy applications persisted before the backendNotified field was added (field missing on the doc)" in:
       stubExpectedRequests(approvedAfterEmailSent)
       insertApplicationsWithIndividuals(approvedAfterEmailSent)
-      stubExpectedRequests(approvedAfterOutcome)
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
       // Simulate legacy doc: remove the overallStatus.backendNotified field from the persisted record
       applicationForRiskingRepo.collection
         .updateOne(
           Filters.eq("applicationReference", approvedAfterEmailSent.application.applicationReference.value),
-          Filters.eq("applicationReference", approvedAfterOutcome.application.applicationReference.value),
           Updates.unset("overallStatus.backendNotified")
         )
         .toFuture
@@ -205,8 +175,6 @@ extends ISpec:
 
       AgentRegistrationStubs.verifySendRiskingOutcome(
         approvedAfterEmailSent.application.applicationReference
-        approvedAfterOutcome.application.applicationReference
       ) withClue "legacy doc (missing backendNotified) should be picked up and notified"
       backendNotifiedOf(approvedAfterEmailSent) shouldBe true withClue "after notify, backendNotified should be set"
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true withClue "after notify, backendNotified should be set"
   }

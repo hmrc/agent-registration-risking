@@ -18,10 +18,9 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.Updates
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailures
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -48,10 +47,22 @@ extends ISpec:
 
   private given RequestHeader = tdAll.fakeBackendRequest
 
-  private val approvedAfterOutcome = TdRiskingInstancesInStates.approvedAfterOutcome
-  private val failedFixableAfterOutcome = TdRiskingInstancesInStates.failedFixableAfterOutcome
-  private val failedNonFixableAfterOutcome = TdRiskingInstancesInStates.failedNonFixableAfterOutcome
-  private val outcomeNotComputed = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
+  private val approvedAfterEmailSent = TdRiskingInstancesInStates.approvedAfterEmailSent
+  private val failedNonFixableAfterEmailSent = TdRiskingInstancesInStates.failedNonFixableAfterEmailSent
+
+  // Constructed inline because `failedFixableAfterEmailSent` case object is commented out until the FailedFixable email service ships.
+  // Predicate `emailSentAt exists` would otherwise let it through — this spec proves the fixable-failures flag holds as an additional gate on top of the predicate.
+  private val failedFixableAfterEmailSentApp: ApplicationForRisking = TdRiskingInstancesInStates.failedFixableAfterOutcome.application
+    .copy(isEmailSent = true)
+    .modify(_.overallStatus.emailsProcessed).setTo(true)
+    .modify(_.overallStatus.emailSentAt).setTo(Some(frozenInstant))
+  private val failedFixableAfterEmailSent: TdApplicationWithIndividuals =
+    new TdApplicationWithIndividuals:
+      override def tdRisking = TdRiskingInstancesInStates.failedFixableAfterOutcome.tdRisking
+      override val application = failedFixableAfterEmailSentApp
+      override val individual1 = TdRiskingInstancesInStates.failedFixableAfterOutcome.individual1
+      override val individual2 = TdRiskingInstancesInStates.failedFixableAfterOutcome.individual2
+      override val riskingProgressForApplicant = TdRiskingInstancesInStates.failedFixableAfterOutcome.riskingProgressForApplicant
 
   override def beforeEach(): Unit =
     super.beforeEach()
@@ -68,7 +79,7 @@ extends ISpec:
     val applicationWithIndividuals = td.applicationWithIndividuals
     val entityFailures = applicationWithIndividuals.application.entityRiskingResult.map(_.failures).getOrElse(List.empty)
     RiskingOutcomeRequest(
-      riskingCompletedDate = applicationWithIndividuals.riskingCompletedDate.value.atZone(ZoneOffset.UTC).toLocalDate,
+      riskingCompletedDate = applicationWithIndividuals.application.overallStatus.emailSentAt.value.atZone(ZoneOffset.UTC).toLocalDate,
       applicationOutcome = applicationWithIndividuals.application.overallStatus.riskingOutcome.value,
       entityFailures = entityFailures,
       entityOutcome = entityFailures.outcomeForEntity,
@@ -89,31 +100,29 @@ extends ISpec:
   private def persisted(td: TdApplicationWithIndividuals): ApplicationForRisking =
     applicationForRiskingRepo.findById(td.application.applicationReference).futureValue.value
 
-  "doesn't notify the backend applications with failed fixable outcome" in:
-    stubExpectedRequests(
-      failedFixableAfterOutcome
-    )
-    insertApplicationsWithIndividuals(
-      failedFixableAfterOutcome
-    )
-    backendNotificationService.processBackendNotifications().futureValue
-    AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterOutcome.application.applicationReference, count = 0)
-    backendNotifiedOf(failedFixableAfterOutcome) shouldBe false
+  "doesn't notify the backend for FailedFixable applications when the fixable-failures flag is OFF — even if emailSentAt is set the flag holds as an additional gate on top of the predicate" in:
+    stubExpectedRequests(failedFixableAfterEmailSent)
+    insertApplicationsWithIndividuals(failedFixableAfterEmailSent)
 
-  "notifies all the backend for all other outcomes" in:
+    backendNotificationService.processBackendNotifications().futureValue
+
+    AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterEmailSent.application.applicationReference, count = 0)
+    backendNotifiedOf(failedFixableAfterEmailSent) shouldBe false
+
+  "notifies the backend for Approved and FailedNonFixable outcomes when the fixable-failures flag is OFF — the flag only gates FailedFixable" in:
     stubExpectedRequests(
-      approvedAfterOutcome,
-      failedNonFixableAfterOutcome
+      approvedAfterEmailSent,
+      failedNonFixableAfterEmailSent
     )
     insertApplicationsWithIndividuals(
-      approvedAfterOutcome,
-      failedNonFixableAfterOutcome
+      approvedAfterEmailSent,
+      failedNonFixableAfterEmailSent
     )
 
     backendNotificationService.processBackendNotifications().futureValue
 
-    AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-    AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterOutcome.application.applicationReference)
+    AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
+    AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
 
-    backendNotifiedOf(approvedAfterOutcome) shouldBe true
-    backendNotifiedOf(failedNonFixableAfterOutcome) shouldBe true
+    backendNotifiedOf(approvedAfterEmailSent) shouldBe true
+    backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe true

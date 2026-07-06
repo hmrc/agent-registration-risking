@@ -251,7 +251,8 @@ object TdRiskingInstancesInStates:
   //   override val riskingProgressForApplicant: RiskingProgress.FailedFixable = ...
 
   case object failedFixableAfterBackendNotified
-  extends TdApplicationWithIndividuals:
+  extends TdApplicationWithIndividuals,
+    TdCompletedRisking:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedFixableAfterBackendNotified
