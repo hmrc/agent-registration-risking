@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.connectors
 import play.api.http.Status.OK
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
+import uk.gov.hmrc.agentregistration.shared.risking.updates.UpdateApplicationStateSentToMinervaRequest
 import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.FutureUtil.andLogOnFailure
@@ -56,5 +57,25 @@ extends Connector:
               info = s"Failed to send risking outcome for applicationReference [${applicationReference.value}]"
             )
       .andLogOnFailure(s"Failed to send risking outcome for applicationReference [${applicationReference.value}]")
+
+  def updateApplicationStatusSentForRisking(updateApplicationStateSentToMinervaRequest: UpdateApplicationStateSentToMinervaRequest)(using
+    RequestHeader
+  ): Future[Unit] =
+    val url: URL = url"$baseUrl/agent-registration/risking-updates/sent-to-minerva"
+    httpClient
+      .post(url)
+      .withBody(Json.toJson(updateApplicationStateSentToMinervaRequest))
+      .execute[HttpResponse]
+      .map: response =>
+        response.status match
+          case Status.OK => ()
+          case other =>
+            Errors.throwUpstreamErrorResponse(
+              httpMethod = "POST",
+              url = url,
+              status = other,
+              response = response
+            )
+      .andLogOnFailure("Failed to update user's Agent Application state")
 
   private val baseUrl: String = appConfig.agentRegistrationBaseUrl

@@ -53,8 +53,9 @@ class AppConfig @Inject() (
 
   object Scheduler:
 
-    val enabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
+    val riskingEnabled: Boolean = config.getOptional[Boolean]("scheduler.risking.enabled").getOrElse(false)
     val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
+    val resultsEnabled: Boolean = config.getOptional[Boolean]("scheduler.results.enabled").getOrElse(false)
 
   object ApplicationForRiskingRepo:
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
@@ -88,13 +89,25 @@ class AppConfig @Inject() (
     val applicationProcessingTime: String = Base64.decode(config.get[String]("email.application-processing-time"))
 
   object CorrectiveAction:
-
     val daysToTakeCorrectiveAction: Int = config.get[Int]("corrective-action.days-to-take-corrective-action")
 
-  object Base64 {
+  object Base64:
 
     private val decoder = java.util.Base64.getDecoder
-
     def decode(encoded: String): String = new String(decoder.decode(encoded), StandardCharsets.UTF_8)
 
-  }
+  object Features:
+    val fixableFailures: Boolean = config.get[Boolean]("features.fixable-failures")
+
+  // !!!
+  // Access objects eagerly to initialize its vals, ensuring config errors are detected at startup
+  AmlsEvidence
+  Scheduler
+  ApplicationForRiskingRepo
+  CompletedRiskingRepo
+  FieldLevelEncryption
+  SdesProxy
+  Email
+  CorrectiveAction
+  Base64
+  Features

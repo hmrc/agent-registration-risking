@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.scheduler
 
 import java.time.Clock
 import java.time.LocalTime
-import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -54,13 +53,13 @@ extends Logging:
       override val lockRepository: LockRepository = mongoLockRepository
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-  def scheduleDaily(
+  def scheduleDailyRiskingFileUpload(
     name: String,
     timeOfDay: LocalTime,
     job: () => Future[Unit]
   ): Unit =
 
-    val nextRun: ZonedDateTime = nextRunTime(timeOfDay)
+    val nextRun: ZonedDateTime = nextDailyRunTime(timeOfDay)
     val delayMillis: Long = nextRun.toInstant.toEpochMilli - now().toInstant.toEpochMilli
 
     executor.schedule(
@@ -73,7 +72,7 @@ extends Logging:
             case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
             case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
             case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
-          scheduleDaily(
+          scheduleDailyRiskingFileUpload(
             name = name,
             timeOfDay = timeOfDay,
             job = job
@@ -86,10 +85,43 @@ extends Logging:
     logger.info(s"$name scheduled for ${nextRun.toString}")
     ()
 
-  private def nextRunTime(timeOfDay: LocalTime): ZonedDateTime =
+  @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
+  def scheduleHourlyResultsFileProcessing(
+    name: String,
+    job: () => Future[Unit]
+  ): Unit =
+
+    val nextRun: ZonedDateTime = nextHourlyRunTime()
+    val delayMillis: Long = nextRun.toInstant.toEpochMilli - now().toInstant.toEpochMilli
+
+    executor.schedule(
+      new Runnable:
+        def run(): Unit = lockServiceFor(name).withLock {
+          logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
+          job()
+        }.onComplete { result =>
+          result match
+            case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
+            case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
+            case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
+          scheduleHourlyResultsFileProcessing(
+            name = name,
+            job = job
+          )
+        }
+      ,
+      delayMillis,
+      TimeUnit.MILLISECONDS
+    )
+    logger.info(s"$name scheduled for ${nextRun.toString}")
+    ()
+
+  private def nextDailyRunTime(timeOfDay: LocalTime): ZonedDateTime =
     val currentTime: ZonedDateTime = now()
     val today: ZonedDateTime = currentTime.`with`(timeOfDay)
     if currentTime.isBefore(today) then
       today
     else
       today.plusDays(1)
+
+  private def nextHourlyRunTime(): ZonedDateTime = ZonedDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)

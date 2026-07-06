@@ -27,7 +27,9 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
+import uk.gov.hmrc.agentregistrationrisking.services.AgentApplicationService
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegistrationStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxyStubs
 
@@ -36,7 +38,8 @@ extends ISpec:
 
   "build risking file" in:
     given request: Request[?] = tdAll.backendRequest
-    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) = riskingRunner.buildRiskingFile().futureValue
+    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) =
+      riskingFileUploadRunner.buildRiskingFile().futureValue
 
     riskingFileWithContent.riskingFile shouldBe RiskingFile(
       riskingFileName = fileName,
@@ -54,7 +57,8 @@ extends ISpec:
     dropDatabase()
 
     given request: Request[?] = tdAll.backendRequest
-    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) = riskingRunner.buildRiskingFile().futureValue
+    val (riskingFileWithContent: RiskingFileWithContent, applicationReferences: Seq[ApplicationReference]) =
+      riskingFileUploadRunner.buildRiskingFile().futureValue
 
     riskingFileWithContent.riskingFile shouldBe RiskingFile(
       riskingFileName = fileName,
@@ -76,13 +80,21 @@ extends ISpec:
     ObjectStoreStubs.stubPutObject(
       fileName = fileName.value
     )
+
+    AgentRegistrationStubs.stubUpdateApplicationStateSentToMinerva(Seq(
+      tdAll.tdRiskingInstancesInStates.readyForSubmission.application.applicationReference,
+      tdAll.tdRiskingInstancesInStates.readyForSubmission2.application.applicationReference
+    ))
+
     SdesProxyStubs.stubSdesFileReady(tdAll.notifySdesFileReadyRequest)
-    riskingRunner.run().futureValue
+    riskingFileUploadRunner.run().futureValue
 
     ObjectStoreStubs.verifyPutObject(
       fileName = fileName.value
     )
     SdesProxyStubs.verifySdesFileReady()
+
+    AgentRegistrationStubs.verifyUpdateApplicationStateSentToMinerva()
 
     val riskingFileContent: String = ObjectStoreStubs.getRequestBody(fileName.value)
     riskingFileContent `shouldBeLike` expectedFileContent
@@ -106,7 +118,7 @@ extends ISpec:
     super.beforeEach()
     primeDb()
 
-  val riskingRunner: RiskingRunner = app.injector.instanceOf[RiskingRunner]
+  val riskingFileUploadRunner: RiskingFileUploadRunner = app.injector.instanceOf[RiskingFileUploadRunner]
 
   val riskingFileRepo: RiskingFileRepo = app.injector.instanceOf[RiskingFileRepo]
   val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]

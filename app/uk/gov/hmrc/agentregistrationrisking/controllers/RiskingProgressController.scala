@@ -36,6 +36,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
+import cats.data.OptionT
+import cats.implicits.*
+import scala.util.chaining.*
 
 class RiskingProgressController @Inject() (
   actions: Actions,
@@ -49,6 +52,9 @@ extends BackendController(cc):
     .async:
       applicationForRiskingService
         .getApplicationWithIndividuals(personReference)
+        .pipe(OptionT.apply)
+        .orElse(OptionT(applicationForRiskingService.getApplicationWithIndividualsFromCompletedRisking(personReference)))
+        .value
         .map:
           case None => NoContent
           case Some(applicationWithIndividuals) => Ok(Json.toJson(RiskingProgressController.toRiskingProgress(applicationWithIndividuals)))
@@ -58,6 +64,11 @@ extends BackendController(cc):
     .async:
       applicationForRiskingService
         .getApplicationWithIndividuals(applicationReference)
+        .pipe(OptionT.apply)
+        .orElse(
+          OptionT(applicationForRiskingService.getApplicationWithIndividualsFromCompletedRisking(applicationReference))
+        )
+        .value
         .map:
           case None => NoContent
           case Some(applicationWithIndividuals: ApplicationWithIndividuals) =>

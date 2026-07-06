@@ -16,25 +16,18 @@
 
 package uk.gov.hmrc.agentregistrationrisking.runner
 
-import org.mongodb.scala.SingleObservableFuture
-import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
-import play.api.mvc.request.RemoteConnection
-import play.api.mvc.request.RequestTarget
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.AgentApplicationService
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import play.api.libs.typedmap.TypedMap
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
@@ -49,14 +42,15 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class RiskingRunner @Inject() (
+class RiskingFileUploadRunner @Inject() (
   objectStoreService: ObjectStoreService,
   sdesProxyService: SdesProxyService,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
   riskingFileRepo: RiskingFileRepo,
   riskingFileService: RiskingFileService,
-  auditService: AuditService
+  auditService: AuditService,
+  agentApplicationService: AgentApplicationService
 )(using
   appConfig: AppConfig,
   ec: ExecutionContext,
@@ -116,4 +110,6 @@ extends RequestAwareLogging:
            | $objectSummary
            |""".stripMargin
       )
+      _ <- agentApplicationService.updateApplicationStateSentToMinerva(applicationReferences)
+      _ = logger.info(s"Updated applications as sent to minerva")
     yield ()

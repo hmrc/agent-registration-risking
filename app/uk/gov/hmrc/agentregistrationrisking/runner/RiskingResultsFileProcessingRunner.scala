@@ -14,56 +14,47 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.controllers
+package uk.gov.hmrc.agentregistrationrisking.runner
 
-import com.google.inject.Inject
-import play.api.mvc.Action
-import play.api.mvc.ControllerComponents
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
 import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
+import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
+import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class SdesNotificationController @Inject() (
-  cc: ControllerComponents,
-  actions: Actions,
+@Singleton
+class RiskingResultsFileProcessingRunner @Inject() (
   riskingResultsService: RiskingResultsService,
   applicationOutcomeService: ApplicationOutcomeService,
   subscriptionService: SubscriptionService,
   emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
   emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable,
   backendNotificationService: BackendNotificationService
-)(using ExecutionContext)
-extends BackendController(cc):
+)(using
+  appConfig: AppConfig,
+  ec: ExecutionContext,
+  clock: Clock
+)
+extends RequestAwareLogging:
 
-  def receiveSdesNotification: Action[SdesNotification] =
-    actions
-      .default
-      .apply(parse.json[SdesNotification]):
-        implicit request =>
-          request.body match
-            case n: FileReady => logger.info(s"File ready notification received for ${n.filename} from SDES [${n.correlationID}]")
-            case n: FileReceived => logger.info(s"File received notification received for ${n.filename} from SDES [${n.correlationID}]")
-            case n: FileProcessed => logger.info(s"File processed notification received for ${n.filename} from SDES [${n.correlationID}]")
-            case n: FileProcessingFailure =>
-              logger.warn(s"File processing failure notification received for ${n.filename} from SDES [${n.correlationID}]. Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
-          Ok
-
-  // TODO: what if few notifications received in the same time during the processing of one notification
-  private def onFileReady()(using RequestHeader): Future[Unit] =
+  def run(): Future[Unit] =
+    given RequestHeader = EmptyRequest.emptyRequestHeader
     (for
       _ <- riskingResultsService.processResultsFiles()
       _ <- applicationOutcomeService.processOverallOutcomes()
+      _ <- backendNotificationService.processBackendNotifications()
       _ <- subscriptionService.processSubscriptions()
       _ <- emailServiceForApprovedApplications.processEmails()
       _ <- emailServiceForFailedNonFixable.processEmails()
-      _ <- backendNotificationService.processBackendNotifications()
-    yield ()).recover { case ex: Exception => logger.error(s"Error processing file ready notification", ex) }
+    yield ()).recover { case ex: Exception => logger.error(s"Error processing risking results file", ex) }

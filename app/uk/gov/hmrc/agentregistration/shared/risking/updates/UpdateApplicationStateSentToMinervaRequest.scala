@@ -13,3 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package uk.gov.hmrc.agentregistration.shared.risking.updates
+
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+
+final case class UpdateApplicationStateSentToMinervaRequest(
+  applicationReferences: Seq[ApplicationReference]
+)
+
+object UpdateApplicationStateSentToMinervaRequest:
+  given OFormat[UpdateApplicationStateSentToMinervaRequest] = Json.format

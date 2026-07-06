@@ -25,6 +25,17 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.RichMatchers.*
 
 import java.time.Instant
 
+trait TdCompletedRisking { self: TdApplicationWithIndividuals =>
+
+  def completedRisking: CompletedRisking = TdCompletedRisking.makeCompletedRisking(
+    completedRiskingId = CompletedRiskingId(s"CompletedRiskingId_${self.tdRisking.seed}"),
+    completedAt = self.tdRisking.instant,
+    riskingFile = self.tdRisking.riskingFile,
+    application = self.applicationWithIndividuals.application,
+    individuals = self.applicationWithIndividuals.individuals
+  )
+}
+
 object TdCompletedRisking:
 
   def makeCompletedRisking(
@@ -49,6 +60,12 @@ object TdCompletedRisking:
     )
   )
 
+  /** Creates a CompletedRisking test data object from a TdRisking instance.
+    *
+    * This method performs data integrity checks to ensure the application and individuals have valid risking results and outcomes.
+    * @throws org.scalatest.exceptions.TestFailedException
+    *   if data integrity checks fail
+    */
   def makeCompletedRisking(
     completedRiskingId: CompletedRiskingId,
     completedAt: Instant,
@@ -73,7 +90,8 @@ object TdCompletedRisking:
           application.entityRiskingResult.value.failures.foreach: failure =>
             failure shouldBe a[EntityFailure.Fixable]
           individuals.foreach: individual =>
-            individual.individualRiskingResult.value.failures shouldBe a[IndividualFailure.Fixable]
+            individual.individualRiskingResult.value.failures.foreach: failure =>
+              failure shouldBe a[IndividualFailure.Fixable]
 
         case RiskingOutcome.FailedNonFixable =>
 

@@ -30,7 +30,6 @@ import play.api.test.TestServerFactory
 import play.core.server.ServerConfig
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdZoneId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport
@@ -39,7 +38,6 @@ import uk.gov.hmrc.mongo.test.MongoSupport
 
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
 import scala.concurrent.ExecutionContext
 
 trait ISpec
@@ -71,7 +69,6 @@ extends AnyFreeSpecLike,
       "microservice.services.email.port" -> WireMockSupport.port,
       "mongodb.uri" -> mongoUri,
       "microservice.services.object-store.port" -> WireMockSupport.port,
-      "microservice.services.secure-data-exchange-proxy.host" -> "localhost",
       "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
       "microservice.services.hip.port" -> WireMockSupport.port,
       "microservice.services.hip.authorization-token" -> "test-hip-auth-token",

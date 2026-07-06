@@ -30,7 +30,8 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.runner.RiskingRunner
+import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
+import uk.gov.hmrc.agentregistrationrisking.runner.RiskingResultsFileProcessingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileContent
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
@@ -57,11 +58,12 @@ class SdesTestOnlyController @Inject() (
   applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
-  riskingRunner: RiskingRunner,
+  riskingFileUploadRunner: RiskingFileUploadRunner,
   sdesProxyService: SdesProxyService,
   appConfig: AppConfig,
   configuration: Configuration,
-  riskingResultsFileContentsRepo: RiskingResultsFileContentsRepo
+  riskingResultsFileContentsRepo: RiskingResultsFileContentsRepo,
+  riskingResultsFileProcessingRunner: RiskingResultsFileProcessingRunner
 )(using clock: Clock)
 extends BackendController(cc)
 with Logging:
@@ -87,6 +89,15 @@ with Logging:
               .map(makeAvailableFileJson)
           .map(x => Json.prettyPrint(Json.toJson(x)))
           .map(Ok(_))
+
+  def notificationFileReady(): Action[JsValue] =
+    actions
+      .default
+      .apply(parse.json):
+        implicit request =>
+          val receivedNotification: String = Json.prettyPrint(request.body)
+          logger.info("Notification file ready:" + receivedNotification)
+          Ok(receivedNotification)
 
   private def downloadUrl(riskingResultsFileName: RiskingResultsFileName): String =
     thisBackendBaseUrl + routes.SdesTestOnlyController.downloadRiskingResultsFile(riskingResultsFileName)
@@ -133,6 +144,12 @@ with Logging:
           .map:
             case Some(riskingResultsFileContent) => Ok(Json.prettyPrint(Json.toJson(riskingResultsFileContent.content)))
             case None => NotFound(s"Risking results file not found: $riskingResultsFileName")
+
+  def runResultsFileProcessingJob(): Action[AnyContent] = actions
+    .default
+    .async:
+      implicit request =>
+        riskingResultsFileProcessingRunner.run().map(_ => Ok(""))
 
   def deleteRiskingResultsFile(
     riskingResultsFileName: RiskingResultsFileName
