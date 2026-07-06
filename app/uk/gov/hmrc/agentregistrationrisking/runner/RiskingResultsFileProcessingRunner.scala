@@ -53,6 +53,7 @@ extends RequestAwareLogging:
     (for
       _ <- riskingResultsService.processResultsFiles()
       _ <- applicationOutcomeService.processOverallOutcomes()
+      _ <- riskingResultsService.specialCaseApprovePreviouslyFailedApplications()
       _ <- backendNotificationService.processBackendNotifications()
       _ <- subscriptionService.processSubscriptions()
       _ <- emailServiceForApprovedApplications.processEmails()
