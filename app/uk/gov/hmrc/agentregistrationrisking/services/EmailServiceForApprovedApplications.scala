@@ -30,6 +30,8 @@ import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -39,7 +41,8 @@ import scala.concurrent.Future
 class EmailServiceForApprovedApplications @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  clock: Clock
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -67,6 +70,8 @@ extends RequestAwareLogging:
           .copy(isEmailSent = true)
           .modify(_.overallStatus.emailsProcessed)
           .setTo(true)
+          .modify(_.overallStatus.emailSentAt)
+          .setTo(Some(Instant.now(clock)))
       )
       _ = logger.info(s"Sent ${sendEmailRequest.templateId} email for ${application.applicationReference}")
     yield ()

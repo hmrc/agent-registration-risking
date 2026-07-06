@@ -23,6 +23,7 @@ object FieldNames:
     val riskingOutcome: String = "overallStatus.riskingOutcome"
     val emailsProcessed: String = "overallStatus.emailsProcessed"
     val backendNotified: String = "overallStatus.backendNotified"
+    val emailSentAt: String = "overallStatus.emailSentAt"
 
   val riskingFileName: String = "riskingFileName"
   val riskingFileNameIndex: String = riskingFileName + "Index"

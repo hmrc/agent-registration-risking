@@ -82,9 +82,9 @@ extends RequestAwareLogging:
         failures = individualRiskingResult.failures,
         riskingOutcome = individualRiskingResult.failures.outcome
       )
-    val instant: Instant = applicationWithIndividuals.riskingCompletedDate.getOrThrowExpectedDataMissing("riskingCompletedDate")
+    val emailSentAt: Instant = applicationForRisking.overallStatus.emailSentAt.getOrThrowExpectedDataMissing("overallStatus.emailSentAt")
     val riskingOutcome: RiskingOutcome = applicationForRisking.overallStatus.riskingOutcome.getOrThrowExpectedDataMissing("riskingOutcome")
-    val riskingCompletedDate: LocalDate = instant.atZone(ZoneOffset.UTC).toLocalDate
+    val riskingCompletedDate: LocalDate = emailSentAt.atZone(ZoneOffset.UTC).toLocalDate
     RiskingOutcomeRequest(
       riskingCompletedDate = riskingCompletedDate,
       applicationOutcome = riskingOutcome,

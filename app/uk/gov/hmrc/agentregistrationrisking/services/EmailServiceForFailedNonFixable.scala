@@ -30,6 +30,8 @@ import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcom
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
+import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -39,7 +41,8 @@ import scala.concurrent.Future
 class EmailServiceForFailedNonFixable @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo
+  individualForRiskingRepo: IndividualForRiskingRepo,
+  clock: Clock
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -74,7 +77,11 @@ extends RequestAwareLogging:
         ProcessInSequence
           .processInSequence(individuals.filter(_.isEmailSent === false))(process)
       _ <- applicationForRiskingRepo
-        .upsert(updatedApplication.modify(_.overallStatus.emailsProcessed).setTo(true))
+        .upsert(
+          updatedApplication
+            .modify(_.overallStatus.emailsProcessed).setTo(true)
+            .modify(_.overallStatus.emailSentAt).setTo(Some(Instant.now(clock)))
+        )
     yield ()
 
   private def process(application: ApplicationForRisking)(using RequestHeader): Future[ApplicationForRisking] =

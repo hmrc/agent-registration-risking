@@ -153,6 +153,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findReadyToNotifyBackend(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
       Filters.exists(FieldNames.overallStatus.riskingOutcome),
+      Filters.exists(FieldNames.overallStatus.emailSentAt),
       Filters.or(
         Filters.eq(FieldNames.overallStatus.backendNotified, false),
         Filters.exists(FieldNames.overallStatus.backendNotified, false)
