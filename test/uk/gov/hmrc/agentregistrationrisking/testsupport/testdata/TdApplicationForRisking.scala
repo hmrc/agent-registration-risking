@@ -94,17 +94,16 @@ trait TdApplicationForRisking:
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.Approved))
 
-    val approvedAfterBackendNotified: ApplicationForRisking = approvedAfterOutcome
-      .modify(_.overallStatus.backendNotified)
-      .setTo(true)
-
-    val approvedAfterSubscribed: ApplicationForRisking = approvedAfterBackendNotified.copy(isSubscribed = true)
+    val approvedAfterSubscribed: ApplicationForRisking = approvedAfterOutcome.copy(isSubscribed = true)
 
     val approvedAfterEmailSent: ApplicationForRisking = approvedAfterSubscribed
       .copy(isEmailSent = true)
-
-    val approvedAfterEmailsProcessed: ApplicationForRisking = approvedAfterEmailSent
       .modify(_.overallStatus.emailsProcessed).setTo(true)
+      .modify(_.overallStatus.emailSentAt).setTo(Some(instant))
+
+    val approvedAfterBackendNotified: ApplicationForRisking = approvedAfterEmailSent
+      .modify(_.overallStatus.backendNotified)
+      .setTo(true)
 
     val failedFixable: ApplicationForRisking = submittedForRisking.copy(
       entityRiskingResult = Some(EntityRiskingResult(
@@ -122,7 +121,12 @@ trait TdApplicationForRisking:
       .modify(_.correctiveActionExpiryDate)
       .setTo(Some(correctiveActionExpiryDate))
 
-    val failedFixableAfterBackendNotified: ApplicationForRisking = failedFixableAfterOutcome
+    val failedFixableAfterEmailSent: ApplicationForRisking = failedFixableAfterOutcome
+      .copy(isEmailSent = true)
+      .modify(_.overallStatus.emailsProcessed).setTo(true)
+      .modify(_.overallStatus.emailSentAt).setTo(Some(instant))
+
+    val failedFixableAfterBackendNotified: ApplicationForRisking = failedFixableAfterEmailSent
       .modify(_.overallStatus.backendNotified)
       .setTo(true)
 
@@ -143,14 +147,11 @@ trait TdApplicationForRisking:
       .modify(_.correctiveActionExpiryDate)
       .setTo(Some(correctiveActionExpiryDate))
 
-    val failedNonFixableAfterBackendNotified: ApplicationForRisking = failedNonFixableAfterOutcome
+    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome
+      .copy(isEmailSent = true)
+      .modify(_.overallStatus.emailsProcessed).setTo(true)
+      .modify(_.overallStatus.emailSentAt).setTo(Some(instant))
+
+    val failedNonFixableAfterBackendNotified: ApplicationForRisking = failedNonFixableAfterEmailSent
       .modify(_.overallStatus.backendNotified)
-      .setTo(true)
-
-    val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterBackendNotified.copy(
-      isEmailSent = true
-    )
-
-    val failedNonFixableAfterEmailsProcessed: ApplicationForRisking = failedNonFixableAfterEmailSent
-      .modify(_.overallStatus.emailsProcessed)
       .setTo(true)

@@ -36,7 +36,7 @@ extends ISpec:
 
   "findById derives overallStatus.emailSentAt from entityRiskingResult.receivedAt when a persisted record has emailsProcessed=true but no emailSentAt (legacy compatibility)" in:
     val legacyApplicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates
-      .approvedAfterEmailsProcessed
+      .approvedAfterEmailSent
       .application
       .modify(_.overallStatus.emailSentAt).setTo(None)
     val entityReceivedAt: Instant = legacyApplicationForRisking.entityRiskingResult.value.receivedAt
@@ -54,7 +54,7 @@ extends ISpec:
   "findById returns the persisted emailSentAt unchanged for a new-shape record where emailSentAt is set at write time" in:
     val newShapeEmailSentAt: Instant = frozenInstant.plusSeconds(60)
     val newShapeApplicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates
-      .approvedAfterEmailsProcessed
+      .approvedAfterEmailSent
       .application
       .modify(_.overallStatus.emailSentAt).setTo(Some(newShapeEmailSentAt))
 

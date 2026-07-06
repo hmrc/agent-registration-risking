@@ -29,7 +29,7 @@ extends UnitSpec:
 
   "reads derives overallStatus.emailSentAt from entityRiskingResult.receivedAt when a legacy document has emailsProcessed=true but no emailSentAt" in:
     val legacyApplicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates
-      .approvedAfterEmailsProcessed
+      .approvedAfterEmailSent
       .application
       .modify(_.overallStatus.emailSentAt).setTo(None)
     val entityReceivedAt: Instant = legacyApplicationForRisking.entityRiskingResult.value.receivedAt
@@ -40,7 +40,7 @@ extends UnitSpec:
     readBack.overallStatus.emailSentAt shouldBe Some(entityReceivedAt)
 
   "reads does not overwrite an existing emailSentAt" in:
-    val applicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterEmailsProcessed.application
+    val applicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterEmailSent.application
     val presetEmailSentAt: Instant = TdInstant.instant.plusSeconds(60)
     val applicationForRiskingWithEmailSentAt: ApplicationForRisking = applicationForRisking
       .modify(_.overallStatus.emailSentAt).setTo(Some(presetEmailSentAt))
@@ -61,7 +61,7 @@ extends UnitSpec:
 
   "reads leaves emailSentAt as None when emailsProcessed=true but entityRiskingResult is missing — impossible under the state ladder but the derivation must not crash on it" in:
     val impossibleApplicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates
-      .approvedAfterEmailsProcessed
+      .approvedAfterEmailSent
       .application
       .modify(_.overallStatus.emailSentAt).setTo(None)
       .copy(entityRiskingResult = None)

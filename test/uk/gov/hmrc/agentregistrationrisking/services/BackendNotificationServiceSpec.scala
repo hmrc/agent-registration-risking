@@ -44,10 +44,10 @@ extends ISpec:
 
   private given RequestHeader = tdAll.fakeBackendRequest
 
-  private val approvedAfterOutcome = TdRiskingInstancesInStates.approvedAfterOutcome
-  private val failedFixableAfterOutcome = TdRiskingInstancesInStates.failedFixableAfterOutcome
-  private val failedNonFixableAfterOutcome = TdRiskingInstancesInStates.failedNonFixableAfterOutcome
+  private val approvedAfterEmailSent = TdRiskingInstancesInStates.approvedAfterEmailSent
+  private val failedNonFixableAfterEmailSent = TdRiskingInstancesInStates.failedNonFixableAfterEmailSent
   private val outcomeNotComputed = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
+  private val emailsNotYetSent = TdRiskingInstancesInStates.approvedAfterSubscribed // outcome + subscribed, but emailSentAt still None so notify predicate excludes it
 
   override def beforeEach(): Unit =
     super.beforeEach()
@@ -64,7 +64,7 @@ extends ISpec:
     val applicationWithIndividuals = td.applicationWithIndividuals
     val entityFailures = applicationWithIndividuals.application.entityRiskingResult.map(_.failures).getOrElse(List.empty)
     RiskingOutcomeRequest(
-      riskingCompletedDate = applicationWithIndividuals.riskingCompletedDate.value.atZone(ZoneOffset.UTC).toLocalDate,
+      riskingCompletedDate = applicationWithIndividuals.application.overallStatus.emailSentAt.value.atZone(ZoneOffset.UTC).toLocalDate,
       applicationOutcome = applicationWithIndividuals.application.overallStatus.riskingOutcome.value,
       entityFailures = entityFailures,
       entityOutcome = entityFailures.outcomeForEntity,
@@ -87,27 +87,23 @@ extends ISpec:
 
   "processBackendNotifications" - {
 
-    "notifies the backend for each application that has a computed riskingOutcome and has not yet been notified, then marks it as notified" in:
+    "notifies the backend for each application whose emails have been sent (emailSentAt exists) and has not yet been notified, then marks it as notified" in:
       stubExpectedRequests(
-        approvedAfterOutcome,
-        failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
+        approvedAfterEmailSent,
+        failedNonFixableAfterEmailSent
       )
       insertApplicationsWithIndividuals(
-        approvedAfterOutcome,
-        failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
+        approvedAfterEmailSent,
+        failedNonFixableAfterEmailSent
       )
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterOutcome.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
 
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true
-      backendNotifiedOf(failedFixableAfterOutcome) shouldBe true
-      backendNotifiedOf(failedNonFixableAfterOutcome) shouldBe true
+      backendNotifiedOf(approvedAfterEmailSent) shouldBe true
+      backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe true
 
     "does not notify the backend for applications whose outcome has not been computed yet" in:
       insertApplicationsWithIndividuals(outcomeNotComputed)
@@ -116,6 +112,14 @@ extends ISpec:
 
       AgentRegistrationStubs.verifySendRiskingOutcome(outcomeNotComputed.application.applicationReference, count = 0)
       backendNotifiedOf(outcomeNotComputed) shouldBe false
+
+    "does not notify the backend for applications whose emails have not yet been sent (emailSentAt not set) — defers FailedFixable naturally and gates every outcome on the email step" in:
+      insertApplicationsWithIndividuals(emailsNotYetSent)
+
+      backendNotificationService.processBackendNotifications().futureValue
+
+      AgentRegistrationStubs.verifySendRiskingOutcome(emailsNotYetSent.application.applicationReference, count = 0)
+      backendNotifiedOf(emailsNotYetSent) shouldBe false
 
     "does not notify the backend for applications already notified" in:
       val approvedAfterBackendNotified = TdRiskingInstancesInStates.approvedAfterBackendNotified
@@ -128,23 +132,41 @@ extends ISpec:
 
     "leaves backendNotified unset when the backend call fails so the next run retries" in:
       AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
-        approvedAfterOutcome.application.applicationReference,
-        expectedRiskingOutcomeRequest(approvedAfterOutcome)
+        approvedAfterEmailSent.application.applicationReference,
+        expectedRiskingOutcomeRequest(approvedAfterEmailSent)
       )
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
+      insertApplicationsWithIndividuals(approvedAfterEmailSent)
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-      backendNotifiedOf(approvedAfterOutcome) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
+      backendNotifiedOf(approvedAfterEmailSent) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
+
+    "continues notifying the rest of the batch when one application's backend call fails — fail-continue via processAllInSequence" in:
+      stubExpectedRequests(approvedAfterEmailSent)
+      AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
+        failedNonFixableAfterEmailSent.application.applicationReference,
+        expectedRiskingOutcomeRequest(failedNonFixableAfterEmailSent)
+      )
+      insertApplicationsWithIndividuals(
+        approvedAfterEmailSent,
+        failedNonFixableAfterEmailSent
+      )
+
+      backendNotificationService.processBackendNotifications().futureValue
+
+      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
+      backendNotifiedOf(approvedAfterEmailSent) shouldBe true withClue "the 202 call succeeded — its flag flips"
+      backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe false withClue "the 500 call failed — its flag must not flip so the next scheduler run retries"
 
     "notifies the backend for legacy applications persisted before the backendNotified field was added (field missing on the doc)" in:
-      stubExpectedRequests(approvedAfterOutcome)
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
+      stubExpectedRequests(approvedAfterEmailSent)
+      insertApplicationsWithIndividuals(approvedAfterEmailSent)
       // Simulate legacy doc: remove the overallStatus.backendNotified field from the persisted record
       applicationForRiskingRepo.collection
         .updateOne(
-          Filters.eq("applicationReference", approvedAfterOutcome.application.applicationReference.value),
+          Filters.eq("applicationReference", approvedAfterEmailSent.application.applicationReference.value),
           Updates.unset("overallStatus.backendNotified")
         )
         .toFuture
@@ -153,7 +175,7 @@ extends ISpec:
       backendNotificationService.processBackendNotifications().futureValue
 
       AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterOutcome.application.applicationReference
+        approvedAfterEmailSent.application.applicationReference
       ) withClue "legacy doc (missing backendNotified) should be picked up and notified"
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true withClue "after notify, backendNotified should be set"
+      backendNotifiedOf(approvedAfterEmailSent) shouldBe true withClue "after notify, backendNotified should be set"
   }

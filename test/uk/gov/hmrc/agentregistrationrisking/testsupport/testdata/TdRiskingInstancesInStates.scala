@@ -68,20 +68,18 @@ object TdRiskingInstancesInStates:
     partiallyRisked.submitted_failedNonFixable_submitted,
     approved,
     approvedAfterOutcome,
-    approvedAfterBackendNotified,
     approvedAfterSubscribed,
     approvedAfterEmailSent,
-    approvedAfterEmailsProcessed,
+    approvedAfterBackendNotified,
     failedFixable,
     failedFixableAfterOutcome,
+    // TODO uncomment when FailedFixable email service ships
+    // failedFixableAfterEmailSent,
     failedFixableAfterBackendNotified,
     failedNonFixable,
     failedNonFixableAfterOutcome,
-    failedNonFixableAfterBackendNotified,
-    failedNonFixableAfter1EmailSent,
-    failedNonFixableAfter2EmailsSent,
-    failedNonFixableAfterAllEmailsSent,
-    failedNonFixableAfterAllEmailsProcessed
+    failedNonFixableAfterEmailSent,
+    failedNonFixableAfterBackendNotified
   )
 
   case object readyForSubmission
@@ -152,16 +150,6 @@ object TdRiskingInstancesInStates:
 
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
-  case object approvedAfterBackendNotified
-  extends TdApplicationWithIndividuals:
-
-    override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterBackendNotified
-    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
-    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-
-    override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
-
   case object approvedAfterSubscribed
   extends TdApplicationWithIndividuals:
 
@@ -182,11 +170,11 @@ object TdRiskingInstancesInStates:
 
     override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.Approved
 
-  case object approvedAfterEmailsProcessed
+  case object approvedAfterBackendNotified
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterEmailsProcessed
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterBackendNotified
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 
@@ -253,13 +241,20 @@ object TdRiskingInstancesInStates:
       correctiveActionExpiryDate = None
     )
 
+  // TODO uncomment when FailedFixable email service ships
+  // case object failedFixableAfterEmailSent
+  // extends TdApplicationWithIndividuals:
+  //   override val tdRisking: TdRisking = TdRisking.make(this.toString)
+  //   override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedFixableAfterEmailSent
+  //   override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
+  //   override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+  //   override val riskingProgressForApplicant: RiskingProgress.FailedFixable = ...
+
   case object failedFixableAfterBackendNotified
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterBackendNotified
-      .modify(_.overallStatus.riskingOutcome)
-      .setTo(Some(RiskingOutcome.FailedFixable))
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedFixableAfterBackendNotified
 
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
@@ -267,7 +262,7 @@ object TdRiskingInstancesInStates:
     override val riskingProgressForApplicant: RiskingProgress.FailedFixable = RiskingProgress.FailedFixable(
       riskedEntity = RiskedEntity(
         applicationReference = application.applicationReference,
-        failures = Seq.empty
+        failures = application.entityRiskingResult.value.failures
       ),
       riskedIndividuals = Seq(
         RiskedIndividual(
@@ -282,7 +277,7 @@ object TdRiskingInstancesInStates:
         )
       ),
       riskingCompletedDate = TdInstant.localDate,
-      correctiveActionExpiryDate = None
+      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
     )
 
   case object failedNonFixable
@@ -372,103 +367,11 @@ object TdRiskingInstancesInStates:
       correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
     )
 
-  case object failedNonFixableAfter1EmailSent
+  case object failedNonFixableAfterEmailSent
   extends TdApplicationWithIndividuals:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterEmailSent
-    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixable
-    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
-
-    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
-      riskedEntity = RiskedEntity(
-        applicationReference = application.applicationReference,
-        failures = application.entityRiskingResult.value.failures
-      ),
-      riskedIndividuals = Seq(
-        RiskedIndividual(
-          personReference = individual1.personReference,
-          individualName = individual1.individualData.individualName,
-          failures = individual1.individualRiskingResult.value.failures
-        ),
-        RiskedIndividual(
-          personReference = individual2.personReference,
-          individualName = individual2.individualData.individualName,
-          failures = individual2.individualRiskingResult.value.failures
-        )
-      ),
-      riskingCompletedDate = TdInstant.localDate,
-      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
-    )
-
-  case object failedNonFixableAfter2EmailsSent
-  extends TdApplicationWithIndividuals:
-
-    override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterEmailSent
-    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
-    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
-
-    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
-      riskedEntity = RiskedEntity(
-        applicationReference = application.applicationReference,
-        failures = application.entityRiskingResult.value.failures
-      ),
-      riskedIndividuals = Seq(
-        RiskedIndividual(
-          personReference = individual1.personReference,
-          individualName = individual1.individualData.individualName,
-          failures = individual1.individualRiskingResult.value.failures
-        ),
-        RiskedIndividual(
-          personReference = individual2.personReference,
-          individualName = individual2.individualData.individualName,
-          failures = individual2.individualRiskingResult.value.failures
-        )
-      ),
-      riskingCompletedDate = TdInstant.localDate,
-      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
-    )
-
-  case object failedNonFixableAfterAllEmailsSent
-  extends TdApplicationWithIndividuals:
-
-    override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterEmailSent
-    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
-    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixableEmailSent
-
-    override val riskingProgressForApplicant: RiskingProgress.FailedNonFixable = RiskingProgress.FailedNonFixable(
-      riskedEntity = RiskedEntity(
-        applicationReference = application.applicationReference,
-        failures = application.entityRiskingResult.value.failures
-      ),
-      riskedIndividuals = Seq(
-        RiskedIndividual(
-          personReference = individual1.personReference,
-          individualName = individual1.individualData.individualName,
-          failures = individual1.individualRiskingResult.value.failures
-        ),
-        RiskedIndividual(
-          personReference = individual2.personReference,
-          individualName = individual2.individualData.individualName,
-          failures = individual2.individualRiskingResult.value.failures
-        )
-      ),
-      riskingCompletedDate = TdInstant.localDate,
-      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
-    )
-
-  case object failedNonFixableAfterAllEmailsProcessed
-  extends TdApplicationWithIndividuals:
-
-    override val tdRisking: TdRisking = TdRisking.make(this.toString)
-    override val application: ApplicationForRisking =
-      tdRisking
-        .tdApplicationForRisking
-        .receivedRiskingResults
-        .failedNonFixableAfterEmailsProcessed
-
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedNonFixableEmailSent
 
