@@ -66,7 +66,7 @@ The **results files** (`risking-results-1.json`, `risking-results-2.json`, etc.)
 ./50-send-file-ready-notification.sh
 ```
 
-POSTs `notification-file-ready.json` to the **real production endpoint** `/receive-sdes-notifications`. This is the trigger that tells the service a results file is ready to be pulled and processed.
+POSTs `notification-file-ready.json` to the **real production endpoint** `/receive-sdes-notifications`. This tells the service a results file is ready, but **does not trigger processing** — the service only logs the notification. Processing now happens via an hourly scheduler (see Step 5).
 
 The notification payload looks like:
 
@@ -82,18 +82,38 @@ The notification payload looks like:
 }
 ```
 
-The service then fetches the file from object-store by filename and processes the risking results.
+---
+
+### Step 4 — Verify the File is Available (`51-process-results-files.sh`)
+
+```bash
+./51-process-results-files.sh
+```
+
+Calls the SDES stub's `files-available/list` endpoint to confirm the uploaded results file is visible and ready to be picked up. Use this as a sanity check before triggering processing.
 
 ---
 
-## Key Design Point: How the File is Pulled
+### Step 5 — Trigger Risking (`60-run-risking.sh`)
 
-The service does **not** receive the file contents in the notification. The notification only tells the service **a file is ready** (with a filename and checksum). After receiving the notification, the service:
+```bash
+./60-run-risking.sh
+```
+
+Calls the **test-only endpoint** `/agent-registration-risking/test-only/run-risking`, which immediately triggers the same logic the hourly scheduler runs. Use this to process the staged results files without waiting up to an hour for the scheduler to fire.
+
+> **Note:** This requires the service to be running with test-only routes enabled (see above).
+
+---
+
+## Key Design Point: How Files Are Processed
+
+The service does **not** process files when it receives a notification. The notification only tells the service **a file is ready** (with a filename and checksum). Processing happens separately, on an **hourly schedule** (or immediately via `60-run-risking.sh` when testing). When processing runs, the service:
 
 1. **Fetches the list of available files from object-store** (port 8464) using the internal auth token
 2. Parses and processes the unprocessed risking results
 
-The test-only upload script (step 2) pre-loads the file into object-store so it's there when the service goes to fetch it after the notification arrives.
+The test-only upload script (step 2) pre-loads the file into object-store so it's there when the service goes to fetch it.
 
 ---
 
