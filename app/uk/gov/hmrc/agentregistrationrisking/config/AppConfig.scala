@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.config
 
 import play.api.Configuration
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.hip.HipAuthToken
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesServerToken
@@ -47,6 +48,8 @@ class AppConfig @Inject() (
   val hmrcAsAgentEnrolment: Enrolment = Enrolment(key = "HMRC-AS-AGENT")
   val hipBaseUrl: String = servicesConfig.baseUrl("hip")
   val hipAuthToken: HipAuthToken = HipAuthToken(config.get[String]("microservice.services.hip.authorization-token"))
+  val enableUnsetRiskingResponses: Boolean = servicesConfig.getBoolean("features.enable-unset-risking-responses")
+  val applicationIdsForUnsettingRiskingResponses: Seq[String] = config.get[Seq[String]]("applicationIdsForUnsettingRiskingResponses")
 
   object AmlsEvidence:
     val baseUrl: String = ConfigHelper.readConfigAsValidUrlString("urls.agent-helpdesk-amls-evidence", config)
