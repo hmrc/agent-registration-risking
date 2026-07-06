@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailures
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.AgentRegistrationConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
@@ -44,7 +45,8 @@ import scala.concurrent.Future
 @Singleton
 class BackendNotificationService @Inject() (
   agentRegistrationConnector: AgentRegistrationConnector,
-  applicationForRiskingRepo: ApplicationForRiskingRepo
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  appConfig: AppConfig
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -55,11 +57,22 @@ extends RequestAwareLogging:
       _ = logger.info(s"Found $applicationCount applications ready to notify backend")
       notifiedCount <-
         ProcessInSequence
-          .processAllInSequence(applicationsWithIndividuals)(process):
+          .processAllInSequence(applicationsWithIndividuals)(processFeatureFlagged):
             case (ex, applicationWithIndividuals) =>
               logger.error(s"Failed to notify backend for application ${applicationWithIndividuals.application.applicationReference.value}", ex)
       _ = logger.info(s"Notified backend for $notifiedCount/$applicationCount applications")
     yield ()
+
+  private def processFeatureFlagged(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
+    val applicationForRisking: ApplicationForRisking = applicationWithIndividuals.application
+    applicationForRisking.overallStatus.riskingOutcome.getOrThrowExpectedDataMissing("risking outcome") match
+      case RiskingOutcome.FailedFixable =>
+        if appConfig.Features.fixableFailures
+        then process(applicationWithIndividuals)
+        else
+          logger.info(s"Not notifying backend for application ${applicationForRisking.applicationReference} with failed fixable outcome because of feature flag: ${appConfig.Features.fixableFailures}")
+          Future.unit
+      case _ => process(applicationWithIndividuals)
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val applicationForRisking: ApplicationForRisking = applicationWithIndividuals.application

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
+import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
@@ -34,11 +35,11 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegi
 
 import java.time.ZoneOffset
 
-class BackendNotificationServiceSpec
+class BackendNotificationServiceFeatureFlagSpec
 extends ISpec:
 
   override protected def configOverrides: Map[String, Any] = Map(
-    "features.fixable-failures" -> true
+    "features.fixable-failures" -> false
   )
 
   private val backendNotificationService: BackendNotificationService = app.injector.instanceOf[BackendNotificationService]
@@ -88,75 +89,31 @@ extends ISpec:
   private def persisted(td: TdApplicationWithIndividuals): ApplicationForRisking =
     applicationForRiskingRepo.findById(td.application.applicationReference).futureValue.value
 
-  "processBackendNotifications" - {
+  "doesn't notify the backend applications with failed fixable outcome" in:
+    stubExpectedRequests(
+      failedFixableAfterOutcome
+    )
+    insertApplicationsWithIndividuals(
+      failedFixableAfterOutcome
+    )
+    backendNotificationService.processBackendNotifications().futureValue
+    AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterOutcome.application.applicationReference, count = 0)
+    backendNotifiedOf(failedFixableAfterOutcome) shouldBe false
 
-    "notifies the backend for each application that has a computed riskingOutcome and has not yet been notified, then marks it as notified" in:
-      stubExpectedRequests(
-        approvedAfterOutcome,
-        failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
-      )
-      insertApplicationsWithIndividuals(
-        approvedAfterOutcome,
-        failedFixableAfterOutcome,
-        failedNonFixableAfterOutcome
-      )
+  "notifies all the backend for all other outcomes" in:
+    stubExpectedRequests(
+      approvedAfterOutcome,
+      failedNonFixableAfterOutcome
+    )
+    insertApplicationsWithIndividuals(
+      approvedAfterOutcome,
+      failedNonFixableAfterOutcome
+    )
 
-      backendNotificationService.processBackendNotifications().futureValue
+    backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterOutcome.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterOutcome.application.applicationReference)
+    AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
+    AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterOutcome.application.applicationReference)
 
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true
-      backendNotifiedOf(failedFixableAfterOutcome) shouldBe true
-      backendNotifiedOf(failedNonFixableAfterOutcome) shouldBe true
-
-    "does not notify the backend for applications whose outcome has not been computed yet" in:
-      insertApplicationsWithIndividuals(outcomeNotComputed)
-
-      backendNotificationService.processBackendNotifications().futureValue
-
-      AgentRegistrationStubs.verifySendRiskingOutcome(outcomeNotComputed.application.applicationReference, count = 0)
-      backendNotifiedOf(outcomeNotComputed) shouldBe false
-
-    "does not notify the backend for applications already notified" in:
-      val approvedAfterBackendNotified = TdRiskingInstancesInStates.approvedAfterBackendNotified
-      insertApplicationsWithIndividuals(approvedAfterBackendNotified)
-
-      backendNotificationService.processBackendNotifications().futureValue
-
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterBackendNotified.application.applicationReference, count = 0)
-      backendNotifiedOf(approvedAfterBackendNotified) shouldBe true withClue "still notified — no change"
-
-    "leaves backendNotified unset when the backend call fails so the next run retries" in:
-      AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
-        approvedAfterOutcome.application.applicationReference,
-        expectedRiskingOutcomeRequest(approvedAfterOutcome)
-      )
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
-
-      backendNotificationService.processBackendNotifications().futureValue
-
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterOutcome.application.applicationReference)
-      backendNotifiedOf(approvedAfterOutcome) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
-
-    "notifies the backend for legacy applications persisted before the backendNotified field was added (field missing on the doc)" in:
-      stubExpectedRequests(approvedAfterOutcome)
-      insertApplicationsWithIndividuals(approvedAfterOutcome)
-      // Simulate legacy doc: remove the overallStatus.backendNotified field from the persisted record
-      applicationForRiskingRepo.collection
-        .updateOne(
-          Filters.eq("applicationReference", approvedAfterOutcome.application.applicationReference.value),
-          Updates.unset("overallStatus.backendNotified")
-        )
-        .toFuture
-        .futureValue
-
-      backendNotificationService.processBackendNotifications().futureValue
-
-      AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterOutcome.application.applicationReference
-      ) withClue "legacy doc (missing backendNotified) should be picked up and notified"
-      backendNotifiedOf(approvedAfterOutcome) shouldBe true withClue "after notify, backendNotified should be set"
-  }
+    backendNotifiedOf(approvedAfterOutcome) shouldBe true
+    backendNotifiedOf(failedNonFixableAfterOutcome) shouldBe true
