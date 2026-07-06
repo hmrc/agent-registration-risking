@@ -72,7 +72,6 @@ extends AnyFreeSpecLike,
       "microservice.services.secure-data-exchange-proxy.port" -> WireMockSupport.port,
       "microservice.services.hip.port" -> WireMockSupport.port,
       "microservice.services.hip.authorization-token" -> "test-hip-auth-token",
-      "features.fixable-failures" -> true,
       "microservice.services.enrolment-store-proxy.port" -> WireMockSupport.port
     ) ++ configOverrides
 

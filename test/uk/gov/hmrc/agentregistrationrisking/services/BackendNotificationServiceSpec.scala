@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
@@ -37,6 +36,10 @@ import java.time.ZoneOffset
 
 class BackendNotificationServiceSpec
 extends ISpec:
+
+  override protected def configOverrides: Map[String, Any] = Map(
+    "features.fixable-failures" -> true
+  )
 
   private val backendNotificationService: BackendNotificationService = app.injector.instanceOf[BackendNotificationService]
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
