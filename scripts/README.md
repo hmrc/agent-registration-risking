@@ -84,31 +84,33 @@ The notification payload looks like:
 
 ---
 
-### Step 4 — Verify the File is Available (`51-process-results-files.sh`)
+### Step 4 — Process the Results File (`51-process-results-files.sh`)
 
 ```bash
 ./51-process-results-files.sh
 ```
 
-Calls the SDES stub's `files-available/list` endpoint to confirm the uploaded results file is visible and ready to be picked up. Use this as a sanity check before triggering processing.
-
----
-
-### Step 5 — Trigger Risking (`60-run-risking.sh`)
-
-```bash
-./60-run-risking.sh
-```
-
-Calls the **test-only endpoint** `/agent-registration-risking/test-only/run-risking`, which immediately triggers the same logic the hourly scheduler runs. Use this to process the staged results files without waiting up to an hour for the scheduler to fire.
+Calls the **test-only endpoint** `/agent-registration-risking/test-only/run-results-file-processing`, which immediately triggers the same inbound processing logic the hourly scheduler runs. The service will fetch all available results files from object-store, parse them, and apply the risking outcomes to the relevant applications.
 
 > **Note:** This requires the service to be running with test-only routes enabled (see above).
 
 ---
 
+### Running Outbound Risking (`60-run-risking.sh`)
+
+```bash
+./60-run-risking.sh
+```
+
+Calls the **test-only endpoint** `/agent-registration-risking/test-only/run-risking`, which triggers the **outbound** risking process — it builds a risking file from applications in MongoDB and submits them to Minerva. This is a separate flow from processing inbound results files (Step 4).
+
+> **Note:** Requires the `agent-registration` service to be running on port 22202, as it calls back to update application status after submission.
+
+---
+
 ## Key Design Point: How Files Are Processed
 
-The service does **not** process files when it receives a notification. The notification only tells the service **a file is ready** (with a filename and checksum). Processing happens separately, on an **hourly schedule** (or immediately via `60-run-risking.sh` when testing). When processing runs, the service:
+The service does **not** process files when it receives a notification. The notification only tells the service **a file is ready** (with a filename and checksum). Processing happens separately, on an **hourly schedule** (or immediately via `51-process-results-files.sh` when testing). When processing runs, the service:
 
 1. **Fetches the list of available files from object-store** (port 8464) using the internal auth token
 2. Parses and processes the unprocessed risking results

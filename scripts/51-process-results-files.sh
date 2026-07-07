@@ -1,6 +1,9 @@
 #!/bin/bash
 
-HTTP_STATUS=$(curl -v \ -w "\n%{http_code}\n" \ -X GET "http://localhost:22203/files-available/list/${INFORMATION_TYPE}")
+HTTP_STATUS=$(curl -s \
+  -o /dev/null \
+  -w "%{http_code}" \
+  -X GET "http://localhost:22203/agent-registration-risking/test-only/run-results-file-processing")
 
 if [ "$HTTP_STATUS" -ne 200 ]; then
   echo "ERROR: Expected HTTP 200 but got $HTTP_STATUS"
