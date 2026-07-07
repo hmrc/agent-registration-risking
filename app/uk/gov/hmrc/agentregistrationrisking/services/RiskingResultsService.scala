@@ -16,48 +16,33 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.Approved
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
+import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
-import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
-import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 
+import java.net.URL
 import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import RiskingOutcomeHelper.*
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.Approved
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeEntity.FailedFixable
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeEntity.FailedNonFixable
-
-import java.net.URL
 
 @Singleton
 class RiskingResultsService @Inject() (
