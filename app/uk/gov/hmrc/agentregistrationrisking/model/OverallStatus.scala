@@ -20,10 +20,13 @@ import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 
+import java.time.Instant
+
 final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],
   emailsProcessed: Boolean,
-  backendNotified: Boolean
+  backendNotified: Boolean,
+  emailSentAt: Option[Instant]
 )
 
 object OverallStatus:
@@ -33,7 +36,8 @@ object OverallStatus:
       (
         (__ \ "riskingOutcome").readNullable[RiskingOutcome] and
           (__ \ "emailsProcessed").read[Boolean] and
-          (__ \ "backendNotified").readNullable[Boolean].map(_.getOrElse(false))
+          (__ \ "backendNotified").readNullable[Boolean].map(_.getOrElse(false)) and
+          (__ \ "emailSentAt").readNullable[Instant]
       )(OverallStatus.apply)
     val writes: OWrites[OverallStatus] = Json.writes[OverallStatus]
     OFormat(reads, writes)

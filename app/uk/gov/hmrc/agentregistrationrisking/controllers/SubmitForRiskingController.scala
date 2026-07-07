@@ -78,7 +78,8 @@ extends BackendController(cc):
     overallStatus = OverallStatus(
       riskingOutcome = None,
       emailsProcessed = false,
-      backendNotified = false
+      backendNotified = false,
+      emailSentAt = None
     ),
     correctiveActionExpiryDate = None
   )

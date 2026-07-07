@@ -50,7 +50,7 @@ object TdCompletedRisking:
       tdRisking
         .tdApplicationForRisking
         .receivedRiskingResults
-        .approvedAfterEmailsProcessed,
+        .approvedAfterEmailSent,
     individuals = Seq(
       tdRisking
         .tdIndividualsForRisking

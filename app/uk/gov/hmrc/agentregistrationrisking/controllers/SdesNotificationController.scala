@@ -19,14 +19,28 @@ package uk.gov.hmrc.agentregistrationrisking.controllers
 import com.google.inject.Inject
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
+import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
+import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
+import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
+import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
-  actions: Actions
+  actions: Actions,
+  riskingResultsService: RiskingResultsService,
+  applicationOutcomeService: ApplicationOutcomeService,
+  subscriptionService: SubscriptionService,
+  emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
+  emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable,
+  backendNotificationService: BackendNotificationService
 )(using ExecutionContext)
 extends BackendController(cc):
 
@@ -42,3 +56,14 @@ extends BackendController(cc):
             case n: FileProcessingFailure =>
               logger.warn(s"File processing failure notification received for ${n.filename} from SDES [${n.correlationID}]. Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
           Ok
+
+  // TODO: what if few notifications received in the same time during the processing of one notification
+  private def onFileReady()(using RequestHeader): Future[Unit] =
+    (for
+      _ <- riskingResultsService.processResultsFiles()
+      _ <- applicationOutcomeService.processOverallOutcomes()
+      _ <- subscriptionService.processSubscriptions()
+      _ <- emailServiceForApprovedApplications.processEmails()
+      _ <- emailServiceForFailedNonFixable.processEmails()
+      _ <- backendNotificationService.processBackendNotifications()
+    yield ()).recover { case ex: Exception => logger.error(s"Error processing file ready notification", ex) }
