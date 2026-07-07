@@ -127,31 +127,6 @@ extends ISpec:
 
     application shouldBe Some(riskedApplication.applicationWithIndividuals)
 
-  "setOverallRiskingOutcomeToApprovedForApplication" in:
-
-    val riskedApplication = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed.application
-
-    val initialState = applicationForRiskingRepo.findById(riskedApplication.applicationReference).futureValue
-
-    initialState.map(_.overallStatus) shouldBe Some(OverallStatus(
-      riskingOutcome = Some(RiskingOutcome.FailedNonFixable),
-      emailsProcessed = true,
-      backendNotified = true
-    ))
-
-    val application: Unit =
-      applicationForRiskingRepo
-        .setOverallRiskingOutcomeToApprovedForApplication(riskedApplication)
-        .futureValue
-
-    val modifiedState = applicationForRiskingRepo.findById(riskedApplication.applicationReference).futureValue
-
-    modifiedState.map(_.overallStatus) shouldBe Some(OverallStatus(
-      riskingOutcome = Some(RiskingOutcome.Approved),
-      emailsProcessed = false,
-      backendNotified = false
-    ))
-
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 

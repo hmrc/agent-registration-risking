@@ -170,31 +170,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
   )
 
-  /*
-  [APB-11788] temporary solution to handle special cases. Do not use!
-   */
-  def setOverallRiskingOutcomeToApprovedForApplication(application: ApplicationForRisking): Future[Unit] = {
-    val updated = application.copy(
-      overallStatus = OverallStatus(
-        riskingOutcome = Some(Approved),
-        emailsProcessed = false,
-        backendNotified = false
-      ),
-      isEmailSent = false,
-      correctiveActionExpiryDate = None,
-      isSubscribed = false
-    )
-
-    collection.replaceOne(
-      filter = Filters.eq(
-        FieldNames.applicationReference,
-        application.applicationReference.value
-      ),
-      replacement = updated
-    )
-      .toFuture().map(_ => ())
-  }
-
 object ApplicationForRiskingRepo:
   val collectionName = "application-for-risking"
 

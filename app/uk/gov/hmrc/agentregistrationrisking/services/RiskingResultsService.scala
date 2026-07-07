@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
+import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
@@ -52,6 +53,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.Approved
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeEntity.FailedFixable
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeEntity.FailedNonFixable
 
@@ -164,7 +166,7 @@ extends RequestAwareLogging:
   def specialCaseApprovePreviouslyFailedApplications()(using request: RequestHeader): Future[Unit] =
     if (appConfig.enableUnsetRiskingResponses) {
       logger.info("[SpecialCaseApprovePreviouslyFailedApplications] feature ENABLED.")
-      ProcessInSequence.processInSequence[ApplicationReference, Unit](
+      ProcessInSequence.processAllInSequence[ApplicationReference, Unit](
         appConfig.applicationIdsForUnsettingRiskingResponses.map(ApplicationReference(_))
       )(appRef =>
         logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] Trying from config appRef: ${appRef.value}")
@@ -178,7 +180,7 @@ extends RequestAwareLogging:
                     failures = List.empty,
                     rawFailures = List.empty
                   ))
-                  _ <- applicationForRiskingRepo.setOverallRiskingOutcomeToApprovedForApplication(appWithIndividuals.application)
+                  _ <- setOverallRiskingOutcomeToApprovedForApplication(appWithIndividuals.application)
                   individualCount <- ProcessInSequence.processInSequence(appWithIndividuals.individuals)(individual =>
                     processRiskingResult(RiskingResult.ForIndividual(
                       personReference = individual.personReference,
@@ -195,9 +197,24 @@ extends RequestAwareLogging:
           case None =>
             Future.successful(logger.warn(s"[SpecialCaseApprovePreviouslyFailedApplications] could not find application with reference ${appRef.value}."))
         }
-      ).map(appRefsProcessed =>
-        logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] finished with ${appRefsProcessed.size} applications.")
+      ) {
+        case (ex, appRef) => logger.error(s"application reference in config $appRef is not valid", ex)
+      }.map(appRefsProcessed =>
+        logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] finished with $appRefsProcessed applications.")
       )
     }
     else
       Future.successful(logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] feature not enabled."))
+
+  private def setOverallRiskingOutcomeToApprovedForApplication(application: ApplicationForRisking): Future[Unit] =
+    val updated = application.copy(
+      overallStatus = OverallStatus(
+        riskingOutcome = Some(Approved),
+        emailsProcessed = false,
+        backendNotified = false
+      ),
+      isEmailSent = false,
+      correctiveActionExpiryDate = None,
+      isSubscribed = false
+    )
+    applicationForRiskingRepo.upsert(updated)
