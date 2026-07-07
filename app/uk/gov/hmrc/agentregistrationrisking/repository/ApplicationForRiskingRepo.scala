@@ -82,6 +82,15 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
 
+  def findAlreadyRiskedApplication(applicationReference: ApplicationReference): Future[Option[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.eq(FieldNames.applicationReference, applicationReference.value),
+      Filters.exists(FieldNames.entityRiskingResult),
+      Filters.exists(FieldNames.overallStatus.riskingOutcome, true)
+    ),
+    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
+  ).map(_.headOption)
+
   def findRequiringEmailProcessingForFailedNonFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
       Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable.toBison),
