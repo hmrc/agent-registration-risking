@@ -141,7 +141,7 @@ extends ISpec:
 
     val application: Unit =
       applicationForRiskingRepo
-        .setOverallRiskingOutcomeToApprovedForApplication(riskedApplication.applicationReference)
+        .setOverallRiskingOutcomeToApprovedForApplication(riskedApplication)
         .futureValue
 
     val modifiedState = applicationForRiskingRepo.findById(riskedApplication.applicationReference).futureValue

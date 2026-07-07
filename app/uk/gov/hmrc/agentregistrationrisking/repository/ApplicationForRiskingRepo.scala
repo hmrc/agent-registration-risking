@@ -26,6 +26,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome.Approved
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.crypto.ApplicationDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
@@ -172,15 +173,26 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   /*
   [APB-11788] temporary solution to handle special cases. Do not use!
    */
-  def setOverallRiskingOutcomeToApprovedForApplication(applicationReference: ApplicationReference): Future[Unit] = {
-    collection.updateOne(
-      Filters.eq(FieldNames.applicationReference, applicationReference.value),
-      Updates.combine(
-        Updates.set(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
-        Updates.set(FieldNames.overallStatus.emailsProcessed, false),
-        Updates.set(FieldNames.overallStatus.backendNotified, false)
-      )
-    ).toFuture().map(_ => ())
+  def setOverallRiskingOutcomeToApprovedForApplication(application: ApplicationForRisking): Future[Unit] = {
+    val updated = application.copy(
+      overallStatus = OverallStatus(
+        riskingOutcome = Some(Approved),
+        emailsProcessed = false,
+        backendNotified = false
+      ),
+      isEmailSent = false,
+      correctiveActionExpiryDate = None,
+      isSubscribed = false
+    )
+
+    collection.replaceOne(
+      filter = Filters.eq(
+        FieldNames.applicationReference,
+        application.applicationReference.value
+      ),
+      replacement = updated
+    )
+      .toFuture().map(_ => ())
   }
 
 object ApplicationForRiskingRepo:

@@ -164,38 +164,37 @@ extends RequestAwareLogging:
   def specialCaseApprovePreviouslyFailedApplications()(using request: RequestHeader): Future[Unit] =
     if (appConfig.enableUnsetRiskingResponses) {
       logger.info("[SpecialCaseApprovePreviouslyFailedApplications] feature ENABLED.")
-      Future.sequence(
+      ProcessInSequence.processInSequence[ApplicationReference, Unit](
         appConfig.applicationIdsForUnsettingRiskingResponses.map(ApplicationReference(_))
-          .map(appRef =>
-            logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] Trying from config appRef: ${appRef.value}")
-            applicationForRiskingRepo.findAlreadyRiskedApplication(appRef).flatMap {
-              case Some(appWithIndividuals) =>
-                appWithIndividuals.application.overallStatus.riskingOutcome match {
-                  case Some(RiskingOutcome.FailedNonFixable | RiskingOutcome.FailedFixable) =>
-                    for {
-                      _ <- updateRiskingResults(RiskingResult.ForEntity(
-                        applicationReference = appWithIndividuals.application.applicationReference,
-                        failures = List.empty,
-                        rawFailures = List.empty
-                      ))
-                      _ <- applicationForRiskingRepo.setOverallRiskingOutcomeToApprovedForApplication(appRef)
-                      individualCount <- ProcessInSequence.processInSequence(appWithIndividuals.individuals)(individual =>
-                        processRiskingResult(RiskingResult.ForIndividual(
-                          personReference = individual.personReference,
-                          failures = List.empty,
-                          rawFailures = List.empty
-                        ))
-                      ).map(_.size)
-                    } yield logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] processed ${appRef.value} application with " +
-                      s"$individualCount individual records.")
-                  case otherRiskingOutcome =>
-                    Future.successful(logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] skipped ${appRef.value} because the " +
-                      s"risking outcome was $otherRiskingOutcome and therefore ineligible."))
-                }
-              case None =>
-                Future.successful(logger.warn(s"[SpecialCaseApprovePreviouslyFailedApplications] could not find application with reference ${appRef.value}."))
+      )(appRef =>
+        logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] Trying from config appRef: ${appRef.value}")
+        applicationForRiskingRepo.findAlreadyRiskedApplication(appRef).flatMap {
+          case Some(appWithIndividuals) =>
+            appWithIndividuals.application.overallStatus.riskingOutcome match {
+              case Some(RiskingOutcome.FailedNonFixable | RiskingOutcome.FailedFixable) =>
+                for {
+                  _ <- updateRiskingResults(RiskingResult.ForEntity(
+                    applicationReference = appWithIndividuals.application.applicationReference,
+                    failures = List.empty,
+                    rawFailures = List.empty
+                  ))
+                  _ <- applicationForRiskingRepo.setOverallRiskingOutcomeToApprovedForApplication(appWithIndividuals.application)
+                  individualCount <- ProcessInSequence.processInSequence(appWithIndividuals.individuals)(individual =>
+                    processRiskingResult(RiskingResult.ForIndividual(
+                      personReference = individual.personReference,
+                      failures = List.empty,
+                      rawFailures = List.empty
+                    ))
+                  ).map(_.size)
+                } yield logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] processed ${appRef.value} application with " +
+                  s"$individualCount individual records.")
+              case otherRiskingOutcome =>
+                Future.successful(logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] skipped ${appRef.value} because the " +
+                  s"risking outcome was $otherRiskingOutcome and therefore ineligible."))
             }
-          )
+          case None =>
+            Future.successful(logger.warn(s"[SpecialCaseApprovePreviouslyFailedApplications] could not find application with reference ${appRef.value}."))
+        }
       ).map(appRefsProcessed =>
         logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] finished with ${appRefsProcessed.size} applications.")
       )
