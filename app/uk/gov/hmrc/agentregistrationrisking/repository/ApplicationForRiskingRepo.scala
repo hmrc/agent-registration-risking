@@ -96,6 +96,14 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
 
+  def findAlreadyRiskedApplication(applicationReference: ApplicationReference): Future[Option[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.eq(FieldNames.applicationReference, applicationReference.value),
+      Filters.exists(FieldNames.overallStatus.riskingOutcome, true)
+    ),
+    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
+  ).map(_.headOption)
+
   private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
 
   private def findApplicationWithIndividuals(
