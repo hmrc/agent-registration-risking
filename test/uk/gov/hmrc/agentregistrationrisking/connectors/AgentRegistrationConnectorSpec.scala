@@ -24,16 +24,17 @@ import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeRequest
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegistrationStubs
 
+import java.time.Instant
 import java.time.LocalDate
 
 class AgentRegistrationConnectorSpec
 extends ISpec:
 
-  val connector: AgentRegistrationConnector = app.injector.instanceOf[AgentRegistrationConnector]
+  val agentRegistrationConnector: AgentRegistrationConnector = app.injector.instanceOf[AgentRegistrationConnector]
 
   private val applicationReference: ApplicationReference = ApplicationReference("APPREF_TEST")
   private val riskingOutcomeRequest: RiskingOutcomeRequest = RiskingOutcomeRequest(
-    riskingCompletedDate = LocalDate.of(2026, 6, 25),
+    emailsSentAt = Instant.parse("2026-06-25T11:33:55Z"),
     applicationOutcome = RiskingOutcome.Approved,
     entityFailures = Seq.empty,
     entityOutcome = RiskingOutcome.Approved,
@@ -43,12 +44,12 @@ extends ISpec:
   "completes successfully when the agent-registration service responds with 200 OK" in:
     given RequestHeader = FakeRequest()
     AgentRegistrationStubs.stubSendRiskingOutcome(applicationReference, riskingOutcomeRequest)
-    connector.sendRiskingOutcome(applicationReference, riskingOutcomeRequest).futureValue shouldBe (())
+    agentRegistrationConnector.sendRiskingOutcome(applicationReference, riskingOutcomeRequest).futureValue shouldBe (())
     AgentRegistrationStubs.verifySendRiskingOutcome(applicationReference)
 
   "fails when the agent-registration service responds with a non-2xx status" in:
     given RequestHeader = FakeRequest()
     AgentRegistrationStubs.stubSendRiskingOutcomeFailure(applicationReference, riskingOutcomeRequest)
-    val exception = connector.sendRiskingOutcome(applicationReference, riskingOutcomeRequest).failed.futureValue
+    val exception = agentRegistrationConnector.sendRiskingOutcome(applicationReference, riskingOutcomeRequest).failed.futureValue
     exception shouldBe a[Throwable]
     AgentRegistrationStubs.verifySendRiskingOutcome(applicationReference)

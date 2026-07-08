@@ -52,12 +52,12 @@ extends RequestAwareLogging:
     for
       applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findReadyToNotifyBackend()
       applicationCount: Int = applicationsWithIndividuals.size
-      _ = logger.info(s"Found $applicationCount applications ready to notify backend")
+      _ = logger.info(s"Processing backend notifications, found $applicationCount applications ready to sent to backend")
       notifiedCount <-
         ProcessInSequence
           .processAllInSequence(applicationsWithIndividuals)(process):
             case (ex, applicationWithIndividuals) =>
-              logger.error(s"Failed to notify backend for application ${applicationWithIndividuals.application.applicationReference.value}", ex)
+              logger.error(s"Failed to notify backend for application ${applicationWithIndividuals.application.applicationReference}", ex)
       _ = logger.info(s"Notified backend for $notifiedCount/$applicationCount applications")
     yield ()
 
@@ -82,11 +82,10 @@ extends RequestAwareLogging:
         failures = individualRiskingResult.failures,
         riskingOutcome = individualRiskingResult.failures.outcome
       )
-    val instant: Instant = applicationWithIndividuals.riskingCompletedDate.getOrThrowExpectedDataMissing("riskingCompletedDate")
     val riskingOutcome: RiskingOutcome = applicationForRisking.overallStatus.riskingOutcome.getOrThrowExpectedDataMissing("riskingOutcome")
-    val riskingCompletedDate: LocalDate = instant.atZone(ZoneOffset.UTC).toLocalDate
+    val emailsSentAt: Instant = applicationForRisking.overallStatus.emailsSentAt.getOrThrowExpectedDataMissing("emailsSentAt")
     RiskingOutcomeRequest(
-      riskingCompletedDate = riskingCompletedDate,
+      emailsSentAt = emailsSentAt,
       applicationOutcome = riskingOutcome,
       entityFailures = entityRiskingResult.failures,
       entityOutcome = entityRiskingResult.failures.outcomeForEntity,

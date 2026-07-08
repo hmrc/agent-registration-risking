@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import com.softwaremill.quicklens.modify
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
@@ -35,7 +34,7 @@ final case class ApplicationForRisking(
   isSubscribed: Boolean,
   isEmailSent: Boolean,
   overallStatus: OverallStatus,
-  correctiveActionExpiryDate: Option[Instant]
+  correctiveActionExpiryDate: Option[Instant] // TODO: this to be removed once failed fixable are implemented. COrrective action is computed in BE now.
 )
 
 object ApplicationForRisking:
