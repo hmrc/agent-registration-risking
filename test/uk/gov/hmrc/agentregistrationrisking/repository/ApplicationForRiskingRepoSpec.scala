@@ -43,8 +43,7 @@ extends ISpec:
         .futureValue
 
     applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.approvedAfterOutcome.application,
-      TdRiskingInstancesInStates.approvedAfterBackendNotified.application
+      TdRiskingInstancesInStates.approvedAfterOutcome.application
     ) withClue applications.map(_.applicationReference.value).mkString(", ")
 
   "findReadyToSetRiskingOutcome" in:
@@ -68,11 +67,22 @@ extends ISpec:
         .futureValue
 
     applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterBackendNotified.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfter1EmailSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfter2EmailsSent.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsSent.applicationWithIndividuals
+      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals
+    ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
+  "findRequiringEmailProcessingForFailedFixable" in:
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findRequiringEmailProcessingForFailedFixable()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.failedFixableAfterOutcome.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   "findApplicationsAwaitingOverallOutcome" in:
@@ -97,7 +107,7 @@ extends ISpec:
 
     applications.toSet shouldBe Set(TdRiskingInstancesInStates.approvedAfterSubscribed.application)
 
-  "findReadyToNotifyBackend returns every application that has a computed riskingOutcome, all risking data (entity + every individual result) is present, and which has not yet been notified to the backend" in:
+  "findReadyToNotifyBackend returns every application that has emailSentAt set (emails complete) and has not yet been notified to the backend" in:
 
     val applications: Seq[ApplicationWithIndividuals] =
       applicationForRiskingRepo
@@ -105,13 +115,9 @@ extends ISpec:
         .futureValue
 
     applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.approvedAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedFixableAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals,
-      TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
+      TdRiskingInstancesInStates.approvedAfterEmailSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedFixableAfterEmailSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterEmailSent.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]

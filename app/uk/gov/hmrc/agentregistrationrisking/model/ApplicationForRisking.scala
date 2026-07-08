@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
+import com.softwaremill.quicklens.modify
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
@@ -38,4 +39,12 @@ final case class ApplicationForRisking(
 )
 
 object ApplicationForRisking:
-  given format: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
+
+  given format: OFormat[ApplicationForRisking] =
+    val baseFormat: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
+    OFormat(baseFormat.map(deriveEmailSentAtFromLegacyRecord), baseFormat)
+
+  private def deriveEmailSentAtFromLegacyRecord(application: ApplicationForRisking): ApplicationForRisking =
+    (application.overallStatus.emailsProcessed, application.overallStatus.emailsSentAt, application.entityRiskingResult) match
+      case (true, None, Some(entityRiskingResult)) => application.modify(_.overallStatus.emailsSentAt).setTo(Some(entityRiskingResult.receivedAt))
+      case _ => application

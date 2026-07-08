@@ -92,3 +92,5 @@ trait TdIndividualForRisking:
     )
 
     def failedNonFixableEmailSent: IndividualForRisking = failedNonFixable.copy(isEmailSent = true)
+
+    def failedFixableEmailSent: IndividualForRisking = failedFixable.copy(isEmailSent = true)

@@ -89,6 +89,13 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
   )
 
+  def findRequiringEmailProcessingForFailedFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedFixable.toBison),
+      Filters.eq(FieldNames.overallStatus.emailsProcessed, false)
+    )
+  )
+
   def findApplicationsAwaitingOverallOutcome(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
       Filters.exists(FieldNames.entityRiskingResult),
@@ -153,9 +160,10 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   def findReadyToNotifyBackend(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
       Filters.exists(FieldNames.overallStatus.riskingOutcome),
+      Filters.eq(FieldNames.overallStatus.emailsProcessed, true),
       Filters.or(
         Filters.eq(FieldNames.overallStatus.backendNotified, false),
-        Filters.exists(FieldNames.overallStatus.backendNotified, false)
+        Filters.exists(FieldNames.overallStatus.backendNotified, false) // legacy records don't have this field
       )
     )
   )

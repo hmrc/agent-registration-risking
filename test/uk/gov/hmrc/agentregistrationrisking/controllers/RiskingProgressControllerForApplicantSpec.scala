@@ -91,7 +91,7 @@ extends ControllerSpec:
         tdRisking
           .tdApplicationForRisking
           .receivedRiskingResults
-          .failedNonFixableAfterEmailsProcessed
+          .failedNonFixableAfterEmailSent
 
       val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
       val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.failedFixable

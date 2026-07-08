@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.BusinessType
-import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.EmailConnector
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -38,10 +38,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class EmailServiceForFailedNonFixable @Inject() (
+class EmailServiceForFailedFixable @Inject() (
   emailConnector: EmailConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
+  appConfig: AppConfig,
   clock: Clock
 )(using ExecutionContext)
 extends RequestAwareLogging:
@@ -49,27 +50,31 @@ extends RequestAwareLogging:
   private val emailTemplateId: EmailTemplateId = EmailTemplateId.ApplicationNonFixableFailure
 
   def processEmails()(using requestHeader: RequestHeader): Future[Unit] =
-    for
-      applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findRequiringEmailProcessingForFailedNonFixable()
-      applicationsCount: Int = applicationsWithIndividuals.size
-      _ = logger.info(s"Found $applicationsCount FailedNonFixable applications with individuals ready to process emails")
-      successfullyProcessedCount <-
-        ProcessInSequence.processAllInSequence(applicationsWithIndividuals)(process):
-          case (ex, applicationWithIndividuals) =>
-            logger.error(
-              s"Failed to process emails for FailedNonFixable application: ${applicationWithIndividuals.application.applicationReference}",
-              ex
-            )
-      _ = logger.info(s"Processed emails for $successfullyProcessedCount/$applicationsCount FailedNonFixable applications")
-    yield ()
+    if !appConfig.Features.fixableFailures then
+      logger.info("FailedFixable email service skipped — feature flag features.fixable-failures is off")
+      Future.unit
+    else
+      for
+        applicationsWithIndividuals: Seq[ApplicationWithIndividuals] <- applicationForRiskingRepo.findRequiringEmailProcessingForFailedFixable()
+        applicationsCount: Int = applicationsWithIndividuals.size
+        _ = logger.info(s"Found $applicationsCount FailedFixable applications with individuals ready to process emails")
+        successfullyProcessedCount <-
+          ProcessInSequence.processAllInSequence(applicationsWithIndividuals)(process):
+            case (ex, applicationWithIndividuals) =>
+              logger.error(
+                s"Failed to process emails for FailedFixable application: ${applicationWithIndividuals.application.applicationReference}",
+                ex
+              )
+        _ = logger.info(s"Processed emails for $successfullyProcessedCount/$applicationsCount FailedFixable applications")
+      yield ()
 
   private def process(applicationWithIndividuals: ApplicationWithIndividuals)(using RequestHeader): Future[Unit] =
     val application: ApplicationForRisking = applicationWithIndividuals.application
-    val individualsWithNonFixableFailure: Seq[IndividualForRisking] = applicationWithIndividuals.individuals.filter(hasNonFixableFailure)
+    val individualsWithFixableFailure: Seq[IndividualForRisking] = applicationWithIndividuals.individuals.filter(hasFixableFailure)
     val individuals: Seq[IndividualForRisking] =
       application.applicationData.businessType match
-        case BusinessType.SoleTrader => individualsWithNonFixableFailure.filterNot(isIndividualTheApplicant(_, application))
-        case _ => individualsWithNonFixableFailure
+        case BusinessType.SoleTrader => individualsWithFixableFailure.filterNot(isIndividualTheApplicant(_, application))
+        case _ => individualsWithFixableFailure
 
     for
       updatedApplication <- process(application)
@@ -117,9 +122,9 @@ extends RequestAwareLogging:
       .individualData
       .emailAddress
 
-  private def hasNonFixableFailure(individual: IndividualForRisking): Boolean = individual
+  private def hasFixableFailure(individual: IndividualForRisking): Boolean = individual
     .individualRiskingResult
-    .exists(_.failures.outcome === RiskingOutcome.FailedNonFixable)
+    .exists(_.failures.outcome === RiskingOutcome.FailedFixable)
 
   private def makeSendEmailRequest(application: ApplicationForRisking): SendEmailRequest =
     val applicationData = application.applicationData

@@ -32,10 +32,14 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdIndividualFor
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EmailStubs
 
-class EmailServiceForFailedNonFixableSpec
+class EmailServiceForFailedFixableEnabledSpec
 extends ISpec:
 
-  private val emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable = app.injector.instanceOf[EmailServiceForFailedNonFixable]
+  override protected def configOverrides: Map[String, Any] = Map[String, Any](
+    "features.fixable-failures" -> true
+  )
+
+  private val emailServiceForFailedFixable: EmailServiceForFailedFixable = app.injector.instanceOf[EmailServiceForFailedFixable]
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
@@ -73,16 +77,16 @@ extends ISpec:
     )
   )
 
-  private val tdRisking: TdRisking = TdRisking.make("EmailServiceForFailedNonFixableSpec")
+  private val tdRisking: TdRisking = TdRisking.make("EmailServiceForFailedFixableEnabledSpec")
   private val tdApplicationForRisking: TdApplicationForRisking = tdRisking.tdApplicationForRisking
   private val tdIndividualForRisking1: TdIndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1
   private val tdIndividualForRisking2: TdIndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2
   private val tdIndividualForRisking3: TdIndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking3
 
-  private val soleTraderApp: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome
+  private val soleTraderApp: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome
     .modify(_.applicationData.businessType)
     .setTo(BusinessType.SoleTrader)
-  private val soleTraderInd1: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedNonFixable
+  private val soleTraderInd1: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedFixable
     .modify(_.individualData.emailAddress)
     .setTo(soleTraderApp.applicationData.applicantContactDetails.applicantEmailAddress)
 
@@ -90,56 +94,56 @@ extends ISpec:
 
     List(
       TestCase(
-        description = "sends 1 applicant email and 1 individual email when only 1 of 3 individuals has a NonFixable failure",
-        application = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome,
+        description = "sends 1 applicant email and 1 individual email when only 1 of 3 individuals has a Fixable failure",
+        application = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome,
         individuals = Seq(
-          tdIndividualForRisking1.receivedRiskingResults.failedNonFixable,
+          tdIndividualForRisking1.receivedRiskingResults.failedFixable,
           tdIndividualForRisking2.receivedRiskingResults.approved,
           tdIndividualForRisking3.receivedRiskingResults.approved
         ),
         expectedEmails = Seq(
-          expectedApplicantEmail(tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome),
-          expectedIndividualEmail(tdIndividualForRisking1.receivedRiskingResults.failedNonFixable)
+          expectedApplicantEmail(tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome),
+          expectedIndividualEmail(tdIndividualForRisking1.receivedRiskingResults.failedFixable)
         )
       ),
       TestCase(
-        description = "sends 1 applicant email and 2 individual emails when 2 of 3 individuals have a NonFixable failure",
-        application = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome,
+        description = "sends 1 applicant email and 2 individual emails when 2 of 3 individuals have a Fixable failure",
+        application = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome,
         individuals = Seq(
-          tdIndividualForRisking1.receivedRiskingResults.failedNonFixable,
-          tdIndividualForRisking2.receivedRiskingResults.failedNonFixable,
+          tdIndividualForRisking1.receivedRiskingResults.failedFixable,
+          tdIndividualForRisking2.receivedRiskingResults.failedFixable,
           tdIndividualForRisking3.receivedRiskingResults.approved
         ),
         expectedEmails = Seq(
-          expectedApplicantEmail(tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome),
-          expectedIndividualEmail(tdIndividualForRisking1.receivedRiskingResults.failedNonFixable),
-          expectedIndividualEmail(tdIndividualForRisking2.receivedRiskingResults.failedNonFixable)
+          expectedApplicantEmail(tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome),
+          expectedIndividualEmail(tdIndividualForRisking1.receivedRiskingResults.failedFixable),
+          expectedIndividualEmail(tdIndividualForRisking2.receivedRiskingResults.failedFixable)
         )
       ),
       TestCase(
-        description = "sends only the applicant email when the entity failure is NonFixable but no individual has a NonFixable failure",
-        application = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome,
-        individuals = Seq(tdIndividualForRisking1.receivedRiskingResults.failedFixable, tdIndividualForRisking2.receivedRiskingResults.approved),
-        expectedEmails = Seq(expectedApplicantEmail(tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome))
+        description = "sends only the applicant email when the entity failure is Fixable but no individual has a Fixable failure",
+        application = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome,
+        individuals = Seq(tdIndividualForRisking1.receivedRiskingResults.approved, tdIndividualForRisking2.receivedRiskingResults.approved),
+        expectedEmails = Seq(expectedApplicantEmail(tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome))
       ),
       TestCase(
         description = "sends no emails when the application has already been processed (emailsProcessed = true)",
-        application = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterEmailSent,
+        application = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterEmailSent,
         individuals = Seq(
-          tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent,
-          tdIndividualForRisking2.receivedRiskingResults.failedNonFixableEmailSent
+          tdIndividualForRisking1.receivedRiskingResults.failedFixableEmailSent,
+          tdIndividualForRisking2.receivedRiskingResults.failedFixableEmailSent
         ),
         expectedEmails = Seq.empty
       ),
       TestCase(
         description =
           "sends only the remaining individual email when the entity email is already sent but one individual was not yet emailed (crash-recovery intermediate state)",
-        application = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome.copy(isEmailSent = true),
+        application = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome.copy(isEmailSent = true),
         individuals = Seq(
-          tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent,
-          tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
+          tdIndividualForRisking1.receivedRiskingResults.failedFixableEmailSent,
+          tdIndividualForRisking2.receivedRiskingResults.failedFixable
         ),
-        expectedEmails = Seq(expectedIndividualEmail(tdIndividualForRisking2.receivedRiskingResults.failedNonFixable))
+        expectedEmails = Seq(expectedIndividualEmail(tdIndividualForRisking2.receivedRiskingResults.failedFixable))
       ),
       TestCase(
         description = "sends only the applicant email when SoleTrader and the only individual is the applicant",
@@ -153,14 +157,14 @@ extends ISpec:
         applicationForRiskingRepo.upsert(tc.application).futureValue
         tc.individuals.foreach(individualForRiskingRepo.upsert(_).futureValue)
 
-        emailServiceForFailedNonFixable.processEmails().futureValue
+        emailServiceForFailedFixable.processEmails().futureValue
 
         EmailStubs.verifySendEmail(count = tc.expectedEmails.size)
 
     "leaves overallStatus.emailsProcessed=false and emailSentAt=None when one individual email fails mid-batch — atomic set must not run so the next scheduler run retries" in:
-      val application: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome
-      val individual1: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedNonFixable
-      val individual2: IndividualForRisking = tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
+      val application: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome
+      val individual1: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedFixable
+      val individual2: IndividualForRisking = tdIndividualForRisking2.receivedRiskingResults.failedFixable
 
       EmailStubs.stubSendEmail(expectedApplicantEmail(application))
       EmailStubs.stubSendEmail(expectedIndividualEmail(individual1))
@@ -170,7 +174,7 @@ extends ISpec:
       individualForRiskingRepo.upsert(individual1).futureValue
       individualForRiskingRepo.upsert(individual2).futureValue
 
-      emailServiceForFailedNonFixable.processEmails().futureValue
+      emailServiceForFailedFixable.processEmails().futureValue
 
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(application.applicationReference).futureValue.value
       persistedApp.isEmailSent shouldBe true withClue "entity email was sent so isEmailSent should have been flipped by the first upsert"
@@ -185,9 +189,9 @@ extends ISpec:
       ).value.isEmailSent shouldBe false withClue "individual2 email failed — its isEmailSent flag must NOT flip"
 
     "leaves the whole record untouched when the entity email fails — no individual emails attempted, atomic set never reached" in:
-      val application: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.failedNonFixableAfterOutcome
-      val individual1: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedNonFixable
-      val individual2: IndividualForRisking = tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
+      val application: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.failedFixableAfterOutcome
+      val individual1: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedFixable
+      val individual2: IndividualForRisking = tdIndividualForRisking2.receivedRiskingResults.failedFixable
 
       EmailStubs.stubSendEmailFailure(expectedApplicantEmail(application))
 
@@ -195,7 +199,7 @@ extends ISpec:
       individualForRiskingRepo.upsert(individual1).futureValue
       individualForRiskingRepo.upsert(individual2).futureValue
 
-      emailServiceForFailedNonFixable.processEmails().futureValue
+      emailServiceForFailedFixable.processEmails().futureValue
 
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(application.applicationReference).futureValue.value
       persistedApp.isEmailSent shouldBe false withClue "entity email failed — no upsert should have run"
@@ -208,10 +212,10 @@ extends ISpec:
     "completes the atomic final upsert on the next scheduler run after a mid-batch crash — sends the remaining individual email then flips emailsProcessed+emailSentAt together" in:
       val applicationCrashedMidBatch: ApplicationForRisking = tdApplicationForRisking
         .receivedRiskingResults
-        .failedNonFixableAfterOutcome
+        .failedFixableAfterOutcome
         .copy(isEmailSent = true)
-      val individual1EmailedInPriorRun: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedNonFixableEmailSent
-      val individual2StillPending: IndividualForRisking = tdIndividualForRisking2.receivedRiskingResults.failedNonFixable
+      val individual1EmailedInPriorRun: IndividualForRisking = tdIndividualForRisking1.receivedRiskingResults.failedFixableEmailSent
+      val individual2StillPending: IndividualForRisking = tdIndividualForRisking2.receivedRiskingResults.failedFixable
 
       EmailStubs.stubSendEmail(expectedIndividualEmail(individual2StillPending))
 
@@ -219,7 +223,7 @@ extends ISpec:
       individualForRiskingRepo.upsert(individual1EmailedInPriorRun).futureValue
       individualForRiskingRepo.upsert(individual2StillPending).futureValue
 
-      emailServiceForFailedNonFixable.processEmails().futureValue
+      emailServiceForFailedFixable.processEmails().futureValue
 
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(applicationCrashedMidBatch.applicationReference).futureValue.value
       persistedApp.overallStatus.emailsProcessed shouldBe true withClue "all emails complete — atomic final upsert must have run"

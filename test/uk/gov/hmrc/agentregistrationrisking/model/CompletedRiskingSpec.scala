@@ -40,7 +40,7 @@ extends UnitSpec:
         tdRisking
           .tdApplicationForRisking
           .receivedRiskingResults
-          .failedNonFixableAfterEmailsProcessed,
+          .failedNonFixableAfterBackendNotified,
       individuals = Seq(
         tdRisking
           .tdIndividualsForRisking
@@ -135,7 +135,8 @@ extends UnitSpec:
         |    "overallStatus": {
         |      "riskingOutcome": "FailedNonFixable",
         |      "emailsProcessed": true,
-        |      "backendNotified": true
+        |      "backendNotified": true,
+        |      "emailsSentAt": "2059-11-25T16:33:51Z"
         |    },
         |    "correctiveActionExpiryDate": "2060-01-09T16:33:51Z"
         |  },

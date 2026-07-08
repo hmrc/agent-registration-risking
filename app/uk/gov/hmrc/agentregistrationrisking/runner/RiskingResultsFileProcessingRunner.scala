@@ -22,6 +22,7 @@ import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
 import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
+import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedFixable
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
@@ -40,6 +41,7 @@ class RiskingResultsFileProcessingRunner @Inject() (
   subscriptionService: SubscriptionService,
   emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
   emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable,
+  emailServiceForFailedFixable: EmailServiceForFailedFixable,
   backendNotificationService: BackendNotificationService
 )(using
   appConfig: AppConfig,
@@ -53,8 +55,9 @@ extends RequestAwareLogging:
     (for
       _ <- riskingResultsService.processResultsFiles()
       _ <- applicationOutcomeService.processOverallOutcomes()
-      _ <- backendNotificationService.processBackendNotifications()
       _ <- subscriptionService.processSubscriptions()
       _ <- emailServiceForApprovedApplications.processEmails()
       _ <- emailServiceForFailedNonFixable.processEmails()
+      _ <- emailServiceForFailedFixable.processEmails()
+      _ <- backendNotificationService.processBackendNotifications()
     yield ()).recover { case ex: Exception => logger.error(s"Error processing risking results file", ex) }

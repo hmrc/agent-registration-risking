@@ -20,34 +20,41 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdInstant
+
+import java.time.Instant
 
 class OverallStatusSpec
 extends UnitSpec:
 
   "serialize and deserialize" in:
 
+    val emailsSentAt: Instant = TdInstant.instant
     val overallStatus: OverallStatus = OverallStatus(
       riskingOutcome = Some(RiskingOutcome.Approved),
       emailsProcessed = true,
-      backendNotified = false
+      backendNotified = false,
+      emailsSentAt = Some(emailsSentAt)
     )
     val json: JsValue = Json.parse(
       // language=JSON
-      """{
-        |  "riskingOutcome":"Approved",
-        |  "emailsProcessed":true,
-        |  "backendNotified":false
-        |}""".stripMargin
+      s"""{
+         |  "riskingOutcome":"Approved",
+         |  "emailsProcessed":true,
+         |  "backendNotified":false,
+         |  "emailsSentAt":"$emailsSentAt"
+         |}""".stripMargin
     )
     Json.toJson[OverallStatus](overallStatus) shouldBe json
     json.as[OverallStatus] shouldBe overallStatus
 
-  "deserialize backward compatible" in:
+  "deserialize backward compatible - missing backendNotified and emailSentAt fields default to false and None" in:
 
     val overallStatus: OverallStatus = OverallStatus(
       riskingOutcome = Some(RiskingOutcome.Approved),
       emailsProcessed = true,
-      backendNotified = false // defaults to false
+      backendNotified = false, // defaults to false
+      emailsSentAt = None
     )
     val json: JsValue = Json.parse(
       // language=JSON
