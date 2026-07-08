@@ -21,8 +21,8 @@ import org.bson.json.JsonWriterSettings
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
-import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
@@ -81,6 +81,15 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     ),
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
+
+  def findAlreadyRiskedApplication(applicationReference: ApplicationReference): Future[Option[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.eq(FieldNames.applicationReference, applicationReference.value),
+      Filters.exists(FieldNames.entityRiskingResult),
+      Filters.exists(FieldNames.overallStatus.riskingOutcome, true)
+    ),
+    individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
+  ).map(_.headOption)
 
   def findRequiringEmailProcessingForFailedNonFixable(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
