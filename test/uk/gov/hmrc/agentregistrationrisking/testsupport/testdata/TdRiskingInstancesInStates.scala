@@ -73,8 +73,7 @@ object TdRiskingInstancesInStates:
     approvedAfterBackendNotified,
     failedFixable,
     failedFixableAfterOutcome,
-    // TODO uncomment when FailedFixable email service ships
-    // failedFixableAfterEmailSent,
+    failedFixableAfterEmailSent,
     failedFixableAfterBackendNotified,
     failedNonFixable,
     failedNonFixableAfterOutcome,
@@ -241,14 +240,34 @@ object TdRiskingInstancesInStates:
       correctiveActionExpiryDate = None
     )
 
-  // TODO uncomment when FailedFixable email service ships
-  // case object failedFixableAfterEmailSent
-  // extends TdApplicationWithIndividuals:
-  //   override val tdRisking: TdRisking = TdRisking.make(this.toString)
-  //   override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedFixableAfterEmailSent
-  //   override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
-  //   override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
-  //   override val riskingProgressForApplicant: RiskingProgress.FailedFixable = ...
+  case object failedFixableAfterEmailSent
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.failedFixableAfterEmailSent
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixableEmailSent
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+    override val riskingProgressForApplicant: RiskingProgress.FailedFixable = RiskingProgress.FailedFixable(
+      riskedEntity = RiskedEntity(
+        applicationReference = application.applicationReference,
+        failures = application.entityRiskingResult.value.failures
+      ),
+      riskedIndividuals = Seq(
+        RiskedIndividual(
+          personReference = individual1.personReference,
+          individualName = individual1.individualData.individualName,
+          failures = individual1.individualRiskingResult.value.failures
+        ),
+        RiskedIndividual(
+          personReference = individual2.personReference,
+          individualName = individual2.individualData.individualName,
+          failures = individual2.individualRiskingResult.value.failures
+        )
+      ),
+      riskingCompletedDate = TdInstant.localDate,
+      correctiveActionExpiryDate = Some(TdInstant.correctiveActionExpiryLocalDate)
+    )
 
   case object failedFixableAfterBackendNotified
   extends TdApplicationWithIndividuals,

@@ -70,6 +70,21 @@ extends ISpec:
       TdRiskingInstancesInStates.failedNonFixableAfterOutcome.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 
+  "findRequiringEmailProcessingForFailedFixable" in:
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findRequiringEmailProcessingForFailedFixable()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.failedFixableAfterOutcome.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_approved_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_failedNonFixable_submitted.applicationWithIndividuals,
+      TdRiskingInstancesInStates.partiallyRisked.failedFixable_submitted_submitted.applicationWithIndividuals
+    ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
   "findApplicationsAwaitingOverallOutcome" in:
 
     val applications: Seq[ApplicationWithIndividuals] =
@@ -101,8 +116,7 @@ extends ISpec:
 
     applications.toSet shouldBe Set(
       TdRiskingInstancesInStates.approvedAfterEmailSent.applicationWithIndividuals,
-      // TODO uncomment when FailedFixable email service ships
-      // TdRiskingInstancesInStates.failedFixableAfterEmailSent.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedFixableAfterEmailSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfterEmailSent.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
 

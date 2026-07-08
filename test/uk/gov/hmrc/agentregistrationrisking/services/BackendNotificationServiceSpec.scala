@@ -45,6 +45,7 @@ extends ISpec:
 
   private val approvedAfterEmailSent = TdRiskingInstancesInStates.approvedAfterEmailSent
   private val failedNonFixableAfterEmailSent = TdRiskingInstancesInStates.failedNonFixableAfterEmailSent
+  private val failedFixableAfterEmailSent = TdRiskingInstancesInStates.failedFixableAfterEmailSent
   private val outcomeNotComputed = TdRiskingInstancesInStates.approved // entityRiskingResult received, but riskingOutcome not yet computed
   private val emailsNotYetSent = TdRiskingInstancesInStates.approvedAfterSubscribed // outcome + subscribed, but emailSentAt still None so notify predicate excludes it
 
@@ -89,20 +90,24 @@ extends ISpec:
     "notifies the backend for each application whose emails have been sent (emailSentAt exists) and has not yet been notified, then marks it as notified" in:
       stubExpectedRequests(
         approvedAfterEmailSent,
-        failedNonFixableAfterEmailSent
+        failedNonFixableAfterEmailSent,
+        failedFixableAfterEmailSent
       )
       insertApplicationsWithIndividuals(
         approvedAfterEmailSent,
-        failedNonFixableAfterEmailSent
+        failedNonFixableAfterEmailSent,
+        failedFixableAfterEmailSent
       )
 
       backendNotificationService.processBackendNotifications().futureValue
 
       AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
       AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterEmailSent.application.applicationReference)
 
       backendNotifiedOf(approvedAfterEmailSent) shouldBe true
       backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe true
+      backendNotifiedOf(failedFixableAfterEmailSent) shouldBe true
 
     "does not notify the backend for applications whose outcome has not been computed yet" in:
       insertApplicationsWithIndividuals(outcomeNotComputed)
