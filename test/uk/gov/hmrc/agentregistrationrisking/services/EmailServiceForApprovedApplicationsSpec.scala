@@ -93,7 +93,7 @@ extends ISpec:
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(application.applicationReference).futureValue.value
       persistedApp.isEmailSent shouldBe true
       persistedApp.overallStatus.emailsProcessed shouldBe true
-      persistedApp.overallStatus.emailSentAt shouldBe defined
+      persistedApp.overallStatus.emailsSentAt shouldBe defined
 
     "does NOT send the success email when the application is Approved but NOT yet subscribed — subscription must complete first" in:
       val application: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.approvedAfterOutcome
@@ -106,7 +106,7 @@ extends ISpec:
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(application.applicationReference).futureValue.value
       persistedApp.isEmailSent shouldBe false
       persistedApp.overallStatus.emailsProcessed shouldBe false
-      persistedApp.overallStatus.emailSentAt shouldBe None
+      persistedApp.overallStatus.emailsSentAt shouldBe None
 
     "does NOT send the success email a second time when the application already had its email sent — idempotent under re-run of the scheduler" in:
       val application: ApplicationForRisking = tdApplicationForRisking.receivedRiskingResults.approvedAfterEmailSent
@@ -119,5 +119,5 @@ extends ISpec:
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(application.applicationReference).futureValue.value
       persistedApp.isEmailSent shouldBe true withClue "state must be unchanged from the primed value"
       persistedApp.overallStatus.emailsProcessed shouldBe true
-      persistedApp.overallStatus.emailSentAt shouldBe defined
+      persistedApp.overallStatus.emailsSentAt shouldBe defined
   }

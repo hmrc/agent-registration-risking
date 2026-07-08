@@ -70,7 +70,7 @@ trait TdApplicationForRisking:
       riskingOutcome = None,
       emailsProcessed = false,
       backendNotified = false,
-      emailSentAt = None
+      emailsSentAt = None
     ),
     correctiveActionExpiryDate = None
   )
@@ -99,7 +99,7 @@ trait TdApplicationForRisking:
     val approvedAfterEmailSent: ApplicationForRisking = approvedAfterSubscribed
       .copy(isEmailSent = true)
       .modify(_.overallStatus.emailsProcessed).setTo(true)
-      .modify(_.overallStatus.emailSentAt).setTo(Some(instant))
+      .modify(_.overallStatus.emailsSentAt).setTo(Some(instant))
 
     val approvedAfterBackendNotified: ApplicationForRisking = approvedAfterEmailSent
       .modify(_.overallStatus.backendNotified)
@@ -124,7 +124,7 @@ trait TdApplicationForRisking:
     val failedFixableAfterEmailSent: ApplicationForRisking = failedFixableAfterOutcome
       .copy(isEmailSent = true)
       .modify(_.overallStatus.emailsProcessed).setTo(true)
-      .modify(_.overallStatus.emailSentAt).setTo(Some(instant))
+      .modify(_.overallStatus.emailsSentAt).setTo(Some(instant))
 
     val failedFixableAfterBackendNotified: ApplicationForRisking = failedFixableAfterEmailSent
       .modify(_.overallStatus.backendNotified)
@@ -150,7 +150,7 @@ trait TdApplicationForRisking:
     val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome
       .copy(isEmailSent = true)
       .modify(_.overallStatus.emailsProcessed).setTo(true)
-      .modify(_.overallStatus.emailSentAt).setTo(Some(instant))
+      .modify(_.overallStatus.emailsSentAt).setTo(Some(instant))
 
     val failedNonFixableAfterBackendNotified: ApplicationForRisking = failedNonFixableAfterEmailSent
       .modify(_.overallStatus.backendNotified)

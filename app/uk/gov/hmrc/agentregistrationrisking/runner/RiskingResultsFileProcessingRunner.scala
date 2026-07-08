@@ -21,8 +21,8 @@ import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
 import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
-import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedFixable
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
+import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedFixable
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest

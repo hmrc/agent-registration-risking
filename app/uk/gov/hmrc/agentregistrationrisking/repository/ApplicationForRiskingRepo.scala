@@ -163,7 +163,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
       Filters.eq(FieldNames.overallStatus.emailsProcessed, true),
       Filters.or(
         Filters.eq(FieldNames.overallStatus.backendNotified, false),
-        Filters.exists(FieldNames.overallStatus.backendNotified, false)
+        Filters.exists(FieldNames.overallStatus.backendNotified, false) // legacy records don't have this field
       )
     )
   )

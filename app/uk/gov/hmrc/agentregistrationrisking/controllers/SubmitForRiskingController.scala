@@ -79,7 +79,7 @@ extends BackendController(cc):
       riskingOutcome = None,
       emailsProcessed = false,
       backendNotified = false,
-      emailSentAt = None
+      emailsSentAt = None
     ),
     correctiveActionExpiryDate = None
   )

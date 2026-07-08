@@ -70,7 +70,7 @@ extends RequestAwareLogging:
           .copy(isEmailSent = true)
           .modify(_.overallStatus.emailsProcessed)
           .setTo(true)
-          .modify(_.overallStatus.emailSentAt)
+          .modify(_.overallStatus.emailsSentAt)
           .setTo(Some(Instant.now(clock)))
       )
       _ = logger.info(s"Sent ${sendEmailRequest.templateId} email for ${application.applicationReference}")

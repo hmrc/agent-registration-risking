@@ -80,7 +80,7 @@ extends RequestAwareLogging:
         .upsert(
           updatedApplication
             .modify(_.overallStatus.emailsProcessed).setTo(true)
-            .modify(_.overallStatus.emailSentAt).setTo(Some(Instant.now(clock)))
+            .modify(_.overallStatus.emailsSentAt).setTo(Some(Instant.now(clock)))
         )
     yield ()
 

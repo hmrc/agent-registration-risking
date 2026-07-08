@@ -26,7 +26,7 @@ final case class OverallStatus(
   riskingOutcome: Option[RiskingOutcome],
   emailsProcessed: Boolean,
   backendNotified: Boolean,
-  emailSentAt: Option[Instant]
+  emailsSentAt: Option[Instant]
 )
 
 object OverallStatus:
@@ -37,7 +37,7 @@ object OverallStatus:
         (__ \ "riskingOutcome").readNullable[RiskingOutcome] and
           (__ \ "emailsProcessed").read[Boolean] and
           (__ \ "backendNotified").readNullable[Boolean].map(_.getOrElse(false)) and
-          (__ \ "emailSentAt").readNullable[Instant]
+          (__ \ "emailsSentAt").readNullable[Instant]
       )(OverallStatus.apply)
     val writes: OWrites[OverallStatus] = Json.writes[OverallStatus]
     OFormat(reads, writes)

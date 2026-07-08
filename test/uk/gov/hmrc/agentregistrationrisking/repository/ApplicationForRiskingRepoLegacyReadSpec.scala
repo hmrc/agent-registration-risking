@@ -37,11 +37,11 @@ extends ISpec:
     individualForRiskingRepo.collection.drop().toFuture.futureValue
     ()
 
-  "findById derives overallStatus.emailSentAt from entityRiskingResult.receivedAt when a persisted record has emailsProcessed=true but no emailSentAt (legacy compatibility)" in:
+  "findById derives overallStatus.emailsSentAt from entityRiskingResult.receivedAt when a persisted record has emailsProcessed=true but no emailSentAt (legacy compatibility)" in:
     val legacyApplicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates
       .approvedAfterEmailSent
       .application
-      .modify(_.overallStatus.emailSentAt).setTo(None)
+      .modify(_.overallStatus.emailsSentAt).setTo(None)
     val entityReceivedAt: Instant = legacyApplicationForRisking.entityRiskingResult.value.receivedAt
 
     applicationForRiskingRepo.upsert(legacyApplicationForRisking).futureValue
@@ -52,14 +52,14 @@ extends ISpec:
         .futureValue
         .value
 
-    readBack.overallStatus.emailSentAt shouldBe Some(entityReceivedAt)
+    readBack.overallStatus.emailsSentAt shouldBe Some(entityReceivedAt)
 
   "findById returns the persisted emailSentAt unchanged for a new-shape record where emailSentAt is set at write time" in:
     val newShapeEmailSentAt: Instant = frozenInstant.plusSeconds(60)
     val newShapeApplicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates
       .approvedAfterEmailSent
       .application
-      .modify(_.overallStatus.emailSentAt).setTo(Some(newShapeEmailSentAt))
+      .modify(_.overallStatus.emailsSentAt).setTo(Some(newShapeEmailSentAt))
 
     applicationForRiskingRepo.upsert(newShapeApplicationForRisking).futureValue
 
@@ -69,14 +69,14 @@ extends ISpec:
         .futureValue
         .value
 
-    readBack.overallStatus.emailSentAt shouldBe Some(newShapeEmailSentAt) withClue
+    readBack.overallStatus.emailsSentAt shouldBe Some(newShapeEmailSentAt) withClue
       "the derivation must not override a value that was written to the document — only synthesise when the field is missing"
 
   "findReadyToNotifyBackend picks up a legacy record where emailsProcessed=true but emailSentAt is missing on disk — proves legacy Approved/FailedNonFixable that were emailed under old flow (pre-emailSentAt) still get notified to BE" in:
     val legacyApp: ApplicationForRisking = TdRiskingInstancesInStates
       .approvedAfterEmailSent
       .application
-      .modify(_.overallStatus.emailSentAt).setTo(None)
+      .modify(_.overallStatus.emailsSentAt).setTo(None)
     val individual1 = TdRiskingInstancesInStates.approvedAfterEmailSent.individual1
     val individual2 = TdRiskingInstancesInStates.approvedAfterEmailSent.individual2
 
@@ -89,5 +89,5 @@ extends ISpec:
     ready.map(_.application.applicationReference).toSet shouldBe Set(legacyApp.applicationReference) withClue
       "predicate gate `emailsProcessed=true` must match legacy records that were emailed under the old flow before this PR added emailSentAt; the derivation on read fills emailSentAt = Some(receivedAt) so the wire builder gets a valid date"
 
-    ready.head.application.overallStatus.emailSentAt shouldBe Some(legacyApp.entityRiskingResult.value.receivedAt) withClue
-      "after the derivation runs, the wire builder can safely call overallStatus.emailSentAt.getOrThrowExpectedDataMissing"
+    ready.head.application.overallStatus.emailsSentAt shouldBe Some(legacyApp.entityRiskingResult.value.receivedAt) withClue
+      "after the derivation runs, the wire builder can safely call overallStatus.emailsSentAt.getOrThrowExpectedDataMissing"

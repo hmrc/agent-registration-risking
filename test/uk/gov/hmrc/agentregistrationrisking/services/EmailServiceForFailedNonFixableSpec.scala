@@ -175,7 +175,7 @@ extends ISpec:
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(application.applicationReference).futureValue.value
       persistedApp.isEmailSent shouldBe true withClue "entity email was sent so isEmailSent should have been flipped by the first upsert"
       persistedApp.overallStatus.emailsProcessed shouldBe false withClue "atomic final upsert must NOT have run — individual2 email failed"
-      persistedApp.overallStatus.emailSentAt shouldBe None withClue "atomic final upsert must NOT have run"
+      persistedApp.overallStatus.emailsSentAt shouldBe None withClue "atomic final upsert must NOT have run"
 
       individualForRiskingRepo.findByApplicationReference(
         application.applicationReference
@@ -200,7 +200,7 @@ extends ISpec:
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(application.applicationReference).futureValue.value
       persistedApp.isEmailSent shouldBe false withClue "entity email failed — no upsert should have run"
       persistedApp.overallStatus.emailsProcessed shouldBe false
-      persistedApp.overallStatus.emailSentAt shouldBe None
+      persistedApp.overallStatus.emailsSentAt shouldBe None
 
       individualForRiskingRepo.findByApplicationReference(application.applicationReference).futureValue.foreach: individual =>
         individual.isEmailSent shouldBe false withClue s"individual ${individual.personReference} — entity email failed, individual emails must not have been attempted"
@@ -223,7 +223,7 @@ extends ISpec:
 
       val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(applicationCrashedMidBatch.applicationReference).futureValue.value
       persistedApp.overallStatus.emailsProcessed shouldBe true withClue "all emails complete — atomic final upsert must have run"
-      persistedApp.overallStatus.emailSentAt shouldBe defined withClue "atomic final upsert must have set emailSentAt together with emailsProcessed"
+      persistedApp.overallStatus.emailsSentAt shouldBe defined withClue "atomic final upsert must have set emailSentAt together with emailsProcessed"
       individualForRiskingRepo
         .findByApplicationReference(applicationCrashedMidBatch.applicationReference)
         .futureValue

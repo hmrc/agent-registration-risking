@@ -64,7 +64,7 @@ extends ISpec:
     val applicationWithIndividuals = td.applicationWithIndividuals
     val entityFailures = applicationWithIndividuals.application.entityRiskingResult.map(_.failures).getOrElse(List.empty)
     RiskingOutcomeRequest(
-      riskingCompletedDate = applicationWithIndividuals.application.overallStatus.emailSentAt.value.atZone(ZoneOffset.UTC).toLocalDate,
+      riskingCompletedDate = applicationWithIndividuals.application.overallStatus.emailsSentAt.value.atZone(ZoneOffset.UTC).toLocalDate,
       applicationOutcome = applicationWithIndividuals.application.overallStatus.riskingOutcome.value,
       entityFailures = entityFailures,
       entityOutcome = entityFailures.outcomeForEntity,

@@ -25,7 +25,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
 import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
-import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedFixable
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFixable
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
@@ -41,7 +40,6 @@ class SdesNotificationController @Inject() (
   subscriptionService: SubscriptionService,
   emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
   emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable,
-  emailServiceForFailedFixable: EmailServiceForFailedFixable,
   backendNotificationService: BackendNotificationService
 )(using ExecutionContext)
 extends BackendController(cc):
@@ -58,15 +56,3 @@ extends BackendController(cc):
             case n: FileProcessingFailure =>
               logger.warn(s"File processing failure notification received for ${n.filename} from SDES [${n.correlationID}]. Reason: ${n.failureReason}. Action Required: ${n.actionRequired}")
           Ok
-
-  // TODO: what if few notifications received in the same time during the processing of one notification
-  private def onFileReady()(using RequestHeader): Future[Unit] =
-    (for
-      _ <- riskingResultsService.processResultsFiles()
-      _ <- applicationOutcomeService.processOverallOutcomes()
-      _ <- subscriptionService.processSubscriptions()
-      _ <- emailServiceForApprovedApplications.processEmails()
-      _ <- emailServiceForFailedNonFixable.processEmails()
-      _ <- emailServiceForFailedFixable.processEmails()
-      _ <- backendNotificationService.processBackendNotifications()
-    yield ()).recover { case ex: Exception => logger.error(s"Error processing file ready notification", ex) }

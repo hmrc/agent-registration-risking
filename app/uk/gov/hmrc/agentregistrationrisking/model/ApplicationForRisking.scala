@@ -45,6 +45,6 @@ object ApplicationForRisking:
     OFormat(baseFormat.map(deriveEmailSentAtFromLegacyRecord), baseFormat)
 
   private def deriveEmailSentAtFromLegacyRecord(application: ApplicationForRisking): ApplicationForRisking =
-    (application.overallStatus.emailsProcessed, application.overallStatus.emailSentAt, application.entityRiskingResult) match
-      case (true, None, Some(entityRiskingResult)) => application.modify(_.overallStatus.emailSentAt).setTo(Some(entityRiskingResult.receivedAt))
+    (application.overallStatus.emailsProcessed, application.overallStatus.emailsSentAt, application.entityRiskingResult) match
+      case (true, None, Some(entityRiskingResult)) => application.modify(_.overallStatus.emailsSentAt).setTo(Some(entityRiskingResult.receivedAt))
       case _ => application

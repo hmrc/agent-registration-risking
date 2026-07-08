@@ -29,12 +29,12 @@ extends UnitSpec:
 
   "serialize and deserialize" in:
 
-    val emailSentAt: Instant = TdInstant.instant
+    val emailsSentAt: Instant = TdInstant.instant
     val overallStatus: OverallStatus = OverallStatus(
       riskingOutcome = Some(RiskingOutcome.Approved),
       emailsProcessed = true,
       backendNotified = false,
-      emailSentAt = Some(emailSentAt)
+      emailsSentAt = Some(emailsSentAt)
     )
     val json: JsValue = Json.parse(
       // language=JSON
@@ -42,7 +42,7 @@ extends UnitSpec:
          |  "riskingOutcome":"Approved",
          |  "emailsProcessed":true,
          |  "backendNotified":false,
-         |  "emailSentAt":"$emailSentAt"
+         |  "emailsSentAt":"$emailsSentAt"
          |}""".stripMargin
     )
     Json.toJson[OverallStatus](overallStatus) shouldBe json
@@ -54,7 +54,7 @@ extends UnitSpec:
       riskingOutcome = Some(RiskingOutcome.Approved),
       emailsProcessed = true,
       backendNotified = false, // defaults to false
-      emailSentAt = None
+      emailsSentAt = None
     )
     val json: JsValue = Json.parse(
       // language=JSON

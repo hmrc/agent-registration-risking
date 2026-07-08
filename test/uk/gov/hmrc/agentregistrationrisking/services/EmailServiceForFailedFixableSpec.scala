@@ -52,4 +52,4 @@ extends ISpec:
     val persistedApp: ApplicationForRisking = applicationForRiskingRepo.findById(td.application.applicationReference).futureValue.value
     persistedApp.isEmailSent shouldBe false
     persistedApp.overallStatus.emailsProcessed shouldBe false
-    persistedApp.overallStatus.emailSentAt shouldBe None
+    persistedApp.overallStatus.emailsSentAt shouldBe None
