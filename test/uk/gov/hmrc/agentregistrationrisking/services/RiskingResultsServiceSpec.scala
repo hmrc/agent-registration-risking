@@ -19,8 +19,10 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import org.mongodb.scala.SingleObservableFuture
 import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
@@ -32,9 +34,13 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.SdesProxy
 class RiskingResultsServiceSpec
 extends ISpec:
 
+  private val failedNonFixableAppRef = "APPREF_failedNonFixableAfterAllEmailsProcessed"
+
   // `auditing.enabled` defaults to false in ISpec, which makes DefaultAuditConnector short-circuit and post nothing.
   override protected def configOverrides: Map[String, Any] = Map[String, Any](
-    "auditing.enabled" -> true
+    "auditing.enabled" -> true,
+    "features.enable-unset-risking-responses" -> true,
+    "applicationIdsForUnsettingRiskingResponses" -> Seq(failedNonFixableAppRef)
   )
 
   private val riskingResultsService: RiskingResultsService = app.injector.instanceOf[RiskingResultsService]
@@ -54,6 +60,11 @@ extends ISpec:
     personReference = personReference,
     applicationReference = applicationReference
   )
+
+  private val failedNonFixable = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed
+  private val failedNonFixableApplication = failedNonFixable.application
+  private val failedNonFixableIndividual1 = failedNonFixable.individual1
+  private val failedNonFixableIndividual2 = failedNonFixable.individual2
 
   override def beforeEach(): Unit =
     super.beforeEach()
@@ -111,4 +122,46 @@ extends ISpec:
       riskingResultsService.processResultsFiles().futureValue
 
       AuditStubs.verifyNoAuditSent()
+  }
+
+  "specialCaseApprovePreviouslyFailedApplications" - {
+
+    "overwrite previously failed responses for FailedNonFixable application with Approved for the applications specified in config" in:
+
+      AuditStubs.stubAuditWrite()
+
+      applicationForRiskingRepo.upsert(failedNonFixableApplication).futureValue
+      individualForRiskingRepo.upsert(failedNonFixableIndividual1).futureValue
+      individualForRiskingRepo.upsert(failedNonFixableIndividual2).futureValue
+
+      riskingResultsService.specialCaseApprovePreviouslyFailedApplications().futureValue
+
+      val modifiedApplication: Option[ApplicationForRisking] = applicationForRiskingRepo.findById(ApplicationReference(failedNonFixableAppRef)).futureValue
+
+      eventually:
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseEntity",
+          detail = Json.obj(
+            "applicationReference" -> failedNonFixableApplication.applicationReference.value,
+            "riskingOutcome" -> "Success"
+          )
+        )
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseIndividual",
+          detail = Json.obj(
+            "applicationReference" -> failedNonFixableApplication.applicationReference.value,
+            "personReference" -> failedNonFixableIndividual1.personReference.value,
+            "riskingOutcome" -> "Success"
+          )
+        )
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseIndividual",
+          detail = Json.obj(
+            "applicationReference" -> failedNonFixableApplication.applicationReference.value,
+            "personReference" -> failedNonFixableIndividual2.personReference.value,
+            "riskingOutcome" -> "Success"
+          )
+        )
+
+      modifiedApplication.value.overallStatus.riskingOutcome shouldBe Some(RiskingOutcome.Approved)
   }

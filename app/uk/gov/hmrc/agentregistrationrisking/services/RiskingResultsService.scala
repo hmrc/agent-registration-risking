@@ -18,40 +18,30 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import sttp.model.Uri
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
-import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResult
-import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultParser
+import uk.gov.hmrc.agentregistrationrisking.model.RiskingOutcome.Approved
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
+import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.*
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
-import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
-import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 
+import java.net.URL
 import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import RiskingOutcomeHelper.*
-
-import java.net.URL
 
 @Singleton
 class RiskingResultsService @Inject() (
@@ -113,6 +103,66 @@ extends RequestAwareLogging:
     riskingResult match
       case riskingResult: RiskingResult.ForEntity => updateRiskingResults(riskingResult)
       case riskingResult: RiskingResult.ForIndividual => updateRiskingResults(riskingResult)
+
+    /*
+            [APB-11788] special case / temporary solution for allowing applications that have already been determined as Failed
+                      to be Approved instead (to allow for an ASA to be created). For example, where an applicant has successfully
+                      appealed a Failed Non-Fixable.
+     */
+  def specialCaseApprovePreviouslyFailedApplications()(using request: RequestHeader): Future[Unit] =
+    if (appConfig.enableUnsetRiskingResponses) {
+      logger.info("[SpecialCaseApprovePreviouslyFailedApplications] feature ENABLED.")
+      ProcessInSequence.processAllInSequence[ApplicationReference, Unit](
+        appConfig.applicationIdsForUnsettingRiskingResponses.map(ApplicationReference(_))
+      )(appRef =>
+        logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] Trying from config appRef: ${appRef.value}")
+        applicationForRiskingRepo.findAlreadyRiskedApplication(appRef).flatMap {
+          case Some(appWithIndividuals) =>
+            appWithIndividuals.application.overallStatus.riskingOutcome match {
+              case Some(RiskingOutcome.FailedNonFixable | RiskingOutcome.FailedFixable) =>
+                for {
+                  _ <- updateRiskingResults(RiskingResult.ForEntity(
+                    applicationReference = appWithIndividuals.application.applicationReference,
+                    failures = List.empty,
+                    rawFailures = List.empty
+                  ))
+                  _ <- setOverallRiskingOutcomeToApprovedForApplication(appWithIndividuals.application)
+                  individualCount <- ProcessInSequence.processInSequence(appWithIndividuals.individuals)(individual =>
+                    processRiskingResult(RiskingResult.ForIndividual(
+                      personReference = individual.personReference,
+                      failures = List.empty,
+                      rawFailures = List.empty
+                    ))
+                  ).map(_.size)
+                } yield logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] processed ${appRef.value} application with " +
+                  s"$individualCount individual records.")
+              case otherRiskingOutcome =>
+                Future.successful(logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] skipped ${appRef.value} because the " +
+                  s"risking outcome was $otherRiskingOutcome and therefore ineligible."))
+            }
+          case None =>
+            Future.successful(logger.warn(s"[SpecialCaseApprovePreviouslyFailedApplications] could not find application with reference ${appRef.value}."))
+        }
+      ) {
+        case (ex, appRef) => logger.error(s"application reference in config $appRef is not valid", ex)
+      }.map(appRefsProcessed =>
+        logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] finished with $appRefsProcessed applications.")
+      )
+    }
+    else
+      Future.successful(logger.info(s"[SpecialCaseApprovePreviouslyFailedApplications] feature not enabled."))
+
+  private def setOverallRiskingOutcomeToApprovedForApplication(application: ApplicationForRisking): Future[Unit] =
+    val updated = application.copy(
+      overallStatus = OverallStatus(
+        riskingOutcome = Some(Approved),
+        emailsProcessed = false
+      ),
+      isEmailSent = false,
+      correctiveActionExpiryDate = None,
+      isSubscribed = false
+    )
+    applicationForRiskingRepo.upsert(updated)
 
   private def updateRiskingResults(riskingResult: RiskingResult.ForEntity)(using request: RequestHeader): Future[Unit] = applicationForRiskingRepo
     .findById(riskingResult.applicationReference)

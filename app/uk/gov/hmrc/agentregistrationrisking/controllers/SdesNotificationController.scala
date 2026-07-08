@@ -63,6 +63,7 @@ extends BackendController(cc):
     (for
       _ <- riskingResultsService.processResultsFiles()
       _ <- applicationOutcomeService.processOverallOutcomes()
+      _ <- riskingResultsService.specialCaseApprovePreviouslyFailedApplications()
       _ <- subscriptionService.processSubscriptions()
       _ <- emailServiceForApprovedApplications.processEmails()
       _ <- emailServiceForFailedNonFixable.processEmails()

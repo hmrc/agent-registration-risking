@@ -94,6 +94,17 @@ extends ISpec:
 
     applications.toSet shouldBe Set(TdRiskingInstancesInStates.approvedAfterSubscribed.application)
 
+  "findAlreadyRiskedApplication" in:
+
+    val riskedApplication = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed
+
+    val application: Option[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findAlreadyRiskedApplication(riskedApplication.application.applicationReference)
+        .futureValue
+
+    application shouldBe Some(riskedApplication.applicationWithIndividuals)
+
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
