@@ -117,6 +117,17 @@ extends ISpec:
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
 
+  "findAlreadyRiskedApplication" in:
+
+    val riskedApplication = TdRiskingInstancesInStates.failedNonFixableAfterAllEmailsProcessed
+
+    val application: Option[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findAlreadyRiskedApplication(riskedApplication.application.applicationReference)
+        .futureValue
+
+    application shouldBe Some(riskedApplication.applicationWithIndividuals)
+
   override protected def beforeAll(): Unit =
     super.beforeAll()
     primeDb()
