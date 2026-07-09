@@ -35,7 +35,8 @@ final case class ApplicationForRisking(
   isSubscribed: Boolean,
   isEmailSent: Boolean,
   overallStatus: OverallStatus,
-  correctiveActionExpiryDate: Option[Instant]
+  correctiveActionExpiryDate: Option[Instant],
+  isResubmission: Option[Boolean] = None
 )
 
 object ApplicationForRisking:

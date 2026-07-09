@@ -138,7 +138,8 @@ extends UnitSpec:
         |      "backendNotified": true,
         |      "emailsSentAt": "2059-11-25T16:33:51Z"
         |    },
-        |    "correctiveActionExpiryDate": "2060-01-09T16:33:51Z"
+        |    "correctiveActionExpiryDate": "2060-01-09T16:33:51Z",
+        |    "isResubmission": false
         |  },
         |  "individuals": [
         |    {
@@ -184,7 +185,8 @@ extends UnitSpec:
         |        ],
         |        "receivedAt": "2059-11-23T16:33:51Z"
         |      },
-        |      "isEmailSent": true
+        |      "isEmailSent": true,
+        |      "isResubmission": false
         |    },
         |    {
         |      "personReference": "PREF_CompletedRiskingSpec_02",
@@ -229,7 +231,8 @@ extends UnitSpec:
         |        ],
         |        "receivedAt": "2059-11-23T16:33:51Z"
         |      },
-        |      "isEmailSent": false
+        |      "isEmailSent": false,
+        |      "isResubmission": false
         |    }
         |  ]
         |} 

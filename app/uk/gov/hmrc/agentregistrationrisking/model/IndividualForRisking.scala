@@ -33,7 +33,8 @@ final case class IndividualForRisking(
   createdAt: Instant,
   lastUpdatedAt: Instant,
   individualRiskingResult: Option[IndividualRiskingResult],
-  isEmailSent: Boolean
+  isEmailSent: Boolean,
+  isResubmission: Option[Boolean] = None
 )
 
 object IndividualForRisking:

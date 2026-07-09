@@ -72,7 +72,8 @@ trait TdApplicationForRisking:
       backendNotified = false,
       emailsSentAt = None
     ),
-    correctiveActionExpiryDate = None
+    correctiveActionExpiryDate = None,
+    isResubmission = Some(false)
   )
 
   def submittedForRisking: ApplicationForRisking = readyForSubmission

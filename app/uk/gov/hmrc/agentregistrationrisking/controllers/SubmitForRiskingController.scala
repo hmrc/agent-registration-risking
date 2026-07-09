@@ -81,7 +81,8 @@ extends BackendController(cc):
       backendNotified = false,
       emailsSentAt = None
     ),
-    correctiveActionExpiryDate = None
+    correctiveActionExpiryDate = None,
+    isResubmission = Some(submitForRiskingRequest.isResubmission)
   )
 
   private def makeIndividualForRiskingList(
@@ -91,14 +92,16 @@ extends BackendController(cc):
     makeIndividualForRisking(
       applicationReference = submitForRiskingRequest.applicationData.applicationReference,
       individualData = individualProvidedDetails,
-      createdAt = createdAt
+      createdAt = createdAt,
+      isResubmission = submitForRiskingRequest.isResubmission
     )
   )
 
   private def makeIndividualForRisking(
     applicationReference: ApplicationReference,
     individualData: IndividualData,
-    createdAt: Instant
+    createdAt: Instant,
+    isResubmission: Boolean
   ): IndividualForRisking = IndividualForRisking(
     personReference = individualData.personReference,
     applicationReference = applicationReference,
@@ -106,5 +109,6 @@ extends BackendController(cc):
     createdAt = createdAt,
     lastUpdatedAt = createdAt,
     individualRiskingResult = None,
-    isEmailSent = false
+    isEmailSent = false,
+    isResubmission = Some(isResubmission)
   )
