@@ -132,7 +132,7 @@ object RiskingFileDataRecord:
     val contactDetails: ApplicantContactDetailsData = applicationData.applicantContactDetails
     RiskingFileDataRecord(
       recordType = RecordType.Entity,
-      resubmission = applicationForRisking.isResubmission.getOrElse(false),
+      resubmission = applicationForRisking.isResubmission,
       applicationReference = Some(applicationData.applicationReference),
       applicantName = Some(contactDetails.applicantName),
       applicantPhone = Some(contactDetails.telephoneNumber),
@@ -163,7 +163,7 @@ object RiskingFileDataRecord:
     val individualData: IndividualData = individualForRisking.individualData
     this.apply(
       recordType = RecordType.Individual,
-      resubmission = individualForRisking.isResubmission.getOrElse(false),
+      resubmission = individualForRisking.isResubmission,
       applicationReference = None,
       applicantName = None,
       applicantPhone = None,

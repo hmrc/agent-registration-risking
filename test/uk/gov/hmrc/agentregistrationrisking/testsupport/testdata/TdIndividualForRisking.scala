@@ -57,7 +57,7 @@ trait TdIndividualForRisking:
     lastUpdatedAt = instant,
     individualRiskingResult = None,
     isEmailSent = false,
-    isResubmission = Some(false)
+    isResubmission = false
   )
 
   // nothing changes from data perspective

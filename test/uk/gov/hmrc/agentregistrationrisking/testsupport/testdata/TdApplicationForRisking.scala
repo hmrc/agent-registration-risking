@@ -73,7 +73,7 @@ trait TdApplicationForRisking:
       emailsSentAt = None
     ),
     correctiveActionExpiryDate = None,
-    isResubmission = Some(false)
+    isResubmission = false
   )
 
   def submittedForRisking: ApplicationForRisking = readyForSubmission

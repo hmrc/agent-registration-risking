@@ -82,7 +82,7 @@ extends BackendController(cc):
       emailsSentAt = None
     ),
     correctiveActionExpiryDate = None,
-    isResubmission = Some(submitForRiskingRequest.isResubmission)
+    isResubmission = submitForRiskingRequest.isResubmission
   )
 
   private def makeIndividualForRiskingList(
@@ -110,5 +110,5 @@ extends BackendController(cc):
     lastUpdatedAt = createdAt,
     individualRiskingResult = None,
     isEmailSent = false,
-    isResubmission = Some(isResubmission)
+    isResubmission = isResubmission
   )

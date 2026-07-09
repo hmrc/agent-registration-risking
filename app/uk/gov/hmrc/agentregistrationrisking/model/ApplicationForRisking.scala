@@ -21,6 +21,8 @@ import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import play.api.libs.json.OWrites
+import play.api.libs.json.Reads
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 
 import java.time.Instant
@@ -36,14 +38,44 @@ final case class ApplicationForRisking(
   isEmailSent: Boolean,
   overallStatus: OverallStatus,
   correctiveActionExpiryDate: Option[Instant],
-  isResubmission: Option[Boolean] = None
+  isResubmission: Boolean
 )
 
 object ApplicationForRisking:
 
   given format: OFormat[ApplicationForRisking] =
-    val baseFormat: OFormat[ApplicationForRisking] = Json.format[ApplicationForRisking]
-    OFormat(baseFormat.map(deriveEmailSentAtFromLegacyRecord), baseFormat)
+    final case class ApplicationForRiskingLegacy(
+      applicationReference: ApplicationReference, // primary Key
+      riskingFileName: Option[RiskingFileName], // foreign Key to RiskingFile
+      applicationData: ApplicationData, // data submitted by agent-registration-frontend
+      createdAt: Instant,
+      lastUpdatedAt: Instant,
+      entityRiskingResult: Option[EntityRiskingResult],
+      isSubscribed: Boolean,
+      isEmailSent: Boolean,
+      overallStatus: OverallStatus,
+      correctiveActionExpiryDate: Option[Instant]
+    )
+
+    val legacyReads: Reads[ApplicationForRisking] = Json.reads[ApplicationForRiskingLegacy].map(a =>
+      ApplicationForRisking(
+        applicationReference = a.applicationReference,
+        riskingFileName = a.riskingFileName,
+        applicationData = a.applicationData,
+        createdAt = a.createdAt,
+        lastUpdatedAt = a.lastUpdatedAt,
+        entityRiskingResult = a.entityRiskingResult,
+        isSubscribed = a.isSubscribed,
+        isEmailSent = a.isEmailSent,
+        overallStatus = a.overallStatus,
+        correctiveActionExpiryDate = a.correctiveActionExpiryDate,
+        isResubmission = false // here's a legacy field, so we default to false
+      )
+    )
+    val modernReads: Reads[ApplicationForRisking] = Json.reads[ApplicationForRisking]
+    val reads: Reads[ApplicationForRisking] = modernReads.orElse(legacyReads).map(deriveEmailSentAtFromLegacyRecord)
+    val writes: OWrites[ApplicationForRisking] = Json.writes[ApplicationForRisking]
+    OFormat(reads, writes)
 
   private def deriveEmailSentAtFromLegacyRecord(application: ApplicationForRisking): ApplicationForRisking =
     (application.overallStatus.emailsProcessed, application.overallStatus.emailsSentAt, application.entityRiskingResult) match
