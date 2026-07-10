@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import org.mongodb.scala.SingleObservableFuture
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
@@ -119,6 +120,37 @@ extends ISpec:
       TdRiskingInstancesInStates.failedFixableAfterEmailSent.applicationWithIndividuals,
       TdRiskingInstancesInStates.failedNonFixableAfterEmailSent.applicationWithIndividuals
     ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
+  "findReadyToArchive returns every application whose risking outcome is computed, backend is notified, emails are processed — plus Approved must also be subscribed" in:
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findReadyToArchive()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.approvedAfterBackendNotified.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedFixableAfterBackendNotified.applicationWithIndividuals,
+      TdRiskingInstancesInStates.failedNonFixableAfterBackendNotified.applicationWithIndividuals
+    ) withClue applications.toSet.map(_.application.applicationReference.value).mkString(",\n ")
+
+  "findReadyToArchive excludes Approved applications with isSubscribed=false — proves the Approved arm's isSubscribed=true gate is load-bearing at the pure-predicate layer" in:
+    val approvedButNotSubscribed: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterBackendNotified
+      .application
+      .copy(
+        applicationReference = ApplicationReference("APPREF_approvedButNotSubscribed_repoNegative"),
+        isSubscribed = false
+      )
+    applicationForRiskingRepo.upsert(approvedButNotSubscribed).futureValue
+
+    val applications: Seq[ApplicationWithIndividuals] =
+      applicationForRiskingRepo
+        .findReadyToArchive()
+        .futureValue
+
+    applications.map(_.application.applicationReference) should not contain
+      approvedButNotSubscribed.applicationReference withClue
+      "Approved isSubscribed=true gate must exclude records where subscription never completed"
 
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
