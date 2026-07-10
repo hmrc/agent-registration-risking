@@ -18,6 +18,8 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 
 import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.Updates
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
@@ -72,6 +74,40 @@ extends ISpec:
     readBack.overallStatus.emailsSentAt shouldBe Some(newShapeEmailSentAt) withClue
       "the derivation must not override a value that was written to the document — only synthesise when the field is missing"
 
+  "findById treats overallStatus.backendNotified as false when the persisted document does not have the field (legacy compatibility via readNullable + getOrElse(false))" in:
+    val application: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterBackendNotified.application
+    applicationForRiskingRepo.upsert(application).futureValue
+
+    applicationForRiskingRepo.collection
+      .updateOne(
+        Filters.eq(FieldNames.applicationReference, application.applicationReference.value),
+        Updates.unset(FieldNames.overallStatus.backendNotified)
+      )
+      .toFuture()
+      .futureValue
+
+    val readBack: ApplicationForRisking =
+      applicationForRiskingRepo
+        .findById(application.applicationReference)
+        .futureValue
+        .value
+
+    readBack.overallStatus.backendNotified shouldBe false withClue
+      "legacy record missing the field on disk must read as false (BC-compat via readNullable + getOrElse(false))"
+
+  "findById returns the persisted overallStatus.backendNotified value unchanged for a new-shape record where the field is written at upsert time" in:
+    val newShapeApp: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterBackendNotified.application
+    applicationForRiskingRepo.upsert(newShapeApp).futureValue
+
+    val readBack: ApplicationForRisking =
+      applicationForRiskingRepo
+        .findById(newShapeApp.applicationReference)
+        .futureValue
+        .value
+
+    readBack.overallStatus.backendNotified shouldBe true withClue
+      "new-shape record with backendNotified=true written to disk must round-trip unchanged"
+
   "findReadyToNotifyBackend picks up a legacy record where emailsProcessed=true but emailSentAt is missing on disk — proves legacy Approved/FailedNonFixable that were emailed under old flow (pre-emailSentAt) still get notified to BE" in:
     val legacyApp: ApplicationForRisking = TdRiskingInstancesInStates
       .approvedAfterEmailSent
@@ -91,3 +127,25 @@ extends ISpec:
 
     ready.head.application.overallStatus.emailsSentAt shouldBe Some(legacyApp.entityRiskingResult.value.receivedAt) withClue
       "after the derivation runs, the wire builder can safely call overallStatus.emailsSentAt.getOrThrowExpectedDataMissing"
+
+  "findReadyToArchive does NOT match legacy records whose overallStatus.backendNotified field is absent from the persisted document — legacy pre-migration records that never had backendNotified flipped MUST NOT be archived (would erase evidence of an unfinished notify-BE flow)" in:
+    val application: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterBackendNotified.application
+    val individual1 = TdRiskingInstancesInStates.approvedAfterBackendNotified.individual1
+    val individual2 = TdRiskingInstancesInStates.approvedAfterBackendNotified.individual2
+
+    applicationForRiskingRepo.upsert(application).futureValue
+    individualForRiskingRepo.upsert(individual1).futureValue
+    individualForRiskingRepo.upsert(individual2).futureValue
+
+    applicationForRiskingRepo.collection
+      .updateOne(
+        Filters.eq(FieldNames.applicationReference, application.applicationReference.value),
+        Updates.unset(FieldNames.overallStatus.backendNotified)
+      )
+      .toFuture()
+      .futureValue
+
+    val ready: Seq[ApplicationWithIndividuals] = applicationForRiskingRepo.findReadyToArchive().futureValue
+
+    ready.map(_.application.applicationReference).toSet should not contain application.applicationReference withClue
+      "predicate gate `backendNotified=true` MUST NOT match legacy records missing the field on disk — those records represent an unfinished notify-BE flow and archiving them would silently erase evidence"

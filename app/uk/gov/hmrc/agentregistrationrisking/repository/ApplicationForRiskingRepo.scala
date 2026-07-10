@@ -168,6 +168,21 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
   )
 
+  def findReadyToArchive(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
+    applicationFilter = Filters.and(
+      Filters.eq(FieldNames.overallStatus.backendNotified, true),
+      Filters.eq(FieldNames.overallStatus.emailsProcessed, true),
+      Filters.or(
+        Filters.and(
+          Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
+          Filters.eq(FieldNames.isSubscribed, true)
+        ),
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedNonFixable.toBison),
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.FailedFixable.toBison)
+      )
+    )
+  )
+
 object ApplicationForRiskingRepo:
   val collectionName = "application-for-risking"
 
