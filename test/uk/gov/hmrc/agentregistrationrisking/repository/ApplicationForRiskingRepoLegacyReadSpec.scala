@@ -74,6 +74,40 @@ extends ISpec:
     readBack.overallStatus.emailsSentAt shouldBe Some(newShapeEmailSentAt) withClue
       "the derivation must not override a value that was written to the document — only synthesise when the field is missing"
 
+  "findById treats overallStatus.backendNotified as false when the persisted document does not have the field (legacy compatibility via readNullable + getOrElse(false))" in:
+    val application: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterBackendNotified.application
+    applicationForRiskingRepo.upsert(application).futureValue
+
+    applicationForRiskingRepo.collection
+      .updateOne(
+        Filters.eq(FieldNames.applicationReference, application.applicationReference.value),
+        Updates.unset(FieldNames.overallStatus.backendNotified)
+      )
+      .toFuture()
+      .futureValue
+
+    val readBack: ApplicationForRisking =
+      applicationForRiskingRepo
+        .findById(application.applicationReference)
+        .futureValue
+        .value
+
+    readBack.overallStatus.backendNotified shouldBe false withClue
+      "legacy record missing the field on disk must read as false (BC-compat via readNullable + getOrElse(false))"
+
+  "findById returns the persisted overallStatus.backendNotified value unchanged for a new-shape record where the field is written at upsert time" in:
+    val newShapeApp: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterBackendNotified.application
+    applicationForRiskingRepo.upsert(newShapeApp).futureValue
+
+    val readBack: ApplicationForRisking =
+      applicationForRiskingRepo
+        .findById(newShapeApp.applicationReference)
+        .futureValue
+        .value
+
+    readBack.overallStatus.backendNotified shouldBe true withClue
+      "new-shape record with backendNotified=true written to disk must round-trip unchanged"
+
   "findReadyToNotifyBackend picks up a legacy record where emailsProcessed=true but emailSentAt is missing on disk — proves legacy Approved/FailedNonFixable that were emailed under old flow (pre-emailSentAt) still get notified to BE" in:
     val legacyApp: ApplicationForRisking = TdRiskingInstancesInStates
       .approvedAfterEmailSent
