@@ -291,14 +291,19 @@ trait TdBase:
 
   def arn: Arn = Arn("TARN0000001")
 
-  def riskingOutcomeApplication(outcome: RiskingOutcomeApplication.Outcome) = RiskingOutcomeApplication(
-    actualDecisionDate = riskingCompletedDate,
-    outcome = outcome,
-    correctiveActionExpiryDate =
-      outcome match
-        case RiskingOutcomeApplication.Outcome.Approved => None
-        case _ => Some(correctiveActionExpiryDate)
-  )
+  object riskingOutcomeApplication:
+
+    def approved = RiskingOutcomeApplication.Approved(
+      actualDecisionDate = riskingCompletedDate
+    )
+    def failedFixable = RiskingOutcomeApplication.FailedFixable(
+      actualDecisionDate = riskingCompletedDate,
+      correctiveActionExpiryDate = correctiveActionExpiryDate
+    )
+    def failedNonFixable = RiskingOutcomeApplication.FailedNonFixable(
+      actualDecisionDate = riskingCompletedDate,
+      correctiveActionExpiryDate = correctiveActionExpiryDate
+    )
 
   def riskingOutcomeEntityFixableAmls(failure: EntityFailure.IsAmls) = RiskingOutcomeEntity.FailedFixable(
     fixes = Seq(
@@ -435,6 +440,18 @@ trait TdBase:
         dateOfBirth = Some(IndividualDateOfBirth.Provided(dateOfBirth)),
         nino = Some(IndividualNino.Provided(nino)),
         saUtr = Some(IndividualSaUtr.Provided(saUtr)),
+        isConfirmed = None
+      )
+    ),
+    declarationAgreed = false
+  )
+
+  val riskingOutcomeIndividualDetailsFixMissingSaUtr: RiskingOutcomeIndividual.FailedFixable = RiskingOutcomeIndividual.FailedFixable(
+    fixes = Seq(
+      IndividualFix._10.IndividualDetailsFix(
+        dateOfBirth = Some(IndividualDateOfBirth.Provided(dateOfBirth)),
+        nino = Some(IndividualNino.Provided(nino)),
+        saUtr = None,
         isConfirmed = None
       )
     ),

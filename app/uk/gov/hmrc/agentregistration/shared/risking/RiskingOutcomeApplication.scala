@@ -16,50 +16,29 @@
 
 package uk.gov.hmrc.agentregistration.shared.risking
 
-import play.api.libs.json.Format
-import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import play.api.libs.json.OWrites
-import play.api.libs.json.Reads
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
-
 import java.time.LocalDate
 
-final case class RiskingOutcomeApplication(
-  actualDecisionDate: LocalDate,
-  outcome: RiskingOutcomeApplication.Outcome,
-  correctiveActionExpiryDate: Option[LocalDate] // this is populated only if the outcome is FailedFixable
-)
+sealed trait RiskingOutcomeApplication:
+  def actualDecisionDate: LocalDate
 
 object RiskingOutcomeApplication:
 
-  enum Outcome:
-
-    case Approved
-    case FailedFixable
-    case FailedNonFixable
-
-  object Outcome:
-    given Format[Outcome] = JsonFormatsFactory.makeEnumFormat[Outcome]
-
-  private final case class RiskingOutcomeApplicationLegacy(
-    riskingCompletedDate: LocalDate,
-    outcome: RiskingOutcomeApplication.Outcome,
-    correctiveActionExpiryDate: Option[LocalDate] // this is populated only if the outcome is FailedFixable
+  final case class Approved(
+    override val actualDecisionDate: LocalDate
   )
+  extends RiskingOutcomeApplication
 
-  given OFormat[RiskingOutcomeApplication] =
+  final case class FailedFixable(
+    override val actualDecisionDate: LocalDate,
+    correctiveActionExpiryDate: LocalDate
+  )
+  extends RiskingOutcomeApplication
 
-    val legacyReads: Reads[RiskingOutcomeApplication] = Json
-      .reads[RiskingOutcomeApplicationLegacy]
-      .map(x =>
-        RiskingOutcomeApplication(
-          actualDecisionDate = x.riskingCompletedDate,
-          outcome = x.outcome,
-          correctiveActionExpiryDate = x.correctiveActionExpiryDate
-        )
-      )
-    val reads: Reads[RiskingOutcomeApplication] = Json.reads[RiskingOutcomeApplication].orElse(legacyReads)
-    val writes: OWrites[RiskingOutcomeApplication] = Json.writes[RiskingOutcomeApplication]
+  final case class FailedNonFixable(
+    override val actualDecisionDate: LocalDate,
+    correctiveActionExpiryDate: LocalDate
+  )
+  extends RiskingOutcomeApplication
 
-    OFormat(reads, writes)
+  given OFormat[RiskingOutcomeApplication] = RiskingOutcomeApplicationFormats.format
