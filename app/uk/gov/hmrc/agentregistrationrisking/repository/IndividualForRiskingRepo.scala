@@ -83,6 +83,11 @@ extends Repo[PersonReference, IndividualForRisking](
       )
     ).toFuture()
 
+  def deleteByApplicationReference(applicationReference: ApplicationReference): Future[Unit] = collection
+    .deleteMany(Filters.eq(FieldNames.applicationReference, applicationReference.value))
+    .toFuture()
+    .map(_ => ())
+
 object IndividualForRiskingRepo:
   val collectionName: String = "individual-for-risking"
 

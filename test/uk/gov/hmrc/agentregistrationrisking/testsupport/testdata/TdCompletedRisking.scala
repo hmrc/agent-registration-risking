@@ -115,7 +115,7 @@ object TdCompletedRisking:
     CompletedRisking(
       _id = completedRiskingId,
       completedAt = completedAt,
-      riskingFile = riskingFile,
+      riskingFile = Some(riskingFile),
       application = application,
       individuals = individuals
     )

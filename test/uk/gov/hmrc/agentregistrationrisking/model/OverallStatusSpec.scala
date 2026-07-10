@@ -64,3 +64,40 @@ extends UnitSpec:
         |}""".stripMargin
     )
     json.as[OverallStatus] shouldBe overallStatus
+
+  "deserialize backward compatible - missing only backendNotified defaults to false while emailSentAt is preserved" in:
+
+    val emailsSentAt: Instant = TdInstant.instant
+    val overallStatus: OverallStatus = OverallStatus(
+      riskingOutcome = Some(RiskingOutcome.Approved),
+      emailsProcessed = true,
+      backendNotified = false,
+      emailsSentAt = Some(emailsSentAt)
+    )
+    val json: JsValue = Json.parse(
+      // language=JSON
+      s"""{
+         |  "riskingOutcome":"Approved",
+         |  "emailsProcessed":true,
+         |  "emailsSentAt":"$emailsSentAt"
+         |}""".stripMargin
+    )
+    json.as[OverallStatus] shouldBe overallStatus
+
+  "deserialize backward compatible - missing only emailSentAt defaults to None while backendNotified is preserved" in:
+
+    val overallStatus: OverallStatus = OverallStatus(
+      riskingOutcome = Some(RiskingOutcome.Approved),
+      emailsProcessed = true,
+      backendNotified = true,
+      emailsSentAt = None
+    )
+    val json: JsValue = Json.parse(
+      // language=JSON
+      """{
+        |  "riskingOutcome":"Approved",
+        |  "emailsProcessed":true,
+        |  "backendNotified":true
+        |}""".stripMargin
+    )
+    json.as[OverallStatus] shouldBe overallStatus

@@ -27,7 +27,7 @@ import javax.inject.Singleton
 final case class CompletedRisking(
   _id: CompletedRiskingId,
   completedAt: Instant,
-  riskingFile: RiskingFile,
+  riskingFile: Option[RiskingFile],
   application: ApplicationForRisking,
   individuals: Seq[IndividualForRisking]
 ):

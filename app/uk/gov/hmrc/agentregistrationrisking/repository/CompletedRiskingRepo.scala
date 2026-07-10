@@ -35,6 +35,7 @@ import org.mongodb.scala.Document
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.crypto.CompletedRiskingEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRiskingId
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
@@ -43,26 +44,33 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 @Singleton
 final class CompletedRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  completedRiskingEncryption: CompletedRiskingEncryption
 )(using ec: ExecutionContext)
 extends Repo[CompletedRiskingId, CompletedRisking](
   collectionName = CompletedRiskingRepo.collectionName,
   mongoComponent = mongoComponent,
   indexes = CompletedRiskingRepoHelp.indexes(appConfig.CompletedRiskingRepo.ttl),
-  extraCodecs = Seq(Codecs.playFormatCodec(CompletedRisking.format)),
+  extraCodecs = Seq(Codecs.playFormatCodec(completedRiskingEncryption.formats)),
   replaceIndexes = true
-):
+)(using domainFormat = completedRiskingEncryption.formats):
 
   def findRecent(applicationReference: ApplicationReference): Future[Option[CompletedRisking]] = collection
     .find(filter = Filters.eq(FieldNames.CompletedRisking.applicationReference, applicationReference.value))
-    .sort(Sorts.descending(FieldNames.CompletedRisking.completedAt))
+    .sort(Sorts.orderBy(
+      Sorts.descending(FieldNames.CompletedRisking.completedAt),
+      Sorts.descending(FieldNames.CompletedRisking.completedRiskingId)
+    ))
     .limit(1)
     .toFuture()
     .map(_.headOption)
 
   def findRecent(personReference: PersonReference): Future[Option[CompletedRisking]] = collection
     .find(filter = Filters.eq(FieldNames.CompletedRisking.personReference, personReference.value))
-    .sort(Sorts.descending(FieldNames.CompletedRisking.completedAt))
+    .sort(Sorts.orderBy(
+      Sorts.descending(FieldNames.CompletedRisking.completedAt),
+      Sorts.descending(FieldNames.CompletedRisking.completedRiskingId)
+    ))
     .limit(1)
     .toFuture()
     .map(_.headOption)
