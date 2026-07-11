@@ -182,9 +182,9 @@ extends UnitSpec:
          "correctiveActionExpiryDate": "2059-11-25T16:33:51Z"
       }""".stripMargin
     )
-    /**
-     * The legacyJson is missing the isResubmission field, which was added later. The reads should default it to false when reading legacy documents.
-     */
+
+    /** The legacyJson is missing the isResubmission field, which was added later. The reads should default it to false when reading legacy documents.
+      */
     val readLegacy: ApplicationForRisking = legacyJson.as[ApplicationForRisking]
     readLegacy shouldBe applicationForRisking
     Json.toJson[ApplicationForRisking](applicationForRisking) shouldBe json
