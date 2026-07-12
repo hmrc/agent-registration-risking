@@ -41,8 +41,8 @@ object Errors:
     ): T = t.getOrElse(throw new IllegalStateException(s"Expected data was missing: $message"))
 
     def getOrThrowExpectedDataMissingF(
-      message: => String
-    ): Future[T] = t.fold(Future.failed(IllegalStateException(s"Expected data was missing: $message")))(Future.successful)
+                                        message: => String
+                                      ): Future[T] = t.fold(Future.failed(IllegalStateException(s"Expected data was missing: $message")))(Future.successful)
 
   /** Creates a requirement which has to pass to continue computation.
     */
