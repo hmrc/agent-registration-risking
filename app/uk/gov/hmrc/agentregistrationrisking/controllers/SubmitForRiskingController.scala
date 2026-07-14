@@ -59,7 +59,7 @@ extends BackendController(cc):
           val application: ApplicationForRisking = makeApplicationForRisking(request.body, now)
           for
             _ <- applicationForRiskingRepo.upsert(application)
-            _ <- individualForRiskingRepo.insertMany(makeIndividualForRiskingList(request.body, now))
+            _ <- insertIndividualsForRisking(request.body, now)
             _ <- emailServiceForSubmissionConfirmations.sendSubmissionConfirmationEmail(application)
           yield Created
 
@@ -84,6 +84,20 @@ extends BackendController(cc):
     correctiveActionExpiryDate = None,
     isResubmission = submitForRiskingRequest.isResubmission
   )
+
+  private def insertIndividualsForRisking(
+    submitForRiskingRequest: SubmitForRiskingRequest,
+    createdAt: Instant
+  ): Future[Unit] =
+    val individualsForRiskingList = makeIndividualForRiskingList(submitForRiskingRequest, createdAt)
+    if individualsForRiskingList.nonEmpty
+    then individualForRiskingRepo.insertMany(individualsForRiskingList)
+    else if submitForRiskingRequest.isResubmission
+    then Future.successful(())
+    else
+      throw new IllegalStateException(
+        s"[SubmitForRiskingController] No individuals provided for risking application ref ${submitForRiskingRequest.applicationData.applicationReference.value} and this is not a resubmission"
+      )
 
   private def makeIndividualForRiskingList(
     submitForRiskingRequest: SubmitForRiskingRequest,
