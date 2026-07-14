@@ -102,3 +102,109 @@ extends ControllerSpec:
 
     AuthStubs.verifyAuthorise()
     EmailStubs.verifySendEmail()
+
+  "submit application and individuals for risking as a resubmission" in:
+    // GIVEN
+    dropDatabase()
+
+    given Request[?] = tdAll.backendRequest
+
+    AuthStubs.stubAuthorise()
+
+    val td = tdAll.tdRiskingInstancesInStates.readyForSubmission
+
+    val resubmissionRequest: SubmitForRiskingRequest = td.tdRisking.submitForRiskingRequest.copy(isResubmission = true)
+    val applicationReference: ApplicationReference = resubmissionRequest.applicationData.applicationReference
+
+    val applicationForRiskingReSubmitted: ApplicationForRisking = td.application.copy(isResubmission = true)
+    val individualForRiskingReSubmitted1: IndividualForRisking = td.individual1.copy(isResubmission = true)
+    val individualForRiskingReSubmitted2: IndividualForRisking = td.individual2.copy(isResubmission = true)
+
+    EmailStubs.stubSendEmail(SendEmailRequest(
+      to = Seq(resubmissionRequest.applicationData.agentDetails.agentEmailAddress),
+      templateId = EmailTemplateId.SubmissionConfirmation,
+      parameters = Map(
+        "agentName" -> resubmissionRequest.applicationData.applicantContactDetails.applicantName.value,
+        "applicationRef" -> applicationReference.value,
+        "applicationProcessingTime" -> "35 working days"
+      )
+    ))
+
+    // WHEN
+    val response =
+      httpClient
+        .post(url"${baseUrl + path}")
+        .withBody(Json.toJson(resubmissionRequest))
+        .execute[HttpResponse]
+        .futureValue
+
+    // THEN
+    response.status shouldBe Status.CREATED
+    response.body shouldBe ""
+
+    applicationForRiskingRepo
+      .findById(applicationReference)
+      .futureValue
+      .value shouldBe applicationForRiskingReSubmitted
+
+    individualForRiskingRepo
+      .findByApplicationReference(applicationReference)
+      .futureValue shouldBe List(
+      individualForRiskingReSubmitted1,
+      individualForRiskingReSubmitted2
+    )
+
+    AuthStubs.verifyAuthorise()
+    EmailStubs.verifySendEmail()
+
+  "submit application only with no individuals for risking as a resubmission" in:
+    // GIVEN
+    dropDatabase()
+
+    given Request[?] = tdAll.backendRequest
+
+    AuthStubs.stubAuthorise()
+
+    val td = tdAll.tdRiskingInstancesInStates.readyForSubmission
+
+    val resubmissionRequest: SubmitForRiskingRequest = td.tdRisking.submitForRiskingRequest.copy(
+      individuals = List.empty,
+      isResubmission = true
+    )
+    val applicationReference: ApplicationReference = resubmissionRequest.applicationData.applicationReference
+
+    val applicationForRiskingReSubmitted: ApplicationForRisking = td.application.copy(isResubmission = true)
+
+    EmailStubs.stubSendEmail(SendEmailRequest(
+      to = Seq(resubmissionRequest.applicationData.agentDetails.agentEmailAddress),
+      templateId = EmailTemplateId.SubmissionConfirmation,
+      parameters = Map(
+        "agentName" -> resubmissionRequest.applicationData.applicantContactDetails.applicantName.value,
+        "applicationRef" -> applicationReference.value,
+        "applicationProcessingTime" -> "35 working days"
+      )
+    ))
+
+    // WHEN
+    val response =
+      httpClient
+        .post(url"${baseUrl + path}")
+        .withBody(Json.toJson(resubmissionRequest))
+        .execute[HttpResponse]
+        .futureValue
+
+    // THEN
+    response.status shouldBe Status.CREATED
+    response.body shouldBe ""
+
+    applicationForRiskingRepo
+      .findById(applicationReference)
+      .futureValue
+      .value shouldBe applicationForRiskingReSubmitted
+
+    individualForRiskingRepo
+      .findByApplicationReference(applicationReference)
+      .futureValue shouldBe List.empty withClue " no individuals should be stored in mongo for this resubmission"
+
+    AuthStubs.verifyAuthorise()
+    EmailStubs.verifySendEmail()
