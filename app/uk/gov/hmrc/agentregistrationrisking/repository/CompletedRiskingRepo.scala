@@ -76,7 +76,7 @@ extends Repo[CompletedRiskingId, CompletedRisking](
     .map(_.headOption)
 
 object CompletedRiskingRepo:
-  val collectionName = "completed-risking"
+  val collectionName = "risking-completed"
 
 object CompletedRiskingRepoHelp:
 
