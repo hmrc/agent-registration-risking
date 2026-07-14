@@ -61,7 +61,7 @@ class AppConfig @Inject() (
     val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
 
   object CompletedRiskingRepo:
-    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.completed-risking-ttl", servicesConfig)
+    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.risking-completed-ttl", servicesConfig)
 
   object FieldLevelEncryption:
 
