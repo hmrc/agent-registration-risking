@@ -24,6 +24,8 @@ import uk.gov.hmrc.agentregistration.shared.util.Errors
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.FutureUtil.andLogOnFailure
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.Authorization
+import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,13 +38,15 @@ class AgentRegistrationConnector @Inject() (
 )(using ExecutionContext)
 extends Connector:
 
+  private def internalAuthHc(using hc: HeaderCarrier): HeaderCarrier = hc.copy(authorization = Some(Authorization(appConfig.InternalAuth.token)))
+
   def sendRiskingOutcome(
     applicationReference: ApplicationReference,
     riskingOutcomeRequest: RiskingOutcomeRequest
   )(using RequestHeader): Future[Unit] =
     val url: URL = url"$baseUrl/agent-registration/risking-updates/risking-outcome/${applicationReference.value}"
     httpClient
-      .post(url)
+      .post(url)(using internalAuthHc)
       .withBody(Json.toJson(riskingOutcomeRequest))
       .execute[HttpResponse]
       .map: response =>
@@ -63,7 +67,7 @@ extends Connector:
   ): Future[Unit] =
     val url: URL = url"$baseUrl/agent-registration/risking-updates/sent-to-minerva"
     httpClient
-      .post(url)
+      .post(url)(using internalAuthHc)
       .withBody(Json.toJson(updateApplicationStateSentToMinervaRequest))
       .execute[HttpResponse]
       .map: response =>
