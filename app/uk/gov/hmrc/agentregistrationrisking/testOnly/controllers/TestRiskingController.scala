@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.testOnly.controllers
 
 import play.api.Logging
+import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
@@ -25,6 +26,7 @@ import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.FieldNames.applicationReference
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
@@ -41,6 +43,7 @@ import javax.inject.Singleton
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.util.Random
+import scala.concurrent.Future
 
 @Singleton()
 @nowarn()
@@ -65,6 +68,22 @@ extends BackendController(cc)
 with Logging:
 
   given ExecutionContext = controllerComponents.executionContext
+
+  def findApplicationForRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          maybeApplication <- applicationForRiskingRepo.findById(applicationReference)
+        yield maybeApplication match
+          case None => NoContent
+          case Some(applicationForRisking) => Ok(Json.prettyPrint(Json.toJson(applicationForRisking)))
+
+  def findIndividualsForRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          individuals <- individualForRiskingRepo.findByApplicationReference(applicationReference)
+        yield Ok(Json.prettyPrint(Json.toJson(individuals)))
 
   def runRisking: Action[AnyContent] = Action
     .async:
