@@ -99,6 +99,9 @@ class AppConfig @Inject() (
   object Features:
     val fixableFailures: Boolean = config.get[Boolean]("features.fixable-failures")
 
+  object InternalAuth:
+    val token: String = config.get[String]("internal-auth.token")
+
   // !!!
   // Access objects eagerly to initialize its vals, ensuring config errors are detected at startup
   AmlsEvidence
@@ -111,3 +114,4 @@ class AppConfig @Inject() (
   CorrectiveAction
   Base64
   Features
+  InternalAuth
