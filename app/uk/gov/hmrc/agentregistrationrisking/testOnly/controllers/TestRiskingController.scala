@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.FieldNames.applicationReference
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.CompletedRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
@@ -52,6 +53,7 @@ class TestRiskingController @Inject() (
   actions: Actions,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
+  completedRiskingRepo: CompletedRiskingRepo,
   applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
@@ -84,6 +86,13 @@ with Logging:
         for
           individuals <- individualForRiskingRepo.findByApplicationReference(applicationReference)
         yield Ok(Json.prettyPrint(Json.toJson(individuals)))
+
+  def findCompletedRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          completedRisking <- completedRiskingRepo.findRecent(applicationReference)
+        yield Ok(Json.prettyPrint(Json.toJson(completedRisking)))
 
   def runRisking: Action[AnyContent] = Action
     .async:

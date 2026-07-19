@@ -27,3 +27,4 @@ DELETE     /agent-registration-risking/test-only/applications                   
 
 GET        /agent-registration-risking/test-only/application-for-risking/:applicationReference        uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.findApplicationForRisking(applicationReference: ApplicationReference)
 GET        /agent-registration-risking/test-only/application-for-risking/:applicationReference        uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.findIndividualsForRisking(applicationReference: ApplicationReference)
+GET        /agent-registration-risking/test-only/completed-risking/:applicationReference              uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.findCompletedRisking(applicationReference: ApplicationReference)
