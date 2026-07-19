@@ -30,10 +30,10 @@ extends UnitSpec:
       recordType = RecordType.Entity,
       applicationReference = Some(ApplicationReference("XKXP9HEZB")),
       failures = Some(List(Failure(
-        reasonCode = "7",
-        reasonDescription = "Insolvent",
-        checkId = "7",
-        checkDescription = "Insolvent"
+        reasonCode = "3.1",
+        reasonDescription = "Entity claims AMLS with HMRC but their registration number cannot be found in HMRC's AMLS register",
+        checkId = "3",
+        checkDescription = "AMLS"
       ))),
       personReference = None
     )
@@ -44,10 +44,10 @@ extends UnitSpec:
         |  "applicationReference": "XKXP9HEZB",
         |  "failures": [
         |    {
-        |      "reasonCode": "7",
-        |      "reasonDescription": "Insolvent",
-        |      "checkId": "7",
-        |      "checkDescription": "Insolvent"
+        |      "reasonCode": "3.1",
+        |      "reasonDescription": "Entity claims AMLS with HMRC but their registration number cannot be found in HMRC's AMLS register",
+        |      "checkId": "3",
+        |      "checkDescription": "AMLS"
         |    }
         |  ]
         |}""".stripMargin
@@ -59,10 +59,10 @@ extends UnitSpec:
       recordType = RecordType.Individual,
       applicationReference = None,
       failures = Some(List(Failure(
-        reasonCode = "9",
-        reasonDescription = "Relevant criminal convictions",
-        checkId = "9",
-        checkDescription = "Relevant criminal convictions"
+        reasonCode = "8.1",
+        reasonDescription = "Measure - Published Tax Avoidance promoters, enablers and suppliers",
+        checkId = "8",
+        checkDescription = "Anti-avoidance measures or penalties"
       ))),
       personReference = Some(PersonReference("JJFCXYTM4"))
     )
@@ -73,10 +73,10 @@ extends UnitSpec:
         |  "personReference": "JJFCXYTM4",
         |  "failures": [
         |    {
-        |      "reasonCode": "9",
-        |      "reasonDescription": "Relevant criminal convictions",
-        |      "checkId": "9",
-        |      "checkDescription": "Relevant criminal convictions"
+        |      "reasonCode": "8.1",
+        |      "reasonDescription": "Measure - Published Tax Avoidance promoters, enablers and suppliers",
+        |      "checkId": "8",
+        |      "checkDescription": "Anti-avoidance measures or penalties"
         |    }
         |  ]
         |}""".stripMargin
