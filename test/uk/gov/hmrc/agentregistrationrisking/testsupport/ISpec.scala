@@ -75,7 +75,9 @@ extends AnyFreeSpecLike,
       "microservice.services.enrolment-store-proxy.port" -> WireMockSupport.port
     ) ++ configOverrides
 
-  protected def configOverrides: Map[String, Any] = Map[String, Any]()
+  protected def configOverrides: Map[String, Any] = Map[String, Any](
+    "internal-auth.token" -> tdAll.internalAuthToken
+  )
 
   lazy val overridesModule: AbstractModule =
     new AbstractModule:

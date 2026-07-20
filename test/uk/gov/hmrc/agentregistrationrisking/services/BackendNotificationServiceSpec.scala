@@ -78,7 +78,11 @@ extends ISpec:
     )
 
   private def stubExpectedRequests(tds: TdApplicationWithIndividuals*): Unit = tds.foreach: td =>
-    AgentRegistrationStubs.stubSendRiskingOutcome(td.application.applicationReference, expectedRiskingOutcomeRequest(td))
+    AgentRegistrationStubs.stubSendRiskingOutcome(
+      td.application.applicationReference,
+      expectedRiskingOutcomeRequest(td),
+      expectedAuthorizationToken = tdAll.internalAuthToken
+    )
 
   private def backendNotifiedOf(td: TdApplicationWithIndividuals): Boolean = persisted(td).overallStatus.backendNotified
 
@@ -101,9 +105,18 @@ extends ISpec:
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedFixableAfterEmailSent.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        approvedAfterEmailSent.application.applicationReference,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        failedNonFixableAfterEmailSent.application.applicationReference,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        failedFixableAfterEmailSent.application.applicationReference,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
 
       backendNotifiedOf(approvedAfterEmailSent) shouldBe true
       backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe true
@@ -114,7 +127,11 @@ extends ISpec:
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(outcomeNotComputed.application.applicationReference, count = 0)
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        outcomeNotComputed.application.applicationReference,
+        count = 0,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
       backendNotifiedOf(outcomeNotComputed) shouldBe false
 
     "does not notify the backend for applications whose emails have not yet been sent (emailSentAt not set) — defers FailedFixable naturally and gates every outcome on the email step" in:
@@ -122,7 +139,11 @@ extends ISpec:
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(emailsNotYetSent.application.applicationReference, count = 0)
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        emailsNotYetSent.application.applicationReference,
+        count = 0,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
       backendNotifiedOf(emailsNotYetSent) shouldBe false
 
     "does not notify the backend for applications already notified" in:
@@ -131,26 +152,35 @@ extends ISpec:
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterBackendNotified.application.applicationReference, count = 0)
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        approvedAfterBackendNotified.application.applicationReference,
+        count = 0,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
       backendNotifiedOf(approvedAfterBackendNotified) shouldBe true withClue "still notified — no change"
 
     "leaves backendNotified unset when the backend call fails so the next run retries" in:
       AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
         approvedAfterEmailSent.application.applicationReference,
-        expectedRiskingOutcomeRequest(approvedAfterEmailSent)
+        expectedRiskingOutcomeRequest(approvedAfterEmailSent),
+        expectedAuthorizationToken = tdAll.internalAuthToken
       )
       insertApplicationsWithIndividuals(approvedAfterEmailSent)
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        approvedAfterEmailSent.application.applicationReference,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
       backendNotifiedOf(approvedAfterEmailSent) shouldBe false withClue "flag stays unset so the next file-ready notification retries"
 
     "continues notifying the rest of the batch when one application's backend call fails — fail-continue via processAllInSequence" in:
       stubExpectedRequests(approvedAfterEmailSent)
       AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
         failedNonFixableAfterEmailSent.application.applicationReference,
-        expectedRiskingOutcomeRequest(failedNonFixableAfterEmailSent)
+        expectedRiskingOutcomeRequest(failedNonFixableAfterEmailSent),
+        expectedAuthorizationToken = tdAll.internalAuthToken
       )
       insertApplicationsWithIndividuals(
         approvedAfterEmailSent,
@@ -159,8 +189,14 @@ extends ISpec:
 
       backendNotificationService.processBackendNotifications().futureValue
 
-      AgentRegistrationStubs.verifySendRiskingOutcome(approvedAfterEmailSent.application.applicationReference)
-      AgentRegistrationStubs.verifySendRiskingOutcome(failedNonFixableAfterEmailSent.application.applicationReference)
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        approvedAfterEmailSent.application.applicationReference,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
+      AgentRegistrationStubs.verifySendRiskingOutcome(
+        failedNonFixableAfterEmailSent.application.applicationReference,
+        expectedAuthorizationToken = tdAll.internalAuthToken
+      )
       backendNotifiedOf(approvedAfterEmailSent) shouldBe true withClue "the 202 call succeeded — its flag flips"
       backendNotifiedOf(failedNonFixableAfterEmailSent) shouldBe false withClue "the 500 call failed — its flag must not flip so the next scheduler run retries"
 
@@ -179,7 +215,8 @@ extends ISpec:
       backendNotificationService.processBackendNotifications().futureValue
 
       AgentRegistrationStubs.verifySendRiskingOutcome(
-        approvedAfterEmailSent.application.applicationReference
+        approvedAfterEmailSent.application.applicationReference,
+        expectedAuthorizationToken = tdAll.internalAuthToken
       ) withClue "legacy doc (missing backendNotified) should be picked up and notified"
       backendNotifiedOf(approvedAfterEmailSent) shouldBe true withClue "after notify, backendNotified should be set"
   }
