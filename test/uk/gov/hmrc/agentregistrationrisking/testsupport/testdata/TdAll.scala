@@ -39,6 +39,7 @@ extends TdInstant,
   sdes.TdSdesData,
   TdSdesProxy,
   TdRiskingRecords,
-  TdEmail:
+  TdEmail,
+  TdInternalAuth:
 
   val tdRiskingInstancesInStates: TdRiskingInstancesInStates.type = TdRiskingInstancesInStates

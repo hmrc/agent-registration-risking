@@ -33,39 +33,47 @@ object AgentRegistrationStubs:
 
   def stubSendRiskingOutcome(
     applicationReference: ApplicationReference,
-    riskingOutcomeRequest: RiskingOutcomeRequest
+    riskingOutcomeRequest: RiskingOutcomeRequest,
+    expectedAuthorizationToken: String
   ): StubMapping = stub(
     applicationReference,
     riskingOutcomeRequest,
+    expectedAuthorizationToken,
     responseStatus = 200
   )
 
   def stubSendRiskingOutcomeFailure(
     applicationReference: ApplicationReference,
-    riskingOutcomeRequest: RiskingOutcomeRequest
+    riskingOutcomeRequest: RiskingOutcomeRequest,
+    expectedAuthorizationToken: String
   ): StubMapping = stub(
     applicationReference,
     riskingOutcomeRequest,
+    expectedAuthorizationToken,
     responseStatus = 500
   )
 
   private def stub(
     applicationReference: ApplicationReference,
     riskingOutcomeRequest: RiskingOutcomeRequest,
+    expectedAuthorizationToken: String,
     responseStatus: Int
   ): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(sendRiskingOutcomeUrl(applicationReference)),
     requestBody = Some(equalToJson(Json.prettyPrint(Json.toJson(riskingOutcomeRequest)))),
+    requestHeaders = Seq("Authorization" -> wm.equalTo(expectedAuthorizationToken)),
     responseStatus = responseStatus
   )
 
   def verifySendRiskingOutcome(
     applicationReference: ApplicationReference,
+    expectedAuthorizationToken: String,
     count: Int = 1
   ): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.POST,
     urlPattern = wm.urlEqualTo(sendRiskingOutcomeUrl(applicationReference)),
+    requestHeaders = Seq("Authorization" -> wm.equalTo(expectedAuthorizationToken)),
     count = count
   )
 

@@ -43,13 +43,21 @@ extends ISpec:
 
   "completes successfully when the agent-registration service responds with 200 OK" in:
     given RequestHeader = FakeRequest()
-    AgentRegistrationStubs.stubSendRiskingOutcome(applicationReference, riskingOutcomeRequest)
+    AgentRegistrationStubs.stubSendRiskingOutcome(
+      applicationReference,
+      riskingOutcomeRequest,
+      expectedAuthorizationToken = tdAll.internalAuthToken
+    )
     agentRegistrationConnector.sendRiskingOutcome(applicationReference, riskingOutcomeRequest).futureValue shouldBe (())
-    AgentRegistrationStubs.verifySendRiskingOutcome(applicationReference)
+    AgentRegistrationStubs.verifySendRiskingOutcome(applicationReference, expectedAuthorizationToken = tdAll.internalAuthToken)
 
   "fails when the agent-registration service responds with a non-2xx status" in:
     given RequestHeader = FakeRequest()
-    AgentRegistrationStubs.stubSendRiskingOutcomeFailure(applicationReference, riskingOutcomeRequest)
+    AgentRegistrationStubs.stubSendRiskingOutcomeFailure(
+      applicationReference,
+      riskingOutcomeRequest,
+      expectedAuthorizationToken = tdAll.internalAuthToken
+    )
     val exception = agentRegistrationConnector.sendRiskingOutcome(applicationReference, riskingOutcomeRequest).failed.futureValue
     exception shouldBe a[Throwable]
-    AgentRegistrationStubs.verifySendRiskingOutcome(applicationReference)
+    AgentRegistrationStubs.verifySendRiskingOutcome(applicationReference, expectedAuthorizationToken = tdAll.internalAuthToken)
