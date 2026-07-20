@@ -87,6 +87,13 @@ with Logging:
           individuals <- individualForRiskingRepo.findByApplicationReference(applicationReference)
         yield Ok(Json.prettyPrint(Json.toJson(individuals)))
 
+  def findIndividualForRisking(personReference: PersonReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          individual <- individualForRiskingRepo.findById(personReference)
+        yield Ok(Json.prettyPrint(Json.toJson(individual)))
+
   def findCompletedRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
     .async:
       implicit request =>
