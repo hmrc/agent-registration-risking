@@ -22,3 +22,7 @@ DELETE     /agent-registration-risking/test-only/risking-results-file/:filename 
 POST       /agent-registration-risking/test-only/delete-all-risking-results-files                     uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.SdesTestOnlyController.deleteAllRiskingResultsFiles()
 
 DELETE     /agent-registration-risking/test-only/applications                                         uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.deleteAllApplications
+
+GET        /agent-registration-risking/test-only/application-for-risking/:applicationReference        uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.findApplicationForRisking(applicationReference: ApplicationReference)
+GET        /agent-registration-risking/test-only/individuals-for-risking/:applicationReference        uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.findIndividualsForRisking(applicationReference: ApplicationReference)
+GET        /agent-registration-risking/test-only/individual-for-risking/:personReference              uk.gov.hmrc.agentregistrationrisking.testOnly.controllers.TestRiskingController.findIndividualForRisking(personReference: PersonReference)
