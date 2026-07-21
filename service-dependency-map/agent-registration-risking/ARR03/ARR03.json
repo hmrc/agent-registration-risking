@@ -1,0 +1,118 @@
+{
+  "apiId": "ARR03",
+  "apiTitle": "Get Individual Risking Response",
+  "description": "Retrieves the risking response for a specific individual identified by their person reference. Searches across all applications for the matching individual and returns their risking status and any failure details.",
+  "method": "GET",
+  "path": "/individual/{personReference}",
+  "pathParameters": [
+    {
+      "name": "personReference",
+      "type": "string",
+      "description": "The unique person reference identifier for the individual. Bound as a PersonReference value class.",
+      "required": true,
+      "example": "IND001"
+    }
+  ],
+  "queryParameters": [],
+  "responses": [
+    {
+      "statusCode": 200,
+      "description": "Found — returns IndividualRiskingResponse JSON.",
+      "body": {
+        "personReference": "string",
+        "status": "ApplicationForRiskingStatus enum",
+        "failures": "array of Failure objects or null"
+      }
+    },
+    {
+      "statusCode": 204,
+      "description": "No Content — person reference not found in any application.",
+      "body": "Empty"
+    },
+    {
+      "statusCode": 401,
+      "description": "Unauthorised — authentication or authorisation failed.",
+      "body": "Empty or auth error body"
+    }
+  ],
+  "authentication": {
+    "required": true,
+    "type": "Government Gateway",
+    "affinityGroup": "Agent",
+    "credentialRoles": ["User", "Admin"],
+    "notes": "Rejects if HMRC-AS-AGENT enrolment is already active on the user."
+  },
+  "audience": "internal",
+  "controller": "uk.gov.hmrc.agentregistrationrisking.controllers.GetIndividualController",
+  "controllerMethod": "getIndividualRiskingResponse",
+  "services": [
+    {
+      "name": "ApplicationForRiskingRepo",
+      "type": "MongoDB repository",
+      "operation": "findByPersonReference",
+      "collection": "application-for-risking"
+    }
+  ],
+  "interactions": [
+    {
+      "step": 1,
+      "actor": "Caller",
+      "action": "GET /individual/{personReference}",
+      "target": "GetIndividualController"
+    },
+    {
+      "step": 2,
+      "actor": "GetIndividualController",
+      "action": "Invoke AuthorisedAction — verify Government Gateway auth, AffinityGroup.Agent, credential role, absence of HMRC-AS-AGENT enrolment",
+      "target": "AuthorisedAction / HMRC Auth service"
+    },
+    {
+      "step": 3,
+      "actor": "GetIndividualController",
+      "action": "Query MongoDB for ApplicationForRisking containing individual with matching personReference (Filters.eq on 'individuals.personReference')",
+      "target": "ApplicationForRiskingRepo → MongoDB collection 'application-for-risking'"
+    },
+    {
+      "step": 4,
+      "actor": "GetIndividualController",
+      "action": "From the returned application, find the specific IndividualForRisking whose personReference matches",
+      "target": "GetIndividualController (in-memory filter on individuals list)"
+    },
+    {
+      "step": 5,
+      "actor": "GetIndividualController",
+      "action": "Map IndividualForRisking to IndividualRiskingResponse (personReference, status, failures)",
+      "target": "IndividualForRisking companion object"
+    },
+    {
+      "step": 6,
+      "actor": "GetIndividualController",
+      "action": "Return 200 OK with IndividualRiskingResponse JSON, or 204 No Content if not found",
+      "target": "Caller"
+    }
+  ],
+  "externalDependencies": [
+    {
+      "name": "HMRC Auth Service",
+      "type": "HTTP",
+      "purpose": "Validate Government Gateway credentials and retrieve enrolments/credentialRole/internalId"
+    }
+  ],
+  "databaseCollections": [
+    {
+      "collection": "application-for-risking",
+      "operation": "findOne (headOption on Filters.eq 'individuals.personReference')",
+      "key": "individuals.personReference"
+    }
+  ],
+  "specialCases": [
+    "Returns 204 (not 404) when the person reference is not found.",
+    "After fetching the application by personReference index, the controller performs an in-memory find on the individuals list to locate the exact matching individual.",
+    "The unique index on 'individuals.personReference' guarantees at most one application contains a given personReference."
+  ],
+  "metadata": {
+    "lastUpdated": "2026-03-27",
+    "gitCommitSha": "169b806fc80ac3b3ff2f69c831f3dd6627378da0",
+    "analysisVersion": "1.0"
+  }
+}
