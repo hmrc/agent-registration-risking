@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.testOnly.controllers
 
 import play.api.Logging
+import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
@@ -25,7 +26,9 @@ import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.FieldNames.applicationReference
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.repository.CompletedRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
@@ -41,6 +44,7 @@ import javax.inject.Singleton
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.util.Random
+import scala.concurrent.Future
 
 @Singleton()
 @nowarn()
@@ -49,6 +53,7 @@ class TestRiskingController @Inject() (
   actions: Actions,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
+  completedRiskingRepo: CompletedRiskingRepo,
   applicationForRiskingIdGenerator: ApplicationForRiskingIdGenerator,
   agentReferenceGenerator: ApplicationReferenceGenerator,
   personReferenceGenerator: PersonReferenceGenerator,
@@ -65,6 +70,36 @@ extends BackendController(cc)
 with Logging:
 
   given ExecutionContext = controllerComponents.executionContext
+
+  def findApplicationForRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          maybeApplication <- applicationForRiskingRepo.findById(applicationReference)
+        yield maybeApplication match
+          case None => NoContent
+          case Some(applicationForRisking) => Ok(Json.prettyPrint(Json.toJson(applicationForRisking)))
+
+  def findIndividualsForRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          individuals <- individualForRiskingRepo.findByApplicationReference(applicationReference)
+        yield Ok(Json.prettyPrint(Json.toJson(individuals)))
+
+  def findIndividualForRisking(personReference: PersonReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          individual <- individualForRiskingRepo.findById(personReference)
+        yield Ok(Json.prettyPrint(Json.toJson(individual)))
+
+  def findCompletedRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        for
+          completedRisking <- completedRiskingRepo.findRecent(applicationReference)
+        yield Ok(Json.prettyPrint(Json.toJson(completedRisking)))
 
   def runRisking: Action[AnyContent] = Action
     .async:
