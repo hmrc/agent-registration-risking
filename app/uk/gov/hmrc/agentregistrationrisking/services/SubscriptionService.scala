@@ -20,6 +20,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
+import uk.gov.hmrc.agentregistration.shared.InternalUserId
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
@@ -65,13 +66,22 @@ extends RequestAwareLogging:
       _ = logger.info(s"Subscribed $subscriptionSuccessCount/$applicationCount applications")
     yield ()
 
-  private def subscribeApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+  private def subscribeApplication(application: ApplicationForRisking)(using rh: RequestHeader): Future[Unit] =
+    given RequestHeader = withStubsPlanetId(rh, application.applicationData.internalUserId)
     logger.info(s"Subscribing application: ${application.applicationReference} ...")
     for
       _ <- subscribeAgent(application.applicationData)
       _ <- applicationForRiskingRepo.upsert(application.copy(isSubscribed = true, lastUpdatedAt = Instant.now(clock)))
       _ = logger.info(s"Application subscribed: ${application.applicationReference}")
     yield ()
+
+  private def withStubsPlanetId(
+    rh: RequestHeader,
+    internalUserId: InternalUserId
+  ): RequestHeader =
+    internalUserId.value.split("@").drop(1).headOption match
+      case Some(planetId) => rh.withHeaders(rh.headers.add("X-Planet-Id" -> planetId))
+      case None => rh
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   private def subscribeAgent(agentApplication: ApplicationData)(using RequestHeader): Future[Unit] =

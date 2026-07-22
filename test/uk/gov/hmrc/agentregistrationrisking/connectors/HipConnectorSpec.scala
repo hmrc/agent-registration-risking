@@ -58,22 +58,36 @@ extends ISpec:
 
   "returns an ARN when the API response is 201 Created" in:
     HipStubs.stubSubscribeToAgentServices(safeId, arn)
-    connector.subscribeToAgentServices(safeId, subscribeAgentRequest).futureValue shouldBe Arn(arn)
+    connector.subscribeToAgentServices(
+      safeId,
+      subscribeAgentRequest
+    ).futureValue shouldBe Arn(arn)
     HipStubs.verifySubscribeToAgentServices()
 
   "returns an ARN when the API response is 422 with code 061 BP has already a valid Agent Subscription" in:
     HipStubs.stubSubscribeToAgentServicesAlreadySubscribed(safeId, arn)
-    connector.subscribeToAgentServices(safeId, subscribeAgentRequest).futureValue shouldBe Arn(arn)
+    connector.subscribeToAgentServices(
+      safeId,
+      subscribeAgentRequest
+    ).futureValue shouldBe Arn(arn)
     HipStubs.verifySubscribeToAgentServices()
 
   "throws an exception when the API response is 422 with code 061 and ARN not in expected place" in:
     HipStubs.stubSubscribeToAgentServicesAlreadySubscribed(safeId, "HARN0001234 in unexpected place")
-    val exception = connector.subscribeToAgentServices(safeId, subscribeAgentRequest).failed.futureValue
+    val exception =
+      connector.subscribeToAgentServices(
+        safeId,
+        subscribeAgentRequest
+      ).failed.futureValue
     exception shouldBe a[Throwable]
     HipStubs.verifySubscribeToAgentServices()
 
   "throws an exception when the API response is anything else" in:
     HipStubs.stubSubscribeToAgentServicesFailure(safeId)
-    val exception = connector.subscribeToAgentServices(safeId, subscribeAgentRequest).failed.futureValue
+    val exception =
+      connector.subscribeToAgentServices(
+        safeId,
+        subscribeAgentRequest
+      ).failed.futureValue
     exception shouldBe a[Throwable]
     HipStubs.verifySubscribeToAgentServices()
