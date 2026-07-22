@@ -33,6 +33,7 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.HipConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.hip.SubscribeAgentRequest
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.stubadapter.StubsPlanetHeaderAdapter
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -65,7 +66,8 @@ extends RequestAwareLogging:
       _ = logger.info(s"Subscribed $subscriptionSuccessCount/$applicationCount applications")
     yield ()
 
-  private def subscribeApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+  private def subscribeApplication(application: ApplicationForRisking)(using rh: RequestHeader): Future[Unit] =
+    given RequestHeader = StubsPlanetHeaderAdapter.withStubsPlanetId(rh, application.applicationData.internalUserId)
     logger.info(s"Subscribing application: ${application.applicationReference} ...")
     for
       _ <- subscribeAgent(application.applicationData)
