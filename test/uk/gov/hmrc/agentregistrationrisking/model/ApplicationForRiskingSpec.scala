@@ -47,7 +47,8 @@ extends UnitSpec:
       ),
       entityRiskingResult = None,
       correctiveActionExpiryDate = Some(TdInstant.instant),
-      isResubmission = false
+      isResubmission = false,
+      entityAlreadyApproved = false
     )
     val json: JsValue = Json.parse(
       // language=JSON
@@ -113,7 +114,8 @@ extends UnitSpec:
            "backendNotified": false
          },
          "correctiveActionExpiryDate": "2059-11-25T16:33:51Z",
-         "isResubmission": false
+         "isResubmission": false,
+         "entityAlreadyApproved": false
       }""".stripMargin
     )
     val legacyJson: JsValue = Json.parse(

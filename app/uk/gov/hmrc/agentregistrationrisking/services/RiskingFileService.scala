@@ -34,7 +34,6 @@ class RiskingFileService @Inject() (appConfig: AppConfig):
     individuals: Seq[IndividualForRisking],
     instant: Instant
   ): RiskingFileWithContent =
-    // TODO: when resubmitting, THE APPROVED should be REMOVED from the below lists so they won't be sent for risking twice
     val riskingFile: RiskingFile = RiskingFile(
       riskingFileName = RiskingFileName.make(instant),
       uploadedAt = instant
@@ -60,7 +59,9 @@ class RiskingFileService @Inject() (appConfig: AppConfig):
   ): (RiskingFileContent, NumberOfRecords) =
     val headerRow: String = s"00|ARR|SAS|${asMinervaHeaderDate(instant)}|${asMinervaHeaderTime(instant)}\n"
     val (dataRecords: String, footerRecord: String, numberOfRecords: NumberOfRecords) =
-      val applicationRecords: Seq[RiskingFileDataRecord] = applications.map(RiskingFileDataRecord.fromApplicationForRisking(_, appConfig.AmlsEvidence.baseUrl))
+      val applicationRecords: Seq[RiskingFileDataRecord] = applications
+        .filterNot(_.entityAlreadyApproved)
+        .map(RiskingFileDataRecord.fromApplicationForRisking(_, appConfig.AmlsEvidence.baseUrl))
       val individualRecords: Seq[RiskingFileDataRecord] = individuals.map(RiskingFileDataRecord.fromIndividualForRisking)
       val allRecords: Seq[RiskingFileDataRecord] = applicationRecords ++ individualRecords
       val numberOfRecords: NumberOfRecords = allRecords.size

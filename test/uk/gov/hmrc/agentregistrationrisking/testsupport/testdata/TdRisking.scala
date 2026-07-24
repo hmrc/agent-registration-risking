@@ -59,7 +59,8 @@ trait TdRisking:
       tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualData,
       tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualData
     ),
-    isResubmission = false
+    isResubmission = false,
+    entityAlreadyApproved = false
   )
 
 object TdRisking:
