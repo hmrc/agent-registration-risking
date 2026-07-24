@@ -85,7 +85,7 @@ extends RequestAwareLogging:
       addr4 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine4, 35).asInstanceOf[Option[String]],
       postcode = ensureFieldLength(agentDetails.agentCorrespondenceAddress.postalCode, 10).asInstanceOf[Option[String]],
       country = ensureCountryCode(agentDetails.agentCorrespondenceAddress.countryCode),
-      phone = ensureFieldLength(Some(agentDetails.telephoneNumber.agentTelephoneNumber), 24).asInstanceOf[Option[String]],
+      phone = ensureFieldLength(Some(agentDetails.telephoneNumber.getAgentTelephoneNumber), 24).asInstanceOf[Option[String]],
       email = ensureFieldLength(agentDetails.agentEmailAddress, 132).asInstanceOf[EmailAddress],
       supervisoryBody = Some(amlsDetails.supervisoryBody.value),
       membershipNumber = Some(amlsDetails.amlsRegistrationNumber.value),
