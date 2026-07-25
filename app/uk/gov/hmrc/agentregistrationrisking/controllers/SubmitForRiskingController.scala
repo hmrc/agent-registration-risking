@@ -94,25 +94,11 @@ extends BackendController(cc):
   private def makeEntityApprovedApplicationForRisking(
     submitForRiskingRequest: SubmitForRiskingRequest,
     createdAt: Instant
-  ): ApplicationForRisking = ApplicationForRisking(
-    applicationReference = submitForRiskingRequest.applicationData.applicationReference,
-    riskingFileName = None,
-    applicationData = submitForRiskingRequest.applicationData,
-    createdAt = createdAt,
-    lastUpdatedAt = createdAt,
-    entityRiskingResult = Some(EntityRiskingResult(failures = List.empty, receivedAt = createdAt)),
-    isSubscribed = false,
-    isEmailSent = false,
-    overallStatus = OverallStatus(
-      riskingOutcome = None,
-      emailsProcessed = false,
-      backendNotified = false,
-      emailsSentAt = None
-    ),
-    correctiveActionExpiryDate = None,
-    isResubmission = submitForRiskingRequest.isResubmission,
-    entityAlreadyApproved = true
-  )
+  ): ApplicationForRisking = makeApplicationForRisking(submitForRiskingRequest, createdAt)
+    .copy(
+      entityRiskingResult = Some(EntityRiskingResult(failures = List.empty, receivedAt = createdAt)),
+      entityAlreadyApproved = true
+    )
 
   private def insertIndividualsForRisking(
     submitForRiskingRequest: SubmitForRiskingRequest,
