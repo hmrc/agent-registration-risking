@@ -28,6 +28,10 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EmailStub
 class EmailServiceForFailedFixableSpec
 extends ISpec:
 
+  override protected def configOverrides: Map[String, Any] = Map[String, Any](
+    "features.fixable-failures" -> false
+  )
+
   private val emailServiceForFailedFixable: EmailServiceForFailedFixable = app.injector.instanceOf[EmailServiceForFailedFixable]
   private val applicationForRiskingRepo: ApplicationForRiskingRepo = app.injector.instanceOf[ApplicationForRiskingRepo]
   private val individualForRiskingRepo: IndividualForRiskingRepo = app.injector.instanceOf[IndividualForRiskingRepo]
@@ -40,7 +44,7 @@ extends ISpec:
     individualForRiskingRepo.collection.drop().toFuture.futureValue
     ()
 
-  "processEmails is a no-op when the features.fixable-failures flag is OFF (default in application.conf) — no Mongo query, no emails sent, application state unchanged" in:
+  "processEmails is a no-op when the features.fixable-failures flag is OFF — no Mongo query, no emails sent, application state unchanged" in:
     val td = TdRiskingInstancesInStates.failedFixableAfterOutcome
     applicationForRiskingRepo.upsert(td.application).futureValue
     individualForRiskingRepo.upsert(td.individual1).futureValue

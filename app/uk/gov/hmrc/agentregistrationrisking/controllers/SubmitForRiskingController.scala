@@ -102,7 +102,7 @@ extends BackendController(cc):
     lastUpdatedAt = createdAt,
     entityRiskingResult = Some(EntityRiskingResult(failures = List.empty, receivedAt = createdAt)),
     isSubscribed = false,
-    isEmailSent = true,
+    isEmailSent = false,
     overallStatus = OverallStatus(
       riskingOutcome = None,
       emailsProcessed = false,

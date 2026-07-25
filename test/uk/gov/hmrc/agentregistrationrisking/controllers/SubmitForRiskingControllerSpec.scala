@@ -174,8 +174,7 @@ extends ControllerSpec:
     val applicationForRiskingEntityApproved: ApplicationForRisking = td.application.copy(
       isResubmission = true,
       entityAlreadyApproved = true,
-      entityRiskingResult = Some(EntityRiskingResult(failures = List.empty, receivedAt = td.application.createdAt)),
-      isEmailSent = true
+      entityRiskingResult = Some(EntityRiskingResult(failures = List.empty, receivedAt = td.application.createdAt))
     )
     val individualForRiskingReSubmitted1: IndividualForRisking = td.individual1.copy(isResubmission = true)
     val individualForRiskingReSubmitted2: IndividualForRisking = td.individual2.copy(isResubmission = true)
