@@ -39,6 +39,20 @@ trait TdRiskingRecords:
 
   val matchingApplicationReference: ApplicationReference = ApplicationReference("ABC123456")
   val matchingPersonReference: PersonReference = PersonReference("1234567890")
+  val matchingPersonReference2: PersonReference = PersonReference("2345678901")
+
+  val passRecordArrayFileWithTwoIndividuals: JsArray = Json.arr(
+    Json.obj(
+      "recordType" -> Individual,
+      "personReference" -> matchingPersonReference.value,
+      "failures" -> Json.arr()
+    ),
+    Json.obj(
+      "recordType" -> Individual,
+      "personReference" -> matchingPersonReference2.value,
+      "failures" -> Json.arr()
+    )
+  )
 
   val passRecordArrayFileWithNonExistentApp: JsArray = Json.arr(
     Json.obj(

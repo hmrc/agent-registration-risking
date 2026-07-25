@@ -114,7 +114,7 @@ extends ISpec:
 
       AuditStubs.verifyNoAuditSent()
 
-    "does not overwrite entityRiskingResult when application is entity-approved" in:
+    "does not overwrite entityRiskingResult when application is entity-approved and Minerva returns both entity and individual results" in:
       val prePopulatedEntityResult = EntityRiskingResult(failures = List.empty, receivedAt = TdInstant.instant)
       val entityApprovedApp = application.copy(
         entityAlreadyApproved = true,
@@ -132,6 +132,7 @@ extends ISpec:
       riskingResultsService.processResultsFiles().futureValue
 
       applicationForRiskingRepo.findById(applicationReference).futureValue.value.entityRiskingResult shouldBe Some(prePopulatedEntityResult)
+      individualForRiskingRepo.findById(personReference).futureValue.value.individualRiskingResult should not be empty
 
       eventually:
         AuditStubs.verifyAuditSent(
@@ -146,4 +147,30 @@ extends ISpec:
             ))
           )
         )
+
+    "processes both individuals when application is entity-approved and Minerva returns two individual results" in:
+      val prePopulatedEntityResult = EntityRiskingResult(failures = List.empty, receivedAt = TdInstant.instant)
+      val entityApprovedApp = application.copy(
+        entityAlreadyApproved = true,
+        entityRiskingResult = Some(prePopulatedEntityResult)
+      )
+      val individual2: IndividualForRisking = submitted.individual2.copy(
+        personReference = tdAll.matchingPersonReference2,
+        applicationReference = applicationReference
+      )
+      applicationForRiskingRepo.upsert(entityApprovedApp).futureValue
+      individualForRiskingRepo.upsert(individual).futureValue
+      individualForRiskingRepo.upsert(individual2).futureValue
+
+      SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.testAvailableFile))
+      ObjectStoreStubs.stubObjectStoreListObjects(processedFileNames = List.empty)
+      ObjectStoreStubs.stubDownloadMinervaFile(tdAll.testDownloadUrl, tdAll.passRecordArrayFileWithTwoIndividuals)
+      ObjectStoreStubs.stubPutObject(tdAll.testFileName, directory = "processed-results-files")
+      AuditStubs.stubAuditWrite()
+
+      riskingResultsService.processResultsFiles().futureValue
+
+      applicationForRiskingRepo.findById(applicationReference).futureValue.value.entityRiskingResult shouldBe Some(prePopulatedEntityResult)
+      individualForRiskingRepo.findById(tdAll.matchingPersonReference).futureValue.value.individualRiskingResult should not be empty
+      individualForRiskingRepo.findById(tdAll.matchingPersonReference2).futureValue.value.individualRiskingResult should not be empty
   }
