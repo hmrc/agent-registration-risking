@@ -192,6 +192,167 @@ extends UnitSpec:
     Json.toJson[ApplicationForRisking](applicationForRisking) shouldBe json
     json.as[ApplicationForRisking] shouldBe applicationForRisking
 
+  "serialize and deserialize ApplicationForRisking with and without entityAlreadyApproved" in:
+    val applicationForRisking: ApplicationForRisking = ApplicationForRisking(
+      applicationReference = ApplicationReference("APP-123"),
+      riskingFileName = Some(RiskingFileName("some-file.txt")),
+      applicationData = TdApplicationData.make("legacy2"),
+      createdAt = TdInstant.instant,
+      lastUpdatedAt = TdInstant.instant,
+      isSubscribed = false,
+      isEmailSent = false,
+      overallStatus = OverallStatus(
+        riskingOutcome = None,
+        emailsProcessed = false,
+        backendNotified = false,
+        emailsSentAt = None
+      ),
+      entityRiskingResult = None,
+      correctiveActionExpiryDate = Some(TdInstant.instant),
+      isResubmission = true,
+      entityAlreadyApproved = false
+    )
+    val json: JsValue = Json.parse(
+      // language=JSON
+      """{
+         "applicationReference": "APP-123",
+         "riskingFileName": "some-file.txt",
+         "applicationData": {
+           "applicationReference": "APPREF_legacy2",
+           "internalUserId": "INTERNAL_USER_ID_legacy2",
+           "applicantCredentials": {
+             "providerId": "providerid_legacy2",
+             "providerType": "providertype_legacy2"
+           },
+           "businessType": "LimitedLiabilityPartnership",
+           "groupId": "groupid_legacy2",
+            "applicantContactDetails": {
+              "applicantName": "applicantname_legacy2",
+              "telephoneNumber": "01234567890",
+              "applicantEmailAddress": "applicantemail@legacy2.com"
+            },
+            "amlsDetails": {
+              "supervisoryBody": "amlscode_legacy2",
+              "amlsRegistrationNumber": "amlsregistrationnumber_legacy2",
+              "amlsEvidence": {
+                "fileUploadReference": "amls_fileupload_reflegacy2",
+                "fileName": "amls_evicence_legacy2"
+              }
+            },
+            "agentDetails": {
+              "businessName": {
+                "agentBusinessName": "agentBusinessName_legacy2",
+                "otherAgentBusinessName": "otherAgentBusinessName_legacy2"
+              },
+              "telephoneNumber": {
+                "agentTelephoneNumber": "agentTelephoneNumber_legacy2",
+                 "otherAgentTelephoneNumber": "otherAgentTelephoneNumber_legacy2"
+              },
+              "agentEmailAddress": "agentemail@legacy2.com",
+              "agentCorrespondenceAddress": {
+                "addressLine1": "addressline1_legacy2",
+                "addressLine2": "addressline2_legacy2",
+                "postalCode": "AB1 2CD",
+                "countryCode": "GB"
+              }
+            },
+            "vrns": [
+              "vrn_legacy2"
+            ],
+            "payeRefs": [
+              "payeref_legacy2"
+            ],
+            "crn": "crn_legacy2",
+            "utr": "utr_legacy2",
+            "safeId": "safeid_legacy2",
+            "arn": "arn_legacy2"
+         },
+         "createdAt": "2059-11-25T16:33:51Z",
+         "lastUpdatedAt": "2059-11-25T16:33:51Z",
+         "isSubscribed": false,
+         "isEmailSent": false,
+         "overallStatus": {
+           "emailsProcessed": false,
+           "backendNotified": false
+         },
+         "correctiveActionExpiryDate": "2059-11-25T16:33:51Z",
+         "isResubmission": true,
+         "entityAlreadyApproved": false
+      }""".stripMargin
+    )
+    val legacy2Json: JsValue = Json.parse(
+      // language=JSON
+      """{
+         "applicationReference": "APP-123",
+         "riskingFileName": "some-file.txt",
+         "applicationData": {
+           "applicationReference": "APPREF_legacy2",
+           "internalUserId": "INTERNAL_USER_ID_legacy2",
+           "applicantCredentials": {
+             "providerId": "providerid_legacy2",
+             "providerType": "providertype_legacy2"
+           },
+           "businessType": "LimitedLiabilityPartnership",
+           "groupId": "groupid_legacy2",
+            "applicantContactDetails": {
+              "applicantName": "applicantname_legacy2",
+              "telephoneNumber": "01234567890",
+              "applicantEmailAddress": "applicantemail@legacy2.com"
+            },
+            "amlsDetails": {
+              "supervisoryBody": "amlscode_legacy2",
+              "amlsRegistrationNumber": "amlsregistrationnumber_legacy2",
+              "amlsEvidence": {
+                "fileUploadReference": "amls_fileupload_reflegacy2",
+                "fileName": "amls_evicence_legacy2"
+              }
+            },
+            "agentDetails": {
+              "businessName": {
+                "agentBusinessName": "agentBusinessName_legacy2",
+                "otherAgentBusinessName": "otherAgentBusinessName_legacy2"
+              },
+              "telephoneNumber": {
+                "agentTelephoneNumber": "agentTelephoneNumber_legacy2",
+                 "otherAgentTelephoneNumber": "otherAgentTelephoneNumber_legacy2"
+              },
+              "agentEmailAddress": "agentemail@legacy2.com",
+              "agentCorrespondenceAddress": {
+                "addressLine1": "addressline1_legacy2",
+                "addressLine2": "addressline2_legacy2",
+                "postalCode": "AB1 2CD",
+                "countryCode": "GB"
+              }
+            },
+            "vrns": [
+              "vrn_legacy2"
+            ],
+            "payeRefs": [
+              "payeref_legacy2"
+            ],
+            "crn": "crn_legacy2",
+            "utr": "utr_legacy2",
+            "safeId": "safeid_legacy2",
+            "arn": "arn_legacy2"
+         },
+         "createdAt": "2059-11-25T16:33:51Z",
+         "lastUpdatedAt": "2059-11-25T16:33:51Z",
+         "isSubscribed": false,
+         "isEmailSent": false,
+         "overallStatus": {
+           "emailsProcessed": false,
+           "backendNotified": false
+         },
+         "correctiveActionExpiryDate": "2059-11-25T16:33:51Z",
+         "isResubmission": true
+      }""".stripMargin
+    )
+
+    val readLegacy2: ApplicationForRisking = legacy2Json.as[ApplicationForRisking]
+    readLegacy2 shouldBe applicationForRisking
+    Json.toJson[ApplicationForRisking](applicationForRisking) shouldBe json
+    json.as[ApplicationForRisking] shouldBe applicationForRisking
+
   "reads derives overallStatus.emailsSentAt from entityRiskingResult.receivedAt when a legacy document has emailsProcessed=true but no emailSentAt" in:
     val legacyApplicationForRisking: ApplicationForRisking = TdRiskingInstancesInStates
       .approvedAfterEmailSent
