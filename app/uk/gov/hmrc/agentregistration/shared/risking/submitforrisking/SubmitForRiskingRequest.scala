@@ -22,7 +22,8 @@ import uk.gov.hmrc.agentregistration.shared.risking.*
 final case class SubmitForRiskingRequest(
   applicationData: ApplicationData,
   individuals: List[IndividualData],
-  isResubmission: Boolean
+  isResubmission: Boolean,
+  entityAlreadyApproved: Boolean
 )
 
 object SubmitForRiskingRequest:

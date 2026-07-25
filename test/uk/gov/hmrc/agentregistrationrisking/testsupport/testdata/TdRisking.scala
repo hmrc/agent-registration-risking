@@ -59,7 +59,18 @@ trait TdRisking:
       tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualData,
       tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualData
     ),
-    isResubmission = false
+    isResubmission = false,
+    entityAlreadyApproved = false
+  )
+
+  def submitForRiskingRequestEntityApproved: SubmitForRiskingRequest = SubmitForRiskingRequest(
+    applicationData = applicationData,
+    individuals = List(
+      tdIndividualsForRisking.tdIndividualForRisking1.readyForSubmission.individualData,
+      tdIndividualsForRisking.tdIndividualForRisking2.readyForSubmission.individualData
+    ),
+    isResubmission = true,
+    entityAlreadyApproved = true
   )
 
 object TdRisking:

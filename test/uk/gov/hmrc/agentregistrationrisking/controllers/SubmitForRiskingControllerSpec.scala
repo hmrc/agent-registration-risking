@@ -21,6 +21,7 @@ import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EmailTemplateId
+import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.SendEmailRequest
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -146,6 +147,62 @@ extends ControllerSpec:
       .findById(applicationReference)
       .futureValue
       .value shouldBe applicationForRiskingReSubmitted
+
+    individualForRiskingRepo
+      .findByApplicationReference(applicationReference)
+      .futureValue shouldBe List(
+      individualForRiskingReSubmitted1,
+      individualForRiskingReSubmitted2
+    )
+
+    AuthStubs.verifyAuthorise()
+    EmailStubs.verifySendEmail()
+
+  "submit application and individuals for risking as an entity-approved resubmission" in:
+    // GIVEN
+    dropDatabase()
+
+    given Request[?] = tdAll.backendRequest
+
+    AuthStubs.stubAuthorise()
+
+    val td = tdAll.tdRiskingInstancesInStates.readyForSubmission
+
+    val entityApprovedRequest: SubmitForRiskingRequest = td.tdRisking.submitForRiskingRequestEntityApproved
+    val applicationReference: ApplicationReference = entityApprovedRequest.applicationData.applicationReference
+
+    val applicationForRiskingEntityApproved: ApplicationForRisking = td.application.copy(
+      isResubmission = true,
+      entityAlreadyApproved = true,
+      entityRiskingResult = Some(EntityRiskingResult(failures = List.empty, receivedAt = td.application.createdAt))
+    )
+    val individualForRiskingReSubmitted1: IndividualForRisking = td.individual1.copy(isResubmission = true)
+    val individualForRiskingReSubmitted2: IndividualForRisking = td.individual2.copy(isResubmission = true)
+
+    EmailStubs.stubSendEmail(SendEmailRequest(
+      to = Seq(entityApprovedRequest.applicationData.agentDetails.agentEmailAddress),
+      templateId = EmailTemplateId.SubmissionConfirmation,
+      parameters = Map(
+        "agentName" -> entityApprovedRequest.applicationData.applicantContactDetails.applicantName.value,
+        "applicationRef" -> applicationReference.value,
+        "applicationProcessingTime" -> "35 working days"
+      )
+    ))
+
+    val response =
+      httpClient
+        .post(url"${baseUrl + path}")
+        .withBody(Json.toJson(entityApprovedRequest))
+        .execute[HttpResponse]
+        .futureValue
+
+    response.status shouldBe Status.CREATED
+    response.body shouldBe ""
+
+    applicationForRiskingRepo
+      .findById(applicationReference)
+      .futureValue
+      .value shouldBe applicationForRiskingEntityApproved
 
     individualForRiskingRepo
       .findByApplicationReference(applicationReference)

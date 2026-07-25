@@ -20,10 +20,12 @@ import org.mongodb.scala.SingleObservableFuture
 import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
+import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdInstant
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuditStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
@@ -111,4 +113,64 @@ extends ISpec:
       riskingResultsService.processResultsFiles().futureValue
 
       AuditStubs.verifyNoAuditSent()
+
+    "does not overwrite entityRiskingResult when application is entity-approved and Minerva returns both entity and individual results" in:
+      val prePopulatedEntityResult = EntityRiskingResult(failures = List.empty, receivedAt = TdInstant.instant)
+      val entityApprovedApp = application.copy(
+        entityAlreadyApproved = true,
+        entityRiskingResult = Some(prePopulatedEntityResult)
+      )
+      applicationForRiskingRepo.upsert(entityApprovedApp).futureValue
+      individualForRiskingRepo.upsert(individual).futureValue
+
+      SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.testAvailableFile))
+      ObjectStoreStubs.stubObjectStoreListObjects(processedFileNames = List.empty)
+      ObjectStoreStubs.stubDownloadMinervaFile(tdAll.testDownloadUrl, tdAll.failRecordArrayFileMatchingApp)
+      ObjectStoreStubs.stubPutObject(tdAll.testFileName, directory = "processed-results-files")
+      AuditStubs.stubAuditWrite()
+
+      riskingResultsService.processResultsFiles().futureValue
+
+      applicationForRiskingRepo.findById(applicationReference).futureValue.value.entityRiskingResult shouldBe Some(prePopulatedEntityResult)
+      individualForRiskingRepo.findById(personReference).futureValue.value.individualRiskingResult should not be empty
+
+      eventually:
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseIndividual",
+          detail = Json.obj(
+            "applicationReference" -> applicationReference.value,
+            "personReference" -> personReference.value,
+            "riskingOutcome" -> "FixableFailure",
+            "failures" -> Json.arr(Json.obj(
+              "reasonCode" -> "4.1",
+              "reasonDescription" -> "Outstanding returns overdue"
+            ))
+          )
+        )
+
+    "processes both individuals when application is entity-approved and Minerva returns two individual results" in:
+      val prePopulatedEntityResult = EntityRiskingResult(failures = List.empty, receivedAt = TdInstant.instant)
+      val entityApprovedApp = application.copy(
+        entityAlreadyApproved = true,
+        entityRiskingResult = Some(prePopulatedEntityResult)
+      )
+      val individual2: IndividualForRisking = submitted.individual2.copy(
+        personReference = tdAll.matchingPersonReference2,
+        applicationReference = applicationReference
+      )
+      applicationForRiskingRepo.upsert(entityApprovedApp).futureValue
+      individualForRiskingRepo.upsert(individual).futureValue
+      individualForRiskingRepo.upsert(individual2).futureValue
+
+      SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.testAvailableFile))
+      ObjectStoreStubs.stubObjectStoreListObjects(processedFileNames = List.empty)
+      ObjectStoreStubs.stubDownloadMinervaFile(tdAll.testDownloadUrl, tdAll.passRecordArrayFileWithTwoIndividuals)
+      ObjectStoreStubs.stubPutObject(tdAll.testFileName, directory = "processed-results-files")
+      AuditStubs.stubAuditWrite()
+
+      riskingResultsService.processResultsFiles().futureValue
+
+      applicationForRiskingRepo.findById(applicationReference).futureValue.value.entityRiskingResult shouldBe Some(prePopulatedEntityResult)
+      individualForRiskingRepo.findById(tdAll.matchingPersonReference).futureValue.value.individualRiskingResult should not be empty
+      individualForRiskingRepo.findById(tdAll.matchingPersonReference2).futureValue.value.individualRiskingResult should not be empty
   }

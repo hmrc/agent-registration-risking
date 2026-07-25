@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualD
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.SubmitForRiskingRequest
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -56,7 +57,11 @@ extends BackendController(cc):
       .async(parse.json[SubmitForRiskingRequest]):
         implicit request =>
           val now = Instant.now(summon[Clock])
-          val application: ApplicationForRisking = makeApplicationForRisking(request.body, now)
+          val application: ApplicationForRisking =
+            if request.body.entityAlreadyApproved then
+              makeEntityApprovedApplicationForRisking(request.body, now)
+            else
+              makeApplicationForRisking(request.body, now)
           for
             _ <- applicationForRiskingRepo.upsert(application)
             _ <- insertIndividualsForRisking(request.body, now)
@@ -82,8 +87,18 @@ extends BackendController(cc):
       emailsSentAt = None
     ),
     correctiveActionExpiryDate = None,
-    isResubmission = submitForRiskingRequest.isResubmission
+    isResubmission = submitForRiskingRequest.isResubmission,
+    entityAlreadyApproved = false
   )
+
+  private def makeEntityApprovedApplicationForRisking(
+    submitForRiskingRequest: SubmitForRiskingRequest,
+    createdAt: Instant
+  ): ApplicationForRisking = makeApplicationForRisking(submitForRiskingRequest, createdAt)
+    .copy(
+      entityRiskingResult = Some(EntityRiskingResult(failures = List.empty, receivedAt = createdAt)),
+      entityAlreadyApproved = true
+    )
 
   private def insertIndividualsForRisking(
     submitForRiskingRequest: SubmitForRiskingRequest,

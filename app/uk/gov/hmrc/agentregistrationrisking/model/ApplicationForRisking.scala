@@ -38,7 +38,8 @@ final case class ApplicationForRisking(
   isEmailSent: Boolean,
   overallStatus: OverallStatus,
   correctiveActionExpiryDate: Option[Instant],
-  isResubmission: Boolean
+  isResubmission: Boolean,
+  entityAlreadyApproved: Boolean
 )
 
 object ApplicationForRisking:
@@ -57,6 +58,20 @@ object ApplicationForRisking:
       correctiveActionExpiryDate: Option[Instant]
     )
 
+    final case class ApplicationForRiskingLegacy2(
+      applicationReference: ApplicationReference,
+      riskingFileName: Option[RiskingFileName],
+      applicationData: ApplicationData,
+      createdAt: Instant,
+      lastUpdatedAt: Instant,
+      entityRiskingResult: Option[EntityRiskingResult],
+      isSubscribed: Boolean,
+      isEmailSent: Boolean,
+      overallStatus: OverallStatus,
+      correctiveActionExpiryDate: Option[Instant],
+      isResubmission: Boolean
+    )
+
     val legacyReads: Reads[ApplicationForRisking] = Json.reads[ApplicationForRiskingLegacy].map(a =>
       ApplicationForRisking(
         applicationReference = a.applicationReference,
@@ -69,11 +84,28 @@ object ApplicationForRisking:
         isEmailSent = a.isEmailSent,
         overallStatus = a.overallStatus,
         correctiveActionExpiryDate = a.correctiveActionExpiryDate,
-        isResubmission = false // here's a legacy field, so we default to false
+        isResubmission = false, // here's a legacy field, so we default to false
+        entityAlreadyApproved = false // here's a legacy field, so we default to false
+      )
+    )
+    val legacyReads2: Reads[ApplicationForRisking] = Json.reads[ApplicationForRiskingLegacy2].map(a =>
+      ApplicationForRisking(
+        applicationReference = a.applicationReference,
+        riskingFileName = a.riskingFileName,
+        applicationData = a.applicationData,
+        createdAt = a.createdAt,
+        lastUpdatedAt = a.lastUpdatedAt,
+        entityRiskingResult = a.entityRiskingResult,
+        isSubscribed = a.isSubscribed,
+        isEmailSent = a.isEmailSent,
+        overallStatus = a.overallStatus,
+        correctiveActionExpiryDate = a.correctiveActionExpiryDate,
+        isResubmission = a.isResubmission,
+        entityAlreadyApproved = false // here's a legacy field, so we default to false
       )
     )
     val modernReads: Reads[ApplicationForRisking] = Json.reads[ApplicationForRisking]
-    val reads: Reads[ApplicationForRisking] = modernReads.orElse(legacyReads).map(deriveEmailSentAtFromLegacyRecord)
+    val reads: Reads[ApplicationForRisking] = modernReads.orElse(legacyReads2).orElse(legacyReads).map(deriveEmailSentAtFromLegacyRecord)
     val writes: OWrites[ApplicationForRisking] = Json.writes[ApplicationForRisking]
     OFormat(reads, writes)
 

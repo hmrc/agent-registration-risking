@@ -122,6 +122,9 @@ extends RequestAwareLogging:
         // TODO: audit event needed
         logger.error(s"Missing application for: ${riskingResult.applicationReference}")
         Future.unit
+      case Some(application) if application.entityAlreadyApproved =>
+        logger.warn(s"Received unexpected entity risking result for entity-approved application ${application.applicationReference}, ignoring")
+        Future.unit
       case Some(application) =>
         val now = Instant.now(clock)
         val updatedApplication: ApplicationForRisking = application.copy(
