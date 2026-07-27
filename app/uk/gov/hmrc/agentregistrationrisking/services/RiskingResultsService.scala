@@ -100,7 +100,7 @@ extends RequestAwareLogging:
         _.toJavaUri.toURL
       )
 
-  private def getUnprocessedAvailableFiles()(using request: RequestHeader): Future[Seq[AvailableFile]] =
+  def getUnprocessedAvailableFiles()(using request: RequestHeader): Future[Seq[AvailableFile]] =
     for
       availableFiles: Seq[AvailableFile] <- sdesProxyConnector.listAvailableFiles
       filesAlreadyProcessed: ObjectListing <- objectStoreService.listObjects

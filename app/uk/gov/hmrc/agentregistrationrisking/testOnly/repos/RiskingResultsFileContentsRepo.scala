@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.testOnly.repos
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.Sorts
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.repository.FieldNames
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo
@@ -50,7 +51,10 @@ extends Repo[RiskingResultsFileName, RiskingResultsFileContent](
   replaceIndexes = true
 ):
 
-  def findAll(): Future[Seq[RiskingResultsFileContent]] = collection.find[RiskingResultsFileContent]().toFuture()
+  def findAll(): Future[Seq[RiskingResultsFileContent]] = collection
+    .find[RiskingResultsFileContent]()
+    .sort(Sorts.descending(RiskingResultFilesRepoHelp.FieldNames.uploadedAt))
+    .toFuture()
 
 object RiskingResultFilesRepoHelp:
 
