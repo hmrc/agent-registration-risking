@@ -32,6 +32,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingResultsFileProcessingRunner
+import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileContent
 import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
@@ -63,7 +64,8 @@ class SdesTestOnlyController @Inject() (
   appConfig: AppConfig,
   configuration: Configuration,
   riskingResultsFileContentsRepo: RiskingResultsFileContentsRepo,
-  riskingResultsFileProcessingRunner: RiskingResultsFileProcessingRunner
+  riskingResultsFileProcessingRunner: RiskingResultsFileProcessingRunner,
+  riskingResultsService: RiskingResultsService
 )(using clock: Clock)
 extends BackendController(cc)
 with Logging:
@@ -144,6 +146,15 @@ with Logging:
           .map:
             case Some(riskingResultsFileContent) => Ok(Json.prettyPrint(Json.toJson(riskingResultsFileContent.content)))
             case None => NotFound(s"Risking results file not found: $riskingResultsFileName")
+
+  def getUnprocessedAvailableFiles(): Action[AnyContent] = actions
+    .default
+    .async:
+      implicit request =>
+        riskingResultsService
+          .getUnprocessedAvailableFiles()
+          .map(x => Json.prettyPrint(Json.toJson(x)))
+          .map(Ok(_))
 
   def runResultsFileProcessingJob(): Action[AnyContent] = actions
     .default
