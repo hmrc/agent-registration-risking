@@ -1,0 +1,93 @@
+{
+  "apiId": "ARR05",
+  "apiTitle": "Receive SDES Notifications",
+  "description": "Receives and processes SDES (Secure Data Exchange Service) file notification callbacks. Accepts four notification types: FileReady, FileReceived, FileProcessed, and FileProcessingFailure. All notification types are acknowledged with 200 OK after logging. No database writes occur — this endpoint is purely for log-and-acknowledge of SDES lifecycle events.",
+  "method": "POST",
+  "path": "/receive-sdes-notifications",
+  "pathParameters": [],
+  "queryParameters": [],
+  "responses": [
+    {
+      "statusCode": 200,
+      "description": "OK — notification received and acknowledged (all notification types).",
+      "body": "Empty"
+    },
+    {
+      "statusCode": 400,
+      "description": "Bad Request — JSON body failed to parse as SdesNotification, or unknown notification type discriminator.",
+      "body": "Play framework JSON parse error"
+    }
+  ],
+  "authentication": {
+    "required": false,
+    "notes": "This endpoint does NOT use the authorised action builder. It uses Action.apply directly. No Government Gateway authentication is required. SDES calls this endpoint as a callback."
+  },
+  "audience": "internal",
+  "controller": "uk.gov.hmrc.agentregistrationrisking.controllers.SdesNotificationController",
+  "controllerMethod": "receiveSdesNotification",
+  "services": [],
+  "interactions": [
+    {
+      "step": 1,
+      "actor": "SDES (Secure Data Exchange Service)",
+      "action": "POST /receive-sdes-notifications with SdesNotification JSON body (notification discriminator: FileReady | FileReceived | FileProcessed | FileProcessingFailure)",
+      "target": "SdesNotificationController"
+    },
+    {
+      "step": 2,
+      "actor": "SdesNotificationController",
+      "action": "Parse JSON body as SdesNotification using discriminator field 'notification' with type names matching case class simple names",
+      "target": "Play JSON parser"
+    },
+    {
+      "step": 3,
+      "actor": "SdesNotificationController",
+      "action": "Pattern match on notification type",
+      "target": "SdesNotificationController"
+    },
+    {
+      "step": 4,
+      "actor": "SdesNotificationController",
+      "action": "FileReady: log info 'File ready notification received for {filename} from SDES [{correlationID}]'",
+      "target": "Logger"
+    },
+    {
+      "step": 5,
+      "actor": "SdesNotificationController",
+      "action": "FileReceived: log info 'File received notification received for {filename} from SDES [{correlationID}]'",
+      "target": "Logger"
+    },
+    {
+      "step": 6,
+      "actor": "SdesNotificationController",
+      "action": "FileProcessed: log info 'File processed notification received for {filename} from SDES'",
+      "target": "Logger"
+    },
+    {
+      "step": 7,
+      "actor": "SdesNotificationController",
+      "action": "FileProcessingFailure: log warning 'File processing failure notification received for {filename} from SDES. Reason: {failureReason}. Action Required: {actionRequired}'",
+      "target": "Logger"
+    },
+    {
+      "step": 8,
+      "actor": "SdesNotificationController",
+      "action": "Return 200 OK for all notification types",
+      "target": "SDES"
+    }
+  ],
+  "externalDependencies": [],
+  "databaseCollections": [],
+  "specialCases": [
+    "No authentication is enforced — this is an inbound callback from SDES and does not use Government Gateway auth.",
+    "All four notification types return 200 OK, including FileProcessingFailure. The failure is only logged as a warning, not acted upon programmatically.",
+    "The JSON discriminator is the field 'notification' with values matching the case class simple names (FileReady, FileReceived, FileProcessed, FileProcessingFailure).",
+    "FileProcessingFailure includes 'failureReason' and 'actionRequired' fields that are logged but no automated remediation is triggered.",
+    "FileReady and FileReceived include 'availableUntil'/'dateTime' fields; FileProcessingFailure adds 'failureReason' and 'actionRequired'."
+  ],
+  "metadata": {
+    "lastUpdated": "2026-03-27",
+    "gitCommitSha": "169b806fc80ac3b3ff2f69c831f3dd6627378da0",
+    "analysisVersion": "1.0"
+  }
+}

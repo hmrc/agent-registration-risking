@@ -1,0 +1,104 @@
+{
+  "apiId": "ARR04",
+  "apiTitle": "Get Application Status",
+  "description": "Retrieves the current risking status for a given application reference. Returns a simple JSON object with a 'status' field, or 404 Not Found if the application reference does not exist.",
+  "method": "GET",
+  "path": "/application-status/{applicationReference}",
+  "pathParameters": [
+    {
+      "name": "applicationReference",
+      "type": "string",
+      "description": "The unique application reference identifier. Bound as an ApplicationReference value class.",
+      "required": true,
+      "example": "ABC1234567"
+    }
+  ],
+  "queryParameters": [],
+  "responses": [
+    {
+      "statusCode": 200,
+      "description": "Found — returns a JSON object with the current status.",
+      "body": {
+        "status": "ApplicationForRiskingStatus enum string (ReadyForSubmission | SubmittedForRisking | Approved | FailedNonFixable | FailedFixable | ReadyForResubmission)"
+      }
+    },
+    {
+      "statusCode": 404,
+      "description": "Not Found — application reference does not exist in the database.",
+      "body": "Empty"
+    },
+    {
+      "statusCode": 401,
+      "description": "Unauthorised — authentication or authorisation failed.",
+      "body": "Empty or auth error body"
+    }
+  ],
+  "authentication": {
+    "required": true,
+    "type": "Government Gateway",
+    "affinityGroup": "Agent",
+    "credentialRoles": ["User", "Admin"],
+    "notes": "Rejects if HMRC-AS-AGENT enrolment is already active on the user."
+  },
+  "audience": "internal",
+  "controller": "uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationStatusController",
+  "controllerMethod": "getApplicationStatus",
+  "services": [
+    {
+      "name": "ApplicationForRiskingRepo",
+      "type": "MongoDB repository",
+      "operation": "findByApplicationReference",
+      "collection": "application-for-risking"
+    }
+  ],
+  "interactions": [
+    {
+      "step": 1,
+      "actor": "Caller",
+      "action": "GET /application-status/{applicationReference}",
+      "target": "GetApplicationStatusController"
+    },
+    {
+      "step": 2,
+      "actor": "GetApplicationStatusController",
+      "action": "Invoke AuthorisedAction — verify Government Gateway auth, AffinityGroup.Agent, credential role, absence of HMRC-AS-AGENT enrolment",
+      "target": "AuthorisedAction / HMRC Auth service"
+    },
+    {
+      "step": 3,
+      "actor": "GetApplicationStatusController",
+      "action": "Query MongoDB for ApplicationForRisking by applicationReference",
+      "target": "ApplicationForRiskingRepo → MongoDB collection 'application-for-risking'"
+    },
+    {
+      "step": 4,
+      "actor": "GetApplicationStatusController",
+      "action": "Return 200 OK with {status: application.status.toString} if found, or 404 Not Found",
+      "target": "Caller"
+    }
+  ],
+  "externalDependencies": [
+    {
+      "name": "HMRC Auth Service",
+      "type": "HTTP",
+      "purpose": "Validate Government Gateway credentials and retrieve enrolments/credentialRole/internalId"
+    }
+  ],
+  "databaseCollections": [
+    {
+      "collection": "application-for-risking",
+      "operation": "findOne (headOption on Filters.eq applicationReference)",
+      "key": "applicationReference"
+    }
+  ],
+  "specialCases": [
+    "Unlike ARR02, this endpoint returns 404 Not Found (not 204) when the application reference does not exist.",
+    "The response only contains the status string, not any individual or failure details.",
+    "Status is serialised as the enum case name string (e.g. 'ReadyForSubmission')."
+  ],
+  "metadata": {
+    "lastUpdated": "2026-03-27",
+    "gitCommitSha": "169b806fc80ac3b3ff2f69c831f3dd6627378da0",
+    "analysisVersion": "1.0"
+  }
+}

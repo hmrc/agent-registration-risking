@@ -1,0 +1,40 @@
+service: agent-registration-risking
+repository: https://github.com/hmrc/agent-registration-risking
+capabilities:
+  - risking-submission
+  - risking-response-retrieval
+  - application-status-tracking
+  - sdes-notification-processing
+audience:
+  - internal
+interaction: synchronous
+criticality: high
+lifecycle: active
+dependencies:
+  consumes: []
+  produces: []
+tags:
+  - agent-registration
+  - risking
+  - sdes
+apis:
+  - id: ARR01
+    method: POST
+    path: /submit-for-risking
+    description: Submits a completed agent registration payload for risking.
+  - id: ARR02
+    method: GET
+    path: /application/{applicationReference}
+    description: Retrieves risking response details for the specified application reference.
+  - id: ARR03
+    method: GET
+    path: /individual/{personReference}
+    description: Retrieves risking response details for the specified individual person reference.
+  - id: ARR04
+    method: GET
+    path: /application-status/{applicationReference}
+    description: Retrieves the current risking status for the specified application reference.
+  - id: ARR05
+    method: POST
+    path: /receive-sdes-notifications
+    description: Receives and processes SDES notifications related to risking file handling.

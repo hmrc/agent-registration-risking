@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant Caller
+    participant AuthorisedAction
+    participant AuthService as HMRC Auth Service
+    participant Controller as GetApplicationController
+    participant MongoDB as MongoDB (application-for-risking)
+
+    Caller->>Controller: GET /application/{applicationReference}
+    Controller->>AuthorisedAction: andThen(authorisedAction)
+    AuthorisedAction->>AuthService: authorised(GovernmentGateway + AffinityGroup.Agent)
+    AuthService-->>AuthorisedAction: allEnrolments, credentialRole, internalId
+    alt Auth failed
+        AuthorisedAction-->>Caller: 401 Unauthorised
+    else Auth OK
+        AuthorisedAction-->>Controller: AuthorisedRequest
+        Controller->>MongoDB: findByApplicationReference(applicationReference)
+        MongoDB-->>Controller: Option[ApplicationForRisking]
+        alt Not found
+            Controller-->>Caller: 204 No Content
+        else Found
+            Controller->>Controller: Map to ApplicationRiskingResponse (applicationReference, status, individuals[{personReference, status, failures}], failures)
+            Controller-->>Caller: 200 OK (ApplicationRiskingResponse JSON)
+        end
+    end
