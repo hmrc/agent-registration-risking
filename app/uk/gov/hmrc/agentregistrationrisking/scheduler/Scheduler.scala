@@ -21,6 +21,7 @@ import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import javax.inject.Singleton
 import play.api.Logging
@@ -30,6 +31,7 @@ import uk.gov.hmrc.mongo.lock.MongoLockRepository
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
@@ -52,6 +54,39 @@ extends Logging:
       override val ttl: scala.concurrent.duration.Duration = 1.hour
       override val lockRepository: LockRepository = mongoLockRepository
 
+  private[scheduler] def jobTimeoutFor(lockService: LockService): FiniteDuration =
+    lockService.ttl match
+      case finite: FiniteDuration =>
+        val timeout = finite - 10.minutes
+        if timeout <= Duration.Zero then
+          throw new IllegalStateException(
+            s"Lock TTL ($finite) must be greater than 10 minutes to leave a positive job timeout"
+          )
+        else timeout
+      case _ => throw new IllegalStateException("Lock TTL must be a finite duration")
+
+  private[scheduler] def withJobTimeout(
+    name: String,
+    timeout: FiniteDuration
+  )(job: Future[Unit]): Future[Unit] =
+    val promise = Promise[Unit]()
+    val timeoutTask = executor.schedule(
+      new Runnable:
+        def run(): Unit =
+          logger.warn(
+            s"Scheduled task $name did not complete within ${timeout.toString}. The distributed lock will be released and the next tick may run concurrently with the underlying job, which cannot be cancelled and may still be in progress."
+          )
+          val _ = promise.tryFailure(new TimeoutException(s"Scheduled task $name timed out after ${timeout.toString}"))
+      ,
+      timeout.toMillis,
+      TimeUnit.MILLISECONDS
+    )
+    job.onComplete { result =>
+      val _ = timeoutTask.cancel(false)
+      val _ = promise.tryComplete(result)
+    }
+    promise.future
+
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   def scheduleDailyRiskingFileUpload(
     name: String,
@@ -64,20 +99,22 @@ extends Logging:
 
     executor.schedule(
       new Runnable:
-        def run(): Unit = lockServiceFor(name).withLock {
-          logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
-          job()
-        }.onComplete { result =>
-          result match
-            case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
-            case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
-            case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
-          scheduleDailyRiskingFileUpload(
-            name = name,
-            timeOfDay = timeOfDay,
-            job = job
-          )
-        }
+        def run(): Unit =
+          val lockService = lockServiceFor(name)
+          lockService.withLock {
+            logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
+            withJobTimeout(name = name, timeout = jobTimeoutFor(lockService))(job())
+          }.onComplete { result =>
+            result match
+              case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
+              case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
+              case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
+            scheduleDailyRiskingFileUpload(
+              name = name,
+              timeOfDay = timeOfDay,
+              job = job
+            )
+          }
       ,
       delayMillis,
       TimeUnit.MILLISECONDS
@@ -96,19 +133,21 @@ extends Logging:
 
     executor.schedule(
       new Runnable:
-        def run(): Unit = lockServiceFor(name).withLock {
-          logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
-          job()
-        }.onComplete { result =>
-          result match
-            case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
-            case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
-            case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
-          scheduleHourlyResultsFileProcessing(
-            name = name,
-            job = job
-          )
-        }
+        def run(): Unit =
+          val lockService = lockServiceFor(name)
+          lockService.withLock {
+            logger.info(s"Starting scheduled task: $name at ${ZonedDateTime.now(clock).toString}")
+            withJobTimeout(name = name, timeout = jobTimeoutFor(lockService))(job())
+          }.onComplete { result =>
+            result match
+              case Success(Some(_)) => logger.info(s"Scheduled task completed successfully: $name")
+              case Success(None) => logger.debug(s"Scheduled task skipped - already running on another instance: $name")
+              case Failure(e) => logger.error(s"Scheduled task failed: $name, ${e.getMessage}", e)
+            scheduleHourlyResultsFileProcessing(
+              name = name,
+              job = job
+            )
+          }
       ,
       delayMillis,
       TimeUnit.MILLISECONDS
