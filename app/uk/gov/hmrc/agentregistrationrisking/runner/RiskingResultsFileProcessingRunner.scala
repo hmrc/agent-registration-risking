@@ -65,7 +65,10 @@ extends RequestAwareLogging:
       _ <- stage("RiskingArchivalService.processArchivals")(riskingArchivalService.processArchivals())
     yield ()).recover { case ex => logger.error(s"Error processing risking results file", ex) }
 
-  private def stage(name: String)(runStage: => Future[Unit])(using RequestHeader): Future[Unit] = Future.unit
-    .flatMap(_ => runStage)
-    .recover:
-      case ex => logger.error(s"Stage $name failed, continuing with remaining stages", ex)
+  private def stage(name: String)(runStage: => Future[Unit])(using RequestHeader): Future[Unit] =
+    logger.info(s"Stage started: $name")
+    Future.unit
+      .flatMap(_ => runStage)
+      .map { _ => logger.info(s"Stage completed: $name") }
+      .recover:
+        case ex => logger.error(s"Stage failed: $name, continuing with remaining stages", ex)
