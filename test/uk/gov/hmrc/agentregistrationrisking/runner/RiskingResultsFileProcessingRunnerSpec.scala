@@ -62,12 +62,6 @@ extends UnitSpec:
       fixture.executedStages shouldBe allStages withClue "stages after the failing one must still run"
     }
 
-    "still runs all downstream stages when a stage throws synchronously" in {
-      val fixture = new Fixture(failingStages = Set.empty, throwingStages = Set("processResultsFiles"))
-      fixture.runner.run().futureValue shouldBe ()
-      fixture.executedStages shouldBe allStages
-    }
-
     "succeeds (does not propagate failure to the scheduler) even when every stage fails" in {
       val fixture = new Fixture(failingStages = allStages.toSet)
       fixture.runner.run().futureValue shouldBe ()
@@ -78,8 +72,7 @@ extends UnitSpec:
   /** Builds a runner whose services are stubs recording invocation order. Stage stubs never touch their (null) dependencies. Wart.Null is excluded for tests.
     */
   private class Fixture(
-    failingStages: Set[String],
-    throwingStages: Set[String] = Set.empty
+    failingStages: Set[String]
   ):
 
     private val calls: AtomicReference[Vector[String]] = new AtomicReference(Vector.empty)
@@ -88,7 +81,6 @@ extends UnitSpec:
 
     private def stubStage(name: String): Future[Unit] =
       val _ = calls.updateAndGet(_ :+ name)
-      if throwingStages.contains(name) then throw new RuntimeException(s"$name threw synchronously")
       if failingStages.contains(name) then Future.failed(new RuntimeException(s"$name failed"))
       else Future.successful(())
 

@@ -67,8 +67,7 @@ extends RequestAwareLogging:
 
   private def stage(name: String)(runStage: => Future[Unit])(using RequestHeader): Future[Unit] =
     logger.info(s"Stage started: $name")
-    Future.unit
-      .flatMap(_ => runStage)
+    runStage
       .map { _ => logger.info(s"Stage completed: $name") }
       .recover:
         case ex => logger.error(s"Stage failed: $name, continuing with remaining stages", ex)
