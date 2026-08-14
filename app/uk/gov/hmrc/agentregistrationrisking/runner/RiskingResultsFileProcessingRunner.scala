@@ -55,12 +55,19 @@ extends RequestAwareLogging:
   def run(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
     (for
-      _ <- riskingResultsService.processResultsFiles()
-      _ <- applicationOutcomeService.processOverallOutcomes()
-      _ <- subscriptionService.processSubscriptions()
-      _ <- emailServiceForApprovedApplications.processEmails()
-      _ <- emailServiceForFailedNonFixable.processEmails()
-      _ <- emailServiceForFailedFixable.processEmails()
-      _ <- backendNotificationService.processBackendNotifications()
-      _ <- riskingArchivalService.processArchivals()
-    yield ()).recover { case ex: Exception => logger.error(s"Error processing risking results file", ex) }
+      _ <- stage("RiskingResultsService.processResultsFiles")(riskingResultsService.processResultsFiles())
+      _ <- stage("ApplicationOutcomeService.processOverallOutcomes")(applicationOutcomeService.processOverallOutcomes())
+      _ <- stage("SubscriptionService.processSubscriptions")(subscriptionService.processSubscriptions())
+      _ <- stage("EmailServiceForApprovedApplications.processEmails")(emailServiceForApprovedApplications.processEmails())
+      _ <- stage("EmailServiceForFailedNonFixable.processEmails")(emailServiceForFailedNonFixable.processEmails())
+      _ <- stage("EmailServiceForFailedFixable.processEmails")(emailServiceForFailedFixable.processEmails())
+      _ <- stage("BackendNotificationService.processBackendNotifications")(backendNotificationService.processBackendNotifications())
+      _ <- stage("RiskingArchivalService.processArchivals")(riskingArchivalService.processArchivals())
+    yield ()).recover { case ex => logger.error(s"Error processing risking results file", ex) }
+
+  private def stage(name: String)(runStage: => Future[Unit])(using RequestHeader): Future[Unit] =
+    logger.info(s"Stage started: $name")
+    runStage
+      .map { _ => logger.info(s"Stage completed: $name") }
+      .recover:
+        case ex => logger.error(s"Stage failed: $name, continuing with remaining stages", ex)
