@@ -103,7 +103,7 @@ class AppConfig @Inject() (
     val token: String = config.get[String]("internal-auth.token")
 
   object StrideAuth:
-    val strideRole: String = config.get[String]("stride-auth.role")
+    val strideRole: String = config.get[String]("stride-auth.stride-role")
 
   // !!!
   // Access objects eagerly to initialize its vals, ensuring config errors are detected at startup

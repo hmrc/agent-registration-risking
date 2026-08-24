@@ -28,7 +28,6 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import play.api.mvc.Results.Unauthorized
 
 @Singleton
 class StrideAuthorisedAction @Inject() (
@@ -52,9 +51,6 @@ with RequestAwareLogging:
     ).apply:
       case allEnrolments if allEnrolments.enrolments.map(_.key).contains(appConfig.StrideAuth.strideRole) => block(request)
       case _ => Future.failed(InternalError(s"User logged in without stride credentials"))
-    .recover:
-      case _: NoActiveSession => Unauthorized("No active session")
-      case e: AuthorisationException => Unauthorized(s"Unauthorised because of ${e.reason}, $e")
 
   override def parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
 

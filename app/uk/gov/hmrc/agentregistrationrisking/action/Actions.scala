@@ -35,6 +35,6 @@ class Actions @Inject() (
 
   val strideAuthorised: ActionBuilder[Request, AnyContent] = actionBuilder
     .andThen(strideAuthorisedAction)
-  
+
   val authorised: ActionBuilder[AuthorisedRequest, AnyContent] = actionBuilder
     .andThen(authorisedAction)
