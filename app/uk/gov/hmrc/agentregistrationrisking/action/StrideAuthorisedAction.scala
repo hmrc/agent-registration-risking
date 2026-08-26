@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.action
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import play.api.mvc.*
+import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
@@ -50,7 +51,9 @@ with RequestAwareLogging:
       Retrievals.allEnrolments
     ).apply:
       case allEnrolments if allEnrolments.enrolments.map(_.key).contains(appConfig.StrideAuth.strideRole) => block(request)
-      case _ => Future.failed(InternalError(s"User logged in without stride credentials"))
+      case _ =>
+        logger.warn(s"User logged in without stride credentials")
+        Future.successful(Unauthorized)
 
   override def parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
 

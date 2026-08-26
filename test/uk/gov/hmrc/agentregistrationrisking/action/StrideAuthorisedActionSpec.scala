@@ -19,9 +19,9 @@ package uk.gov.hmrc.agentregistrationrisking.action
 import play.api.mvc.Request
 import play.api.mvc.Result
 import play.api.mvc.Results.Ok
+import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuthStubs
-import uk.gov.hmrc.auth.core.InternalError
 
 import scala.concurrent.Future
 
@@ -50,8 +50,7 @@ extends ISpec:
     )
     strideAuthorisedAction
       .invokeBlock(request, _ => fakeResultF)
-      .failed
-      .futureValue shouldBe InternalError(s"User logged in without stride credentials")
+      .futureValue shouldBe Unauthorized
     AuthStubs.verifyAuthorise()
 
     def fakeResultF: Future[Result] = fail("this should not be executed if test works fine")
