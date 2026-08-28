@@ -123,3 +123,48 @@ object AuthStubs:
       ]
     }
     """
+
+  val expectedPrivilegedApplicationRequestBody: String =
+    // language=JSON
+    """
+      |{
+      |  "authorise": [
+      |    {
+      |      "authProviders": [
+      |        "PrivilegedApplication"
+      |      ]
+      |    }
+      |  ],
+      |  "retrieve": [
+      |    "allEnrolments"
+      |  ]
+      |}
+      |""".stripMargin
+
+  val expectedResponseBodyWithStrideRole: String =
+    // language=JSON
+    """
+      |{
+      |  "allEnrolments": [
+      |    {
+      |      "key": "stride-role",
+      |      "identifiers": [],
+      |      "state": "Activated"
+      |    }
+      |  ]
+      |}
+      |""".stripMargin
+
+  val expectedResponseBodyWithoutCorrectStrideRole: String =
+    // language=JSON
+    """
+      |{
+      |  "allEnrolments": [
+      |    {
+      |      "key": "blah",
+      |      "identifiers": [],
+      |      "state": "Activated"
+      |    }
+      |  ]
+      |}
+      |""".stripMargin

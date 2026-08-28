@@ -28,13 +28,13 @@ import javax.inject.Singleton
 class Actions @Inject() (
   actionBuilder: DefaultActionBuilder,
   authorisedAction: AuthorisedAction,
-  basicAuthorisedAction: BasicAuthorisedAction
+  strideAuthorisedAction: StrideAuthorisedAction
 ):
 
   val default: ActionBuilder[Request, AnyContent] = actionBuilder
 
-  val basicAuthorised: ActionBuilder[BasicAuthorisedRequest, AnyContent] = actionBuilder
-    .andThen(basicAuthorisedAction)
+  val strideAuthorised: ActionBuilder[Request, AnyContent] = actionBuilder
+    .andThen(strideAuthorisedAction)
 
   val authorised: ActionBuilder[AuthorisedRequest, AnyContent] = actionBuilder
     .andThen(authorisedAction)

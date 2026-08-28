@@ -46,7 +46,10 @@ with RequestAwareLogging:
 
   "return NoContent if there is no underlying records" in:
     given Request[?] = tdAll.backendRequest
-    AuthStubs.stubAuthorise(requestBodyJson = AuthStubs.expectedRequestBodyMinimal)
+    AuthStubs.stubAuthorise(
+      requestBodyJson = AuthStubs.expectedPrivilegedApplicationRequestBody,
+      responseBody = AuthStubs.expectedResponseBodyWithStrideRole
+    )
 
     val response: HttpResponse =
       httpClient
@@ -60,7 +63,10 @@ with RequestAwareLogging:
 
   "find individual by person reference returns Ok and SmuIndividualResponse as Json body" in:
     given Request[?] = tdAll.backendRequest
-    AuthStubs.stubAuthorise(requestBodyJson = AuthStubs.expectedRequestBodyMinimal)
+    AuthStubs.stubAuthorise(
+      requestBodyJson = AuthStubs.expectedPrivilegedApplicationRequestBody,
+      responseBody = AuthStubs.expectedResponseBodyWithStrideRole
+    )
 
     val individual: IndividualForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.individual1
     val application: ApplicationForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.application
