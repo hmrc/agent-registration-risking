@@ -118,3 +118,4 @@ class AppConfig @Inject() (
   Base64
   Features
   InternalAuth
+  StrideAuth
