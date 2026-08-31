@@ -1,0 +1,111 @@
+{
+  "apiId": "ARR01",
+  "apiTitle": "Submit For Risking",
+  "description": "Submits a completed agent registration payload for risking. Accepts a SubmitForRiskingRequest JSON body containing the agent application and associated individuals, transforms it into an ApplicationForRisking record, and upserts it into MongoDB. Returns 201 Created on success.",
+  "method": "POST",
+  "path": "/submit-for-risking",
+  "pathParameters": [],
+  "queryParameters": [],
+  "responses": [
+    {
+      "statusCode": 201,
+      "description": "Created — the application for risking was successfully upserted.",
+      "body": "Empty"
+    },
+    {
+      "statusCode": 400,
+      "description": "Bad Request — JSON body failed to parse as SubmitForRiskingRequest.",
+      "body": "Play framework JSON parse error"
+    },
+    {
+      "statusCode": 401,
+      "description": "Unauthorised — caller is not authenticated via Government Gateway as an Agent, or credential role is unsupported, or HMRC-AS-AGENT enrolment is already active.",
+      "body": "Empty or auth error body"
+    }
+  ],
+  "authentication": {
+    "required": true,
+    "type": "Government Gateway",
+    "affinityGroup": "Agent",
+    "credentialRoles": ["User", "Admin"],
+    "notes": "Rejects if HMRC-AS-AGENT enrolment is already active on the user. Retrieves internalId, allEnrolments, credentialRole."
+  },
+  "audience": "internal",
+  "controller": "uk.gov.hmrc.agentregistrationrisking.controllers.SubmitForRiskingController",
+  "controllerMethod": "submitForRisking",
+  "services": [
+    {
+      "name": "ApplicationForRiskingRepo",
+      "type": "MongoDB repository",
+      "operation": "upsert",
+      "collection": "application-for-risking"
+    }
+  ],
+  "interactions": [
+    {
+      "step": 1,
+      "actor": "Caller",
+      "action": "POST /submit-for-risking with SubmitForRiskingRequest JSON body",
+      "target": "SubmitForRiskingController"
+    },
+    {
+      "step": 2,
+      "actor": "SubmitForRiskingController",
+      "action": "Invoke AuthorisedAction — verify Government Gateway auth, AffinityGroup.Agent, credential role, and absence of HMRC-AS-AGENT enrolment",
+      "target": "AuthorisedAction / HMRC Auth service"
+    },
+    {
+      "step": 3,
+      "actor": "SubmitForRiskingController",
+      "action": "Parse JSON body as SubmitForRiskingRequest",
+      "target": "Play JSON parser"
+    },
+    {
+      "step": 4,
+      "actor": "SubmitForRiskingController",
+      "action": "Convert SubmitForRiskingRequest to ApplicationForRisking model; map individuals to IndividualForRisking; determine CRN (only for LimitedCompany/LimitedPartnership/LLP/ScottishLimitedPartnership); set status=ReadyForSubmission; set createdAt=Instant.now()",
+      "target": "SubmitForRiskingController (internal extension methods)"
+    },
+    {
+      "step": 5,
+      "actor": "SubmitForRiskingController",
+      "action": "Upsert ApplicationForRisking document into MongoDB (replaceOne with upsert=true, keyed on applicationReference)",
+      "target": "ApplicationForRiskingRepo → MongoDB collection 'application-for-risking'"
+    },
+    {
+      "step": 6,
+      "actor": "SubmitForRiskingController",
+      "action": "Return 201 Created",
+      "target": "Caller"
+    }
+  ],
+  "externalDependencies": [
+    {
+      "name": "HMRC Auth Service",
+      "type": "HTTP",
+      "purpose": "Validate Government Gateway credentials and retrieve enrolments/credentialRole/internalId"
+    }
+  ],
+  "databaseCollections": [
+    {
+      "collection": "application-for-risking",
+      "operation": "upsert (replaceOne)",
+      "key": "applicationReference",
+      "indexes": [
+        {"field": "applicationReference", "unique": true},
+        {"field": "individuals.personReference", "unique": true},
+        {"field": "lastUpdated", "type": "TTL"}
+      ]
+    }
+  ],
+  "specialCases": [
+    "CRN is only populated for LimitedCompany, LimitedPartnership, LLP, and ScottishLimitedPartnership business types; all other types get null CRN.",
+    "PassedIV is mandatory on IndividualProvidedDetails; throws if missing.",
+    "Upsert semantics mean re-submission of the same applicationReference overwrites the existing record."
+  ],
+  "metadata": {
+    "lastUpdated": "2026-03-27",
+    "gitCommitSha": "169b806fc80ac3b3ff2f69c831f3dd6627378da0",
+    "analysisVersion": "1.0"
+  }
+}

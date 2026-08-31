@@ -1,0 +1,118 @@
+{
+  "apiId": "ARR02",
+  "apiTitle": "Get Application Risking Response",
+  "description": "Retrieves the full risking response for a given application reference, including the overall application status and the risking status of each associated individual. Returns 200 with the response body if found, or 204 No Content if the application reference is not found in the database.",
+  "method": "GET",
+  "path": "/application/{applicationReference}",
+  "pathParameters": [
+    {
+      "name": "applicationReference",
+      "type": "string",
+      "description": "The unique application reference identifier. Bound as an ApplicationReference value class.",
+      "required": true,
+      "example": "ABC1234567"
+    }
+  ],
+  "queryParameters": [],
+  "responses": [
+    {
+      "statusCode": 200,
+      "description": "Found — returns ApplicationRiskingResponse JSON.",
+      "body": {
+        "applicationReference": "string",
+        "status": "ApplicationForRiskingStatus enum (ReadyForSubmission | SubmittedForRisking | Approved | FailedNonFixable | FailedFixable | ReadyForResubmission)",
+        "individuals": [
+          {
+            "personReference": "string",
+            "status": "ApplicationForRiskingStatus enum",
+            "failures": "array of Failure objects or null"
+          }
+        ],
+        "failures": "array of Failure objects or null"
+      }
+    },
+    {
+      "statusCode": 204,
+      "description": "No Content — application reference not found in database.",
+      "body": "Empty"
+    },
+    {
+      "statusCode": 401,
+      "description": "Unauthorised — authentication or authorisation failed.",
+      "body": "Empty or auth error body"
+    }
+  ],
+  "authentication": {
+    "required": true,
+    "type": "Government Gateway",
+    "affinityGroup": "Agent",
+    "credentialRoles": ["User", "Admin"],
+    "notes": "Rejects if HMRC-AS-AGENT enrolment is already active on the user."
+  },
+  "audience": "internal",
+  "controller": "uk.gov.hmrc.agentregistrationrisking.controllers.GetApplicationController",
+  "controllerMethod": "getApplicationRiskingResponse",
+  "services": [
+    {
+      "name": "ApplicationForRiskingRepo",
+      "type": "MongoDB repository",
+      "operation": "findByApplicationReference",
+      "collection": "application-for-risking"
+    }
+  ],
+  "interactions": [
+    {
+      "step": 1,
+      "actor": "Caller",
+      "action": "GET /application/{applicationReference}",
+      "target": "GetApplicationController"
+    },
+    {
+      "step": 2,
+      "actor": "GetApplicationController",
+      "action": "Invoke AuthorisedAction — verify Government Gateway auth, AffinityGroup.Agent, credential role, absence of HMRC-AS-AGENT enrolment",
+      "target": "AuthorisedAction / HMRC Auth service"
+    },
+    {
+      "step": 3,
+      "actor": "GetApplicationController",
+      "action": "Query MongoDB for ApplicationForRisking by applicationReference (Filters.eq)",
+      "target": "ApplicationForRiskingRepo → MongoDB collection 'application-for-risking'"
+    },
+    {
+      "step": 4,
+      "actor": "GetApplicationController",
+      "action": "Map ApplicationForRisking to ApplicationRiskingResponse (includes individual risking statuses)",
+      "target": "GetApplicationController (internal extension method)"
+    },
+    {
+      "step": 5,
+      "actor": "GetApplicationController",
+      "action": "Return 200 OK with ApplicationRiskingResponse JSON, or 204 No Content if not found",
+      "target": "Caller"
+    }
+  ],
+  "externalDependencies": [
+    {
+      "name": "HMRC Auth Service",
+      "type": "HTTP",
+      "purpose": "Validate Government Gateway credentials and retrieve enrolments/credentialRole/internalId"
+    }
+  ],
+  "databaseCollections": [
+    {
+      "collection": "application-for-risking",
+      "operation": "findOne (headOption on Filters.eq applicationReference)",
+      "key": "applicationReference"
+    }
+  ],
+  "specialCases": [
+    "Returns 204 (not 404) when the application reference is not found — callers must handle both 200 and 204.",
+    "The response only includes personReference, status, and failures for each individual — not the full IndividualForRisking details."
+  ],
+  "metadata": {
+    "lastUpdated": "2026-03-27",
+    "gitCommitSha": "169b806fc80ac3b3ff2f69c831f3dd6627378da0",
+    "analysisVersion": "1.0"
+  }
+}
