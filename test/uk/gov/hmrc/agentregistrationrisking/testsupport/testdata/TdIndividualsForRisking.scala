@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 
@@ -47,7 +46,6 @@ trait TdIndividualsForRisking {
     instant = dependencies.instant,
     applicationReference = applicationReference,
     individualData = TdIndividualData.make(
-      applicationReference = applicationReference,
       personReference = PersonReference(s"PREF_${seed}_01"),
       seed = s"${seed}_01"
     )
@@ -57,7 +55,6 @@ trait TdIndividualsForRisking {
     instant = dependencies.instant,
     applicationReference = applicationReference,
     individualData = TdIndividualData.make(
-      applicationReference = applicationReference,
       personReference = PersonReference(s"PREF_${seed}_02"),
       seed = s"${seed}_02"
     )
@@ -67,7 +64,6 @@ trait TdIndividualsForRisking {
     instant = dependencies.instant,
     applicationReference = applicationReference,
     individualData = TdIndividualData.make(
-      applicationReference = applicationReference,
       personReference = PersonReference(s"PREF_${seed}_03"),
       seed = s"${seed}_03"
     )

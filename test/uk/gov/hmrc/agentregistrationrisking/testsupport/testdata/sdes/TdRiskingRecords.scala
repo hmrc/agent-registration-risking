@@ -24,11 +24,12 @@ import uk.gov.hmrc.agentregistrationrisking.model.RecordType.*
 import uk.gov.hmrc.agentregistrationrisking.model.Failure
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecord
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport
 
 trait TdRiskingRecords:
 
   val testFileName = "testFileName"
-  val testDownloadUrl = s"http://localhost:11111/test-location/testFile"
+  val testDownloadUrl = s"http://localhost:${WireMockSupport.port.toString}/test-location/testFile"
   val testFileSize = 1024
 
   val testAvailableFile = AvailableFile(

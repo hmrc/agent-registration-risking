@@ -77,7 +77,7 @@ with RequestAwareLogging:
     .getEnrolment(appConfig.hmrcAsAgentEnrolment.key)
     .exists(_.isActivated)
 
-  private def isUnsupportedCredentialRole[A](maybeCredentialRole: Option[CredentialRole])(using request: RequestHeader) =
+  private def isUnsupportedCredentialRole[A](maybeCredentialRole: Option[CredentialRole]) =
     @nowarn
     val supportedCredentialRoles: Set[CredentialRole] = Set(User, Admin)
     val credentialRole: CredentialRole = maybeCredentialRole.getOrElse(throw RuntimeException("Retrievals for CredentialRole is missing"))

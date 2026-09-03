@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.objectstore.client.Path

@@ -18,11 +18,8 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
-import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
 import java.time.Instant
-import javax.inject.Singleton
 
 final case class CompletedRisking(
   _id: CompletedRiskingId,

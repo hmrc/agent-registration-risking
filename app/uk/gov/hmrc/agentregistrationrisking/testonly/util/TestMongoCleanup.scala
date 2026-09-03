@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testOnly.util
+package uk.gov.hmrc.agentregistrationrisking.testonly.util
 
 import org.mongodb.scala.Document
 import org.mongodb.scala.ObservableFuture
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo

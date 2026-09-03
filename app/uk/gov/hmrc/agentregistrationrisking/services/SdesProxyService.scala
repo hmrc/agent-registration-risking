@@ -18,19 +18,15 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
-import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 
-import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
@@ -38,9 +34,6 @@ class SdesProxyService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   appConfig: AppConfig,
   correlationIdGenerator: CorrelationIdGenerator
-)(using
-  ExecutionContext,
-  Clock
 )
 extends RequestAwareLogging:
 
@@ -48,7 +41,7 @@ extends RequestAwareLogging:
     val fileReadyNotification = makeNotifySdesFileReadyRequest(objectSummaryWithMd5)
     sdesProxyConnector.notifySdesFileReady(fileReadyNotification)
 
-  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5)(using RequestHeader): NotifySdesFileReadyRequest =
+  private def makeNotifySdesFileReadyRequest(objectSummaryWithMd5: ObjectSummaryWithMd5): NotifySdesFileReadyRequest =
     val informationType: SdesInformationType = appConfig.SdesProxy.outboundInformationType
     val serviceReferenceNumber: SdesSrn = appConfig.SdesProxy.srn
     val objectStoreLocation = s"${appConfig.SdesProxy.objectStoreLocationPrefix}/${objectSummaryWithMd5.location.directory.asUri}"

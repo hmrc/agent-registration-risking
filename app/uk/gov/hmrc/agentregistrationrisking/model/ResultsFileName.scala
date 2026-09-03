@@ -16,11 +16,8 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import org.bson.types.ObjectId
 import play.api.libs.json.Format
-import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
-import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
 /** The name of a risking results file received from Minerva
   */

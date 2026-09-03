@@ -16,26 +16,13 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth.Provided
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
-import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
-import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
-import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.correlationId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.objectSummaryWithMd5
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll.tdAll.testAvailableFile
 import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
 
-import java.time.Instant
-
 trait TdSdesProxy { dependencies: TdInstant =>
-
-  private val createdAt: Instant = dependencies.instant
 
   def fileDownloadLocation = s"/${objectSummaryWithMd5.location.directory.value}/${objectSummaryWithMd5.location.fileName}"
 

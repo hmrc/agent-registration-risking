@@ -18,23 +18,18 @@ package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.risking.updates.UpdateApplicationStateSentToMinervaRequest
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.ApplicationReferenceGenerator
-import uk.gov.hmrc.agentregistration.shared.ApplicationState
-import uk.gov.hmrc.agentregistration.shared.ApplicationState.SentToMinerva
 import uk.gov.hmrc.agentregistrationrisking.connectors.AgentRegistrationConnector
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
 class AgentApplicationService @Inject() (
   agentRegistrationConnector: AgentRegistrationConnector
-)(using ExecutionContext)
+)
 extends RequestAwareLogging:
 
   def updateApplicationStateSentToMinerva(

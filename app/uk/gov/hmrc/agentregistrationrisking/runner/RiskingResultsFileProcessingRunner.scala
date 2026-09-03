@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.runner
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
 import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
@@ -29,7 +28,6 @@ import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
-import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -45,11 +43,7 @@ class RiskingResultsFileProcessingRunner @Inject() (
   emailServiceForFailedFixable: EmailServiceForFailedFixable,
   backendNotificationService: BackendNotificationService,
   riskingArchivalService: RiskingArchivalService
-)(using
-  appConfig: AppConfig,
-  ec: ExecutionContext,
-  clock: Clock
-)
+)(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
   def run(): Future[Unit] =

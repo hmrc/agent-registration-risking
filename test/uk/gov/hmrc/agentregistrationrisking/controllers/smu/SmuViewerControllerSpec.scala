@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.controllers.smu
 
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.smu.SmuIndividualResponse
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -69,7 +68,6 @@ with RequestAwareLogging:
     )
 
     val individual: IndividualForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.individual1
-    val application: ApplicationForRisking = tdAll.tdRiskingInstancesInStates.submittedForRisking.application
 
     val response: HttpResponse =
       httpClient

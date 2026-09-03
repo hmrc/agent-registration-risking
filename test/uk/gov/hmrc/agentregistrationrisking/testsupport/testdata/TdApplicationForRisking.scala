@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
@@ -26,7 +25,6 @@ import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 
 import java.time.Duration
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 import com.softwaremill.quicklens.modify
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 

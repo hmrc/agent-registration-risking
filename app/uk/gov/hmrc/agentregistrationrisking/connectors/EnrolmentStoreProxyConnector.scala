@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.connectors
 
-import play.api.libs.json.JsMacroImpl
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import play.api.libs.json.Reads

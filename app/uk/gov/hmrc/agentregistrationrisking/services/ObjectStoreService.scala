@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
@@ -31,12 +30,6 @@ import uk.gov.hmrc.objectstore.client.RetentionPeriod
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 
-import java.net.URL
-import java.time.Clock
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -44,15 +37,10 @@ import scala.concurrent.Future
 
 @Singleton
 class ObjectStoreService @Inject() (
-  playObjectStoreClient: PlayObjectStoreClient,
-  appConfig: AppConfig
-)(using
-  ExecutionContext,
-  Clock
-)
+  playObjectStoreClient: PlayObjectStoreClient
+)(using ExecutionContext)
 extends RequestAwareLogging:
 
-  private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
   private val receivedResultsFilesPath = Path.Directory("processed-results-files")
 
   def deleteSdesFiles()(using request: RequestHeader) =
@@ -92,7 +80,6 @@ extends RequestAwareLogging:
   def listObjects(using request: RequestHeader): Future[ObjectListing] = playObjectStoreClient.listObjects(receivedResultsFilesPath)
 
   def generatePreSignedDownloadUrl(
-    objectStorePath: Path.Directory,
     objectStoreFileName: String
   )(using request: RequestHeader): Future[PresignedDownloadUrl] = playObjectStoreClient.presignedDownloadUrl(
     path = Path.Directory("sdes").file(fileName = objectStoreFileName)

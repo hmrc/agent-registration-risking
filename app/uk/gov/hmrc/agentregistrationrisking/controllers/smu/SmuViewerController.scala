@@ -17,24 +17,17 @@
 package uk.gov.hmrc.agentregistrationrisking.controllers.smu
 
 import play.api.libs.json.Json
-import play.api.libs.typedmap.TypedMap
-import play.api.mvc.request.RemoteConnection
-import play.api.mvc.request.RequestTarget
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import play.api.mvc.Headers
-import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.controllers.BackendController
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.smu.SmuIndividualResponse
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
-import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,13 +38,11 @@ class SmuViewerController @Inject() (
   cc: ControllerComponents,
   actions: Actions,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
-  objectStoreService: ObjectStoreService,
-  appConfig: AppConfig
+  individualForRiskingRepo: IndividualForRiskingRepo
 )
 extends BackendController(cc):
 
-  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.strideAuthorised.async: request =>
+  def findIndividualByPersonReference(personReference: PersonReference): Action[AnyContent] = actions.strideAuthorised.async: _ =>
     for
       maybeIndividual: Option[IndividualForRisking] <- individualForRiskingRepo.findById(personReference)
       maybeApp: Option[ApplicationForRisking] <-

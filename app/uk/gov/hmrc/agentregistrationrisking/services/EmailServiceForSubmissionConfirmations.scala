@@ -28,14 +28,13 @@ import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
 class EmailServiceForSubmissionConfirmations @Inject() (
   emailConnector: EmailConnector,
   appConfig: AppConfig
-)(using ExecutionContext)
+)
 extends RequestAwareLogging:
 
   private val emailTemplateId: EmailTemplateId = EmailTemplateId.SubmissionConfirmation

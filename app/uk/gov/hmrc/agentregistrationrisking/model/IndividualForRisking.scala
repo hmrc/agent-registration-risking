@@ -21,11 +21,10 @@ import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
-import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.*
 
 import java.time.Instant
+import scala.annotation.nowarn
 
 final case class IndividualForRisking(
   personReference: PersonReference, // primary Key
@@ -39,6 +38,8 @@ final case class IndividualForRisking(
 )
 
 object IndividualForRisking:
+  // Legacy case classes below are used only as Json.reads[...] type arguments, which the unused check does not see
+  @nowarn("msg=unused local definition")
   given format: OFormat[IndividualForRisking] =
     final case class IndividualForRiskingLegacy(
       personReference: PersonReference, // primary Key

@@ -125,7 +125,7 @@ extends ISpec:
     ready.map(_.application.applicationReference).toSet shouldBe Set(legacyApp.applicationReference) withClue
       "predicate gate `emailsProcessed=true` must match legacy records that were emailed under the old flow before this PR added emailSentAt; the derivation on read fills emailSentAt = Some(receivedAt) so the wire builder gets a valid date"
 
-    ready.head.application.overallStatus.emailsSentAt shouldBe Some(legacyApp.entityRiskingResult.value.receivedAt) withClue
+    ready.headOption.value.application.overallStatus.emailsSentAt shouldBe Some(legacyApp.entityRiskingResult.value.receivedAt) withClue
       "after the derivation runs, the wire builder can safely call overallStatus.emailsSentAt.getOrThrowExpectedDataMissing"
 
   "findReadyToArchive does NOT match legacy records whose overallStatus.backendNotified field is absent from the persisted document — legacy pre-migration records that never had backendNotified flipped MUST NOT be archived (would erase evidence of an unfinished notify-BE flow)" in:

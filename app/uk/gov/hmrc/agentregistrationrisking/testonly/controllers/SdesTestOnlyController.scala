@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testOnly.controllers
+package uk.gov.hmrc.agentregistrationrisking.testonly.controllers
 
 import org.mongodb.scala.SingleObservableFuture
 import play.api.libs.json.JsValue
@@ -34,15 +34,13 @@ import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingResultsFileProcessingRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
-import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileContent
-import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
-import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultsFileContentsRepo
+import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileContent
+import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileName
+import uk.gov.hmrc.agentregistrationrisking.testonly.repos.RiskingResultsFileContentsRepo
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Clock
 import java.time.Instant
-import java.time.LocalDate
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.annotation.nowarn

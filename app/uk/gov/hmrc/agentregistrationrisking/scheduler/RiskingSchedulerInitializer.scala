@@ -23,7 +23,6 @@ import uk.gov.hmrc.agentregistrationrisking.runner.RiskingResultsFileProcessingR
 
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class RiskingSchedulerInitializer @Inject() (
@@ -31,7 +30,7 @@ class RiskingSchedulerInitializer @Inject() (
   appConfig: AppConfig,
   riskingFileUploadRunner: RiskingFileUploadRunner,
   riskingResultsFileProcessingRunner: RiskingResultsFileProcessingRunner
-)(using ExecutionContext)
+)
 extends Logging:
 
   initialize()

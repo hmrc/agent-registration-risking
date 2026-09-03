@@ -17,12 +17,8 @@
 package uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock as wm
-import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status
-import play.api.libs.json.JsObject
-import uk.gov.hmrc.agentregistration.shared.InternalUserId
-import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
 
 object AuthStubs:
@@ -57,24 +53,6 @@ object AuthStubs:
        }
     """
 
-  private def responseBodyAsIndividual(): String =
-    // language=JSON
-    s"""
-    {
-     "allEnrolments": [{
-       "key": "MTD-IT",
-       "identifiers": [{
-         "key": "AnyIdentifier",
-         "value": "AnyValue"
-       }]
-     }],
-     "groupIdentifier": "3E7R-E0V0-5V4N-Q5S0",
-     "affinityGroup": "Individual",
-     "confidenceLevel": 250,
-     "internalId": "123456789"
-    }
-    """
-
   private val expectedRequestBody: String =
     // language=JSON
     """
@@ -100,27 +78,6 @@ object AuthStubs:
     {
       "authorise": [],
       "retrieve": []
-    }
-    """
-
-  private val expectedRequestBodyIndividual: String =
-    // language=JSON
-    """
-    {
-      "authorise": [
-      {
-        "authProviders": [
-          "GovernmentGateway"
-        ]
-      },
-      {
-        "affinityGroup": "Individual"
-      }
-      ],
-      "retrieve": [
-        "allEnrolments",
-        "internalId"
-      ]
     }
     """
 

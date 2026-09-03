@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testOnly.repos
+package uk.gov.hmrc.agentregistrationrisking.testonly.repos
 
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
 import org.mongodb.scala.model.Sorts
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
-import uk.gov.hmrc.agentregistrationrisking.repository.FieldNames
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
-import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileContent
-import uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
-import uk.gov.hmrc.agentregistrationrisking.testOnly.repos.RiskingResultFilesRepoHelp.given
+import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileContent
+import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileName
+import uk.gov.hmrc.agentregistrationrisking.testonly.repos.RiskingResultFilesRepoHelp.given
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
@@ -36,12 +34,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 final class RiskingResultsFileContentsRepo @Inject() (
-  mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  mongoComponent: MongoComponent
 )(using ec: ExecutionContext)
 extends Repo[RiskingResultsFileName, RiskingResultsFileContent](
   collectionName = "risking-results-file-contents",

@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.contactdetails.ApplicantName
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualDateOfBirth
@@ -32,10 +30,8 @@ import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsEvidenc
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicantContactDetailsData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
-import uk.gov.hmrc.agentregistration.shared.util.OptionalListExtensions.transformToCommaSeparatedString
 import uk.gov.hmrc.agentregistrationrisking.util.BooleanExtensions.convertBooleanToStringRepresentation
 import uk.gov.hmrc.agentregistrationrisking.util.MinervaDateFormats.asMinervaDate
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.amls.AmlsEvidenceUrl
 
 import java.time.LocalDate
@@ -189,14 +185,6 @@ object RiskingFileDataRecord:
       providedByApplicant = Some(individualData.providedByApplicant),
       passedIV = Some(individualData.passedIv)
     )
-
-  private def getMaybeCrn(agentApplication: AgentApplication): Option[Crn] =
-    agentApplication match
-      case a: AgentApplicationLimitedCompany => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case a: AgentApplicationLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case a: AgentApplicationLlp => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case a: AgentApplicationScottishLimitedPartnership => Some(a.getBusinessDetails.companyProfile.companyNumber)
-      case _ => None
 
   extension (amlsEvidence: AmlsEvidenceData)
     def makeAmlsEvidenceUrl(baseUrl: String): AmlsEvidenceUrl =

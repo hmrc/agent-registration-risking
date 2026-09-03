@@ -18,8 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.*
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.PersonReference
 
 /** Ephemeral data class representing a risking result record returned from the connector.

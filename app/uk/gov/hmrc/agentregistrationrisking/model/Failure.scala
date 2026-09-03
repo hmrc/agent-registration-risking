@@ -17,10 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
-import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 
 final case class Failure(
   reasonCode: String,

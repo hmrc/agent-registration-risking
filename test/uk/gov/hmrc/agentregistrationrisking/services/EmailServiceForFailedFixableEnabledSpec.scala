@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationFo
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdIndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EmailStubs
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 
 class EmailServiceForFailedFixableEnabledSpec
 extends ISpec:
@@ -183,9 +184,9 @@ extends ISpec:
 
       individualForRiskingRepo.findByApplicationReference(
         application.applicationReference
-      ).futureValue.find(_.personReference == individual1.personReference).value.isEmailSent shouldBe true
+      ).futureValue.find(_.personReference === individual1.personReference).value.isEmailSent shouldBe true
       individualForRiskingRepo.findByApplicationReference(application.applicationReference).futureValue.find(
-        _.personReference == individual2.personReference
+        _.personReference === individual2.personReference
       ).value.isEmailSent shouldBe false withClue "individual2 email failed — its isEmailSent flag must NOT flip"
 
     "leaves the whole record untouched when the entity email fails — no individual emails attempted, atomic set never reached" in:
@@ -231,7 +232,7 @@ extends ISpec:
       individualForRiskingRepo
         .findByApplicationReference(applicationCrashedMidBatch.applicationReference)
         .futureValue
-        .find(_.personReference == individual2StillPending.personReference)
+        .find(_.personReference === individual2StillPending.personReference)
         .value
         .isEmailSent shouldBe true
   }
