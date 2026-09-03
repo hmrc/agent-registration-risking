@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testOnly.model
+package uk.gov.hmrc.agentregistrationrisking.testonly.model
 
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.Format
+import play.api.mvc.PathBindable
+import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
+import uk.gov.hmrc.agentregistration.shared.util.ValueClassBinder
 
-import java.time.Instant
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
-
-final case class RiskingResultsFileContent(
-  riskingResultsFileName: RiskingResultsFileName,
-  content: JsValue,
-  uploadedAt: Instant
+final case class RiskingResultsFileName(
+  value: String
 )
 
-object RiskingResultsFileContent:
+object RiskingResultsFileName:
 
-  given format: OFormat[RiskingResultsFileContent] = Json.format[RiskingResultsFileContent]
-  val ttl: FiniteDuration = FiniteDuration(3, TimeUnit.HOURS)
+  given format: Format[RiskingResultsFileName] = JsonFormatsFactory.makeValueClassFormat
+  given pathBindable: PathBindable[RiskingResultsFileName] = ValueClassBinder.valueClassBinder[RiskingResultsFileName](_.value)

@@ -25,7 +25,6 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegistrationStubs
 
 import java.time.Instant
-import java.time.LocalDate
 
 class AgentRegistrationConnectorSpec
 extends ISpec:

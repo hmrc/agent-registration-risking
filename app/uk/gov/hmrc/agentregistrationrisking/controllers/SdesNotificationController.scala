@@ -22,12 +22,10 @@ import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentregistrationrisking.action.Actions
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 
-import scala.concurrent.ExecutionContext
-
 class SdesNotificationController @Inject() (
   cc: ControllerComponents,
   actions: Actions
-)(using ExecutionContext)
+)
 extends BackendController(cc):
 
   def receiveSdesNotification: Action[SdesNotification] =

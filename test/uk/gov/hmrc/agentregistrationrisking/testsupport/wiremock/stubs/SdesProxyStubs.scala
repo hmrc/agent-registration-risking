@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock as wm
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
-import com.github.tomakehurst.wiremock.matching.StringValuePattern
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -26,6 +25,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.AvailableFile
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.StubMaker
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 
 object SdesProxyStubs:
 
@@ -73,7 +73,7 @@ object SdesProxyStubs:
 
   def getSdesFileReadyRequestBody: String =
     StubMaker.getEvents((x: ServeEvent) =>
-      x.getRequest.getUrl == "/notification/fileready"
+      x.getRequest.getUrl === "/notification/fileready"
     )
       .lastOption
       .value

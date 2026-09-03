@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
-import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking

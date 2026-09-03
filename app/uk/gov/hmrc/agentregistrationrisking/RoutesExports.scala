@@ -20,4 +20,4 @@ object RoutesExports:
 
   export uk.gov.hmrc.agentregistration.shared.ApplicationReference
   export uk.gov.hmrc.agentregistration.shared.PersonReference
-  export uk.gov.hmrc.agentregistrationrisking.testOnly.model.RiskingResultsFileName
+  export uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileName

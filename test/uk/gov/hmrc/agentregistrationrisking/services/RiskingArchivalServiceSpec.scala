@@ -242,7 +242,7 @@ extends ISpec:
           .futureValue
 
       archivesForAppRef should have size 1 withClue "no shadow re-archive — only the pre-existing archive from before the crash remains"
-      archivesForAppRef.head shouldBe originalArchive withClue "the pre-existing archive is untouched"
+      archivesForAppRef.headOption.value shouldBe originalArchive withClue "the pre-existing archive is untouched"
 
       individualForRiskingRepo.findByApplicationReference(
         failedFixableAfterBackendNotified.application.applicationReference

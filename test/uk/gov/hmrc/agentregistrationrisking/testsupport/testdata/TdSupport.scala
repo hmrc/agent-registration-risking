@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderNames
-import uk.gov.hmrc.http.SessionKeys
 
 import java.time.LocalDate
 

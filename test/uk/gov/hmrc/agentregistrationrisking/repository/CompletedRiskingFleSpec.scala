@@ -91,4 +91,4 @@ extends ISpec:
 
   "with FLE enabled findRecent(personReference) round-trips to plaintext" in:
     completedRiskingRepo.upsert(completedRisking).futureValue
-    completedRiskingRepo.findRecent(completedRisking.individuals.head.personReference).futureValue.value shouldBe completedRisking
+    completedRiskingRepo.findRecent(completedRisking.individuals.headOption.value.personReference).futureValue.value shouldBe completedRisking

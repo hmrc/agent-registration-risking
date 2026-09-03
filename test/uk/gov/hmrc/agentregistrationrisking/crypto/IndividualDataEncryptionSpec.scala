@@ -17,8 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.crypto
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentregistration.shared.Nino
-import uk.gov.hmrc.agentregistration.shared.SaUtr
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData

@@ -32,8 +32,6 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWi
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegistrationStubs
 
-import java.time.ZoneOffset
-
 class BackendNotificationServiceSpec
 extends ISpec:
 

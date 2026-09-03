@@ -22,14 +22,12 @@ import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
-import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.AgentApplicationService
 import uk.gov.hmrc.agentregistrationrisking.services.ObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
@@ -46,13 +44,11 @@ class RiskingFileUploadRunner @Inject() (
   objectStoreService: ObjectStoreService,
   sdesProxyService: SdesProxyService,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
-  individualForRiskingRepo: IndividualForRiskingRepo,
   riskingFileRepo: RiskingFileRepo,
   riskingFileService: RiskingFileService,
   auditService: AuditService,
   agentApplicationService: AgentApplicationService
 )(using
-  appConfig: AppConfig,
   ec: ExecutionContext,
   clock: Clock
 )
@@ -83,7 +79,6 @@ extends RequestAwareLogging:
   def run(): Future[Unit] =
     given RequestHeader = EmptyRequest.emptyRequestHeader
     logger.info(s"Building risking file and sending it to minerva started ...")
-    val instant: Instant = Instant.now(clock)
     for
       (
         riskingFileWithContent: RiskingFileWithContent,

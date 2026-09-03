@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import com.softwaremill.quicklens.modify
-import uk.gov.hmrc.agentregistration.shared.AgentApplication
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
@@ -26,6 +25,7 @@ import play.api.libs.json.Reads
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 
 import java.time.Instant
+import scala.annotation.nowarn
 
 final case class ApplicationForRisking(
   applicationReference: ApplicationReference, // primary Key
@@ -44,6 +44,8 @@ final case class ApplicationForRisking(
 
 object ApplicationForRisking:
 
+  // Legacy case classes below are used only as Json.reads[...] type arguments, which the unused check does not see
+  @nowarn("msg=unused local definition")
   given format: OFormat[ApplicationForRisking] =
     final case class ApplicationForRiskingLegacy(
       applicationReference: ApplicationReference, // primary Key

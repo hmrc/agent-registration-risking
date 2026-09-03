@@ -36,8 +36,8 @@ object ObjectStoreStubs:
 
   private def urlPattern(
     fileName: String,
-    owner: String = "agent-registration-risking",
-    directory: String = "applications-for-risking"
+    owner: String,
+    directory: String
   ): String = s"/object-store/object/$owner/$directory/$fileName"
 
   def stubObjectStoreTransfer(

@@ -108,7 +108,7 @@ extends ISpec:
     authorisedAction
       .invokeBlock(
         notLoggedInRequest,
-        (r: AuthorisedRequest[?]) =>
+        (_: AuthorisedRequest[?]) =>
           Future.successful(result)
       )
       .futureValue shouldBe result

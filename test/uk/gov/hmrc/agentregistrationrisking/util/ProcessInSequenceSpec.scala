@@ -22,6 +22,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 
 @SuppressWarnings(Array("org.wartremover.warts.MutableDataStructures"))
 class ProcessInSequenceSpec
@@ -79,7 +80,7 @@ extends UnitSpec:
     val result: Future[List[Int]] =
       ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
         callLog += item
-        if item == 0 then Future.failed(boom) else Future.successful(item)
+        if item === 0 then Future.failed(boom) else Future.successful(item)
 
     result.failed.futureValue shouldBe boom
     callLog.toList shouldBe List(0)
@@ -91,7 +92,7 @@ extends UnitSpec:
     val result =
       ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
         callLog += item
-        if item == 1 then Future.failed(boom) else Future.successful(item)
+        if item === 1 then Future.failed(boom) else Future.successful(item)
 
     result.failed.futureValue shouldBe boom
     eventually:
@@ -104,7 +105,7 @@ extends UnitSpec:
     val result =
       ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
         callLog += item
-        if item == 2 then Future.failed(boom) else Future.successful(item)
+        if item === 2 then Future.failed(boom) else Future.successful(item)
 
     result.failed.futureValue shouldBe boom
     callLog.toList shouldBe List(0, 1, 2)
@@ -116,7 +117,7 @@ extends UnitSpec:
     val result =
       ProcessInSequence.processInSequence(Seq(0, 1, 2)): item =>
         callLog += item
-        if item == 1 then throw boom else Future.successful(item)
+        if item === 1 then throw boom else Future.successful(item)
 
     result.failed.futureValue shouldBe boom
     callLog.toList shouldBe List(0, 1)
@@ -151,7 +152,7 @@ extends UnitSpec:
     val result =
       ProcessInSequence.processAllInSequence(Seq(0, 1, 2, 3, 4))(item =>
         callLog += item
-        if item % 2 == 1 then Future.failed(boom) else Future.successful(item)
+        if item % 2 === 1 then Future.failed(boom) else Future.successful(item)
       )((_, item) => failureLog += item)
 
     result.futureValue shouldBe 3
@@ -161,7 +162,7 @@ extends UnitSpec:
   "processAllInSequence allFail  calls onFailure for every item and returns 0" in:
     val failureLog = mutable.ListBuffer.empty[Int]
     val boom = new RuntimeException("boom")
-    val result = ProcessInSequence.processAllInSequence(Seq(0, 1, 2))(item => Future.failed(boom))((_, item) => failureLog += item)
+    val result = ProcessInSequence.processAllInSequence(Seq(0, 1, 2))(_ => Future.failed(boom))((_, item) => failureLog += item)
 
     result.futureValue shouldBe 0
     failureLog.toList shouldBe List(0, 1, 2)
@@ -174,7 +175,7 @@ extends UnitSpec:
     val result =
       ProcessInSequence.processAllInSequence(Seq(0, 1, 2))(item =>
         callLog += item
-        if item == 1 then throw boom else Future.successful(item)
+        if item === 1 then throw boom else Future.successful(item)
       )((ex, item) => failureLog += ((ex.getMessage, item)))
 
     result.futureValue shouldBe 2
@@ -189,7 +190,7 @@ extends UnitSpec:
     val result =
       ProcessInSequence.processAllInSequence(Seq(0, 1, 2))(item =>
         callLog += item
-        if item == 1 then Future.failed(original) else Future.successful(item)
+        if item === 1 then Future.failed(original) else Future.successful(item)
       )((_, _) => throw onFailureBoom)
 
     result.failed.futureValue shouldBe onFailureBoom

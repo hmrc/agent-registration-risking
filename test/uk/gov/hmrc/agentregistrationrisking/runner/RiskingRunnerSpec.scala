@@ -21,13 +21,9 @@ import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFile
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.NotifySdesFileReadyRequest
-import uk.gov.hmrc.agentregistrationrisking.model.sdes.SdesInformationType
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
-import uk.gov.hmrc.agentregistrationrisking.services.AgentApplicationService
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AgentRegistrationStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.ObjectStoreStubs
@@ -75,7 +71,6 @@ extends ISpec:
     riskingFileWithContent.riskingFileContent `shouldBeLike` expectedFileContentWhenNoRecords
 
   "build risking file and sent to minerva" in:
-    given request: Request[?] = tdAll.backendRequest
 
     ObjectStoreStubs.stubPutObject(
       fileName = fileName.value

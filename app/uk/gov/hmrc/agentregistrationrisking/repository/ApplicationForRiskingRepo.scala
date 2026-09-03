@@ -26,7 +26,6 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.crypto.ApplicationDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.*
@@ -41,19 +40,17 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 final class ApplicationForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig,
   applicationDataEncryption: ApplicationDataEncryption,
   individualDataEncryption: IndividualDataEncryption
 )(using ec: ExecutionContext)
 extends Repo[ApplicationReference, ApplicationForRisking](
   collectionName = ApplicationForRiskingRepo.collectionName,
   mongoComponent = mongoComponent,
-  indexes = ApplicationForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
+  indexes = ApplicationForRiskingRepoHelp.indexes(),
   extraCodecs = Seq(
     Codecs.playFormatCodec(applicationDataEncryption.formats),
     Codecs.playFormatCodec(RiskingOutcome.format)
@@ -199,7 +196,7 @@ object ApplicationForRiskingRepoHelp:
     new IdExtractor[ApplicationForRisking, ApplicationReference]:
       override def id(applicationForRisking: ApplicationForRisking): ApplicationReference = applicationForRisking.applicationReference
 
-  def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
+  def indexes(): Seq[IndexModel] = Seq(
     IndexModel(
       keys = Indexes.ascending(FieldNames.applicationReference),
       indexOptions = IndexOptions()

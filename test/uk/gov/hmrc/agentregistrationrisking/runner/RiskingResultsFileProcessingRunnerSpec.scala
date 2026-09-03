@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentregistrationrisking.runner
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.services.ApplicationOutcomeService
 import uk.gov.hmrc.agentregistrationrisking.services.BackendNotificationService
 import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForApprovedApplications
@@ -28,8 +27,8 @@ import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 
-import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -71,6 +70,9 @@ extends UnitSpec:
 
   /** Builds a runner whose services are stubs recording invocation order. Stage stubs never touch their (null) dependencies. Wart.Null is excluded for tests.
     */
+  // the stage stubs below must keep their `(using RequestHeader)` clause to match the
+  // signatures they override, even though the stub bodies ignore it
+  @nowarn("msg=unused implicit parameter")
   private class Fixture(
     failingStages: Set[String]
   ):
@@ -86,9 +88,6 @@ extends UnitSpec:
 
     private val riskingResultsService =
       new RiskingResultsService(
-        null,
-        null,
-        null,
         null,
         null,
         null,
@@ -120,7 +119,6 @@ extends UnitSpec:
 
     private val emailServiceForApprovedApplications =
       new EmailServiceForApprovedApplications(
-        null,
         null,
         null,
         null
@@ -162,8 +160,6 @@ extends UnitSpec:
         override def processArchivals()(using RequestHeader): Future[Unit] = stubStage("processArchivals")
 
     val runner: RiskingResultsFileProcessingRunner =
-      given AppConfig = null
-      given Clock = Clock.systemUTC()
       new RiskingResultsFileProcessingRunner(
         riskingResultsService = riskingResultsService,
         applicationOutcomeService = applicationOutcomeService,

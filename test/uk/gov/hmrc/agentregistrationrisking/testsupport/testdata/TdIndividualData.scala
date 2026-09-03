@@ -16,9 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
-import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.EmailAddress
-import uk.gov.hmrc.agentregistration.shared.InternalUserId
 import uk.gov.hmrc.agentregistration.shared.Nino
 import uk.gov.hmrc.agentregistration.shared.PayeRef
 import uk.gov.hmrc.agentregistration.shared.PersonReference
@@ -38,7 +36,6 @@ import scala.util.Random
 object TdIndividualData:
 
   def make(
-    applicationReference: ApplicationReference,
     personReference: PersonReference,
     seed: String
   ): IndividualData =

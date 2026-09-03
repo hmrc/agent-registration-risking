@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testOnly.services
+package uk.gov.hmrc.agentregistrationrisking.testonly.services
 
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector

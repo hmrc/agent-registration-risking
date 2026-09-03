@@ -16,18 +16,12 @@
 
 package uk.gov.hmrc.agentregistrationrisking.services
 
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import play.api.mvc.RequestHeader
-import sttp.model.Uri
-import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.RiskingResultsFileConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
-import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualRiskingResult
@@ -38,11 +32,8 @@ import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
-import uk.gov.hmrc.agentregistrationrisking.util.Utils.*
-import uk.gov.hmrc.objectstore.client.Md5Hash
 import uk.gov.hmrc.objectstore.client.ObjectListing
 import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.config.ObjectStoreClientConfig
 
 import java.time.Clock
 import java.time.Instant
@@ -52,17 +43,12 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import RiskingOutcomeHelper.*
 
-import java.net.URL
-
 @Singleton
 class RiskingResultsService @Inject() (
   sdesProxyConnector: SdesProxyConnector,
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
-  appConfig: AppConfig,
-  objectStoreClientConfig: ObjectStoreClientConfig,
   objectStoreService: ObjectStoreService,
-  correlationIdGenerator: CorrelationIdGenerator,
   riskingResultsFileConnector: RiskingResultsFileConnector,
   auditService: AuditService,
   clock: Clock
@@ -91,14 +77,6 @@ extends RequestAwareLogging:
       uploadResult: ObjectSummaryWithMd5 <- objectStoreService.uploadRiskingResultsFile(riskingResultRecords)
       _ = logger.info(s"Uploaded RiskingResultsFile to object store as backup and evidence: $uploadResult")
     yield ()
-
-  private def parseDownloadUrl(file: AvailableFile): Future[URL] = Future:
-    Uri
-      .parse(file.downloadURL)
-      .fold(
-        e => throw new RuntimeException(s"Could not parse the downloadURL for ${file.filename}: [${file.downloadURL}], $e"),
-        _.toJavaUri.toURL
-      )
 
   def getUnprocessedAvailableFiles()(using request: RequestHeader): Future[Seq[AvailableFile]] =
     for
