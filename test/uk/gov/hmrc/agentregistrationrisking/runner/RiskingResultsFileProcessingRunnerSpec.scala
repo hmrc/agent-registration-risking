@@ -139,7 +139,6 @@ extends UnitSpec:
         null,
         null,
         null,
-        null,
         null
       ):
         override def processEmails()(using RequestHeader): Future[Unit] = stubStage("processEmailsForFailedFixable")

@@ -96,9 +96,6 @@ class AppConfig @Inject() (
     private val decoder = java.util.Base64.getDecoder
     def decode(encoded: String): String = new String(decoder.decode(encoded), StandardCharsets.UTF_8)
 
-  object Features:
-    val fixableFailures: Boolean = config.get[Boolean]("features.fixable-failures")
-
   object InternalAuth:
     val token: String = config.get[String]("internal-auth.token")
 
@@ -116,6 +113,5 @@ class AppConfig @Inject() (
   Email
   CorrectiveAction
   Base64
-  Features
   InternalAuth
   StrideAuth
