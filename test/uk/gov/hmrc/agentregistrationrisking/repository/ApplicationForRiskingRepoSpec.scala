@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
+import com.softwaremill.quicklens.modify
 import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
+import uk.gov.hmrc.agentregistrationrisking.model.EnrolmentFailure
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 
@@ -46,6 +48,22 @@ extends ISpec:
     applications.toSet shouldBe Set(
       TdRiskingInstancesInStates.approvedAfterOutcome.application
     ) withClue applications.map(_.applicationReference.value).mkString(", ")
+
+  "findReadyToBeSubscribed excludes parked applications whose enrolmentFailure is set" in:
+    val parkedApplication: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterOutcome
+      .application
+      .modify(_.applicationReference).setTo(ApplicationReference("APPREF_parked_repoNegative"))
+      .modify(_.enrolmentFailure).setTo(Some(EnrolmentFailure.AlreadyAllocatedToGroup))
+    applicationForRiskingRepo.upsert(parkedApplication).futureValue
+
+    val applications: Seq[ApplicationForRisking] =
+      applicationForRiskingRepo
+        .findReadyToBeSubscribed()
+        .futureValue
+
+    applications.map(_.applicationReference) should not contain
+      parkedApplication.applicationReference withClue
+      "parked (enrolmentFailure set) applications must not be picked up by the subscription retry loop"
 
   "findReadyToSetRiskingOutcome" in:
 

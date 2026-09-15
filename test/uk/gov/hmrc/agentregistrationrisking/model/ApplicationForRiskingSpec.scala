@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.model
 
 import com.softwaremill.quicklens.modify
+import play.api.libs.json.JsObject
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
@@ -397,3 +398,19 @@ extends UnitSpec:
 
     readBack.overallStatus.emailsProcessed shouldBe true
     readBack.overallStatus.emailsSentAt shouldBe None
+
+  "enrolmentFailure — missing on document reads as None" in:
+    val application: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterOutcome.application
+    val jsonWithoutEnrolmentFailure: JsObject = Json.toJson(application).as[JsObject] - "enrolmentFailure"
+
+    val readBack: ApplicationForRisking = jsonWithoutEnrolmentFailure.as[ApplicationForRisking]
+
+    readBack.enrolmentFailure shouldBe None
+
+  "enrolmentFailure — roundtrips for each variant" in:
+    val application: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterOutcome.application
+
+    EnrolmentFailure.values.foreach: enrolmentFailure =>
+      val parkedApplication: ApplicationForRisking = application.modify(_.enrolmentFailure).setTo(Some(enrolmentFailure))
+      val readBack: ApplicationForRisking = Json.toJson(parkedApplication).as[ApplicationForRisking]
+      readBack.enrolmentFailure shouldBe Some(enrolmentFailure)

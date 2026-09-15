@@ -66,7 +66,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .find(
       Filters.and(
         Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
-        Filters.eq(FieldNames.isSubscribed, false)
+        Filters.eq(FieldNames.isSubscribed, false),
+        Filters.exists(FieldNames.enrolmentFailure, false)
       )
     )
     .toFuture()

@@ -48,6 +48,8 @@ object FieldNames:
 
   val isEmailSent: String = "isEmailSent"
 
+  val enrolmentFailure: String = "enrolmentFailure"
+
   object CompletedRisking:
 
     val completedRiskingId: String = "_id"

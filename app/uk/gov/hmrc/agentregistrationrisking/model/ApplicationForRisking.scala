@@ -39,7 +39,8 @@ final case class ApplicationForRisking(
   overallStatus: OverallStatus,
   correctiveActionExpiryDate: Option[Instant],
   isResubmission: Boolean,
-  entityAlreadyApproved: Boolean
+  entityAlreadyApproved: Boolean,
+  enrolmentFailure: Option[EnrolmentFailure] = None
 )
 
 object ApplicationForRisking:
@@ -87,7 +88,8 @@ object ApplicationForRisking:
         overallStatus = a.overallStatus,
         correctiveActionExpiryDate = a.correctiveActionExpiryDate,
         isResubmission = false, // here's a legacy field, so we default to false
-        entityAlreadyApproved = false // here's a legacy field, so we default to false
+        entityAlreadyApproved = false, // here's a legacy field, so we default to false
+        enrolmentFailure = None
       )
     )
     val legacyReads2: Reads[ApplicationForRisking] = Json.reads[ApplicationForRiskingLegacy2].map(a =>
@@ -103,7 +105,8 @@ object ApplicationForRisking:
         overallStatus = a.overallStatus,
         correctiveActionExpiryDate = a.correctiveActionExpiryDate,
         isResubmission = a.isResubmission,
-        entityAlreadyApproved = false // here's a legacy field, so we default to false
+        entityAlreadyApproved = false, // here's a legacy field, so we default to false
+        enrolmentFailure = None
       )
     )
     val modernReads: Reads[ApplicationForRisking] = Json.reads[ApplicationForRisking]
