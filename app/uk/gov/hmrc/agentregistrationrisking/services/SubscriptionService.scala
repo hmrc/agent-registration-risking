@@ -61,41 +61,97 @@ extends RequestAwareLogging:
       applicationCount: Int = applications.size
       _ = logger.info(s"Found $applicationCount applications ready to subscribe")
       subscriptionSuccessCount <-
-        ProcessInSequence.processAllInSequence(applications)(subscribeApplication):
+        ProcessInSequence.processAllInSequence(applications)(createAgentServicesAccount):
           case (ex, application) => logger.error(s"Failed to subscribe agent: ${application.applicationData.applicationReference.value}", ex)
       _ = logger.info(s"Subscribed $subscriptionSuccessCount/$applicationCount applications")
     yield ()
 
-  private def subscribeApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
-    logger.info(s"Subscribing application: ${application.applicationReference} ...")
+  private def createAgentServicesAccount(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+    logger.info(s"Creating agent services account: ${application.applicationReference} ...")
+    val applicationData: ApplicationData = application.applicationData
+    val subscribeAgentRequest: SubscribeAgentRequest = buildSubscribeAgentRequest(applicationData)
     for
-      enrolmentFailure: Option[EnrolmentFailure] <- subscribeAgent(application.applicationData)
+      arn: Arn <- subscribeToAgentServices(applicationData, subscribeAgentRequest)
+      enrolmentFailure: Option[EnrolmentFailure] <- enrolToAgentServices(
+        arn,
+        applicationData,
+        subscribeAgentRequest
+      )
       _ <-
         enrolmentFailure match
           case None =>
-            applicationForRiskingRepo.upsert(
-              application
-                .modify(_.isSubscribed).setTo(true)
-                .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
-            )
-          case Some(enrolmentFailure) =>
-            applicationForRiskingRepo.upsert(
-              application
-                .modify(_.enrolmentFailure).setTo(Some(enrolmentFailure))
-                .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
-            )
-      _ =
-        enrolmentFailure match
-          case None => logger.info(s"Application subscribed: ${application.applicationReference}")
-          case Some(enrolmentFailure) =>
-            logger.warn(s"Application parked with $enrolmentFailure - dropped from retry pool: ${application.applicationReference}")
+            auditService.sendCreateAgentServicesAccountEvent(applicationData, arn)
+            markAccountCreated(application)
+          case Some(enrolmentFailure) => stopRetryingAccountCreation(application, enrolmentFailure)
     yield ()
 
+  private def subscribeToAgentServices(
+    applicationData: ApplicationData,
+    subscribeAgentRequest: SubscribeAgentRequest
+  )(using RequestHeader): Future[Arn] =
+    if applicationData.arn.nonEmpty then
+      logger.info(s"Agent is already subscribed to agent services (skipping hip request): ${applicationData.applicationReference}")
+      Future.successful(applicationData.getArn)
+    else
+      hipConnector.subscribeToAgentServices(
+        safeId = applicationData.safeId,
+        subscribeAgentRequest = subscribeAgentRequest
+      ).map: arn =>
+        logger.info(s"Subscribed to agent services: ${applicationData.applicationReference}")
+        arn
+
+  private def enrolToAgentServices(
+    arn: Arn,
+    applicationData: ApplicationData,
+    subscribeAgentRequest: SubscribeAgentRequest
+  )(using RequestHeader): Future[Option[EnrolmentFailure]] =
+    val knownFacts: Seq[KnownFact] = Seq(
+      KnownFact(
+        key = "AgencyPostcode",
+        value = subscribeAgentRequest.postcode.getOrThrowExpectedDataMissing("postcode is required for UK subscriptions")
+      )
+    )
+    val enrolmentKey: String = s"HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}"
+    for
+      _ <- enrolmentStoreProxyConnector.addKnownFacts(
+        enrolmentKey = enrolmentKey,
+        knownFactsRequest = KnownFactsRequest(verifiers = knownFacts)
+      )
+      _ = logger.info(s"Added known fact: ${applicationData.applicationReference}")
+      enrolmentFailure: Option[EnrolmentFailure] <- enrolmentStoreProxyConnector.allocateEnrolmentToGroup(
+        enrolmentKey = enrolmentKey,
+        groupId = applicationData.groupId,
+        enrolmentRequest = EnrolmentRequest(
+          userId = applicationData.applicantCredentials.providerId,
+          `type` = "principal",
+          friendlyName = subscribeAgentRequest.name,
+          verifiers = knownFacts
+        )
+      )
+    yield enrolmentFailure
+
+  private def markAccountCreated(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
+    application
+      .modify(_.isSubscribed).setTo(true)
+      .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
+  ).map: _ =>
+    logger.info(s"Agent services account created: ${application.applicationReference}")
+
+  private def stopRetryingAccountCreation(
+    application: ApplicationForRisking,
+    enrolmentFailure: EnrolmentFailure
+  )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
+    application
+      .modify(_.enrolmentFailure).setTo(Some(enrolmentFailure))
+      .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
+  ).map: _ =>
+    logger.warn(s"Stopped retrying agent services account creation for ${application.applicationReference}: non-recoverable $enrolmentFailure")
+
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  private def subscribeAgent(agentApplication: ApplicationData)(using RequestHeader): Future[Option[EnrolmentFailure]] =
-    val agentDetails: AgentDetailsData = agentApplication.agentDetails
-    val amlsDetails: AmlsDetailsData = agentApplication.amlsDetails
-    val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequest(
+  private def buildSubscribeAgentRequest(applicationData: ApplicationData)(using RequestHeader): SubscribeAgentRequest =
+    val agentDetails: AgentDetailsData = applicationData.agentDetails
+    val amlsDetails: AmlsDetailsData = applicationData.amlsDetails
+    SubscribeAgentRequest(
       name = ensureFieldLength(agentDetails.businessName.getAgentBusinessName, 40).asInstanceOf[String],
       addr1 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine1, 35).asInstanceOf[String],
       addr2 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine2.getOrElse(""), 35).asInstanceOf[String],
@@ -114,68 +170,6 @@ extends RequestAwareLogging:
       acceptNewTermsStatus = "ACCEPTED",
       reriskStatus = "ACCEPTED"
     )
-
-    for
-      arn <-
-        if (agentApplication.arn.nonEmpty)
-          logger.info(s"Agent is already subscribed to agent services (skipping hip request): ${agentApplication.applicationReference}")
-          Future.successful(agentApplication.getArn)
-        else
-          hipConnector.subscribeToAgentServices(
-            safeId = agentApplication.safeId,
-            subscribeAgentRequest = subscribeAgentRequest
-          ).map(arn =>
-            logger.info(s"Subscribed to agent services: ${agentApplication.applicationReference}")
-            arn
-          )
-      enrolmentFailure: Option[EnrolmentFailure] <- enrolAgent(
-        arn,
-        agentApplication,
-        subscribeAgentRequest
-      )
-      _ =
-        enrolmentFailure match
-          case None =>
-            auditService.sendCreateAgentServicesAccountEvent(agentApplication, arn)
-            logger.info("Sent CreatedAgentServicesAccountAuditEvent")
-          case Some(enrolmentFailure) =>
-            logger.warn(s"Skipping CreatedAgentServicesAccountAuditEvent - enrolment parked with $enrolmentFailure for ${agentApplication.applicationReference}")
-    yield enrolmentFailure
-
-  private def enrolAgent(
-    arn: Arn,
-    agentApplication: ApplicationData,
-    subscribeAgentRequest: SubscribeAgentRequest
-  )(using RequestHeader): Future[Option[EnrolmentFailure]] =
-    val knownFacts: Seq[KnownFact] = Seq(
-      KnownFact(
-        key = "AgencyPostcode",
-        value = subscribeAgentRequest.postcode.getOrThrowExpectedDataMissing("postcode is required for UK subscriptions")
-      )
-    )
-    val enrolmentKey = s"HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}"
-    for
-      _ <- enrolmentStoreProxyConnector.addKnownFacts(
-        enrolmentKey = enrolmentKey,
-        knownFactsRequest = KnownFactsRequest(verifiers = knownFacts)
-      )
-      _ = logger.info(s"Added known fact: ${agentApplication.applicationReference}")
-      enrolmentFailure: Option[EnrolmentFailure] <- enrolmentStoreProxyConnector.allocateEnrolmentToGroup(
-        enrolmentKey = enrolmentKey,
-        groupId = agentApplication.groupId,
-        enrolmentRequest = EnrolmentRequest(
-          userId = agentApplication.applicantCredentials.providerId,
-          `type` = "principal",
-          friendlyName = subscribeAgentRequest.name,
-          verifiers = knownFacts
-        )
-      )
-      _ =
-        enrolmentFailure match
-          case None => logger.info(s"Allocated enrolment to group: ${agentApplication.applicationReference}")
-          case Some(enrolmentFailure) =>
-            logger.warn(s"Enrolment not allocated - non-recoverable outcome $enrolmentFailure for ${agentApplication.applicationReference}")
-    yield enrolmentFailure
 
   private def ensureCountryCode(country: String)(using RequestHeader): String =
     val gbCountries: Set[String] = Set(
