@@ -57,6 +57,68 @@ object EnrolmentStoreProxyStubs:
     responseBody = Json.stringify(Json.obj("error" -> "Internal Server Error"))
   )
 
+  def stubAllocateEnrolmentToGroupInvalidIdentifiers(
+    groupId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"$basePath/groups/$groupId/enrolments/$enrolmentKey"),
+    responseStatus = 400,
+    responseBody = Json.stringify(Json.obj(
+      "code" -> "INVALID_IDENTIFIERS",
+      "message" -> "The enrolment identifiers provided were invalid"
+    ))
+  )
+
+  def stubAllocateEnrolmentToGroupGroupIdDoesNotExist(
+    groupId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"$basePath/groups/$groupId/enrolments/$enrolmentKey"),
+    responseStatus = 404,
+    responseBody = Json.stringify(Json.obj(
+      "code" -> "GROUP_ID_DOES_NOT_EXIST",
+      "message" -> "Group Id does NOT exist"
+    ))
+  )
+
+  def stubAllocateEnrolmentToGroupMultipleEnrolmentsInvalid(
+    groupId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"$basePath/groups/$groupId/enrolments/$enrolmentKey"),
+    responseStatus = 409,
+    responseBody = Json.stringify(Json.obj(
+      "code" -> "MULTIPLE_ENROLMENTS_INVALID",
+      "message" -> "Multiple Enrolments are not valid for this service"
+    ))
+  )
+
+  def stubAllocateEnrolmentToGroupBadRequestUnrecognisedCode(
+    groupId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"$basePath/groups/$groupId/enrolments/$enrolmentKey"),
+    responseStatus = 400,
+    responseBody = Json.stringify(Json.obj(
+      "code" -> "SOME_OTHER_CODE",
+      "message" -> "A 400 that is not INVALID_IDENTIFIERS"
+    ))
+  )
+
+  def stubAllocateEnrolmentToGroupConflictMalformedBody(
+    groupId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"$basePath/groups/$groupId/enrolments/$enrolmentKey"),
+    responseStatus = 409,
+    responseBody = "not-valid-json"
+  )
+
   def verifyAddKnownFacts(count: Int = 1): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.PUT,
     urlPattern = wm.urlMatching(s"$basePath/enrolments/.*"),

@@ -21,7 +21,10 @@ import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.util.Errors
+import uk.gov.hmrc.agentregistration.shared.util.HttpErrorBody.errorBody
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.model.EnrolmentFailure
 import uk.gov.hmrc.agentregistrationrisking.util.FutureUtil.andLogOnFailure
 import uk.gov.hmrc.http.client.HttpClientV2
 
@@ -66,7 +69,7 @@ extends Connector:
     groupId: GroupId,
     enrolmentKey: String,
     enrolmentRequest: EnrolmentStoreProxyConnector.EnrolmentRequest
-  )(using RequestHeader): Future[Unit] =
+  )(using RequestHeader): Future[Option[EnrolmentFailure]] =
     val url: URL = url"$baseUrl/groups/${groupId.value}/enrolments/$enrolmentKey"
     httpClient
       .post(url)
@@ -74,7 +77,10 @@ extends Connector:
       .execute[HttpResponse]
       .map: response =>
         response.status match
-          case Status.CREATED => ()
+          case Status.CREATED => None
+          case Status.BAD_REQUEST if response.errorBody.exists(_.code === "INVALID_IDENTIFIERS") => Some(EnrolmentFailure.InvalidIdentifiers)
+          case Status.NOT_FOUND if response.errorBody.exists(_.code === "GROUP_ID_DOES_NOT_EXIST") => Some(EnrolmentFailure.GroupDoesNotExist)
+          case Status.CONFLICT if response.errorBody.exists(_.code === "MULTIPLE_ENROLMENTS_INVALID") => Some(EnrolmentFailure.AlreadyAllocatedToGroup)
           case status =>
             Errors.throwUpstreamErrorResponse(
               httpMethod = "POST",
