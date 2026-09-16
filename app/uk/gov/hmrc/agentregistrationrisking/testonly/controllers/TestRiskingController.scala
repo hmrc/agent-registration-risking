@@ -77,13 +77,6 @@ with Logging:
           case None => NoContent
           case Some(applicationForRisking) => Ok(Json.prettyPrint(Json.toJson(applicationForRisking)))
 
-  def findIndividualsForRisking(applicationReference: ApplicationReference): Action[AnyContent] = Action
-    .async:
-      implicit request =>
-        for
-          individuals <- individualForRiskingRepo.findByApplicationReference(applicationReference)
-        yield Ok(Json.prettyPrint(Json.toJson(individuals)))
-
   def findIndividualForRisking(personReference: PersonReference): Action[AnyContent] = Action
     .async:
       implicit request =>
