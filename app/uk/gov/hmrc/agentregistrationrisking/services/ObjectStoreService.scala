@@ -60,7 +60,7 @@ extends RequestAwareLogging:
     playObjectStoreClient.putObject[RiskingFileWithContent.RiskingFileContent](
       path = Path.Directory("sdes").file(fileName = riskingFileWithContent.riskingFile.riskingFileName.value),
       content = riskingFileWithContent.riskingFileContent,
-      retentionPeriod = RetentionPeriod.SixMonths, // TODO: how long do we need to keep these files?
+      retentionPeriod = RetentionPeriod.SixMonths,
       contentType = Some("plain/text"),
       contentMd5 = None // defaults to None, and will be calculated
       // owner  =  // defaults to 'appName' configuration
@@ -71,7 +71,7 @@ extends RequestAwareLogging:
   )(using request: RequestHeader): Future[ObjectSummaryWithMd5] = playObjectStoreClient.putObject(
     path = receivedResultsFilesPath.file(fileName = riskingResultRecords.fileName),
     content = riskingResultRecords.rawContent,
-    retentionPeriod = RetentionPeriod.SixMonths, // TODO: how long do we need to keep these files?
+    retentionPeriod = RetentionPeriod.SixMonths,
     contentType = Some("plain/text"),
     contentMd5 = None // defaults to None, and will be calculated
     // owner  =  // defaults to 'appName' configuration
