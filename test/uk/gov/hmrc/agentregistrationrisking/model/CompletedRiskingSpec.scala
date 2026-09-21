@@ -138,7 +138,6 @@ extends UnitSpec:
         |      "backendNotified": true,
         |      "emailsSentAt": "2059-11-25T16:33:51Z"
         |    },
-        |    "correctiveActionExpiryDate": "2060-01-09T16:33:51Z",
         |    "isResubmission": false,
         |    "entityAlreadyApproved": false
         |  },

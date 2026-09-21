@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.SdesProxyConnector
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
+import uk.gov.hmrc.agentregistration.shared.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.model.sdes.*
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.Utils.*

@@ -88,9 +88,6 @@ class AppConfig @Inject() (
 
     val applicationProcessingTime: String = Base64.decode(config.get[String]("email.application-processing-time"))
 
-  object CorrectiveAction:
-    val daysToTakeCorrectiveAction: Int = config.get[Int]("corrective-action.days-to-take-corrective-action")
-
   object Base64:
 
     private val decoder = java.util.Base64.getDecoder
@@ -111,7 +108,6 @@ class AppConfig @Inject() (
   FieldLevelEncryption
   SdesProxy
   Email
-  CorrectiveAction
   Base64
   InternalAuth
   StrideAuth

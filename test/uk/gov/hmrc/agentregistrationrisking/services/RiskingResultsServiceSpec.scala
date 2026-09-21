@@ -102,8 +102,8 @@ extends ISpec:
           )
         )
 
-    "does not send any audit event when the results file references applications and individuals that are not in the database" in:
-      // DB intentionally left empty — the file's references won't be found.
+    "sends an unknown-record audit event for each reference in the results file that is not in the database" in:
+      // DB intentionally left empty - the file's references won't be found.
       SdesProxyStubs.stubFindAvailableFiles(Seq(tdAll.testAvailableFile))
       ObjectStoreStubs.stubObjectStoreListObjects(processedFileNames = List.empty)
       ObjectStoreStubs.stubDownloadMinervaFile(tdAll.testDownloadUrl, tdAll.failRecordArrayFileMatchingApp)
@@ -112,7 +112,29 @@ extends ISpec:
 
       riskingResultsService.processResultsFiles().futureValue
 
-      AuditStubs.verifyNoAuditSent()
+      eventually:
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseForUnknownApplication",
+          detail = Json.obj(
+            "applicationReference" -> applicationReference.value,
+            "riskingOutcome" -> "FixableFailure",
+            "failures" -> Json.arr(Json.obj(
+              "reasonCode" -> "3.2",
+              "reasonDescription" -> "AML check failed due to suspicious activity"
+            ))
+          )
+        )
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseForUnknownIndividual",
+          detail = Json.obj(
+            "personReference" -> personReference.value,
+            "riskingOutcome" -> "FixableFailure",
+            "failures" -> Json.arr(Json.obj(
+              "reasonCode" -> "4.1",
+              "reasonDescription" -> "Outstanding returns overdue"
+            ))
+          )
+        )
 
     "does not overwrite entityRiskingResult when application is entity-approved and Minerva returns both entity and individual results" in:
       val prePopulatedEntityResult = EntityRiskingResult(failures = List.empty, receivedAt = TdInstant.instant)

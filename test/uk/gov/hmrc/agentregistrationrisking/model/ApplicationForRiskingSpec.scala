@@ -47,7 +47,6 @@ extends UnitSpec:
         emailsSentAt = None
       ),
       entityRiskingResult = None,
-      correctiveActionExpiryDate = Some(TdInstant.instant),
       isResubmission = false,
       entityAlreadyApproved = false
     )
@@ -114,7 +113,6 @@ extends UnitSpec:
            "emailsProcessed": false,
            "backendNotified": false
          },
-         "correctiveActionExpiryDate": "2059-11-25T16:33:51Z",
          "isResubmission": false,
          "entityAlreadyApproved": false
       }""".stripMargin
@@ -209,7 +207,6 @@ extends UnitSpec:
         emailsSentAt = None
       ),
       entityRiskingResult = None,
-      correctiveActionExpiryDate = Some(TdInstant.instant),
       isResubmission = true,
       entityAlreadyApproved = false
     )
@@ -276,7 +273,6 @@ extends UnitSpec:
            "emailsProcessed": false,
            "backendNotified": false
          },
-         "correctiveActionExpiryDate": "2059-11-25T16:33:51Z",
          "isResubmission": true,
          "entityAlreadyApproved": false
       }""".stripMargin

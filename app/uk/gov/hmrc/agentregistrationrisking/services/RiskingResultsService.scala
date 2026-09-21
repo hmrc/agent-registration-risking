@@ -97,8 +97,8 @@ extends RequestAwareLogging:
     .findById(riskingResult.applicationReference)
     .flatMap:
       case None =>
-        // TODO: audit event needed
         logger.error(s"Missing application for: ${riskingResult.applicationReference}")
+        auditService.sendRiskingResponseForUnknownApplicationEvent(riskingResult)
         Future.unit
       case Some(application) if application.entityAlreadyApproved =>
         logger.warn(s"Received unexpected entity risking result for entity-approved application ${application.applicationReference}, ignoring")
@@ -119,8 +119,8 @@ extends RequestAwareLogging:
     .findById(riskingResult.personReference)
     .flatMap:
       case None =>
-        // TODO: audit event needed
         logger.error(s"Missing individual for: ${riskingResult.personReference}")
+        auditService.sendRiskingResponseForUnknownIndividualEvent(riskingResult)
         Future.unit
       case Some(individual) =>
         val now = Instant.now(clock)

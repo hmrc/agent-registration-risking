@@ -59,6 +59,22 @@ extends RequestAwareLogging:
     )
     send(event)
 
+  def sendRiskingResponseForUnknownApplicationEvent(result: RiskingResult.ForEntity)(using RequestHeader): Unit =
+    val event = RiskingResponseForUnknownApplication(
+      applicationReference = result.applicationReference,
+      riskingOutcome = AuditOutcome.fromRiskingOutcome(result.failures.outcomeForEntity),
+      failures = toFailureDetails(result.rawFailures)
+    )
+    send(event)
+
+  def sendRiskingResponseForUnknownIndividualEvent(result: RiskingResult.ForIndividual)(using RequestHeader): Unit =
+    val event = RiskingResponseForUnknownIndividual(
+      personReference = result.personReference,
+      riskingOutcome = AuditOutcome.fromRiskingOutcome(result.failures.outcome),
+      failures = toFailureDetails(result.rawFailures)
+    )
+    send(event)
+
   def sendApplicationsTransferredToRiskingEvent(
     applicationReferences: Seq[ApplicationReference]
   )(using RequestHeader): Unit =

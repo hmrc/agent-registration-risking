@@ -37,7 +37,6 @@ final case class ApplicationForRisking(
   isSubscribed: Boolean,
   isEmailSent: Boolean,
   overallStatus: OverallStatus,
-  correctiveActionExpiryDate: Option[Instant],
   isResubmission: Boolean,
   entityAlreadyApproved: Boolean,
   enrolmentFailure: Option[EnrolmentFailure] = None
@@ -57,8 +56,7 @@ object ApplicationForRisking:
       entityRiskingResult: Option[EntityRiskingResult],
       isSubscribed: Boolean,
       isEmailSent: Boolean,
-      overallStatus: OverallStatus,
-      correctiveActionExpiryDate: Option[Instant]
+      overallStatus: OverallStatus
     )
 
     final case class ApplicationForRiskingLegacy2(
@@ -71,7 +69,6 @@ object ApplicationForRisking:
       isSubscribed: Boolean,
       isEmailSent: Boolean,
       overallStatus: OverallStatus,
-      correctiveActionExpiryDate: Option[Instant],
       isResubmission: Boolean
     )
 
@@ -86,7 +83,6 @@ object ApplicationForRisking:
         isSubscribed = a.isSubscribed,
         isEmailSent = a.isEmailSent,
         overallStatus = a.overallStatus,
-        correctiveActionExpiryDate = a.correctiveActionExpiryDate,
         isResubmission = false, // here's a legacy field, so we default to false
         entityAlreadyApproved = false, // here's a legacy field, so we default to false
         enrolmentFailure = None
@@ -103,7 +99,6 @@ object ApplicationForRisking:
         isSubscribed = a.isSubscribed,
         isEmailSent = a.isEmailSent,
         overallStatus = a.overallStatus,
-        correctiveActionExpiryDate = a.correctiveActionExpiryDate,
         isResubmission = a.isResubmission,
         entityAlreadyApproved = false, // here's a legacy field, so we default to false
         enrolmentFailure = None

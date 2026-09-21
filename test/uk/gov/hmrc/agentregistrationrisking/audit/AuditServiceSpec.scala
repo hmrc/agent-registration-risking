@@ -149,6 +149,70 @@ extends ISpec:
         )
   }
 
+  "sendRiskingResponseForUnknownApplicationEvent" - {
+
+    "sends RiskingResponseForUnknownApplication with the outcome and failure details we were told about" in:
+      AuditStubs.stubAuditWrite()
+
+      auditService.sendRiskingResponseForUnknownApplicationEvent(
+        RiskingResult.ForEntity(
+          applicationReference,
+          failures = List(TdFailures.entityFailures.nonFixable1),
+          rawFailures = List(Failure(
+            reasonCode = "8.1",
+            reasonDescription = "Connected to a tax avoidance scheme",
+            checkId = "8",
+            checkDescription = "Anti-avoidance"
+          ))
+        )
+      )
+
+      eventually:
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseForUnknownApplication",
+          detail = Json.obj(
+            "applicationReference" -> applicationReference.value,
+            "riskingOutcome" -> "NonFixableFailure",
+            "failures" -> Json.arr(Json.obj(
+              "reasonCode" -> "8.1",
+              "reasonDescription" -> "Connected to a tax avoidance scheme"
+            ))
+          )
+        )
+  }
+
+  "sendRiskingResponseForUnknownIndividualEvent" - {
+
+    "sends RiskingResponseForUnknownIndividual with the outcome and failure details we were told about" in:
+      AuditStubs.stubAuditWrite()
+
+      auditService.sendRiskingResponseForUnknownIndividualEvent(
+        RiskingResult.ForIndividual(
+          individual.personReference,
+          failures = List(TdFailures.individualFailures.fixable1),
+          rawFailures = List(Failure(
+            reasonCode = "4.1",
+            reasonDescription = "One or more overdue SA returns",
+            checkId = "4",
+            checkDescription = "Overdue returns"
+          ))
+        )
+      )
+
+      eventually:
+        AuditStubs.verifyAuditSent(
+          auditType = "RiskingResponseForUnknownIndividual",
+          detail = Json.obj(
+            "personReference" -> individual.personReference.value,
+            "riskingOutcome" -> "FixableFailure",
+            "failures" -> Json.arr(Json.obj(
+              "reasonCode" -> "4.1",
+              "reasonDescription" -> "One or more overdue SA returns"
+            ))
+          )
+        )
+  }
+
   "sendRiskingDeterminationEvent" - {
 
     "sends RiskingDetermination with Success when the overall outcome is Approved" in:

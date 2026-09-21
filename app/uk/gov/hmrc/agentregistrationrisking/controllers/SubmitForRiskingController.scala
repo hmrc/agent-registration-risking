@@ -85,7 +85,6 @@ extends BackendController(cc):
       backendNotified = false,
       emailsSentAt = None
     ),
-    correctiveActionExpiryDate = None,
     isResubmission = submitForRiskingRequest.isResubmission,
     entityAlreadyApproved = false
   )

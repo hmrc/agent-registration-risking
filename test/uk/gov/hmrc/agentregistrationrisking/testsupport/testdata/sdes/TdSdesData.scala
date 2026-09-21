@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.sdes
 
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
+import uk.gov.hmrc.agentregistration.shared.CorrelationId
 
 trait TdSdesData:
 

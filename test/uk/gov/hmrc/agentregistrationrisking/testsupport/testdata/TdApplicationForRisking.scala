@@ -23,7 +23,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 
-import java.time.Duration
 import java.time.Instant
 import com.softwaremill.quicklens.modify
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
@@ -53,8 +52,6 @@ trait TdApplicationForRisking:
   def applicationReference: ApplicationReference
   def applicationData: ApplicationData
 
-  def correctiveActionExpiryDate: Instant = instant.plus(Duration.ofDays(45))
-
   def readyForSubmission: ApplicationForRisking = ApplicationForRisking(
     applicationReference = applicationReference,
     riskingFileName = None,
@@ -70,7 +67,6 @@ trait TdApplicationForRisking:
       backendNotified = false,
       emailsSentAt = None
     ),
-    correctiveActionExpiryDate = None,
     isResubmission = false,
     entityAlreadyApproved = false
   )
@@ -118,8 +114,6 @@ trait TdApplicationForRisking:
     val failedFixableAfterOutcome: ApplicationForRisking = failedFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedFixable))
-      .modify(_.correctiveActionExpiryDate)
-      .setTo(Some(correctiveActionExpiryDate))
 
     val failedFixableAfterEmailSent: ApplicationForRisking = failedFixableAfterOutcome
       .copy(isEmailSent = true)
@@ -144,8 +138,6 @@ trait TdApplicationForRisking:
     val failedNonFixableAfterOutcome: ApplicationForRisking = failedNonFixable
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.FailedNonFixable))
-      .modify(_.correctiveActionExpiryDate)
-      .setTo(Some(correctiveActionExpiryDate))
 
     val failedNonFixableAfterEmailSent: ApplicationForRisking = failedNonFixableAfterOutcome
       .copy(isEmailSent = true)

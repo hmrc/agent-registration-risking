@@ -28,9 +28,6 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWi
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuditStubs
 
-import java.time.Duration
-import java.time.Instant
-
 class ApplicationOutcomeServiceSpec
 extends ISpec:
 
@@ -93,31 +90,7 @@ extends ISpec:
       outcomeOf(failedFixable) shouldBe Some(RiskingOutcome.FailedFixable)
       outcomeOf(failedNonFixable) shouldBe Some(RiskingOutcome.FailedNonFixable)
 
-    "sets correctiveActionExpiryDate to (now + 45 days) when the computed outcome is FailedFixable" in:
-      AuditStubs.stubAuditWrite()
-      insertApplicationsWithIndividuals(failedFixable)
-
-      applicationOutcomeService.processOverallOutcomes().futureValue
-
-      correctiveActionExpiryDateOf(failedFixable) shouldBe Some(frozenInstant.plus(Duration.ofDays(45)))
-
-    "sets correctiveActionExpiryDate to (now + 45 days) when the computed outcome is FailedNonFixable" in:
-      AuditStubs.stubAuditWrite()
-      insertApplicationsWithIndividuals(failedNonFixable)
-
-      applicationOutcomeService.processOverallOutcomes().futureValue
-
-      correctiveActionExpiryDateOf(failedNonFixable) shouldBe Some(frozenInstant.plus(Duration.ofDays(45)))
-
-    "leaves correctiveActionExpiryDate unset when the computed outcome is Approved" in:
-      AuditStubs.stubAuditWrite()
-      insertApplicationsWithIndividuals(approved)
-
-      applicationOutcomeService.processOverallOutcomes().futureValue
-
-      correctiveActionExpiryDateOf(approved) shouldBe None
-
-    "does not set outcome or correctiveActionExpiryDate when only some individuals have results yet" in:
+    "does not set an outcome when only some individuals have results yet" in:
       AuditStubs.stubAuditWrite()
       val partiallyRisked = TdRiskingInstancesInStates.partiallyRisked.failedNonFixable_failedFixable_submitted
       insertApplicationsWithIndividuals(partiallyRisked)
@@ -125,7 +98,6 @@ extends ISpec:
       applicationOutcomeService.processOverallOutcomes().futureValue
 
       outcomeOf(partiallyRisked) shouldBe None
-      correctiveActionExpiryDateOf(partiallyRisked) shouldBe None
 
     "does not send a RiskingDetermination or set an outcome for an application that is not ready" in:
       AuditStubs.stubAuditWrite()
@@ -151,10 +123,6 @@ extends ISpec:
     persisted(td)
       .overallStatus
       .riskingOutcome
-
-  private def correctiveActionExpiryDateOf(td: TdApplicationWithIndividuals): Option[Instant] =
-    persisted(td)
-      .correctiveActionExpiryDate
 
   private def persisted(td: TdApplicationWithIndividuals): ApplicationForRisking =
     applicationForRiskingRepo

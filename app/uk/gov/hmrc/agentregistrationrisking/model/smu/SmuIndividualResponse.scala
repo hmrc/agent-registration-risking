@@ -26,6 +26,8 @@ import uk.gov.hmrc.agentregistration.shared.individual.*
 import uk.gov.hmrc.agentregistration.shared.lists.IndividualName
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 
 import java.time.LocalDate
 
@@ -44,9 +46,12 @@ object SmuIndividualResponse:
   given format: OFormat[SmuIndividualResponse] = Json.format[SmuIndividualResponse]
 
   def make(
-    ipd: IndividualData,
-    aa: ApplicationData
-  ) = SmuIndividualResponse(IndividualForSmuViewer.make(ipd), EntityForSmuViewer.make(aa))
+    individual: IndividualForRisking,
+    application: ApplicationForRisking
+  ): SmuIndividualResponse = SmuIndividualResponse(
+    IndividualForSmuViewer.make(individual),
+    EntityForSmuViewer.make(application)
+  )
 
   final case class IndividualForSmuViewer(
     personReference: PersonReference,
@@ -67,37 +72,38 @@ object SmuIndividualResponse:
 
     given format: OFormat[IndividualForSmuViewer] = Json.format[IndividualForSmuViewer]
 
-    private[SmuIndividualResponse] def make(individual: IndividualData): IndividualForSmuViewer = IndividualForSmuViewer(
-      personReference = individual.personReference,
-      // TODO update this once we have implemented resubmission flags
-      resubmission = false,
-      passedIdentityVerification = individual.passedIv,
-      detailsProvidedByApplicant = individual.providedByApplicant,
-      individualName = individual.individualName,
-      individualDateOfBirth =
-        individual.individualDateOfBirth match
-          case IndividualDateOfBirth.Provided(date) => date
-          case IndividualDateOfBirth.FromCitizensDetails(date) => date
-          case IndividualDateOfBirth.ApplicantProvided(date) => date
-      ,
-      individualNino =
-        individual.individualNino match
-          case IndividualNino.Provided(nino) => Some(nino)
-          case IndividualNino.FromAuth(nino) => Some(nino)
-          case IndividualNino.NotProvided => None
-      ,
-      individualSaUtr =
-        individual.individualSaUtr match
-          case IndividualSaUtr.Provided(saUtr) => Some(saUtr)
-          case IndividualSaUtr.FromAuth(saUtr) => Some(saUtr)
-          case IndividualSaUtr.FromCitizenDetails(saUtr) => Some(saUtr)
-          case IndividualSaUtr.NotProvided => None
-      ,
-      payeRefs = individual.payeRefs,
-      vrns = individual.vrns,
-      telephoneNumber = individual.telephoneNumber,
-      emailAddress = individual.emailAddress
-    )
+    private[SmuIndividualResponse] def make(individual: IndividualForRisking): IndividualForSmuViewer =
+      val individualData: IndividualData = individual.individualData
+      IndividualForSmuViewer(
+        personReference = individualData.personReference,
+        resubmission = individual.isResubmission,
+        passedIdentityVerification = individualData.passedIv,
+        detailsProvidedByApplicant = individualData.providedByApplicant,
+        individualName = individualData.individualName,
+        individualDateOfBirth =
+          individualData.individualDateOfBirth match
+            case IndividualDateOfBirth.Provided(date) => date
+            case IndividualDateOfBirth.FromCitizensDetails(date) => date
+            case IndividualDateOfBirth.ApplicantProvided(date) => date
+        ,
+        individualNino =
+          individualData.individualNino match
+            case IndividualNino.Provided(nino) => Some(nino)
+            case IndividualNino.FromAuth(nino) => Some(nino)
+            case IndividualNino.NotProvided => None
+        ,
+        individualSaUtr =
+          individualData.individualSaUtr match
+            case IndividualSaUtr.Provided(saUtr) => Some(saUtr)
+            case IndividualSaUtr.FromAuth(saUtr) => Some(saUtr)
+            case IndividualSaUtr.FromCitizenDetails(saUtr) => Some(saUtr)
+            case IndividualSaUtr.NotProvided => None
+        ,
+        payeRefs = individualData.payeRefs,
+        vrns = individualData.vrns,
+        telephoneNumber = individualData.telephoneNumber,
+        emailAddress = individualData.emailAddress
+      )
 
   final case class EntityForSmuViewer(
     applicationReference: ApplicationReference,
@@ -120,22 +126,21 @@ object SmuIndividualResponse:
 
     given format: OFormat[EntityForSmuViewer] = Json.format[EntityForSmuViewer]
 
-    private[SmuIndividualResponse] def make(
-      aa: ApplicationData
-    ): EntityForSmuViewer = EntityForSmuViewer(
-      applicationReference = aa.applicationReference,
-      // TODO update this once we have implemented resubmission flags
-      resubmission = false,
-      applicantName = aa.applicantContactDetails.applicantName,
-      businessType = aa.businessType,
-      utr = aa.utr,
-      payeRefs = aa.payeRefs,
-      vrns = aa.vrns,
-      crn = aa.crn,
-      amlsSupervisoryBody = aa.amlsDetails.supervisoryBody,
-      amlsRegNumber = aa.amlsDetails.amlsRegistrationNumber,
-      amlsExpiryDate = None,
-      amlsEvidenceReferenceId = aa.amlsDetails.amlsEvidence.map(_.fileUploadReference.value),
-      applicantPhone = aa.applicantContactDetails.telephoneNumber,
-      applicantEmail = aa.applicantContactDetails.applicantEmailAddress
-    )
+    private[SmuIndividualResponse] def make(application: ApplicationForRisking): EntityForSmuViewer =
+      val applicationData: ApplicationData = application.applicationData
+      EntityForSmuViewer(
+        applicationReference = applicationData.applicationReference,
+        resubmission = application.isResubmission,
+        applicantName = applicationData.applicantContactDetails.applicantName,
+        businessType = applicationData.businessType,
+        utr = applicationData.utr,
+        payeRefs = applicationData.payeRefs,
+        vrns = applicationData.vrns,
+        crn = applicationData.crn,
+        amlsSupervisoryBody = applicationData.amlsDetails.supervisoryBody,
+        amlsRegNumber = applicationData.amlsDetails.amlsRegistrationNumber,
+        amlsExpiryDate = None,
+        amlsEvidenceReferenceId = applicationData.amlsDetails.amlsEvidence.map(_.fileUploadReference.value),
+        applicantPhone = applicationData.applicantContactDetails.telephoneNumber,
+        applicantEmail = applicationData.applicantContactDetails.applicantEmailAddress
+      )
