@@ -101,8 +101,6 @@ extends UnitSpec:
     private val applicationOutcomeService =
       new ApplicationOutcomeService(
         null,
-        null,
-        null,
         null
       ):
         override def processOverallOutcomes()(using RequestHeader): Future[Unit] = stubStage("processOverallOutcomes")

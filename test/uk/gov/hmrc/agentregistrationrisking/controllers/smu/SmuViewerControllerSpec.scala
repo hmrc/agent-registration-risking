@@ -123,6 +123,29 @@ with RequestAwareLogging:
     response.json.as[SmuIndividualResponse] shouldBe smuViewerIndividualResponse
     AuthStubs.verifyAuthorise()
 
+  "find individual by person reference reports the resubmission flags of the stored records" in:
+    given Request[?] = tdAll.backendRequest
+    AuthStubs.stubAuthorise(
+      requestBodyJson = AuthStubs.expectedPrivilegedApplicationRequestBody,
+      responseBody = AuthStubs.expectedResponseBodyWithStrideRole
+    )
+
+    val td = tdAll.tdRiskingInstancesInStates.submittedForRisking
+    val individual: IndividualForRisking = td.individual1.copy(isResubmission = true)
+    applicationForRiskingRepo.upsert(td.application.copy(isResubmission = true)).futureValue
+    individualForRiskingRepo.upsert(individual).futureValue
+
+    val response: HttpResponse =
+      httpClient
+        .get(url(individual.personReference))
+        .execute[HttpResponse]
+        .futureValue
+
+    response.status shouldBe Status.OK
+    (response.json \ "individual" \ "resubmission").as[Boolean] shouldBe true
+    (response.json \ "entity" \ "resubmission").as[Boolean] shouldBe true
+    AuthStubs.verifyAuthorise()
+
   override def beforeEach(): Unit =
     super.beforeEach()
     primeDb()

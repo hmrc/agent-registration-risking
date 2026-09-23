@@ -28,8 +28,8 @@ import play.api.inject.guice.GuiceableModule
 import play.api.test.DefaultTestServerFactory
 import play.api.test.TestServerFactory
 import play.core.server.ServerConfig
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationIdGenerator
+import uk.gov.hmrc.agentregistration.shared.CorrelationId
+import uk.gov.hmrc.agentregistration.shared.CorrelationIdGenerator
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdAll
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdZoneId
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.WireMockSupport

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.model.sdes
 
 import play.api.libs.json.*
-import uk.gov.hmrc.agentregistrationrisking.model.CorrelationId
+import uk.gov.hmrc.agentregistration.shared.CorrelationId
 
 /** Possible responses from the SDES file service
   */

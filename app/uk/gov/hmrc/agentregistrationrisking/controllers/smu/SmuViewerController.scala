@@ -50,9 +50,5 @@ extends BackendController(cc):
           case Some(indi) => applicationForRiskingRepo.findById(indi.applicationReference)
           case None => Future.successful(None)
     yield (maybeIndividual, maybeApp) match
-      case (Some(indi), Some(app)) =>
-        Ok(Json.toJson(SmuIndividualResponse.make(
-          indi.individualData,
-          app.applicationData
-        )))
+      case (Some(indi), Some(app)) => Ok(Json.toJson(SmuIndividualResponse.make(indi, app)))
       case _ => NoContent

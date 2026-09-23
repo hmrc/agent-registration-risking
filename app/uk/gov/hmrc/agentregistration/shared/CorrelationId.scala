@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
@@ -22,7 +22,6 @@ import uk.gov.hmrc.agentregistration.shared.util.JsonFormatsFactory
 import java.util.UUID
 import javax.inject.Singleton
 
-//TODO: make it part of shared model and use in the backend
 final case class CorrelationId(value: String)
 
 object CorrelationId:

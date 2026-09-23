@@ -53,6 +53,26 @@ extends AuditEvent
 object RiskingResponseIndividual:
   given OWrites[RiskingResponseIndividual] = Json.writes[RiskingResponseIndividual]
 
+final case class RiskingResponseForUnknownApplication(
+  applicationReference: ApplicationReference,
+  riskingOutcome: AuditOutcome,
+  failures: Option[List[FailureDetail]]
+)
+extends AuditEvent
+
+object RiskingResponseForUnknownApplication:
+  given OWrites[RiskingResponseForUnknownApplication] = Json.writes[RiskingResponseForUnknownApplication]
+
+final case class RiskingResponseForUnknownIndividual(
+  personReference: PersonReference,
+  riskingOutcome: AuditOutcome,
+  failures: Option[List[FailureDetail]]
+)
+extends AuditEvent
+
+object RiskingResponseForUnknownIndividual:
+  given OWrites[RiskingResponseForUnknownIndividual] = Json.writes[RiskingResponseForUnknownIndividual]
+
 final case class RiskingDetermination(
   applicationReference: ApplicationReference,
   determination: AuditOutcome
