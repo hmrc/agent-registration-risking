@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.partiallyrisked
 
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
@@ -29,4 +28,3 @@ extends TdApplicationWithIndividuals:
   override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.submittedForRisking
   override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedNonFixable
   override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking
-  override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking

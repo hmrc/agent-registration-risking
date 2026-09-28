@@ -81,25 +81,4 @@ object RiskingOutcomeHelper:
       case (FailedNonFixable, Approved) => FailedNonFixable
       case (FailedNonFixable, FailedFixable) => FailedNonFixable
       case (FailedNonFixable, FailedNonFixable) => FailedNonFixable
-  // format: on
-
-  def maybeRiskedEntity(applicationWithIndividuals: ApplicationWithIndividuals): Option[RiskedEntity] = applicationWithIndividuals
-    .application
-    .entityRiskingResult
-    .map(entityRiskingResult => RiskedEntity(applicationWithIndividuals.application.applicationReference, entityRiskingResult.failures))
-
-  def maybeRiskedIndividuals(applicationWithIndividuals: ApplicationWithIndividuals): Option[Seq[RiskedIndividual]] =
-    import cats.implicits.*
-    applicationWithIndividuals
-      .individuals
-      .map: individual =>
-        individual
-          .individualRiskingResult
-          .map(individualRiskingResult =>
-            RiskedIndividual(
-              personReference = individual.individualData.personReference,
-              individualName = individual.individualData.individualName,
-              failures = individualRiskingResult.failures
-            )
-          )
-      .sequence
+    // format: on
