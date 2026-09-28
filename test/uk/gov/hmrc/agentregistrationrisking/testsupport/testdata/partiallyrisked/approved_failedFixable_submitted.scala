@@ -20,7 +20,6 @@ import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdApplicationWithIndividuals
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRisking
-import uk.gov.hmrc.agentregistration.shared.risking.RiskingProgress
 
 case object approved_failedFixable_submitted
 extends TdApplicationWithIndividuals:
@@ -29,5 +28,3 @@ extends TdApplicationWithIndividuals:
   override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approved
   override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.failedFixable
   override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.submittedForRisking
-
-  override def riskingProgressForApplicant: RiskingProgress = RiskingProgress.SubmittedForRisking
