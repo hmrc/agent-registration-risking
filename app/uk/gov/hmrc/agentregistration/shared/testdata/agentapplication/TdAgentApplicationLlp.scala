@@ -78,6 +78,20 @@ trait TdAgentApplicationLlp { dependencies: (TdBase & TdGrsBusinessDetails) =>
       applicationState = GrsDataReceived
     ).assertDataIntegrity()
 
+    val afterStartedExpired: AgentApplicationLlp = afterStarted.copy(
+      applicationExpiresAt = Some(dependencies.nowAsInstant.minusSeconds(60))
+    ).assertDataIntegrity()
+
+    val afterGrsDataReceivedExpired: AgentApplicationLlp = afterGrsDataReceived.copy(
+      applicationExpiresAt = Some(dependencies.nowAsInstant.minusSeconds(60))
+    ).assertDataIntegrity()
+
+    val afterExpired: AgentApplicationLlp = afterStartedExpired.copy(
+      applicationState = ApplicationState.Expired,
+      applicationExpiresAt = None,
+      gracePeriodEndsAt = Some(dependencies.nowAsInstant.plus(java.time.Duration.ofDays(45)))
+    ).assertDataIntegrity()
+
     val afterRefusalToDealWithCheckPass: AgentApplicationLlp = afterGrsDataReceived.copy(
       refusalToDealWithCheckResult = Some(CheckResult.Pass)
     ).assertDataIntegrity()
