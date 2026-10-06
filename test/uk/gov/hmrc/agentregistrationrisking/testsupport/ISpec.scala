@@ -49,6 +49,9 @@ extends AnyFreeSpecLike,
   RichMatchers,
   MongoSupport:
 
+  // the service prefix keeps it apart from a same-named spec's database in the sibling services, whose suites may run at the same time
+  override protected def databaseName: String = s"test-risk-${getClass.getSimpleName}"
+
   given ExecutionContext = app.injector.instanceOf[ExecutionContext]
   given HeaderCarrier = app.injector.instanceOf[HeaderCarrier]
 
