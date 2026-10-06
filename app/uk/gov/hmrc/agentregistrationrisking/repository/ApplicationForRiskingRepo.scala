@@ -16,12 +16,9 @@
 
 package uk.gov.hmrc.agentregistrationrisking.repository
 
-import org.bson.json.JsonMode
-import org.bson.json.JsonWriterSettings
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
-import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
@@ -57,6 +54,8 @@ extends Repo[ApplicationReference, ApplicationForRisking](
   ),
   replaceIndexes = true
 )(using domainFormat = applicationDataEncryption.formats):
+
+  override lazy val requiresTtlIndex: Boolean = false
 
   def findReadyForSubmission(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.exists(FieldNames.riskingFileName, false) // ready for submissions don't have set riskingFileId
@@ -102,8 +101,6 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     individualForAllFilter = Filters.exists(FieldNames.individualRiskingResult)
   )
 
-  private val relaxedJson: JsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
-
   private def findApplicationWithIndividuals(
     applicationFilter: Bson,
     individualForAllFilter: Bson = Filters.empty() // the filter must apply "forall" individuals otherwise entire ApplicationWithIndividuals is discarded
@@ -122,7 +119,7 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     .map:
       _.map: (doc: Document) =>
         given OFormat[IndividualForRisking] = individualDataEncryption.formats
-        val jsValue: JsValue = Json.parse(doc.toJson(relaxedJson))
+        val jsValue: JsValue = Codecs.fromBson[JsValue](doc.toBsonDocument)
         val applicationForRisking: ApplicationForRisking = jsValue.as[ApplicationForRisking](using applicationDataEncryption.formats)
         val individualsForRisking: Seq[IndividualForRisking] = (jsValue \ "individuals").as[Seq[IndividualForRisking]]
         ApplicationWithIndividuals(applicationForRisking, individualsForRisking)

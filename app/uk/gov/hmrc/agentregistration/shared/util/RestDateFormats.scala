@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.util
 
 import play.api.libs.json.Format
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.util.RestDateFormats
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 
 import java.time.Instant
+import java.time.LocalDate
 
-final case class RiskingFile(
-  riskingFileName: RiskingFileName,
-  uploadedAt: Instant
-)
+/** Date formats for REST data exchange: ISO strings. */
+object RestDateFormats:
 
-object RiskingFile:
+  val instantFormat: Format[Instant] = Format(Reads.DefaultInstantReads, Writes.DefaultInstantWrites)
 
-  given format: OFormat[RiskingFile] = makeFormat(using RestDateFormats.instantFormat)
-
-  def makeFormat(using Format[Instant]): OFormat[RiskingFile] = Json.format[RiskingFile]
+  val localDateFormat: Format[LocalDate] = Format(Reads.DefaultLocalDateReads, Writes.DefaultLocalDateWrites)

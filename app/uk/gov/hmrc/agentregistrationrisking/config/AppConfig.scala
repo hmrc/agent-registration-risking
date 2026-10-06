@@ -29,7 +29,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.duration.FiniteDuration
 
 object AppConfig:
   val zoneId: ZoneId = ZoneId.of("UTC")
@@ -57,11 +56,8 @@ class AppConfig @Inject() (
     val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
     val resultsEnabled: Boolean = config.getOptional[Boolean]("scheduler.results.enabled").getOrElse(false)
 
-  object ApplicationForRiskingRepo:
-    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.application-for-risking-ttl", servicesConfig)
-
-  object CompletedRiskingRepo:
-    val ttl: FiniteDuration = ConfigHelper.readFiniteDuration("mongodb.risking-completed-ttl", servicesConfig)
+  object DatesMigrator:
+    val enabled: Boolean = config.get[Boolean]("dates-migrator.enabled")
 
   object FieldLevelEncryption:
 
@@ -103,8 +99,7 @@ class AppConfig @Inject() (
   // Access objects eagerly to initialize its vals, ensuring config errors are detected at startup
   AmlsEvidence
   Scheduler
-  ApplicationForRiskingRepo
-  CompletedRiskingRepo
+  DatesMigrator
   FieldLevelEncryption
   SdesProxy
   Email

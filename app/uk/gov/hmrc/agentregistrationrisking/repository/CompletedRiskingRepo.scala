@@ -24,16 +24,13 @@ import org.mongodb.scala.model.Sorts
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 import CompletedRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.crypto.CompletedRiskingEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRiskingId
@@ -43,16 +40,17 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 @Singleton
 final class CompletedRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig,
   completedRiskingEncryption: CompletedRiskingEncryption
 )(using ec: ExecutionContext)
 extends Repo[CompletedRiskingId, CompletedRisking](
   collectionName = CompletedRiskingRepo.collectionName,
   mongoComponent = mongoComponent,
-  indexes = CompletedRiskingRepoHelp.indexes(appConfig.CompletedRiskingRepo.ttl),
+  indexes = CompletedRiskingRepoHelp.indexes,
   extraCodecs = Seq(Codecs.playFormatCodec(completedRiskingEncryption.formats)),
   replaceIndexes = true
 )(using domainFormat = completedRiskingEncryption.formats):
+
+  override lazy val requiresTtlIndex: Boolean = false
 
   def findRecent(applicationReference: ApplicationReference): Future[Option[CompletedRisking]] = collection
     .find(filter = Filters.eq(FieldNames.CompletedRisking.applicationReference, applicationReference.value))
@@ -88,7 +86,7 @@ object CompletedRiskingRepoHelp:
     new IdExtractor[CompletedRisking, CompletedRiskingId]:
       override def id(completedRisking: CompletedRisking): CompletedRiskingId = completedRisking.completedRiskingId
 
-  def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
+  val indexes: Seq[IndexModel] = Seq(
     IndexModel(
       keys = Indexes.ascending(FieldNames.CompletedRisking.applicationReference),
       indexOptions = IndexOptions()
@@ -98,11 +96,5 @@ object CompletedRiskingRepoHelp:
       keys = Indexes.ascending(FieldNames.CompletedRisking.personReference),
       indexOptions = IndexOptions()
         .name(FieldNames.CompletedRisking.personReferenceIndex)
-    ),
-    IndexModel(
-      keys = Indexes.ascending(FieldNames.CompletedRisking.completedAt),
-      indexOptions = IndexOptions()
-        .expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS)
-        .name(FieldNames.CompletedRisking.completedAtIndex)
     )
   )

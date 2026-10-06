@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.crypto
 
 import com.softwaremill.quicklens.*
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistrationrisking.repository.MongoDateFormats
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
@@ -29,10 +30,12 @@ import javax.inject.Singleton
 @Singleton
 class IndividualDataEncryption @Inject() (fieldLevelEncryption: FieldLevelEncryption):
 
-  val formats: OFormat[IndividualForRisking] = OFormat[IndividualForRisking](
-    r = IndividualForRisking.format.map[IndividualForRisking](decrypt),
-    w = IndividualForRisking.format.contramap[IndividualForRisking](encrypt)
-  )
+  val formats: OFormat[IndividualForRisking] =
+    val mongoFormat: OFormat[IndividualForRisking] = IndividualForRisking.makeFormat(using MongoDateFormats.instantFormat)
+    OFormat[IndividualForRisking](
+      r = mongoFormat.map[IndividualForRisking](decrypt),
+      w = mongoFormat.contramap[IndividualForRisking](encrypt)
+    )
 
   def encrypt(data: IndividualData): IndividualData = transform(data, fieldLevelEncryption.encrypt)
   def decrypt(data: IndividualData): IndividualData = transform(data, fieldLevelEncryption.decrypt)

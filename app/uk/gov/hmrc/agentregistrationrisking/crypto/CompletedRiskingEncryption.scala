@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.crypto
 
 import com.softwaremill.quicklens.*
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistrationrisking.repository.MongoDateFormats
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
 
 import javax.inject.Inject
@@ -29,10 +30,12 @@ class CompletedRiskingEncryption @Inject() (
   individualDataEncryption: IndividualDataEncryption
 ):
 
-  val formats: OFormat[CompletedRisking] = OFormat[CompletedRisking](
-    r = CompletedRisking.format.map[CompletedRisking](decrypt),
-    w = CompletedRisking.format.contramap[CompletedRisking](encrypt)
-  )
+  val formats: OFormat[CompletedRisking] =
+    val mongoFormat: OFormat[CompletedRisking] = CompletedRisking.makeFormat(using MongoDateFormats.instantFormat)
+    OFormat[CompletedRisking](
+      r = mongoFormat.map[CompletedRisking](decrypt),
+      w = mongoFormat.contramap[CompletedRisking](encrypt)
+    )
 
   def encrypt(cr: CompletedRisking): CompletedRisking = cr
     .modify(_.application).using(applicationDataEncryption.encrypt)

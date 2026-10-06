@@ -20,6 +20,9 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
+import java.time.Instant
 
 class CompletedRiskingEncryptionSpec
 extends ISpec:
@@ -74,3 +77,23 @@ extends ISpec:
         withClue(s"plaintext '$plaintext' must not appear as a JSON value in the encrypted JSON: "):
           rendered should not include s"\"$plaintext\""
   }
+
+  "CompletedRiskingEncryption.formats" - {
+
+    "writes the dates as BSON dates, the application's and individuals' included" in:
+      val json: JsValue = completedRiskingEncryption.formats.writes(completedRisking)
+      (json \ "completedAt").get shouldBe mongoDate(completedRisking.completedAt)
+      (json \ "riskingFile" \ "uploadedAt").get shouldBe mongoDate(completedRisking.riskingFile.value.uploadedAt)
+      (json \ "application" \ "createdAt").get shouldBe mongoDate(completedRisking.application.createdAt)
+      (json \ "individuals" \ 0 \ "createdAt").get shouldBe mongoDate(completedRisking.individuals.headOption.value.createdAt)
+
+    "reads what it writes" in:
+      completedRiskingEncryption.formats.reads(completedRiskingEncryption.formats.writes(completedRisking)).get shouldBe completedRisking
+
+    // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
+    "reads a completed risking stored before its dates were migrated to BSON dates" in:
+      val storedBeforeMigration: JsValue = Json.toJson(completedRiskingEncryption.encrypt(completedRisking))
+      completedRiskingEncryption.formats.reads(storedBeforeMigration).get shouldBe completedRisking
+  }
+
+  private def mongoDate(instant: Instant): JsObject = Json.obj("$date" -> Json.obj("$numberLong" -> instant.toEpochMilli.toString))
