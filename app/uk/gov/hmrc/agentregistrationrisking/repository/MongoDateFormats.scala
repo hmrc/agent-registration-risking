@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistrationrisking.repository
 
 import play.api.libs.json.Format
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.util.RestDateFormats
+import play.api.libs.json.Reads
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 
-final case class RiskingFile(
-  riskingFileName: RiskingFileName,
-  uploadedAt: Instant
-)
+/** Date formats for Mongo storage: BSON dates. */
+object MongoDateFormats:
 
-object RiskingFile:
-
-  given format: OFormat[RiskingFile] = makeFormat(using RestDateFormats.instantFormat)
-
-  def makeFormat(using Format[Instant]): OFormat[RiskingFile] = Json.format[RiskingFile]
+  // reads also accept the ISO string shape of data written before the migration to BSON Date
+  val instantFormat: Format[Instant] = Format(
+    // TODO: remove the ISO-string fallback once the dates migration has run in every environment
+    MongoJavatimeFormats.instantReads.orElse(Reads.DefaultInstantReads),
+    MongoJavatimeFormats.instantWrites
+  )

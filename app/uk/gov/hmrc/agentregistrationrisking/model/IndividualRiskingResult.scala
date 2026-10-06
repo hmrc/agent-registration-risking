@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.agentregistrationrisking.model
 
+import play.api.libs.json.Format
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
+import uk.gov.hmrc.agentregistration.shared.util.RestDateFormats
 
 import java.time.Instant
 
@@ -31,4 +33,7 @@ final case class IndividualRiskingResult(
 )
 
 object IndividualRiskingResult:
-  given OFormat[IndividualRiskingResult] = Json.format[IndividualRiskingResult]
+
+  given format: OFormat[IndividualRiskingResult] = makeFormat(using RestDateFormats.instantFormat)
+
+  def makeFormat(using Format[Instant]): OFormat[IndividualRiskingResult] = Json.format[IndividualRiskingResult]

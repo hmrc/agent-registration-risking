@@ -21,6 +21,10 @@ import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddr
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
+import java.time.Instant
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 
 class ApplicationDataEncryptionSpec
 extends ISpec:
@@ -177,3 +181,25 @@ extends ISpec:
         withClue(s"plaintext '$plaintext' must not appear as a JSON value in the encrypted JSON: "):
           rendered should not include s"\"$plaintext\""
   }
+
+  "ApplicationDataEncryption.formats" - {
+
+    "writes the dates as BSON dates" in:
+      val json: JsValue = applicationDataEncryption.formats.writes(riskedApplication)
+      (json \ "createdAt").get shouldBe mongoDate(riskedApplication.createdAt)
+      (json \ "lastUpdatedAt").get shouldBe mongoDate(riskedApplication.lastUpdatedAt)
+      (json \ "entityRiskingResult" \ "receivedAt").get shouldBe mongoDate(riskedApplication.entityRiskingResult.value.receivedAt)
+      (json \ "overallStatus" \ "emailsSentAt").get shouldBe mongoDate(riskedApplication.overallStatus.emailsSentAt.value)
+
+    "reads what it writes" in:
+      applicationDataEncryption.formats.reads(applicationDataEncryption.formats.writes(riskedApplication)).get shouldBe riskedApplication
+
+    // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
+    "reads an application stored before its dates were migrated to BSON dates" in:
+      val storedBeforeMigration: JsValue = Json.toJson(applicationDataEncryption.encrypt(riskedApplication))
+      applicationDataEncryption.formats.reads(storedBeforeMigration).get shouldBe riskedApplication
+  }
+
+  private val riskedApplication: ApplicationForRisking = TdRiskingInstancesInStates.failedFixableAfterBackendNotified.application
+
+  private def mongoDate(instant: Instant): JsObject = Json.obj("$date" -> Json.obj("$numberLong" -> instant.toEpochMilli.toString))

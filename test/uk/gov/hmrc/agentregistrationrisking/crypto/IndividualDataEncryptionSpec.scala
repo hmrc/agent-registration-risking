@@ -22,6 +22,10 @@ import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.IndividualData
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
+import java.time.Instant
+import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 
 class IndividualDataEncryptionSpec
 extends ISpec:
@@ -103,3 +107,24 @@ extends ISpec:
         withClue(s"plaintext '$plaintext' must not appear as a JSON value in the encrypted JSON: "):
           rendered should not include s"\"$plaintext\""
   }
+
+  "IndividualDataEncryption.formats" - {
+
+    "writes the dates as BSON dates" in:
+      val json: JsValue = individualDataEncryption.formats.writes(riskedIndividual)
+      (json \ "createdAt").get shouldBe mongoDate(riskedIndividual.createdAt)
+      (json \ "lastUpdatedAt").get shouldBe mongoDate(riskedIndividual.lastUpdatedAt)
+      (json \ "individualRiskingResult" \ "receivedAt").get shouldBe mongoDate(riskedIndividual.individualRiskingResult.value.receivedAt)
+
+    "reads what it writes" in:
+      individualDataEncryption.formats.reads(individualDataEncryption.formats.writes(riskedIndividual)).get shouldBe riskedIndividual
+
+    // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
+    "reads an individual stored before its dates were migrated to BSON dates" in:
+      val storedBeforeMigration: JsValue = Json.toJson(individualDataEncryption.encrypt(riskedIndividual))
+      individualDataEncryption.formats.reads(storedBeforeMigration).get shouldBe riskedIndividual
+  }
+
+  private val riskedIndividual: IndividualForRisking = TdRiskingInstancesInStates.failedFixableAfterBackendNotified.individual1
+
+  private def mongoDate(instant: Instant): JsObject = Json.obj("$date" -> Json.obj("$numberLong" -> instant.toEpochMilli.toString))

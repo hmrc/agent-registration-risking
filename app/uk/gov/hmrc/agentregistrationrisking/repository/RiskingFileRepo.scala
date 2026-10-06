@@ -19,16 +19,14 @@ package uk.gov.hmrc.agentregistrationrisking.repository
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
 import RiskingFileRepoHelp.given
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
@@ -36,19 +34,22 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 
 @Singleton
 final class RiskingFileRepo @Inject() (
-  mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  mongoComponent: MongoComponent
 )(using ec: ExecutionContext)
 extends Repo[RiskingFileName, RiskingFile](
   collectionName = RiskingFileRepo.collectionName,
   mongoComponent = mongoComponent,
-  indexes = RiskingFileRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
-  extraCodecs = Seq(Codecs.playFormatCodec(RiskingFile.format)),
+  indexes = RiskingFileRepoHelp.indexes,
+  extraCodecs = Seq(Codecs.playFormatCodec(RiskingFileRepo.mongoFormat)),
   replaceIndexes = true
-)
+)(using domainFormat = RiskingFileRepo.mongoFormat):
+
+  override lazy val requiresTtlIndex: Boolean = false
 
 object RiskingFileRepo:
+
   val collectionName = "risking-file"
+  val mongoFormat: OFormat[RiskingFile] = RiskingFile.makeFormat(using MongoDateFormats.instantFormat)
 
 object RiskingFileRepoHelp:
 
@@ -61,17 +62,11 @@ object RiskingFileRepoHelp:
     new IdExtractor[RiskingFile, RiskingFileName]:
       override def id(riskingFile: RiskingFile): RiskingFileName = riskingFile.riskingFileName
 
-  def indexes(cacheTtl: FiniteDuration): Seq[IndexModel] = Seq(
+  val indexes: Seq[IndexModel] = Seq(
     IndexModel(
       keys = Indexes.ascending(FieldNames.riskingFileName),
       indexOptions = IndexOptions()
         .name(FieldNames.riskingFileNameIndex)
         .unique(true)
-    ),
-    IndexModel(
-      keys = Indexes.ascending(FieldNames.uploadedAt),
-      indexOptions = IndexOptions()
-        .expireAfter(cacheTtl.toSeconds, TimeUnit.SECONDS)
-        .name(FieldNames.uploadedAtIndex)
     )
   )
