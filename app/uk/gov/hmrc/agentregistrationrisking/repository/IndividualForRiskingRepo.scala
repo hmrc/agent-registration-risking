@@ -20,23 +20,16 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.Updates
-import org.mongodb.scala.result.UpdateResult
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 
-import java.time.Clock
-import java.time.Instant
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 import IndividualForRiskingRepoHelp.given
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistration.shared.PersonReference
-import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.crypto.IndividualDataEncryption
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
@@ -45,17 +38,17 @@ import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 @Singleton
 final class IndividualForRiskingRepo @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig,
-  clock: Clock,
   individualDataEncryption: IndividualDataEncryption
 )(using ec: ExecutionContext)
 extends Repo[PersonReference, IndividualForRisking](
   collectionName = IndividualForRiskingRepo.collectionName,
   mongoComponent = mongoComponent,
-  indexes = IndividualForRiskingRepoHelp.indexes(appConfig.ApplicationForRiskingRepo.ttl),
+  indexes = IndividualForRiskingRepoHelp.indexes,
   extraCodecs = Seq(Codecs.playFormatCodec(individualDataEncryption.formats)),
   replaceIndexes = true
 )(using domainFormat = individualDataEncryption.formats):
+
+  override lazy val requiresTtlIndex: Boolean = false
 
   def insertMany(
     individualForRiskingList: List[IndividualForRisking]
@@ -72,15 +65,6 @@ extends Repo[PersonReference, IndividualForRisking](
       filter = Filters.in(FieldNames.applicationReference, applicationReferences.map(_.value))
     )
     .toFuture()
-
-  def updateEmailSent(personReference: PersonReference): Future[UpdateResult] = collection
-    .updateOne(
-      Filters.eq(FieldNames.personReference, personReference.value),
-      Updates.combine(
-        Updates.set(FieldNames.isEmailSent, true),
-        Updates.set(FieldNames.lastUpdatedAt, Instant.now(clock).toString)
-      )
-    ).toFuture()
 
   def deleteByApplicationReference(applicationReference: ApplicationReference): Future[Unit] = collection
     .deleteMany(Filters.eq(FieldNames.applicationReference, applicationReference.value))
@@ -101,7 +85,7 @@ object IndividualForRiskingRepoHelp:
     new IdExtractor[IndividualForRisking, PersonReference]:
       override def id(individualForRisking: IndividualForRisking): PersonReference = individualForRisking.personReference
 
-  def indexes(ttl: FiniteDuration): Seq[IndexModel] = Seq(
+  val indexes: Seq[IndexModel] = Seq(
     IndexModel(
       keys = Indexes.ascending(FieldNames.personReference),
       indexOptions = IndexOptions()
@@ -113,11 +97,5 @@ object IndividualForRiskingRepoHelp:
       indexOptions = IndexOptions()
         .name(FieldNames.applicationReferenceIndex)
         .unique(false)
-    ),
-    IndexModel(
-      keys = Indexes.ascending(FieldNames.lastUpdatedAt),
-      indexOptions = IndexOptions()
-        .expireAfter(ttl.toSeconds, TimeUnit.SECONDS)
-        .name(FieldNames.lastUpdatedAtIndex)
     )
   )

@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.model
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcome
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
+import uk.gov.hmrc.agentregistration.shared.util.RestDateFormats
 
 import java.time.Instant
 
@@ -31,7 +32,9 @@ final case class OverallStatus(
 
 object OverallStatus:
 
-  given OFormat[OverallStatus] =
+  given format: OFormat[OverallStatus] = makeFormat(using RestDateFormats.instantFormat)
+
+  def makeFormat(using Format[Instant]): OFormat[OverallStatus] =
     val reads: Reads[OverallStatus] =
       (
         (__ \ "riskingOutcome").readNullable[RiskingOutcome] and

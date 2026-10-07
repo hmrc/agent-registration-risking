@@ -27,14 +27,9 @@ object FieldNames:
 
   val riskingFileName: String = "riskingFileName"
   val riskingFileNameIndex: String = riskingFileName + "Index"
-  val uploadedAt: String = "uploadedAt"
-  val uploadedAtIndex: String = uploadedAt + "Index"
 
   val applicationReference: String = "applicationReference"
   val applicationReferenceIndex: String = applicationReference + "Index"
-
-  val lastUpdatedAt: String = "lastUpdatedAt"
-  val lastUpdatedAtIndex: String = lastUpdatedAt + "Index"
 
   val personReference: String = "personReference"
   val personReferenceIndex: String = personReference + "Index"
@@ -58,4 +53,3 @@ object FieldNames:
     val personReference: String = "individuals.personReference"
     val personReferenceIndex: String = "individuals_personReferenceIndex"
     val completedAt: String = "completedAt"
-    val completedAtIndex: String = completedAt + "Index"

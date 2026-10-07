@@ -49,6 +49,9 @@ extends AnyFreeSpecLike,
   RichMatchers,
   MongoSupport:
 
+  // Specs in other services can have the same name (e.g. DatesMigratorSpec), so the prefix keeps their test databases apart.
+  override protected def databaseName: String = s"test-risk-${getClass.getSimpleName}"
+
   given ExecutionContext = app.injector.instanceOf[ExecutionContext]
   given HeaderCarrier = app.injector.instanceOf[HeaderCarrier]
 
@@ -64,6 +67,7 @@ extends AnyFreeSpecLike,
       "auditing.consumer.baseUri.port" -> WireMockSupport.port,
       "auditing.enabled" -> false,
       "auditing.traceRequests" -> false,
+      "dates-migrator.enabled" -> false,
       "microservice.services.agent-registration.port" -> WireMockSupport.port,
       "microservice.services.auth.port" -> WireMockSupport.port,
       "microservice.services.email.port" -> WireMockSupport.port,

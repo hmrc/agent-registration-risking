@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.model
+package uk.gov.hmrc.agentregistration.shared.individual
 
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistration.shared.risking.IndividualFailure
 import uk.gov.hmrc.agentregistration.shared.util.RestDateFormats
 
 import java.time.Instant
 
-/** The Minerva risking outcome for a single individual: the failure list and the moment we received it. Both arrive together — they cannot be set
-  * independently.
-  */
-final case class IndividualRiskingResult(
-  failures: List[IndividualFailure],
-  receivedAt: Instant
-)
+object IndividualProvidedDetailsFormat:
 
-object IndividualRiskingResult:
+  given restFormat: OFormat[IndividualProvidedDetails] = makeFormat(using RestDateFormats.instantFormat)
 
-  given format: OFormat[IndividualRiskingResult] = makeFormat(using RestDateFormats.instantFormat)
-
-  def makeFormat(using Format[Instant]): OFormat[IndividualRiskingResult] = Json.format[IndividualRiskingResult]
+  def makeFormat(using Format[Instant]): OFormat[IndividualProvidedDetails] = Json.format[IndividualProvidedDetails]
