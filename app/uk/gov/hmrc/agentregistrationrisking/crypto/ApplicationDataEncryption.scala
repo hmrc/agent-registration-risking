@@ -18,9 +18,9 @@ package uk.gov.hmrc.agentregistrationrisking.crypto
 
 import com.softwaremill.quicklens.*
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.agentregistrationrisking.repository.MongoDateFormats
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,7 +29,7 @@ import javax.inject.Singleton
 class ApplicationDataEncryption @Inject() (fieldLevelEncryption: FieldLevelEncryption):
 
   val formats: OFormat[ApplicationForRisking] =
-    val mongoFormat: OFormat[ApplicationForRisking] = ApplicationForRisking.makeFormat(using MongoDateFormats.instantFormat)
+    val mongoFormat: OFormat[ApplicationForRisking] = ApplicationForRisking.makeFormat(using MongoJavatimeFormats.instantFormat)
     OFormat[ApplicationForRisking](
       r = mongoFormat.map[ApplicationForRisking](decrypt),
       w = mongoFormat.contramap[ApplicationForRisking](encrypt)

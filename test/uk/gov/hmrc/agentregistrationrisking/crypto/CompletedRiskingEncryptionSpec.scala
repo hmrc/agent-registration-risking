@@ -89,11 +89,6 @@ extends ISpec:
 
     "reads what it writes" in:
       completedRiskingEncryption.formats.reads(completedRiskingEncryption.formats.writes(completedRisking)).get shouldBe completedRisking
-
-    // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
-    "reads a completed risking stored before its dates were migrated to BSON dates" in:
-      val storedBeforeMigration: JsValue = Json.toJson(completedRiskingEncryption.encrypt(completedRisking))
-      completedRiskingEncryption.formats.reads(storedBeforeMigration).get shouldBe completedRisking
   }
 
   private def mongoDate(instant: Instant): JsObject = Json.obj("$date" -> Json.obj("$numberLong" -> instant.toEpochMilli.toString))

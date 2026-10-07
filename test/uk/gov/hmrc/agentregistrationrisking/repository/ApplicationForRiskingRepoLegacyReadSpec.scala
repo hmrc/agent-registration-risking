@@ -17,16 +17,11 @@
 package uk.gov.hmrc.agentregistrationrisking.repository
 
 import com.softwaremill.quicklens.modify
-import org.bson.BsonDocument
-import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationWithIndividuals
-import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 
@@ -154,24 +149,3 @@ extends ISpec:
 
     ready.map(_.application.applicationReference).toSet should not contain application.applicationReference withClue
       "predicate gate `backendNotified=true` MUST NOT match legacy records missing the field on disk — those records represent an unfinished notify-BE flow and archiving them would silently erase evidence"
-
-  // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
-  "findReadyForSubmission reads an application and its individuals stored before their dates were migrated to BSON dates" in:
-    val applicationWithIndividuals: ApplicationWithIndividuals = TdRiskingInstancesInStates.readyForSubmission.applicationWithIndividuals
-    storeWithIsoStringDates(applicationForRiskingRepo.collection, Json.toJsObject(applicationWithIndividuals.application))
-    applicationWithIndividuals.individuals.foreach: (individual: IndividualForRisking) =>
-      storeWithIsoStringDates(individualForRiskingRepo.collection, Json.toJsObject(individual))
-
-    applicationForRiskingRepo.findReadyForSubmission().futureValue shouldBe Seq(applicationWithIndividuals)
-
-  // stores the record as written before the migration: with the companion format, which writes dates as ISO strings
-  private def storeWithIsoStringDates(
-    collection: MongoCollection[?],
-    json: JsObject
-  ): Unit =
-    collection
-      .withDocumentClass[BsonDocument]()
-      .insertOne(BsonDocument.parse(json.toString))
-      .toFuture()
-      .futureValue
-    ()

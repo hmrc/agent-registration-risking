@@ -22,6 +22,7 @@ import org.mongodb.scala.model.Indexes
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,7 +50,7 @@ extends Repo[RiskingFileName, RiskingFile](
 object RiskingFileRepo:
 
   val collectionName = "risking-file"
-  val mongoFormat: OFormat[RiskingFile] = RiskingFile.makeFormat(using MongoDateFormats.instantFormat)
+  val mongoFormat: OFormat[RiskingFile] = RiskingFile.makeFormat(using MongoJavatimeFormats.instantFormat)
 
 object RiskingFileRepoHelp:
 
