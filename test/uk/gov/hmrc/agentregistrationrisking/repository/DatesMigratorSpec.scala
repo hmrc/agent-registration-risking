@@ -25,12 +25,15 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.CompletedRisking
 import uk.gov.hmrc.agentregistrationrisking.model.IndividualForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
+
+import scala.concurrent.duration.*
 
 class DatesMigratorSpec
 extends ISpec:
@@ -156,6 +159,15 @@ extends ISpec:
     )
     dateTypes(rawRiskingFile(riskingFile)) shouldBe Map("uploadedAt" -> BsonType.DATE_TIME)
 
+  "migrate pauses between the runs on a collection" in:
+    val startedAt: Long = System.nanoTime()
+
+    migrator.migrate().futureValue shouldBe 0L
+
+    val elapsed: FiniteDuration = (System.nanoTime() - startedAt).nanos
+    // all four collections are empty: two quiet runs each, so one pause each
+    elapsed should be >= appConfig.DatesMigrator.delayBetweenRuns * 4
+
   override def beforeEach(): Unit =
     super.beforeEach()
     dropDatabase()
@@ -165,6 +177,7 @@ extends ISpec:
   private lazy val riskingFileRepo: RiskingFileRepo = app.injector.instanceOf[RiskingFileRepo]
   private lazy val completedRiskingRepo: CompletedRiskingRepo = app.injector.instanceOf[CompletedRiskingRepo]
   private lazy val migrator: DatesMigrator = app.injector.instanceOf[DatesMigrator]
+  private lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   private val notRisked: TdRiskingInstancesInStates.readyForSubmission.type = TdRiskingInstancesInStates.readyForSubmission
   private val risked: TdRiskingInstancesInStates.failedFixableAfterBackendNotified.type = TdRiskingInstancesInStates.failedFixableAfterBackendNotified

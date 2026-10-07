@@ -23,7 +23,9 @@ import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
 import play.api.Logging
+import play.api.libs.concurrent.Futures
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.repository.DatesMigrator.*
 
 import javax.inject.Inject
@@ -40,7 +42,9 @@ class DatesMigrator @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   individualForRiskingRepo: IndividualForRiskingRepo,
   riskingFileRepo: RiskingFileRepo,
-  completedRiskingRepo: CompletedRiskingRepo
+  completedRiskingRepo: CompletedRiskingRepo,
+  appConfig: AppConfig,
+  futures: Futures
 )(using ExecutionContext)
 extends Logging:
 
@@ -127,11 +131,12 @@ extends Logging:
         if quietRunsNow === 2
         then Future.successful(converted)
         else
-          run(
-            runNumber = runNumber + 1,
-            quietRuns = quietRunsNow,
-            converted = converted + convertedInRun
-          )
+          futures.delayed(appConfig.DatesMigrator.delayBetweenRuns):
+            run(
+              runNumber = runNumber + 1,
+              quietRuns = quietRunsNow,
+              converted = converted + convertedInRun
+            )
 
     run(
       runNumber = 1,

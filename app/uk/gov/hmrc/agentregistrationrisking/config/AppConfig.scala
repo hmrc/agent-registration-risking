@@ -29,6 +29,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
+import scala.concurrent.duration.FiniteDuration
 
 object AppConfig:
   val zoneId: ZoneId = ZoneId.of("UTC")
@@ -57,7 +58,9 @@ class AppConfig @Inject() (
     val resultsEnabled: Boolean = config.getOptional[Boolean]("scheduler.results.enabled").getOrElse(false)
 
   object DatesMigrator:
+
     val enabled: Boolean = config.get[Boolean]("dates-migrator.enabled")
+    val delayBetweenRuns: FiniteDuration = config.get[FiniteDuration]("dates-migrator.delay-between-runs")
 
   object FieldLevelEncryption:
 
