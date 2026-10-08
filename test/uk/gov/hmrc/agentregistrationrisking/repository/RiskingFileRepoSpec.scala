@@ -20,7 +20,6 @@ import org.bson.BsonDocument
 import org.bson.BsonType
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
-import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFile
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
@@ -64,16 +63,6 @@ extends ISpec:
   "upsert stores uploadedAt as a BSON date" in:
     riskingFileRepo.upsert(riskingFile).futureValue
     rawRiskingFile.get("uploadedAt").getBsonType shouldBe BsonType.DATE_TIME
-
-  // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
-  "findById reads a risking file stored before its date was migrated to a BSON date" in:
-    riskingFileRepo
-      .collection
-      .withDocumentClass[BsonDocument]()
-      .insertOne(BsonDocument.parse(Json.toJsObject(riskingFile).toString))
-      .toFuture()
-      .futureValue
-    riskingFileRepo.findById(riskingFile.riskingFileName).futureValue.value shouldBe riskingFile
 
   private def rawRiskingFile: BsonDocument =
     riskingFileRepo

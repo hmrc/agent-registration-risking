@@ -193,11 +193,6 @@ extends ISpec:
 
     "reads what it writes" in:
       applicationDataEncryption.formats.reads(applicationDataEncryption.formats.writes(riskedApplication)).get shouldBe riskedApplication
-
-    // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
-    "reads an application stored before its dates were migrated to BSON dates" in:
-      val storedBeforeMigration: JsValue = Json.toJson(applicationDataEncryption.encrypt(riskedApplication))
-      applicationDataEncryption.formats.reads(storedBeforeMigration).get shouldBe riskedApplication
   }
 
   private val riskedApplication: ApplicationForRisking = TdRiskingInstancesInStates.failedFixableAfterBackendNotified.application

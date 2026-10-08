@@ -56,9 +56,6 @@ class AppConfig @Inject() (
     val time: LocalTime = LocalTime.parse(config.get[String]("scheduler.risking.time"))
     val resultsEnabled: Boolean = config.getOptional[Boolean]("scheduler.results.enabled").getOrElse(false)
 
-  object DatesMigrator:
-    val enabled: Boolean = config.get[Boolean]("dates-migrator.enabled")
-
   object FieldLevelEncryption:
 
     val enabled: Boolean = config.get[Boolean]("field-level-encryption.enabled")
@@ -99,7 +96,6 @@ class AppConfig @Inject() (
   // Access objects eagerly to initialize its vals, ensuring config errors are detected at startup
   AmlsEvidence
   Scheduler
-  DatesMigrator
   FieldLevelEncryption
   SdesProxy
   Email

@@ -118,11 +118,6 @@ extends ISpec:
 
     "reads what it writes" in:
       individualDataEncryption.formats.reads(individualDataEncryption.formats.writes(riskedIndividual)).get shouldBe riskedIndividual
-
-    // TODO: remove with the ISO-string fallback in MongoDateFormats once the dates migration has run in every environment
-    "reads an individual stored before its dates were migrated to BSON dates" in:
-      val storedBeforeMigration: JsValue = Json.toJson(individualDataEncryption.encrypt(riskedIndividual))
-      individualDataEncryption.formats.reads(storedBeforeMigration).get shouldBe riskedIndividual
   }
 
   private val riskedIndividual: IndividualForRisking = TdRiskingInstancesInStates.failedFixableAfterBackendNotified.individual1
