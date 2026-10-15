@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.testonly.controllers
 
 import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.model.Filters
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.Configuration
@@ -35,7 +36,9 @@ import uk.gov.hmrc.agentregistrationrisking.runner.RiskingResultsFileProcessingR
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
 import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileContent
-import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileName
+import uk.gov.hmrc.agentregistration.shared.testonly.FindRiskingResultsFilesRequest
+import uk.gov.hmrc.agentregistration.shared.testonly.RiskingResultsFileName
+import uk.gov.hmrc.agentregistration.shared.testonly.FindRiskingResultsFilesResponse
 import uk.gov.hmrc.agentregistrationrisking.testonly.repos.RiskingResultsFileContentsRepo
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -133,6 +136,61 @@ with Logging:
                 )
               ).map(_ => Ok(""))
 
+  def findRiskingResultsFiles: Action[FindRiskingResultsFilesRequest] =
+    actions
+      .default
+      .async(parse.json[FindRiskingResultsFilesRequest]):
+        implicit request =>
+          val applicationReferences: List[ApplicationReference] = request.body.applicationReferences
+          val personReferences: List[PersonReference] = request.body.personReferences
+
+          def fileNameByReference[Reference](
+            references: List[Reference],
+            recordField: String,
+            referenceValue: Reference => String,
+            riskingResultsFileContents: Seq[RiskingResultsFileContent]
+          ): Map[Reference, RiskingResultsFileName] =
+            references
+              .flatMap: (reference: Reference) =>
+                val filesMentioningReference: Seq[RiskingResultsFileContent] =
+                  riskingResultsFileContents
+                    .filter((riskingResultsFileContent: RiskingResultsFileContent) =>
+                      riskingResultsFileContent
+                        .content
+                        .as[List[JsValue]]
+                        .exists((record: JsValue) => (record \ recordField).asOpt[String].contains(referenceValue(reference)))
+                    )
+                    .sortBy(_.uploadedAt)
+                    .reverse
+                if filesMentioningReference.sizeIs > 1
+                then
+                  logger.error(
+                    s"Data integrity: ${referenceValue(reference)} is in ${filesMentioningReference.size.toString} risking results files " +
+                      s"(${filesMentioningReference.map(_.riskingResultsFileName.value).mkString(", ")}), expected one; using the latest"
+                  )
+                filesMentioningReference.headOption.map((riskingResultsFileContent: RiskingResultsFileContent) =>
+                  reference -> riskingResultsFileContent.riskingResultsFileName
+                )
+              .toMap
+
+          riskingResultsFileContentsRepo
+            .findMentioning(applicationReferences, personReferences)
+            .map: (riskingResultsFileContents: Seq[RiskingResultsFileContent]) =>
+              Ok(Json.toJson(FindRiskingResultsFilesResponse(
+                fileNameByApplicationReference = fileNameByReference(
+                  applicationReferences,
+                  "applicationReference",
+                  _.value,
+                  riskingResultsFileContents
+                ),
+                fileNameByPersonReference = fileNameByReference(
+                  personReferences,
+                  "personReference",
+                  _.value,
+                  riskingResultsFileContents
+                )
+              )))
+
   def downloadRiskingResultsFile(
     riskingResultsFileName: RiskingResultsFileName
   ): Action[AnyContent] = actions
@@ -176,6 +234,6 @@ with Logging:
       implicit request =>
         riskingResultsFileContentsRepo
           .collection
-          .drop()
+          .deleteMany(Filters.empty())
           .toFuture
           .map(_ => Ok(""))

@@ -17,6 +17,7 @@ GET        /agent-registration-risking/test-only/run-risking                    
 
 GET        /files-available/list/:informationType                                                     uk.gov.hmrc.agentregistrationrisking.testonly.controllers.SdesTestOnlyController.listAvailableFiles(informationType: String)
 POST       /notification/fileready                                                                    uk.gov.hmrc.agentregistrationrisking.testonly.controllers.SdesTestOnlyController.notificationFileReady()
+POST       /agent-registration-risking/test-only/find-risking-results-files/by-references             uk.gov.hmrc.agentregistrationrisking.testonly.controllers.SdesTestOnlyController.findRiskingResultsFiles
 GET        /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testonly.controllers.SdesTestOnlyController.downloadRiskingResultsFile(filename: RiskingResultsFileName)
 POST       /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testonly.controllers.SdesTestOnlyController.uploadRiskingResultsFile(filename: RiskingResultsFileName)
 DELETE     /agent-registration-risking/test-only/risking-results-file/:filename                       uk.gov.hmrc.agentregistrationrisking.testonly.controllers.SdesTestOnlyController.deleteRiskingResultsFile(filename: RiskingResultsFileName)

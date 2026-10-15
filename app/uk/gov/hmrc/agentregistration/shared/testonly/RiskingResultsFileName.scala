@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentregistrationrisking.testonly.model
+package uk.gov.hmrc.agentregistration.shared.testonly
 
 import play.api.libs.json.Format
 import play.api.mvc.PathBindable
