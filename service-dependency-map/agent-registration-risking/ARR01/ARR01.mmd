@@ -1,0 +1,27 @@
+sequenceDiagram
+    participant Caller
+    participant AuthorisedAction
+    participant AuthService as HMRC Auth Service
+    participant Controller as SubmitForRiskingController
+    participant MongoDB as MongoDB (application-for-risking)
+
+    Caller->>Controller: POST /submit-for-risking (SubmitForRiskingRequest JSON)
+    Controller->>AuthorisedAction: andThen(authorisedAction)
+    AuthorisedAction->>AuthService: authorised(GovernmentGateway + AffinityGroup.Agent)
+    AuthService-->>AuthorisedAction: allEnrolments, credentialRole, internalId
+    alt Unsupported credential role
+        AuthorisedAction-->>Caller: 401 Unauthorised
+    else HMRC-AS-AGENT enrolment active
+        AuthorisedAction-->>Caller: 401 Unauthorised
+    else Auth OK
+        AuthorisedAction-->>Controller: AuthorisedRequest
+        Controller->>Controller: Parse JSON body as SubmitForRiskingRequest
+        alt JSON parse failure
+            Controller-->>Caller: 400 Bad Request
+        else Parse OK
+            Controller->>Controller: Convert to ApplicationForRisking (set status=ReadyForSubmission, createdAt=now(), map individuals, extract CRN if applicable)
+            Controller->>MongoDB: upsert(applicationForRisking) via replaceOne keyed on applicationReference
+            MongoDB-->>Controller: Unit (success)
+            Controller-->>Caller: 201 Created
+        end
+    end
