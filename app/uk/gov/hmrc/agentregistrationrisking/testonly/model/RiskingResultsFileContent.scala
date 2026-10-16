@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.testonly.model
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.agentregistration.shared.testonly.RiskingResultsFileName
 
 import java.time.Instant
 import java.util.concurrent.TimeUnit

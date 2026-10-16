@@ -53,7 +53,7 @@ extends AnyFreeSpecLike,
   override protected def databaseName: String = s"test-risk-${getClass.getSimpleName}"
 
   given ExecutionContext = app.injector.instanceOf[ExecutionContext]
-  given HeaderCarrier = app.injector.instanceOf[HeaderCarrier]
+  given HeaderCarrier = HeaderCarrier()
 
   private val testServerPort = ISpec.testServerPort
   protected val baseUrl: String = s"http://localhost:${testServerPort.toString}"

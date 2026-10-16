@@ -16,15 +16,18 @@
 
 package uk.gov.hmrc.agentregistrationrisking.testonly.repos
 
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.IndexModel
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.model.Indexes
 import org.mongodb.scala.model.Sorts
+import uk.gov.hmrc.agentregistration.shared.ApplicationReference
+import uk.gov.hmrc.agentregistration.shared.PersonReference
+import uk.gov.hmrc.agentregistration.shared.testonly.RiskingResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdExtractor
 import uk.gov.hmrc.agentregistrationrisking.repository.Repo.IdString
 import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileContent
-import uk.gov.hmrc.agentregistrationrisking.testonly.model.RiskingResultsFileName
 import uk.gov.hmrc.agentregistrationrisking.testonly.repos.RiskingResultFilesRepoHelp.given
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -52,6 +55,19 @@ extends Repo[RiskingResultsFileName, RiskingResultsFileContent](
     .sort(Sorts.descending(RiskingResultFilesRepoHelp.FieldNames.uploadedAt))
     .toFuture()
 
+  /** The files holding a record about any of the given applications or individuals. */
+  def findMentioning(
+    applicationReferences: Seq[ApplicationReference],
+    personReferences: Seq[PersonReference]
+  ): Future[Seq[RiskingResultsFileContent]] = collection
+    .find[RiskingResultsFileContent](
+      Filters.or(
+        Filters.in(RiskingResultFilesRepoHelp.FieldNames.contentApplicationReference, applicationReferences.map(_.value)*),
+        Filters.in(RiskingResultFilesRepoHelp.FieldNames.contentPersonReference, personReferences.map(_.value)*)
+      )
+    )
+    .toFuture()
+
 object RiskingResultFilesRepoHelp:
 
   object FieldNames:
@@ -60,6 +76,10 @@ object RiskingResultFilesRepoHelp:
     val riskingResultsFileNameIndex: String = "riskingResultsFileNameIndex"
     val uploadedAt: String = "uploadedAt"
     val uploadedAtIndex: String = "uploadedAtIndex"
+    val contentApplicationReference: String = "content.applicationReference"
+    val contentPersonReference: String = "content.personReference"
+    val contentApplicationReferenceIndex: String = "contentApplicationReferenceIndex"
+    val contentPersonReferenceIndex: String = "contentPersonReferenceIndex"
 
   given IdString[RiskingResultsFileName] =
     new IdString[RiskingResultsFileName]:
@@ -82,5 +102,13 @@ object RiskingResultFilesRepoHelp:
       indexOptions = IndexOptions()
         .expireAfter(RiskingResultsFileContent.ttl.toSeconds, TimeUnit.SECONDS)
         .name(FieldNames.uploadedAtIndex)
+    ),
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.contentApplicationReference),
+      indexOptions = IndexOptions().name(FieldNames.contentApplicationReferenceIndex)
+    ),
+    IndexModel(
+      keys = Indexes.ascending(FieldNames.contentPersonReference),
+      indexOptions = IndexOptions().name(FieldNames.contentPersonReferenceIndex)
     )
   )
