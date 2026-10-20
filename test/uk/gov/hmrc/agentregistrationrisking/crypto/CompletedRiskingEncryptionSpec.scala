@@ -40,11 +40,14 @@ extends ISpec:
 
   "CompletedRiskingEncryption" - {
 
+    // AES-GCM gives a different ciphertext every time, so delegation shows as "the other encryption can read it back".
     "delegates encryption of the application field to ApplicationDataEncryption" in:
-      encryptedCompletedRisking.application shouldBe applicationDataEncryption.encrypt(completedRisking.application)
+      encryptedCompletedRisking.application should not be completedRisking.application
+      applicationDataEncryption.decrypt(encryptedCompletedRisking.application) shouldBe completedRisking.application
 
     "delegates encryption of each individual to IndividualDataEncryption" in:
-      encryptedCompletedRisking.individuals shouldBe completedRisking.individuals.map(individualDataEncryption.encrypt)
+      encryptedCompletedRisking.individuals should not be completedRisking.individuals
+      encryptedCompletedRisking.individuals.map(individualDataEncryption.decrypt) shouldBe completedRisking.individuals
 
     "leaves non-PII fields untouched (_id, completedAt, riskingFile)" in:
       encryptedCompletedRisking._id shouldBe completedRisking._id

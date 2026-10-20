@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.crypto
 
+import org.scalatest.Assertion
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentCorrespondenceAddress
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
@@ -36,7 +37,12 @@ extends ISpec:
   private val fieldLevelEncryption: FieldLevelEncryption = app.injector.instanceOf[FieldLevelEncryption]
   private val applicationDataEncryption: ApplicationDataEncryption = app.injector.instanceOf[ApplicationDataEncryption]
 
-  private def encrypt(plain: String): String = fieldLevelEncryption.encrypt(plain)
+  /** AES-GCM gives a different ciphertext every time, so a field is encrypted if it is not the plaintext and decrypts back to it. */
+  extension (ciphertext: String)
+    private infix def shouldBeEncryptionOf(plain: String): Assertion =
+      withClue(s"ciphertext of '$plain': "):
+        ciphertext should not be plain
+        fieldLevelEncryption.decrypt(ciphertext) shouldBe plain
 
   private val applicationData: ApplicationData = TdRiskingInstancesInStates.approved.application.applicationData
   private val encryptedApplicationData: ApplicationData = applicationDataEncryption.encrypt(applicationData)
@@ -44,81 +50,97 @@ extends ISpec:
   "ApplicationDataEncryption.encrypt sets encrypted on every PII field" - {
 
     "internalUserId is encrypted" in:
-      encryptedApplicationData.internalUserId.value shouldBe encrypt(applicationData.internalUserId.value)
+      encryptedApplicationData.internalUserId.value shouldBeEncryptionOf (applicationData.internalUserId.value)
 
     "applicantCredentials.providerId is encrypted" in:
-      encryptedApplicationData.applicantCredentials.providerId shouldBe encrypt(applicationData.applicantCredentials.providerId)
+      encryptedApplicationData.applicantCredentials.providerId shouldBeEncryptionOf (applicationData.applicantCredentials.providerId)
 
     "groupId is encrypted" in:
-      encryptedApplicationData.groupId.value shouldBe encrypt(applicationData.groupId.value)
+      encryptedApplicationData.groupId.value shouldBeEncryptionOf (applicationData.groupId.value)
 
     "applicantContactDetails.applicantName is encrypted" in:
-      encryptedApplicationData.applicantContactDetails.applicantName.value shouldBe encrypt(applicationData.applicantContactDetails.applicantName.value)
+      encryptedApplicationData.applicantContactDetails.applicantName.value shouldBeEncryptionOf (applicationData.applicantContactDetails.applicantName.value)
 
     "applicantContactDetails.telephoneNumber is encrypted" in:
-      encryptedApplicationData.applicantContactDetails.telephoneNumber.value shouldBe encrypt(applicationData.applicantContactDetails.telephoneNumber.value)
+      encryptedApplicationData.applicantContactDetails.telephoneNumber.value shouldBeEncryptionOf (applicationData.applicantContactDetails.telephoneNumber.value)
 
     "applicantContactDetails.applicantEmailAddress is encrypted" in:
-      encryptedApplicationData.applicantContactDetails.applicantEmailAddress.value shouldBe encrypt(
+      encryptedApplicationData.applicantContactDetails.applicantEmailAddress.value shouldBeEncryptionOf (
         applicationData.applicantContactDetails.applicantEmailAddress.value
       )
 
     "amlsDetails.amlsRegistrationNumber is encrypted" in:
-      encryptedApplicationData.amlsDetails.amlsRegistrationNumber.value shouldBe encrypt(applicationData.amlsDetails.amlsRegistrationNumber.value)
+      encryptedApplicationData.amlsDetails.amlsRegistrationNumber.value shouldBeEncryptionOf (applicationData.amlsDetails.amlsRegistrationNumber.value)
 
     "amlsDetails.amlsEvidence.fileName is encrypted" in:
-      encryptedApplicationData.amlsDetails.amlsEvidence.value.fileName shouldBe encrypt(applicationData.amlsDetails.amlsEvidence.value.fileName)
+      encryptedApplicationData.amlsDetails.amlsEvidence.value.fileName shouldBeEncryptionOf (applicationData.amlsDetails.amlsEvidence.value.fileName)
 
     "agentDetails.businessName.agentBusinessName is encrypted" in:
-      encryptedApplicationData.agentDetails.businessName.agentBusinessName shouldBe encrypt(applicationData.agentDetails.businessName.agentBusinessName)
+      encryptedApplicationData.agentDetails.businessName.agentBusinessName shouldBeEncryptionOf (applicationData.agentDetails.businessName.agentBusinessName)
 
     "agentDetails.businessName.otherAgentBusinessName is encrypted" in:
-      encryptedApplicationData.agentDetails.businessName.otherAgentBusinessName.value shouldBe encrypt(
+      encryptedApplicationData.agentDetails.businessName.otherAgentBusinessName.value shouldBeEncryptionOf (
         applicationData.agentDetails.businessName.otherAgentBusinessName.value
       )
 
     "agentDetails.telephoneNumber.agentTelephoneNumber is encrypted" in:
-      encryptedApplicationData.agentDetails.telephoneNumber.agentTelephoneNumber shouldBe encrypt(
+      encryptedApplicationData.agentDetails.telephoneNumber.agentTelephoneNumber shouldBeEncryptionOf (
         applicationData.agentDetails.telephoneNumber.agentTelephoneNumber
       )
 
     "agentDetails.telephoneNumber.otherAgentTelephoneNumber is encrypted" in:
-      encryptedApplicationData.agentDetails.telephoneNumber.otherAgentTelephoneNumber.value shouldBe encrypt(
+      encryptedApplicationData.agentDetails.telephoneNumber.otherAgentTelephoneNumber.value shouldBeEncryptionOf (
         applicationData.agentDetails.telephoneNumber.otherAgentTelephoneNumber.value
       )
 
     "agentDetails.agentEmailAddress is encrypted" in:
-      encryptedApplicationData.agentDetails.agentEmailAddress.value shouldBe encrypt(applicationData.agentDetails.agentEmailAddress.value)
+      encryptedApplicationData.agentDetails.agentEmailAddress.value shouldBeEncryptionOf (applicationData.agentDetails.agentEmailAddress.value)
 
     "agentDetails.agentCorrespondenceAddress.addressLine1 is encrypted" in:
-      encryptedApplicationData.agentDetails.agentCorrespondenceAddress.addressLine1 shouldBe encrypt(
+      encryptedApplicationData.agentDetails.agentCorrespondenceAddress.addressLine1 shouldBeEncryptionOf (
         applicationData.agentDetails.agentCorrespondenceAddress.addressLine1
       )
 
     "agentDetails.agentCorrespondenceAddress.addressLine2 is encrypted" in:
-      encryptedApplicationData.agentDetails.agentCorrespondenceAddress.addressLine2.value shouldBe encrypt(
+      encryptedApplicationData.agentDetails.agentCorrespondenceAddress.addressLine2.value shouldBeEncryptionOf (
         applicationData.agentDetails.agentCorrespondenceAddress.addressLine2.value
       )
 
     "agentDetails.agentCorrespondenceAddress.postalCode is encrypted" in:
-      encryptedApplicationData.agentDetails.agentCorrespondenceAddress.postalCode.value shouldBe encrypt(
+      encryptedApplicationData.agentDetails.agentCorrespondenceAddress.postalCode.value shouldBeEncryptionOf (
         applicationData.agentDetails.agentCorrespondenceAddress.postalCode.value
       )
 
     "vrns are encrypted element-wise" in:
-      encryptedApplicationData.vrns.map(_.value) shouldBe applicationData.vrns.map(v => encrypt(v.value))
+      encryptedApplicationData.vrns.map(_.value)
+        .zip(applicationData.vrns.map(_.value))
+        .foreach(
+          (
+            ciphertext,
+            plainValue
+          ) => ciphertext shouldBeEncryptionOf plainValue
+        )
+      encryptedApplicationData.vrns.size shouldBe applicationData.vrns.size
 
     "payeRefs are encrypted element-wise" in:
-      encryptedApplicationData.payeRefs.map(_.value) shouldBe applicationData.payeRefs.map(p => encrypt(p.value))
+      encryptedApplicationData.payeRefs.map(_.value)
+        .zip(applicationData.payeRefs.map(_.value))
+        .foreach(
+          (
+            ciphertext,
+            plainValue
+          ) => ciphertext shouldBeEncryptionOf plainValue
+        )
+      encryptedApplicationData.payeRefs.size shouldBe applicationData.payeRefs.size
 
     "crn is encrypted" in:
-      encryptedApplicationData.crn.value.value shouldBe encrypt(applicationData.crn.value.value)
+      encryptedApplicationData.crn.value.value shouldBeEncryptionOf (applicationData.crn.value.value)
 
     "utr is encrypted" in:
-      encryptedApplicationData.utr.value shouldBe encrypt(applicationData.utr.value)
+      encryptedApplicationData.utr.value shouldBeEncryptionOf (applicationData.utr.value)
 
     "safeId is encrypted" in:
-      encryptedApplicationData.safeId.value shouldBe encrypt(applicationData.safeId.value)
+      encryptedApplicationData.safeId.value shouldBeEncryptionOf (applicationData.safeId.value)
   }
 
   "ApplicationDataEncryption.encrypt leaves non-PII / search-key fields untouched" - {
