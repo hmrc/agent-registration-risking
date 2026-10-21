@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentregistrationrisking.crypto
 
+import org.scalatest.Assertion
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualNino
 import uk.gov.hmrc.agentregistration.shared.individual.IndividualSaUtr
@@ -37,7 +38,12 @@ extends ISpec:
   private val fieldLevelEncryption: FieldLevelEncryption = app.injector.instanceOf[FieldLevelEncryption]
   private val individualDataEncryption: IndividualDataEncryption = app.injector.instanceOf[IndividualDataEncryption]
 
-  private def encrypt(plain: String): String = fieldLevelEncryption.encrypt(plain)
+  /** AES-GCM gives a different ciphertext every time, so a field is encrypted if it is not the plaintext and decrypts back to it. */
+  extension (ciphertext: String)
+    private infix def shouldBeEncryptionOf(plain: String): Assertion =
+      withClue(s"ciphertext of '$plain': "):
+        ciphertext should not be plain
+        fieldLevelEncryption.decrypt(ciphertext) shouldBe plain
 
   private val individualData: IndividualData = TdRiskingInstancesInStates.approved.individual1.individualData
   private val encryptedIndividualData: IndividualData = individualDataEncryption.encrypt(individualData)
@@ -45,19 +51,35 @@ extends ISpec:
   "IndividualDataEncryption.encrypt sets ciphertext on every PII field" - {
 
     "individualName is encrypted" in:
-      encryptedIndividualData.individualName.value shouldBe encrypt(individualData.individualName.value)
+      encryptedIndividualData.individualName.value shouldBeEncryptionOf (individualData.individualName.value)
 
     "telephoneNumber is encrypted" in:
-      encryptedIndividualData.telephoneNumber.value shouldBe encrypt(individualData.telephoneNumber.value)
+      encryptedIndividualData.telephoneNumber.value shouldBeEncryptionOf (individualData.telephoneNumber.value)
 
     "emailAddress is encrypted" in:
-      encryptedIndividualData.emailAddress.value shouldBe encrypt(individualData.emailAddress.value)
+      encryptedIndividualData.emailAddress.value shouldBeEncryptionOf (individualData.emailAddress.value)
 
     "vrns are encrypted element-wise" in:
-      encryptedIndividualData.vrns.map(_.value) shouldBe individualData.vrns.map(v => encrypt(v.value))
+      encryptedIndividualData.vrns.map(_.value)
+        .zip(individualData.vrns.map(_.value))
+        .foreach(
+          (
+            ciphertext,
+            plainValue
+          ) => ciphertext shouldBeEncryptionOf plainValue
+        )
+      encryptedIndividualData.vrns.size shouldBe individualData.vrns.size
 
     "payeRefs are encrypted element-wise" in:
-      encryptedIndividualData.payeRefs.map(_.value) shouldBe individualData.payeRefs.map(p => encrypt(p.value))
+      encryptedIndividualData.payeRefs.map(_.value)
+        .zip(individualData.payeRefs.map(_.value))
+        .foreach(
+          (
+            ciphertext,
+            plainValue
+          ) => ciphertext shouldBeEncryptionOf plainValue
+        )
+      encryptedIndividualData.payeRefs.size shouldBe individualData.payeRefs.size
   }
 
   "IndividualDataEncryption.encrypt leaves non-PII / search-key fields untouched" - {
