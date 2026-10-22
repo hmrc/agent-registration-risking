@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.testsupport.testdata
 
 import uk.gov.hmrc.agentregistration.shared.ApplicationReference
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.EnrolmentFailure
 import uk.gov.hmrc.agentregistrationrisking.model.EntityRiskingResult
 import uk.gov.hmrc.agentregistrationrisking.model.OverallStatus
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileName
@@ -89,6 +90,12 @@ trait TdApplicationForRisking:
     val approvedAfterOutcome: ApplicationForRisking = approved
       .modify(_.overallStatus.riskingOutcome)
       .setTo(Some(RiskingOutcome.Approved))
+
+    val approvedAfterOutcomeParkedAlreadyAllocatedToGroup: ApplicationForRisking = approvedAfterOutcome
+      .copy(enrolmentFailure = Some(EnrolmentFailure.AlreadyAllocatedToGroup))
+
+    val approvedAfterOutcomeParkedGroupEnrolledForDifferentArn: ApplicationForRisking = approvedAfterOutcome
+      .copy(enrolmentFailure = Some(EnrolmentFailure.GroupEnrolledForDifferentArn))
 
     val approvedAfterSubscribed: ApplicationForRisking = approvedAfterOutcome.copy(isSubscribed = true)
 

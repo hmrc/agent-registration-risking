@@ -56,6 +56,8 @@ object TdRiskingInstancesInStates:
     partiallyRisked.submitted_failedNonFixable_submitted,
     approved,
     approvedAfterOutcome,
+    approvedAfterOutcomeParkedAlreadyAllocatedToGroup,
+    approvedAfterOutcomeParkedGroupEnrolledForDifferentArn,
     approvedAfterSubscribed,
     approvedAfterEmailSent,
     approvedAfterBackendNotified,
@@ -124,6 +126,23 @@ object TdRiskingInstancesInStates:
 
     override val tdRisking: TdRisking = TdRisking.make(this.toString)
     override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterOutcome
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+  case object approvedAfterOutcomeParkedAlreadyAllocatedToGroup
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking = tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterOutcomeParkedAlreadyAllocatedToGroup
+    override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
+    override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
+
+  case object approvedAfterOutcomeParkedGroupEnrolledForDifferentArn
+  extends TdApplicationWithIndividuals:
+
+    override val tdRisking: TdRisking = TdRisking.make(this.toString)
+    override val application: ApplicationForRisking =
+      tdRisking.tdApplicationForRisking.receivedRiskingResults.approvedAfterOutcomeParkedGroupEnrolledForDifferentArn
     override val individual1: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking1.receivedRiskingResults.approved
     override val individual2: IndividualForRisking = tdRisking.tdIndividualsForRisking.tdIndividualForRisking2.receivedRiskingResults.approved
 

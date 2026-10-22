@@ -71,6 +71,16 @@ extends Repo[ApplicationReference, ApplicationForRisking](
     )
     .toFuture()
 
+  def findReadyForAlreadyAllocatedToGroupRecovery(): Future[Seq[ApplicationForRisking]] = collection
+    .find(
+      Filters.and(
+        Filters.eq(FieldNames.overallStatus.riskingOutcome, RiskingOutcome.Approved.toBison),
+        Filters.eq(FieldNames.isSubscribed, false),
+        Filters.eq(FieldNames.enrolmentFailure, EnrolmentFailure.AlreadyAllocatedToGroup.toBison)
+      )
+    )
+    .toFuture()
+
   def findReadyToSetRiskingOutcome(): Future[Seq[ApplicationWithIndividuals]] = findApplicationWithIndividuals(
     applicationFilter = Filters.and(
       Filters.exists(FieldNames.entityRiskingResult),

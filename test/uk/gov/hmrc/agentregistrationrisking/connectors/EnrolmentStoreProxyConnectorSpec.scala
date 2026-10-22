@@ -19,9 +19,13 @@ package uk.gov.hmrc.agentregistrationrisking.connectors
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentregistration.shared.GroupId
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignEnrolmentResult
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignedEnrolment
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentIdentifier
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFact
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.KnownFactsRequest
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.QueryEnrolmentsResult
 import uk.gov.hmrc.agentregistrationrisking.model.EnrolmentFailure
 import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EnrolmentStoreProxyStubs
@@ -32,7 +36,9 @@ extends ISpec:
   val enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector = app.injector.instanceOf[EnrolmentStoreProxyConnector]
 
   private val groupId: GroupId = GroupId("some-group-id")
-  private val enrolmentKey: String = "HMRC-AS-AGENT~AgentReferenceNumber~HARN0001234"
+  private val userId: String = "some-user-id"
+  private val arn: String = "HARN0001234"
+  private val enrolmentKey: String = s"HMRC-AS-AGENT~AgentReferenceNumber~$arn"
 
   private val knownFactsRequest: KnownFactsRequest = KnownFactsRequest(
     verifiers = Seq(KnownFact(key = "AgencyPostcode", value = "AB1 2CD"))
@@ -133,3 +139,86 @@ extends ISpec:
       ).failed.futureValue
     exception shouldBe a[Throwable]
     EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup()
+
+  "queryPrincipalEnrolmentsForUser returns the enrolments when the enrolment store responds with 200" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUser(userId, arn)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.Enrolments(
+      Seq(AssignedEnrolment(service = "HMRC-AS-AGENT", identifiers = Seq(EnrolmentIdentifier(key = "AgentReferenceNumber", value = arn))))
+    )
+    EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+
+  "queryPrincipalEnrolmentsForUser returns no enrolments when the enrolment store responds with 200 and an empty list" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserEmptyList(userId)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.Enrolments(Seq.empty)
+    EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+
+  "queryPrincipalEnrolmentsForUser returns no enrolments when the enrolment store responds with 204 No Content" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserNoContent(userId)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.Enrolments(Seq.empty)
+    EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+
+  "queryPrincipalEnrolmentsForUser returns CredentialNotFound when the enrolment store responds with 404 INVALID_CREDENTIAL_ID" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserNotFound(userId)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.CredentialNotFound
+    EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+
+  "queryPrincipalEnrolmentsForUser returns QueryRejected when the enrolment store responds with 400" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserBadRequest(userId)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.QueryRejected
+    EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+
+  "queryPrincipalEnrolmentsForUser fails when the enrolment store responds with a 5xx status" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserFailure(userId)
+    val exception = enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").failed.futureValue
+    exception shouldBe a[Throwable]
+    EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+
+  "assignEnrolmentToUser returns Assigned when the enrolment store responds with 201 Created" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUser(userId, enrolmentKey)
+    enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.Assigned
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+
+  "assignEnrolmentToUser returns NotAllocatedToGroup when the enrolment store responds with 403 INVALID_CREDENTIAL_ID" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserForbidden(userId, enrolmentKey)
+    enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.NotAllocatedToGroup
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+
+  "assignEnrolmentToUser fails when the enrolment store responds with 403 and an unrecognised code" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserForbiddenUnrecognisedCode(userId, enrolmentKey)
+    val exception = enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).failed.futureValue
+    exception shouldBe a[Throwable]
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+
+  "assignEnrolmentToUser returns UserDoesNotExist when the enrolment store responds with 404 USER_ID_DOES_NOT_EXIST" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserUserIdDoesNotExist(userId, enrolmentKey)
+    enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.UserDoesNotExist
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+
+  "assignEnrolmentToUser returns AllocationDoesNotExist when the enrolment store responds with 404 ALLOCATION_DOES_NOT_EXIST" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserAllocationDoesNotExist(userId, enrolmentKey)
+    enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.AllocationDoesNotExist
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+
+  "assignEnrolmentToUser returns AssignmentRejected when the enrolment store responds with 400" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserBadRequest(userId, enrolmentKey)
+    enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.AssignmentRejected
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+
+  "assignEnrolmentToUser fails when the enrolment store responds with a 5xx status" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserFailure(userId, enrolmentKey)
+    val exception = enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).failed.futureValue
+    exception shouldBe a[Throwable]
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
