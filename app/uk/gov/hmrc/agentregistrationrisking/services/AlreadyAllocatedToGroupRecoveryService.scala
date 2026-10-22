@@ -1,0 +1,137 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.agentregistrationrisking.services
+
+import com.softwaremill.quicklens.modify
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistration.shared.Arn
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
+import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignEnrolmentResult
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.QueryEnrolmentsResult
+import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
+import uk.gov.hmrc.agentregistrationrisking.model.EnrolmentFailure
+import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
+import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
+import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
+
+import java.time.Clock
+import java.time.Instant
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+@Singleton
+class AlreadyAllocatedToGroupRecoveryService @Inject() (
+  applicationForRiskingRepo: ApplicationForRiskingRepo,
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  clock: Clock,
+  auditService: AuditService,
+  appConfig: AppConfig
+)(using ExecutionContext)
+extends RequestAwareLogging:
+
+  def processRecoveries()(using RequestHeader): Future[Unit] =
+    logger.info("Recovering applications parked because the group already holds the enrolment...")
+    for
+      applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForAlreadyAllocatedToGroupRecovery()
+      applicationCount: Int = applications.size
+      _ = logger.info(s"Found $applicationCount applications parked with AlreadyAllocatedToGroup")
+      processedCount <-
+        ProcessInSequence.processAllInSequence(applications)(recoverApplication):
+          case (ex, application) => logger.error(s"Failed to recover application: ${application.applicationData.applicationReference.value}", ex)
+      _ = logger.info(s"Processed $processedCount/$applicationCount recoveries")
+    yield ()
+
+  private def recoverApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+    application.applicationData.arn match
+      case None =>
+        logger.warn(s"No ARN recorded, cannot build the enrolment key: ${application.applicationReference}")
+        stopRetryingRecovery(application, EnrolmentFailure.ArnNotRecorded)
+      case Some(arn) => checkApplicantCredential(application, arn)
+
+  private def checkApplicantCredential(
+    application: ApplicationForRisking,
+    arn: Arn
+  )(using RequestHeader): Future[Unit] =
+    val providerId: String = application.applicationData.applicantCredentials.providerId
+    val serviceName: String = appConfig.hmrcAsAgentEnrolment.key
+    logger.info(s"Group already holds a $serviceName enrolment, checking the applicant credential: ${application.applicationReference}")
+    enrolmentStoreProxyConnector
+      .queryPrincipalEnrolmentsForUser(userId = providerId, service = serviceName)
+      .flatMap:
+        case QueryEnrolmentsResult.CredentialNotFound => stopRetryingRecovery(application, EnrolmentFailure.CredentialDoesNotExist)
+        case QueryEnrolmentsResult.QueryRejected => stopRetryingRecovery(application, EnrolmentFailure.EnrolmentQueryRejected)
+        case QueryEnrolmentsResult.Enrolments(assignedEnrolments) =>
+          // enrolment state is not checked: ES11 cannot activate, so a NotYetActivated enrolment on the credential still counts as held
+          val arnsOnCredential: Seq[String] = assignedEnrolments
+            .filter(_.service === serviceName)
+            .flatMap(_.identifiers)
+            .filter(_.key === "AgentReferenceNumber")
+            .map(_.value)
+          arnsOnCredential match
+            case Seq() => assignEnrolmentToApplicantCredential(application, arn)
+            case arns if arns.exists(_ === arn.value) =>
+              logger.info(s"Applicant credential already holds ${enrolmentKeyFor(arn)}, nothing to assign: ${application.applicationReference}")
+              markAccountCreated(application, arn)
+            case arns =>
+              logger.warn(s"Applicant credential holds $serviceName with [${arns.mkString(", ")}] not ${arn.value}: ${application.applicationReference}")
+              stopRetryingRecovery(application, EnrolmentFailure.GroupEnrolledForDifferentArn)
+
+  private def assignEnrolmentToApplicantCredential(
+    application: ApplicationForRisking,
+    arn: Arn
+  )(using RequestHeader): Future[Unit] =
+    val providerId: String = application.applicationData.applicantCredentials.providerId
+    val enrolmentKey: String = enrolmentKeyFor(arn)
+    logger.info(s"Applicant credential does not hold the enrolment, assigning $enrolmentKey: ${application.applicationReference}")
+    enrolmentStoreProxyConnector
+      .assignEnrolmentToUser(userId = providerId, enrolmentKey = enrolmentKey)
+      .flatMap:
+        case AssignEnrolmentResult.Assigned => markAccountCreated(application, arn)
+        case AssignEnrolmentResult.NotAllocatedToGroup => stopRetryingRecovery(application, EnrolmentFailure.GroupEnrolledForDifferentArn)
+        case AssignEnrolmentResult.UserDoesNotExist => stopRetryingRecovery(application, EnrolmentFailure.CredentialDoesNotExist)
+        case AssignEnrolmentResult.AssignmentRejected => stopRetryingRecovery(application, EnrolmentFailure.EnrolmentAssignmentRejected)
+        case AssignEnrolmentResult.AllocationDoesNotExist => stopRetryingRecovery(application, EnrolmentFailure.EnrolmentNotAllocated)
+
+  private def enrolmentKeyFor(arn: Arn): String = s"${appConfig.hmrcAsAgentEnrolment.key}~AgentReferenceNumber~${arn.value}"
+
+  private def markAccountCreated(
+    application: ApplicationForRisking,
+    arn: Arn
+  )(using RequestHeader): Future[Unit] =
+    auditService.sendCreateAgentServicesAccountEvent(application.applicationData, arn)
+    applicationForRiskingRepo.upsert(
+      application
+        .modify(_.isSubscribed).setTo(true)
+        .modify(_.enrolmentFailure).setTo(None)
+        .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
+    ).map: _ =>
+      logger.info(s"Agent services account recovered: ${application.applicationReference}")
+
+  private def stopRetryingRecovery(
+    application: ApplicationForRisking,
+    enrolmentFailure: EnrolmentFailure
+  )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
+    application
+      .modify(_.enrolmentFailure).setTo(Some(enrolmentFailure))
+      .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
+  ).map: _ =>
+    logger.warn(s"Stopped retrying recovery for ${application.applicationReference}: $enrolmentFailure")

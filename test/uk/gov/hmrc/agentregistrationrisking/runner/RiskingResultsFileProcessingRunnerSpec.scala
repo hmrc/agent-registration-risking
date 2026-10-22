@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFix
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingArchivalService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
+import uk.gov.hmrc.agentregistrationrisking.services.AlreadyAllocatedToGroupRecoveryService
 import uk.gov.hmrc.agentregistrationrisking.testsupport.UnitSpec
 
 import java.util.concurrent.atomic.AtomicReference
@@ -40,6 +41,7 @@ extends UnitSpec:
     "processResultsFiles",
     "processOverallOutcomes",
     "processSubscriptions",
+    "processRecoveries",
     "processEmailsForApproved",
     "processEmailsForFailedNonFixable",
     "processEmailsForFailedFixable",
@@ -115,6 +117,16 @@ extends UnitSpec:
       ):
         override def processSubscriptions()(using RequestHeader): Future[Unit] = stubStage("processSubscriptions")
 
+    private val alreadyAllocatedToGroupRecoveryService =
+      new AlreadyAllocatedToGroupRecoveryService(
+        null,
+        null,
+        null,
+        null,
+        null
+      ):
+        override def processRecoveries()(using RequestHeader): Future[Unit] = stubStage("processRecoveries")
+
     private val emailServiceForApprovedApplications =
       new EmailServiceForApprovedApplications(
         null,
@@ -161,6 +173,7 @@ extends UnitSpec:
         riskingResultsService = riskingResultsService,
         applicationOutcomeService = applicationOutcomeService,
         subscriptionService = subscriptionService,
+        alreadyAllocatedToGroupRecoveryService = alreadyAllocatedToGroupRecoveryService,
         emailServiceForApprovedApplications = emailServiceForApprovedApplications,
         emailServiceForFailedNonFixable = emailServiceForFailedNonFixable,
         emailServiceForFailedFixable = emailServiceForFailedFixable,

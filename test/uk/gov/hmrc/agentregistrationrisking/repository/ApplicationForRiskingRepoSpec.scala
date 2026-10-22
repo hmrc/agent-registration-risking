@@ -53,7 +53,7 @@ extends ISpec:
     val parkedApplication: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterOutcome
       .application
       .modify(_.applicationReference).setTo(ApplicationReference("APPREF_parked_repoNegative"))
-      .modify(_.enrolmentFailure).setTo(Some(EnrolmentFailure.AlreadyAllocatedToGroup))
+      .modify(_.enrolmentFailure).setTo(Some(EnrolmentFailure.GroupDoesNotExist))
     applicationForRiskingRepo.upsert(parkedApplication).futureValue
 
     val applications: Seq[ApplicationForRisking] =
@@ -64,6 +64,16 @@ extends ISpec:
     applications.map(_.applicationReference) should not contain
       parkedApplication.applicationReference withClue
       "parked (enrolmentFailure set) applications must not be picked up by the subscription retry loop"
+
+  "findReadyForAlreadyAllocatedToGroupRecovery should return only applications parked with AlreadyAllocatedToGroup" in:
+    val applications: Seq[ApplicationForRisking] =
+      applicationForRiskingRepo
+        .findReadyForAlreadyAllocatedToGroupRecovery()
+        .futureValue
+
+    applications.toSet shouldBe Set(
+      TdRiskingInstancesInStates.approvedAfterOutcomeParkedAlreadyAllocatedToGroup.application
+    ) withClue applications.map(_.applicationReference.value).mkString(", ")
 
   "findReadyToSetRiskingOutcome" in:
 
