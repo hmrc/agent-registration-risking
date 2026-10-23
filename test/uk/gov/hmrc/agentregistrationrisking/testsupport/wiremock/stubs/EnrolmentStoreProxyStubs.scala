@@ -198,6 +198,20 @@ object EnrolmentStoreProxyStubs:
     ))
   )
 
+  def stubQueryPrincipalEnrolmentsForUserUnexpectedClientError(userId: String): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.GET,
+    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
+    queryParams = Map(
+      "service" -> wm.equalTo("HMRC-AS-AGENT"),
+      "type" -> wm.equalTo("principal")
+    ),
+    responseStatus = 409,
+    responseBody = Json.stringify(Json.obj(
+      "code" -> "SOME_OTHER_CODE",
+      "message" -> "A 4xx the specification does not list"
+    ))
+  )
+
   def stubQueryPrincipalEnrolmentsForUserFailure(userId: String): StubMapping = StubMaker.make(
     httpMethod = StubMaker.HttpMethod.GET,
     urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
@@ -280,6 +294,19 @@ object EnrolmentStoreProxyStubs:
     responseBody = Json.stringify(Json.obj(
       "code" -> "INVALID_CREDENTIAL_ID",
       "message" -> "Invalid credential ID"
+    ))
+  )
+
+  def stubAssignEnrolmentToUserUnexpectedClientError(
+    userId: String,
+    enrolmentKey: String
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+    responseStatus = 409,
+    responseBody = Json.stringify(Json.obj(
+      "code" -> "SOME_OTHER_CODE",
+      "message" -> "A 4xx the specification does not list"
     ))
   )
 

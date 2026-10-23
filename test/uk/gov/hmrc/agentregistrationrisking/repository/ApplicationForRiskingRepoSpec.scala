@@ -53,7 +53,7 @@ extends ISpec:
     val parkedApplication: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterOutcome
       .application
       .modify(_.applicationReference).setTo(ApplicationReference("APPREF_parked_repoNegative"))
-      .modify(_.enrolmentFailure).setTo(Some(EnrolmentFailure.GroupDoesNotExist))
+      .modify(_.enrolmentFailure).setTo(Some(EnrolmentFailure.AlreadyAllocatedToGroup))
     applicationForRiskingRepo.upsert(parkedApplication).futureValue
 
     val applications: Seq[ApplicationForRisking] =
@@ -65,15 +65,16 @@ extends ISpec:
       parkedApplication.applicationReference withClue
       "parked (enrolmentFailure set) applications must not be picked up by the subscription retry loop"
 
-  "findReadyForAlreadyAllocatedToGroupRecovery should return only applications parked with AlreadyAllocatedToGroup" in:
-    val applications: Seq[ApplicationForRisking] =
-      applicationForRiskingRepo
-        .findReadyForAlreadyAllocatedToGroupRecovery()
-        .futureValue
+  "findReadyForAlreadyAllocatedToGroupRecovery should return applications parked with AlreadyAllocatedToGroup and nothing else" in:
+    val applicationReferences: Seq[ApplicationReference] = applicationForRiskingRepo
+      .findReadyForAlreadyAllocatedToGroupRecovery()
+      .futureValue
+      .map(_.applicationReference)
 
-    applications.toSet shouldBe Set(
-      TdRiskingInstancesInStates.approvedAfterOutcomeParkedAlreadyAllocatedToGroup.application
-    ) withClue applications.map(_.applicationReference.value).mkString(", ")
+    applicationReferences should contain(TdRiskingInstancesInStates.approvedAfterOutcomeParkedAlreadyAllocatedToGroup.application.applicationReference)
+    applicationReferences should not contain TdRiskingInstancesInStates.approvedAfterOutcomeParkedGroupEnrolledForDifferentArn.application.applicationReference
+    applicationReferences should not contain TdRiskingInstancesInStates.approvedAfterOutcome.application.applicationReference
+    applicationReferences should not contain TdRiskingInstancesInStates.approvedAfterSubscribed.application.applicationReference
 
   "findReadyToSetRiskingOutcome" in:
 

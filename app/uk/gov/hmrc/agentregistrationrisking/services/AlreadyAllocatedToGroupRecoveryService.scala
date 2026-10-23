@@ -49,22 +49,20 @@ class AlreadyAllocatedToGroupRecoveryService @Inject() (
 extends RequestAwareLogging:
 
   def processRecoveries()(using RequestHeader): Future[Unit] =
-    logger.info("Recovering applications parked because the group already holds the enrolment...")
+    logger.info("Recovering AlreadyAllocatedToGroup applications: Started...")
     for
       applications: Seq[ApplicationForRisking] <- applicationForRiskingRepo.findReadyForAlreadyAllocatedToGroupRecovery()
       applicationCount: Int = applications.size
-      _ = logger.info(s"Found $applicationCount applications parked with AlreadyAllocatedToGroup")
+      _ = logger.info(s"Recovering AlreadyAllocatedToGroup applications: found $applicationCount parked applications")
       processedCount <-
         ProcessInSequence.processAllInSequence(applications)(recoverApplication):
-          case (ex, application) => logger.error(s"Failed to recover application: ${application.applicationData.applicationReference.value}", ex)
-      _ = logger.info(s"Processed $processedCount/$applicationCount recoveries")
+          case (ex, application) => logger.error(s"Recovering AlreadyAllocatedToGroup applications: FAILED for ${application.applicationReference.value}", ex)
+      _ = logger.info(s"Recovering AlreadyAllocatedToGroup applications: finished $processedCount of $applicationCount attempts DONE")
     yield ()
 
   private def recoverApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
     application.applicationData.arn match
-      case None =>
-        logger.warn(s"No ARN recorded, cannot build the enrolment key: ${application.applicationReference}")
-        stopRetryingRecovery(application, EnrolmentFailure.ArnNotRecorded)
+      case None => stopRetryingRecovery(application, EnrolmentFailure.ArnNotRecorded)
       case Some(arn) => checkApplicantCredential(application, arn)
 
   private def checkApplicantCredential(
@@ -73,7 +71,7 @@ extends RequestAwareLogging:
   )(using RequestHeader): Future[Unit] =
     val providerId: String = application.applicationData.applicantCredentials.providerId
     val serviceName: String = appConfig.hmrcAsAgentEnrolment.key
-    logger.info(s"Group already holds a $serviceName enrolment, checking the applicant credential: ${application.applicationReference}")
+    logger.info(s"Recovering AlreadyAllocatedToGroup applications: checking the applicant credential for ${application.applicationReference.value}")
     enrolmentStoreProxyConnector
       .queryPrincipalEnrolmentsForUser(userId = providerId, service = serviceName)
       .flatMap:
@@ -82,17 +80,16 @@ extends RequestAwareLogging:
         case QueryEnrolmentsResult.Enrolments(assignedEnrolments) =>
           // enrolment state is not checked: ES11 cannot activate, so a NotYetActivated enrolment on the credential still counts as held
           val arnsOnCredential: Seq[String] = assignedEnrolments
-            .filter(_.service === serviceName)
             .flatMap(_.identifiers)
             .filter(_.key === "AgentReferenceNumber")
             .map(_.value)
           arnsOnCredential match
             case Seq() => assignEnrolmentToApplicantCredential(application, arn)
             case arns if arns.exists(_ === arn.value) =>
-              logger.info(s"Applicant credential already holds ${enrolmentKeyFor(arn)}, nothing to assign: ${application.applicationReference}")
+              logger.info(s"Recovering AlreadyAllocatedToGroup applications: credential already holds ${enrolmentKeyFor(arn)} for ${application.applicationReference.value}")
               markAccountCreated(application, arn)
             case arns =>
-              logger.warn(s"Applicant credential holds $serviceName with [${arns.mkString(", ")}] not ${arn.value}: ${application.applicationReference}")
+              logger.warn(s"Recovering AlreadyAllocatedToGroup applications: credential holds $serviceName with [${arns.mkString(", ")}] not ${arn.value} for ${application.applicationReference.value}")
               stopRetryingRecovery(application, EnrolmentFailure.GroupEnrolledForDifferentArn)
 
   private def assignEnrolmentToApplicantCredential(
@@ -101,7 +98,7 @@ extends RequestAwareLogging:
   )(using RequestHeader): Future[Unit] =
     val providerId: String = application.applicationData.applicantCredentials.providerId
     val enrolmentKey: String = enrolmentKeyFor(arn)
-    logger.info(s"Applicant credential does not hold the enrolment, assigning $enrolmentKey: ${application.applicationReference}")
+    logger.info(s"Recovering AlreadyAllocatedToGroup applications: assigning $enrolmentKey to the credential for ${application.applicationReference.value}")
     enrolmentStoreProxyConnector
       .assignEnrolmentToUser(userId = providerId, enrolmentKey = enrolmentKey)
       .flatMap:
@@ -124,7 +121,7 @@ extends RequestAwareLogging:
         .modify(_.enrolmentFailure).setTo(None)
         .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
     ).map: _ =>
-      logger.info(s"Agent services account recovered: ${application.applicationReference}")
+      logger.info(s"Recovering AlreadyAllocatedToGroup applications: recovered ${application.applicationReference.value}")
 
   private def stopRetryingRecovery(
     application: ApplicationForRisking,
@@ -134,4 +131,4 @@ extends RequestAwareLogging:
       .modify(_.enrolmentFailure).setTo(Some(enrolmentFailure))
       .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
   ).map: _ =>
-    logger.warn(s"Stopped retrying recovery for ${application.applicationReference}: $enrolmentFailure")
+    logger.warn(s"Recovering AlreadyAllocatedToGroup applications: parked ${application.applicationReference.value} as $enrolmentFailure")

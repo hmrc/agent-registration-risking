@@ -172,6 +172,12 @@ extends ISpec:
     enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.QueryRejected
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
+  "queryPrincipalEnrolmentsForUser returns QueryRejected when the enrolment store responds with a 4xx the specification does not list" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserUnexpectedClientError(userId)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.QueryRejected
+    EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+
   "queryPrincipalEnrolmentsForUser fails when the enrolment store responds with a 5xx status" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserFailure(userId)
@@ -191,11 +197,10 @@ extends ISpec:
     enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.NotAllocatedToGroup
     EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
 
-  "assignEnrolmentToUser fails when the enrolment store responds with 403 and an unrecognised code" in:
+  "assignEnrolmentToUser returns AssignmentRejected when the enrolment store responds with 403 and an unrecognised code" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserForbiddenUnrecognisedCode(userId, enrolmentKey)
-    val exception = enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).failed.futureValue
-    exception shouldBe a[Throwable]
+    enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.AssignmentRejected
     EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
 
   "assignEnrolmentToUser returns UserDoesNotExist when the enrolment store responds with 404 USER_ID_DOES_NOT_EXIST" in:
@@ -213,6 +218,12 @@ extends ISpec:
   "assignEnrolmentToUser returns AssignmentRejected when the enrolment store responds with 400" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserBadRequest(userId, enrolmentKey)
+    enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.AssignmentRejected
+    EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+
+  "assignEnrolmentToUser returns AssignmentRejected when the enrolment store responds with a 4xx the specification does not list" in:
+    given RequestHeader = FakeRequest()
+    EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserUnexpectedClientError(userId, enrolmentKey)
     enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).futureValue shouldBe AssignEnrolmentResult.AssignmentRejected
     EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
 
