@@ -65,6 +65,17 @@ extends ISpec:
       parkedApplication.applicationReference withClue
       "parked (enrolmentFailure set) applications must not be picked up by the subscription retry loop"
 
+  "findReadyForAlreadyAllocatedToGroupRecovery should return applications parked with AlreadyAllocatedToGroup and nothing else" in:
+    val applicationReferences: Seq[ApplicationReference] = applicationForRiskingRepo
+      .findReadyForAlreadyAllocatedToGroupRecovery()
+      .futureValue
+      .map(_.applicationReference)
+
+    applicationReferences should contain(TdRiskingInstancesInStates.approvedAfterOutcomeParkedAlreadyAllocatedToGroup.application.applicationReference)
+    applicationReferences should not contain TdRiskingInstancesInStates.approvedAfterOutcomeParkedGroupEnrolledForDifferentArn.application.applicationReference
+    applicationReferences should not contain TdRiskingInstancesInStates.approvedAfterOutcome.application.applicationReference
+    applicationReferences should not contain TdRiskingInstancesInStates.approvedAfterSubscribed.application.applicationReference
+
   "findReadyToSetRiskingOutcome" in:
 
     val applications: Seq[ApplicationWithIndividuals] =
