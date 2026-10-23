@@ -108,7 +108,9 @@ extends Connector:
           case Status.NO_CONTENT => EnrolmentStoreProxyConnector.QueryEnrolmentsResult.Enrolments(Seq.empty)
           case Status.NOT_FOUND if response.errorBody.exists(_.code === "INVALID_CREDENTIAL_ID") =>
             EnrolmentStoreProxyConnector.QueryEnrolmentsResult.CredentialNotFound
-          case Status.BAD_REQUEST => EnrolmentStoreProxyConnector.QueryEnrolmentsResult.QueryRejected
+          case status if Status.isClientError(status) =>
+            logger.warn(s"ES2 rejected the enrolments query for user $userId with $status: ${response.body}")
+            EnrolmentStoreProxyConnector.QueryEnrolmentsResult.QueryRejected
           case status =>
             Errors.throwUpstreamErrorResponse(
               httpMethod = "GET",
@@ -136,7 +138,9 @@ extends Connector:
             EnrolmentStoreProxyConnector.AssignEnrolmentResult.UserDoesNotExist
           case Status.NOT_FOUND if response.errorBody.exists(_.code === "ALLOCATION_DOES_NOT_EXIST") =>
             EnrolmentStoreProxyConnector.AssignEnrolmentResult.AllocationDoesNotExist
-          case Status.BAD_REQUEST => EnrolmentStoreProxyConnector.AssignEnrolmentResult.AssignmentRejected
+          case status if Status.isClientError(status) =>
+            logger.warn(s"ES11 rejected assigning $enrolmentKey to user $userId with $status: ${response.body}")
+            EnrolmentStoreProxyConnector.AssignEnrolmentResult.AssignmentRejected
           case status =>
             Errors.throwUpstreamErrorResponse(
               httpMethod = "POST",
@@ -199,7 +203,7 @@ object EnrolmentStoreProxyConnector:
     /** 404 INVALID_CREDENTIAL_ID */
     case CredentialNotFound
 
-    /** 400: the stored credential id or our query parameters are not valid */
+    /** Any other 4xx, typically 400: the stored credential id or our query parameters are not valid */
     case QueryRejected
 
   enum AssignEnrolmentResult
@@ -213,8 +217,8 @@ object EnrolmentStoreProxyConnector:
     /** 404 USER_ID_DOES_NOT_EXIST */
     case UserDoesNotExist
 
-    /** 404 ALLOCATION_DOES_NOT_EXIST: the group no longer holds the enrolment */
+    /** 404 ALLOCATION_DOES_NOT_EXIST: our enrolment key is allocated to no group */
     case AllocationDoesNotExist
 
-    /** 400: invalid credential id or enrolment key, or the user is already assigned the enrolment */
+    /** Any other 4xx, typically 400: invalid credential id or enrolment key, or the user is already assigned the enrolment */
     case AssignmentRejected

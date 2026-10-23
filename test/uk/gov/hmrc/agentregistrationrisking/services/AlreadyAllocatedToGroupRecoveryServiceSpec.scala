@@ -63,6 +63,15 @@ extends ISpec:
     applicationForRiskingRepo.upsert(parkedApplication).futureValue
     alreadyAllocatedToGroupRecoveryService.processRecoveries().futureValue
 
+  private def verifyNoAccountCreatedAudit(): Unit = AuditStubs.verifyAuditSent(
+    auditType = "CreateAgentServicesAccount",
+    detail = Json.obj(
+      "applicationReference" -> parkedApplication.applicationReference.value,
+      "agentReferenceNumber" -> arn.value
+    ),
+    count = 0
+  )
+
   "processRecoveries" - {
 
     "marks the application subscribed and clears the enrolment failure when the applicant credential already holds the enrolment" in:
@@ -81,7 +90,7 @@ extends ISpec:
       runRecovery()
 
       EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser(count = 0)
-      AuditStubs.verifyNoAuditSent()
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.GroupEnrolledForDifferentArn)
 
@@ -126,7 +135,7 @@ extends ISpec:
       runRecovery()
 
       EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser(count = 0)
-      AuditStubs.verifyNoAuditSent()
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.CredentialDoesNotExist)
 
@@ -136,6 +145,7 @@ extends ISpec:
       runRecovery()
 
       EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser(count = 0)
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.EnrolmentQueryRejected)
 
@@ -146,7 +156,7 @@ extends ISpec:
       runRecovery()
 
       EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
-      AuditStubs.verifyNoAuditSent()
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.GroupEnrolledForDifferentArn)
 
@@ -156,7 +166,7 @@ extends ISpec:
 
       runRecovery()
 
-      AuditStubs.verifyNoAuditSent()
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.CredentialDoesNotExist)
 
@@ -166,7 +176,7 @@ extends ISpec:
 
       runRecovery()
 
-      AuditStubs.verifyNoAuditSent()
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.EnrolmentAssignmentRejected)
 
@@ -176,7 +186,7 @@ extends ISpec:
 
       runRecovery()
 
-      AuditStubs.verifyNoAuditSent()
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.EnrolmentNotAllocated)
 
@@ -186,6 +196,7 @@ extends ISpec:
       runRecovery()
 
       EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser(count = 0)
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.AlreadyAllocatedToGroup)
 
@@ -196,6 +207,7 @@ extends ISpec:
       runRecovery()
 
       EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()
+      verifyNoAccountCreatedAudit()
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.AlreadyAllocatedToGroup)
 
@@ -206,6 +218,7 @@ extends ISpec:
       alreadyAllocatedToGroupRecoveryService.processRecoveries().futureValue
 
       EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser(count = 0)
+      verifyNoAccountCreatedAudit()
       persisted(parkedWithoutArn).isSubscribed shouldBe false
       persisted(parkedWithoutArn).enrolmentFailure shouldBe Some(EnrolmentFailure.ArnNotRecorded)
 
