@@ -122,13 +122,8 @@ object EnrolmentStoreProxyStubs:
   def stubQueryPrincipalEnrolmentsForUser(
     userId: String,
     arn: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
-    queryParams = Map(
-      "service" -> wm.equalTo("HMRC-AS-AGENT"),
-      "type" -> wm.equalTo("principal")
-    ),
+  ): StubMapping = stubQueryPrincipalEnrolments(
+    userId = userId,
     responseStatus = 200,
     responseBody = Json.stringify(Json.obj(
       "startRecord" -> 1,
@@ -145,13 +140,8 @@ object EnrolmentStoreProxyStubs:
     ))
   )
 
-  def stubQueryPrincipalEnrolmentsForUserEmptyList(userId: String): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
-    queryParams = Map(
-      "service" -> wm.equalTo("HMRC-AS-AGENT"),
-      "type" -> wm.equalTo("principal")
-    ),
+  def stubQueryPrincipalEnrolmentsForUserEmptyList(userId: String): StubMapping = stubQueryPrincipalEnrolments(
+    userId = userId,
     responseStatus = 200,
     responseBody = Json.stringify(Json.obj(
       "startRecord" -> 1,
@@ -160,65 +150,28 @@ object EnrolmentStoreProxyStubs:
     ))
   )
 
-  def stubQueryPrincipalEnrolmentsForUserNoContent(userId: String): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
-    queryParams = Map(
-      "service" -> wm.equalTo("HMRC-AS-AGENT"),
-      "type" -> wm.equalTo("principal")
-    ),
-    responseStatus = 204
-  )
+  def stubQueryPrincipalEnrolmentsForUserNoContent(userId: String): StubMapping = stubQueryPrincipalEnrolments(userId = userId, responseStatus = 204)
 
-  def stubQueryPrincipalEnrolmentsForUserNotFound(userId: String): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
-    queryParams = Map(
-      "service" -> wm.equalTo("HMRC-AS-AGENT"),
-      "type" -> wm.equalTo("principal")
-    ),
+  def stubQueryPrincipalEnrolmentsForUserNotFound(userId: String): StubMapping = stubQueryPrincipalEnrolments(
+    userId = userId,
     responseStatus = 404,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "INVALID_CREDENTIAL_ID",
-      "message" -> "Invalid credential ID"
-    ))
+    responseBody = errorBody("INVALID_CREDENTIAL_ID", "Invalid credential ID")
   )
 
-  def stubQueryPrincipalEnrolmentsForUserBadRequest(userId: String): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
-    queryParams = Map(
-      "service" -> wm.equalTo("HMRC-AS-AGENT"),
-      "type" -> wm.equalTo("principal")
-    ),
+  def stubQueryPrincipalEnrolmentsForUserBadRequest(userId: String): StubMapping = stubQueryPrincipalEnrolments(
+    userId = userId,
     responseStatus = 400,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "INVALID_CREDENTIAL_ID",
-      "message" -> "Invalid credential ID"
-    ))
+    responseBody = errorBody("INVALID_CREDENTIAL_ID", "Invalid credential ID")
   )
 
-  def stubQueryPrincipalEnrolmentsForUserUnexpectedClientError(userId: String): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
-    queryParams = Map(
-      "service" -> wm.equalTo("HMRC-AS-AGENT"),
-      "type" -> wm.equalTo("principal")
-    ),
+  def stubQueryPrincipalEnrolmentsForUserUnexpectedClientError(userId: String): StubMapping = stubQueryPrincipalEnrolments(
+    userId = userId,
     responseStatus = 409,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "SOME_OTHER_CODE",
-      "message" -> "A 4xx the specification does not list"
-    ))
+    responseBody = errorBody("SOME_OTHER_CODE", "A 4xx the specification does not list")
   )
 
-  def stubQueryPrincipalEnrolmentsForUserFailure(userId: String): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.GET,
-    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
-    queryParams = Map(
-      "service" -> wm.equalTo("HMRC-AS-AGENT"),
-      "type" -> wm.equalTo("principal")
-    ),
+  def stubQueryPrincipalEnrolmentsForUserFailure(userId: String): StubMapping = stubQueryPrincipalEnrolments(
+    userId = userId,
     responseStatus = 500,
     responseBody = Json.stringify(Json.obj("error" -> "Internal Server Error"))
   )
@@ -226,99 +179,113 @@ object EnrolmentStoreProxyStubs:
   def stubAssignEnrolmentToUser(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 201
   )
 
   def stubAssignEnrolmentToUserForbidden(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 403,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "INVALID_CREDENTIAL_ID",
-      "message" -> "Invalid credential ID"
-    ))
+    responseBody = errorBody("INVALID_CREDENTIAL_ID", "Invalid credential ID")
   )
 
   def stubAssignEnrolmentToUserForbiddenUnrecognisedCode(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 403,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "SOME_OTHER_CODE",
-      "message" -> "A 403 that is not INVALID_CREDENTIAL_ID"
-    ))
+    responseBody = errorBody("SOME_OTHER_CODE", "A 403 that is not INVALID_CREDENTIAL_ID")
   )
 
   def stubAssignEnrolmentToUserUserIdDoesNotExist(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 404,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "USER_ID_DOES_NOT_EXIST",
-      "message" -> "User ID does not exist"
-    ))
+    responseBody = errorBody("USER_ID_DOES_NOT_EXIST", "User ID does not exist")
   )
 
   def stubAssignEnrolmentToUserAllocationDoesNotExist(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 404,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "ALLOCATION_DOES_NOT_EXIST",
-      "message" -> "The enrolment or client allocation does not exist"
-    ))
+    responseBody = errorBody("ALLOCATION_DOES_NOT_EXIST", "The enrolment or client allocation does not exist")
   )
 
   def stubAssignEnrolmentToUserBadRequest(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 400,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "INVALID_CREDENTIAL_ID",
-      "message" -> "Invalid credential ID"
-    ))
+    responseBody = errorBody("INVALID_CREDENTIAL_ID", "Invalid credential ID")
   )
 
   def stubAssignEnrolmentToUserUnexpectedClientError(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 409,
-    responseBody = Json.stringify(Json.obj(
-      "code" -> "SOME_OTHER_CODE",
-      "message" -> "A 4xx the specification does not list"
-    ))
+    responseBody = errorBody("SOME_OTHER_CODE", "A 4xx the specification does not list")
   )
 
   def stubAssignEnrolmentToUserFailure(
     userId: String,
     enrolmentKey: String
-  ): StubMapping = StubMaker.make(
-    httpMethod = StubMaker.HttpMethod.POST,
-    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+  ): StubMapping = stubAssignEnrolment(
+    userId = userId,
+    enrolmentKey = enrolmentKey,
     responseStatus = 500,
     responseBody = Json.stringify(Json.obj("error" -> "Internal Server Error"))
   )
+
+  private def stubQueryPrincipalEnrolments(
+    userId: String,
+    responseStatus: Int,
+    responseBody: String = ""
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.GET,
+    urlPattern = wm.urlPathEqualTo(s"$basePath/users/$userId/enrolments"),
+    queryParams = Map(
+      "service" -> wm.equalTo("HMRC-AS-AGENT"),
+      "type" -> wm.equalTo("principal")
+    ),
+    responseStatus = responseStatus,
+    responseBody = responseBody
+  )
+
+  private def stubAssignEnrolment(
+    userId: String,
+    enrolmentKey: String,
+    responseStatus: Int,
+    responseBody: String = ""
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.POST,
+    urlPattern = wm.urlEqualTo(s"$basePath/users/$userId/enrolments/$enrolmentKey"),
+    responseStatus = responseStatus,
+    responseBody = responseBody
+  )
+
+  private def errorBody(
+    code: String,
+    message: String
+  ): String = Json.stringify(Json.obj("code" -> code, "message" -> message))
 
   def verifyAddKnownFacts(count: Int = 1): Unit = StubMaker.verify(
     httpMethod = StubMaker.HttpMethod.PUT,

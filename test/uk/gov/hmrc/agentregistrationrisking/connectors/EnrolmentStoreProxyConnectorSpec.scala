@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistrationrisking.connectors
 
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
+import uk.gov.hmrc.agentregistration.shared.Arn
 import uk.gov.hmrc.agentregistration.shared.GroupId
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignEnrolmentResult
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignedEnrolment
@@ -37,8 +38,9 @@ extends ISpec:
 
   private val groupId: GroupId = GroupId("some-group-id")
   private val userId: String = "some-user-id"
-  private val arn: String = "HARN0001234"
-  private val enrolmentKey: String = s"HMRC-AS-AGENT~AgentReferenceNumber~$arn"
+  private val arn: Arn = tdAll.arn
+  private val serviceName: String = "HMRC-AS-AGENT"
+  private val enrolmentKey: String = s"$serviceName~AgentReferenceNumber~${arn.value}"
 
   private val knownFactsRequest: KnownFactsRequest = KnownFactsRequest(
     verifiers = Seq(KnownFact(key = "AgencyPostcode", value = "AB1 2CD"))
@@ -142,46 +144,46 @@ extends ISpec:
 
   "queryPrincipalEnrolmentsForUser returns the enrolments when the enrolment store responds with 200" in:
     given RequestHeader = FakeRequest()
-    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUser(userId, arn)
-    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.Enrolments(
-      Seq(AssignedEnrolment(service = "HMRC-AS-AGENT", identifiers = Seq(EnrolmentIdentifier(key = "AgentReferenceNumber", value = arn))))
+    EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUser(userId, arn.value)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, serviceName).futureValue shouldBe QueryEnrolmentsResult.Enrolments(
+      Seq(AssignedEnrolment(service = serviceName, identifiers = Seq(EnrolmentIdentifier(key = "AgentReferenceNumber", value = arn.value))))
     )
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
   "queryPrincipalEnrolmentsForUser returns no enrolments when the enrolment store responds with 200 and an empty list" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserEmptyList(userId)
-    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.Enrolments(Seq.empty)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, serviceName).futureValue shouldBe QueryEnrolmentsResult.Enrolments(Seq.empty)
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
   "queryPrincipalEnrolmentsForUser returns no enrolments when the enrolment store responds with 204 No Content" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserNoContent(userId)
-    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.Enrolments(Seq.empty)
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, serviceName).futureValue shouldBe QueryEnrolmentsResult.Enrolments(Seq.empty)
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
   "queryPrincipalEnrolmentsForUser returns CredentialNotFound when the enrolment store responds with 404 INVALID_CREDENTIAL_ID" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserNotFound(userId)
-    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.CredentialNotFound
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, serviceName).futureValue shouldBe QueryEnrolmentsResult.CredentialNotFound
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
   "queryPrincipalEnrolmentsForUser returns QueryRejected when the enrolment store responds with 400" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserBadRequest(userId)
-    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.QueryRejected
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, serviceName).futureValue shouldBe QueryEnrolmentsResult.QueryRejected
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
   "queryPrincipalEnrolmentsForUser returns QueryRejected when the enrolment store responds with a 4xx the specification does not list" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserUnexpectedClientError(userId)
-    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").futureValue shouldBe QueryEnrolmentsResult.QueryRejected
+    enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, serviceName).futureValue shouldBe QueryEnrolmentsResult.QueryRejected
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
   "queryPrincipalEnrolmentsForUser fails when the enrolment store responds with a 5xx status" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUserFailure(userId)
-    val exception = enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, "HMRC-AS-AGENT").failed.futureValue
+    val exception: Throwable = enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId, serviceName).failed.futureValue
     exception shouldBe a[Throwable]
     EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
 
@@ -230,6 +232,6 @@ extends ISpec:
   "assignEnrolmentToUser fails when the enrolment store responds with a 5xx status" in:
     given RequestHeader = FakeRequest()
     EnrolmentStoreProxyStubs.stubAssignEnrolmentToUserFailure(userId, enrolmentKey)
-    val exception = enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).failed.futureValue
+    val exception: Throwable = enrolmentStoreProxyConnector.assignEnrolmentToUser(userId, enrolmentKey).failed.futureValue
     exception shouldBe a[Throwable]
     EnrolmentStoreProxyStubs.verifyAssignEnrolmentToUser()

@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignEnrolmentResult
+import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignedEnrolment
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.QueryEnrolmentsResult
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EnrolmentFailure
@@ -63,34 +64,48 @@ extends RequestAwareLogging:
   private def recoverApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
     application.applicationData.arn match
       case None => stopRetryingRecovery(application, EnrolmentFailure.ArnNotRecorded)
-      case Some(arn) => checkApplicantCredential(application, arn)
+      case Some(arn) => recoverApplicationWithArn(application, arn)
 
-  private def checkApplicantCredential(
+  private def recoverApplicationWithArn(
     application: ApplicationForRisking,
     arn: Arn
   )(using RequestHeader): Future[Unit] =
     val providerId: String = application.applicationData.applicantCredentials.providerId
     val serviceName: String = appConfig.hmrcAsAgentEnrolment.key
     logger.info(s"Recovering AlreadyAllocatedToGroup applications: checking the applicant credential for ${application.applicationReference.value}")
-    enrolmentStoreProxyConnector
-      .queryPrincipalEnrolmentsForUser(userId = providerId, service = serviceName)
-      .flatMap:
-        case QueryEnrolmentsResult.CredentialNotFound => stopRetryingRecovery(application, EnrolmentFailure.CredentialDoesNotExist)
-        case QueryEnrolmentsResult.QueryRejected => stopRetryingRecovery(application, EnrolmentFailure.EnrolmentQueryRejected)
-        case QueryEnrolmentsResult.Enrolments(assignedEnrolments) =>
-          // enrolment state is not checked: ES11 cannot activate, so a NotYetActivated enrolment on the credential still counts as held
-          val arnsOnCredential: Seq[String] = assignedEnrolments
-            .flatMap(_.identifiers)
-            .filter(_.key === "AgentReferenceNumber")
-            .map(_.value)
-          arnsOnCredential match
-            case Seq() => assignEnrolmentToApplicantCredential(application, arn)
-            case arns if arns.exists(_ === arn.value) =>
-              logger.info(s"Recovering AlreadyAllocatedToGroup applications: credential already holds ${enrolmentKeyFor(arn)} for ${application.applicationReference.value}")
-              markAccountCreated(application, arn)
-            case arns =>
-              logger.warn(s"Recovering AlreadyAllocatedToGroup applications: credential holds $serviceName with [${arns.mkString(", ")}] not ${arn.value} for ${application.applicationReference.value}")
-              stopRetryingRecovery(application, EnrolmentFailure.GroupEnrolledForDifferentArn)
+    for
+      queryEnrolmentsResult: QueryEnrolmentsResult <- enrolmentStoreProxyConnector.queryPrincipalEnrolmentsForUser(userId = providerId, service = serviceName)
+      _ <-
+        queryEnrolmentsResult match
+          case QueryEnrolmentsResult.CredentialNotFound => stopRetryingRecovery(application, EnrolmentFailure.CredentialDoesNotExist)
+          case QueryEnrolmentsResult.QueryRejected => stopRetryingRecovery(application, EnrolmentFailure.EnrolmentQueryRejected)
+          case QueryEnrolmentsResult.Enrolments(assignedEnrolments) =>
+            recoverFromAssignedEnrolments(
+              application,
+              arn,
+              arnsOnCredential(assignedEnrolments)
+            )
+    yield ()
+
+  // enrolment state is not checked: ES11 cannot activate, so a NotYetActivated enrolment on the credential still counts as held
+  private def arnsOnCredential(assignedEnrolments: Seq[AssignedEnrolment]): Seq[Arn] = assignedEnrolments
+    .flatMap(_.identifiers)
+    .filter(_.key === "AgentReferenceNumber")
+    .map(enrolmentIdentifier => Arn(enrolmentIdentifier.value))
+
+  private def recoverFromAssignedEnrolments(
+    application: ApplicationForRisking,
+    arn: Arn,
+    arnsOnCredential: Seq[Arn]
+  )(using RequestHeader): Future[Unit] =
+    arnsOnCredential match
+      case Seq() => assignEnrolmentToApplicantCredential(application, arn)
+      case arns if arns.contains(arn) =>
+        logger.info(s"Recovering AlreadyAllocatedToGroup applications: credential already holds ${enrolmentKeyFor(arn)} for ${application.applicationReference.value}")
+        markAccountCreated(application, arn)
+      case arns =>
+        logger.warn(s"Recovering AlreadyAllocatedToGroup applications: credential holds ${appConfig.hmrcAsAgentEnrolment.key} with [${arns.map(_.value).mkString(", ")}] not ${arn.value} for ${application.applicationReference.value}")
+        stopRetryingRecovery(application, EnrolmentFailure.GroupEnrolledForDifferentArn)
 
   private def assignEnrolmentToApplicantCredential(
     application: ApplicationForRisking,
