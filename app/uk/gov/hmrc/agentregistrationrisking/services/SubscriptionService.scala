@@ -81,8 +81,13 @@ extends RequestAwareLogging:
         enrolmentFailure match
           case None =>
             auditService.sendCreateAgentServicesAccountEvent(applicationData, arn)
-            markAccountCreated(application)
-          case Some(enrolmentFailure) => stopRetryingAccountCreation(application, enrolmentFailure)
+            markAccountCreated(application, arn)
+          case Some(enrolmentFailure) =>
+            stopRetryingAccountCreation(
+              application,
+              arn,
+              enrolmentFailure
+            )
     yield ()
 
   private def subscribeToAgentServices(
@@ -130,8 +135,12 @@ extends RequestAwareLogging:
       )
     yield enrolmentFailure
 
-  private def markAccountCreated(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
+  private def markAccountCreated(
+    application: ApplicationForRisking,
+    arn: Arn
+  )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
     application
+      .modify(_.applicationData.arn).setTo(Some(arn))
       .modify(_.isSubscribed).setTo(true)
       .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
   ).map: _ =>
@@ -139,9 +148,11 @@ extends RequestAwareLogging:
 
   private def stopRetryingAccountCreation(
     application: ApplicationForRisking,
+    arn: Arn,
     enrolmentFailure: EnrolmentFailure
   )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
     application
+      .modify(_.applicationData.arn).setTo(Some(arn))
       .modify(_.enrolmentFailure).setTo(Some(enrolmentFailure))
       .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
   ).map: _ =>
