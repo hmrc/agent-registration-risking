@@ -43,9 +43,6 @@ derives CanEqual:
   /** ES11 400: the assignment was rejected, invalid credential id or enrolment key, or the user is already assigned the enrolment. */
   case EnrolmentAssignmentRejected
 
-  /** The parked application has no ARN, so the enrolment key cannot be built. */
-  case ArnNotRecorded
-
   /** ES11 404 ALLOCATION_DOES_NOT_EXIST: our enrolment key is allocated to no group, so either the group holds a different ARN or the allocation was removed.
     */
   case EnrolmentNotAllocated

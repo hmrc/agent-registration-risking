@@ -123,6 +123,7 @@ extends UnitSpec:
         null,
         null,
         null,
+        null,
         null
       ):
         override def processRecoveries()(using RequestHeader): Future[Unit] = stubStage("processRecoveries")

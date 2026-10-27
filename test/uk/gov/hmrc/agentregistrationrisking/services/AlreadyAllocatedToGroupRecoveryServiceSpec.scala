@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentregistrationrisking.testsupport.ISpec
 import uk.gov.hmrc.agentregistrationrisking.testsupport.testdata.TdRiskingInstancesInStates
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.AuditStubs
 import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.EnrolmentStoreProxyStubs
+import uk.gov.hmrc.agentregistrationrisking.testsupport.wiremock.stubs.HipStubs
 
 class AlreadyAllocatedToGroupRecoveryServiceSpec
 extends ISpec:
@@ -50,6 +51,7 @@ extends ISpec:
   private val parkedApplication: ApplicationForRisking = TdRiskingInstancesInStates.approvedAfterOutcomeParkedAlreadyAllocatedToGroup.application
   private val arn: Arn = parkedApplication.applicationData.getArn
   private val differentArn: Arn = tdAll.arn
+  private val parkedWithoutArn: ApplicationForRisking = parkedApplication.modify(_.applicationData.arn).setTo(None)
   private val enrolmentKey: String = s"HMRC-AS-AGENT~AgentReferenceNumber~${arn.value}"
   private val providerId: String = parkedApplication.applicationData.applicantCredentials.providerId
 
@@ -161,17 +163,32 @@ extends ISpec:
       persisted(parkedApplication).isSubscribed shouldBe false
       persisted(parkedApplication).enrolmentFailure shouldBe Some(EnrolmentFailure.AlreadyAllocatedToGroup)
 
-    "parks the application as ArnNotRecorded without calling the enrolment store when it has no ARN" in:
-      val parkedWithoutArn: ApplicationForRisking = parkedApplication.modify(_.applicationData.arn).setTo(None)
+    "obtains the ARN from HIP, records it and recovers the application when it has no ARN" in:
+      val arnFromHip: Arn = tdAll.arn
       AuditStubs.stubAuditWrite()
+      HipStubs.stubSubscribeToAgentServicesAlreadySubscribed(parkedWithoutArn.applicationData.safeId, arnFromHip.value)
+      EnrolmentStoreProxyStubs.stubQueryPrincipalEnrolmentsForUser(providerId, arnFromHip.value)
+      applicationForRiskingRepo.upsert(parkedWithoutArn).futureValue
+
+      alreadyAllocatedToGroupRecoveryService.processRecoveries().futureValue
+
+      HipStubs.verifySubscribeToAgentServices()
+      EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser()
+      persisted(parkedWithoutArn).applicationData.arn shouldBe Some(arnFromHip)
+      persisted(parkedWithoutArn).isSubscribed shouldBe true
+      persisted(parkedWithoutArn).enrolmentFailure shouldBe None
+
+    "leaves the application alone when HIP fails to return the ARN, so the next run retries it" in:
+      AuditStubs.stubAuditWrite()
+      HipStubs.stubSubscribeToAgentServicesFailure(parkedWithoutArn.applicationData.safeId)
       applicationForRiskingRepo.upsert(parkedWithoutArn).futureValue
 
       alreadyAllocatedToGroupRecoveryService.processRecoveries().futureValue
 
       EnrolmentStoreProxyStubs.verifyQueryPrincipalEnrolmentsForUser(count = 0)
       verifyNoAccountCreatedAudit()
-      persisted(parkedWithoutArn).isSubscribed shouldBe false
-      persisted(parkedWithoutArn).enrolmentFailure shouldBe Some(EnrolmentFailure.ArnNotRecorded)
+      persisted(parkedWithoutArn).applicationData.arn shouldBe None
+      persisted(parkedWithoutArn).enrolmentFailure shouldBe Some(EnrolmentFailure.AlreadyAllocatedToGroup)
 
     "ignores an application that is not parked with AlreadyAllocatedToGroup" in:
       applicationForRiskingRepo.upsert(TdRiskingInstancesInStates.approvedAfterOutcome.application).futureValue

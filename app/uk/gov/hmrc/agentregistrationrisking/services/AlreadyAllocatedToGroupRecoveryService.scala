@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.Arn
+import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
 import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.===
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
@@ -26,6 +27,7 @@ import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnec
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignEnrolmentResult
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.AssignedEnrolment
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.QueryEnrolmentsResult
+import uk.gov.hmrc.agentregistrationrisking.connectors.HipConnector
 import uk.gov.hmrc.agentregistrationrisking.model.ApplicationForRisking
 import uk.gov.hmrc.agentregistrationrisking.model.EnrolmentFailure
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
@@ -43,6 +45,7 @@ import scala.concurrent.Future
 class AlreadyAllocatedToGroupRecoveryService @Inject() (
   applicationForRiskingRepo: ApplicationForRiskingRepo,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  hipConnector: HipConnector,
   clock: Clock,
   auditService: AuditService,
   appConfig: AppConfig
@@ -63,8 +66,20 @@ extends RequestAwareLogging:
 
   private def recoverApplication(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
     application.applicationData.arn match
-      case None => stopRetryingRecovery(application, EnrolmentFailure.ArnNotRecorded)
+      case None => recoverApplicationWithoutArn(application)
       case Some(arn) => recoverApplicationWithArn(application, arn)
+
+  private def recoverApplicationWithoutArn(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
+    val applicationData: ApplicationData = application.applicationData
+    logger.info(s"Recovering AlreadyAllocatedToGroup applications: no ARN recorded, subscribing to agent services to obtain it for ${application.applicationReference.value}")
+    for
+      arn: Arn <- hipConnector.subscribeToAgentServices(
+        safeId = applicationData.safeId,
+        subscribeAgentRequest = SubscribeAgentRequestBuilder.buildSubscribeAgentRequest(applicationData)
+      )
+      applicationWithArn: ApplicationForRisking = application.modify(_.applicationData.arn).setTo(Some(arn))
+      _ <- recoverApplicationWithArn(applicationWithArn, arn)
+    yield ()
 
   private def recoverApplicationWithArn(
     application: ApplicationForRisking,
