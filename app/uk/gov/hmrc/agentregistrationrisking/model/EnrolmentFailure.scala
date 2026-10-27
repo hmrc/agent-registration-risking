@@ -28,8 +28,24 @@ derives CanEqual:
   /** 404 GROUP_ID_DOES_NOT_EXIST when group was deleted while risking was running. */
   case GroupDoesNotExist
 
-  /** 409 MULTIPLE_ENROLMENTS_INVALID when the group already has the HMRC-AS-AGENT enrolment. */
+  /** 409 MULTIPLE_ENROLMENTS_INVALID when the group already has the HMRC-AS-AGENT enrolment. Recovered by AlreadyAllocatedToGroupRecoveryService. */
   case AlreadyAllocatedToGroup
+
+  /** ES11 403 INVALID_CREDENTIAL_ID, or ES2 showing another ARN on the credential: the group holds HMRC-AS-AGENT for a different ARN. */
+  case GroupEnrolledForDifferentArn
+
+  /** ES11 404 USER_ID_DOES_NOT_EXIST when the applicant credential no longer exists. */
+  case CredentialDoesNotExist
+
+  /** ES2 400: the enrolments query for the applicant credential was rejected. */
+  case EnrolmentQueryRejected
+
+  /** ES11 400: the assignment was rejected, invalid credential id or enrolment key, or the user is already assigned the enrolment. */
+  case EnrolmentAssignmentRejected
+
+  /** ES11 404 ALLOCATION_DOES_NOT_EXIST: our enrolment key is allocated to no group, so either the group holds a different ARN or the allocation was removed.
+    */
+  case EnrolmentNotAllocated
 
 object EnrolmentFailure:
 

@@ -19,10 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import com.softwaremill.quicklens.modify
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistration.shared.Arn
-import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.ApplicationData
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AgentDetailsData
-import uk.gov.hmrc.agentregistration.shared.risking.submitforrisking.AmlsDetailsData
 import uk.gov.hmrc.agentregistration.shared.util.Errors.getOrThrowExpectedDataMissing
 import uk.gov.hmrc.agentregistrationrisking.audit.AuditService
 import uk.gov.hmrc.agentregistrationrisking.connectors.EnrolmentStoreProxyConnector.EnrolmentRequest
@@ -69,7 +66,7 @@ extends RequestAwareLogging:
   private def createAgentServicesAccount(application: ApplicationForRisking)(using RequestHeader): Future[Unit] =
     logger.info(s"Creating agent services account: ${application.applicationReference} ...")
     val applicationData: ApplicationData = application.applicationData
-    val subscribeAgentRequest: SubscribeAgentRequest = buildSubscribeAgentRequest(applicationData)
+    val subscribeAgentRequest: SubscribeAgentRequest = SubscribeAgentRequestBuilder.buildSubscribeAgentRequest(applicationData)
     for
       arn: Arn <- subscribeToAgentServices(applicationData, subscribeAgentRequest)
       enrolmentFailure: Option[EnrolmentFailure] <- enrolToAgentServices(
@@ -81,8 +78,13 @@ extends RequestAwareLogging:
         enrolmentFailure match
           case None =>
             auditService.sendCreateAgentServicesAccountEvent(applicationData, arn)
-            markAccountCreated(application)
-          case Some(enrolmentFailure) => stopRetryingAccountCreation(application, enrolmentFailure)
+            markAccountCreated(application, arn)
+          case Some(enrolmentFailure) =>
+            stopRetryingAccountCreation(
+              application,
+              arn,
+              enrolmentFailure
+            )
     yield ()
 
   private def subscribeToAgentServices(
@@ -130,8 +132,12 @@ extends RequestAwareLogging:
       )
     yield enrolmentFailure
 
-  private def markAccountCreated(application: ApplicationForRisking)(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
+  private def markAccountCreated(
+    application: ApplicationForRisking,
+    arn: Arn
+  )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
     application
+      .modify(_.applicationData.arn).setTo(Some(arn))
       .modify(_.isSubscribed).setTo(true)
       .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
   ).map: _ =>
@@ -139,62 +145,12 @@ extends RequestAwareLogging:
 
   private def stopRetryingAccountCreation(
     application: ApplicationForRisking,
+    arn: Arn,
     enrolmentFailure: EnrolmentFailure
   )(using RequestHeader): Future[Unit] = applicationForRiskingRepo.upsert(
     application
+      .modify(_.applicationData.arn).setTo(Some(arn))
       .modify(_.enrolmentFailure).setTo(Some(enrolmentFailure))
       .modify(_.lastUpdatedAt).setTo(Instant.now(clock))
   ).map: _ =>
     logger.warn(s"Stopped retrying agent services account creation for ${application.applicationReference}: non-recoverable $enrolmentFailure")
-
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  private def buildSubscribeAgentRequest(applicationData: ApplicationData)(using RequestHeader): SubscribeAgentRequest =
-    val agentDetails: AgentDetailsData = applicationData.agentDetails
-    val amlsDetails: AmlsDetailsData = applicationData.amlsDetails
-    SubscribeAgentRequest(
-      name = ensureFieldLength(agentDetails.businessName.getAgentBusinessName, 40).asInstanceOf[String],
-      addr1 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine1, 35).asInstanceOf[String],
-      addr2 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine2.getOrElse(""), 35).asInstanceOf[String],
-      addr3 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine3, 35).asInstanceOf[Option[String]],
-      addr4 = ensureFieldLength(agentDetails.agentCorrespondenceAddress.addressLine4, 35).asInstanceOf[Option[String]],
-      postcode = ensureFieldLength(agentDetails.agentCorrespondenceAddress.postalCode, 10).asInstanceOf[Option[String]],
-      country = ensureCountryCode(agentDetails.agentCorrespondenceAddress.countryCode),
-      phone = ensureFieldLength(Some(agentDetails.telephoneNumber.getAgentTelephoneNumber), 24).asInstanceOf[Option[String]],
-      email = ensureFieldLength(agentDetails.agentEmailAddress, 132).asInstanceOf[EmailAddress],
-      supervisoryBody = Some(amlsDetails.supervisoryBody.value),
-      membershipNumber = Some(amlsDetails.amlsRegistrationNumber.value),
-      evidenceObjectReference = None,
-      updateDetailsStatus = "ACCEPTED",
-      amlSupervisionUpdateStatus = "ACCEPTED",
-      directorPartnerUpdateStatus = "ACCEPTED",
-      acceptNewTermsStatus = "ACCEPTED",
-      reriskStatus = "ACCEPTED"
-    )
-
-  private def ensureCountryCode(country: String)(using RequestHeader): String =
-    val gbCountries: Set[String] = Set(
-      "GB",
-      "GREAT BRITAIN",
-      "BRITAIN",
-      "UNITED KINGDOM",
-      "UK",
-      "ENGLAND",
-      "SCOTLAND",
-      "WALES",
-      "NORTHERN IRELAND"
-    )
-    if gbCountries.contains(country.toUpperCase)
-    then "GB"
-    else
-      logger.info(s"Non-UK country provided: $country. Attempting to use first two characters as country code.")
-      country.take(2).toUpperCase // this may or may not be a valid country code and may still be rejected by the API, but we have no better option for non-UK countries and the API will return a clear error if the code is invalid as opposed to a country code too long error
-
-  private def ensureFieldLength(
-    field: String | Option[String] | EmailAddress,
-    max: Int
-  ): String | Option[String] | EmailAddress =
-    field match {
-      case str: String => str.take(max)
-      case opt: Option[String] => opt.map(_.take(max))
-      case email: EmailAddress => EmailAddress(email.value.take(max))
-    }

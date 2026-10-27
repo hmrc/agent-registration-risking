@@ -90,6 +90,66 @@ extends Connector:
             )
       .andLogOnFailure(s"Failed to allocate enrolment $enrolmentKey to group $groupId")
 
+  /** ES2: Query enrolments assigned to a user https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES2+-+Query+Enrolments+assigned+to+a+user */
+  def queryPrincipalEnrolmentsForUser(
+    userId: String,
+    service: String
+  )(using RequestHeader): Future[EnrolmentStoreProxyConnector.QueryEnrolmentsResult] =
+    val url: URL = url"$baseUrl/users/$userId/enrolments?service=$service&type=principal"
+    httpClient
+      .get(url)
+      .execute[HttpResponse]
+      .map: response =>
+        response.status match
+          case Status.OK =>
+            EnrolmentStoreProxyConnector.QueryEnrolmentsResult.Enrolments(
+              (response.json \ "enrolments").as[Seq[EnrolmentStoreProxyConnector.AssignedEnrolment]]
+            )
+          case Status.NO_CONTENT => EnrolmentStoreProxyConnector.QueryEnrolmentsResult.Enrolments(Seq.empty)
+          case Status.NOT_FOUND if response.errorBody.exists(_.code === "INVALID_CREDENTIAL_ID") =>
+            EnrolmentStoreProxyConnector.QueryEnrolmentsResult.CredentialNotFound
+          case status if Status.isClientError(status) =>
+            logger.warn(s"ES2 rejected the enrolments query for user $userId with $status: ${response.body}")
+            EnrolmentStoreProxyConnector.QueryEnrolmentsResult.QueryRejected
+          case status =>
+            Errors.throwUpstreamErrorResponse(
+              httpMethod = "GET",
+              url = url,
+              status = status,
+              response = response
+            )
+      .andLogOnFailure(s"Failed to query principal enrolments for user $userId and service $service")
+
+  /** ES11: Assign an enrolment to a user https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES11+-+Assign+an+enrolment+to+a+user */
+  def assignEnrolmentToUser(
+    userId: String,
+    enrolmentKey: String
+  )(using RequestHeader): Future[EnrolmentStoreProxyConnector.AssignEnrolmentResult] =
+    val url: URL = url"$baseUrl/users/$userId/enrolments/$enrolmentKey"
+    httpClient
+      .post(url)
+      .execute[HttpResponse]
+      .map: response =>
+        response.status match
+          case Status.CREATED => EnrolmentStoreProxyConnector.AssignEnrolmentResult.Assigned
+          case Status.FORBIDDEN if response.errorBody.exists(_.code === "INVALID_CREDENTIAL_ID") =>
+            EnrolmentStoreProxyConnector.AssignEnrolmentResult.NotAllocatedToGroup
+          case Status.NOT_FOUND if response.errorBody.exists(_.code === "USER_ID_DOES_NOT_EXIST") =>
+            EnrolmentStoreProxyConnector.AssignEnrolmentResult.UserDoesNotExist
+          case Status.NOT_FOUND if response.errorBody.exists(_.code === "ALLOCATION_DOES_NOT_EXIST") =>
+            EnrolmentStoreProxyConnector.AssignEnrolmentResult.AllocationDoesNotExist
+          case status if Status.isClientError(status) =>
+            logger.warn(s"ES11 rejected assigning $enrolmentKey to user $userId with $status: ${response.body}")
+            EnrolmentStoreProxyConnector.AssignEnrolmentResult.AssignmentRejected
+          case status =>
+            Errors.throwUpstreamErrorResponse(
+              httpMethod = "POST",
+              url = url,
+              status = status,
+              response = response
+            )
+      .andLogOnFailure(s"Failed to assign enrolment $enrolmentKey to user $userId")
+
   private val baseUrl: String = appConfig.enrolmentStoreProxyBaseUrl + "/enrolment-store-proxy/enrolment-store"
 
 object EnrolmentStoreProxyConnector:
@@ -118,3 +178,47 @@ object EnrolmentStoreProxyConnector:
 
   object EnrolmentRequest:
     given OFormat[EnrolmentRequest] = Json.format[EnrolmentRequest]
+
+  final case class AssignedEnrolment(
+    service: String,
+    identifiers: Seq[EnrolmentIdentifier]
+  )
+
+  object AssignedEnrolment:
+    given Reads[AssignedEnrolment] = Json.reads[AssignedEnrolment]
+
+  final case class EnrolmentIdentifier(
+    key: String,
+    value: String
+  )
+
+  object EnrolmentIdentifier:
+    given Reads[EnrolmentIdentifier] = Json.reads[EnrolmentIdentifier]
+
+  enum QueryEnrolmentsResult
+  derives CanEqual:
+
+    case Enrolments(assignedEnrolments: Seq[AssignedEnrolment])
+
+    /** 404 INVALID_CREDENTIAL_ID */
+    case CredentialNotFound
+
+    /** Any other 4xx, typically 400: the stored credential id or our query parameters are not valid */
+    case QueryRejected
+
+  enum AssignEnrolmentResult
+  derives CanEqual:
+
+    case Assigned
+
+    /** 403 INVALID_CREDENTIAL_ID: the enrolment is not allocated to the group of the user */
+    case NotAllocatedToGroup
+
+    /** 404 USER_ID_DOES_NOT_EXIST */
+    case UserDoesNotExist
+
+    /** 404 ALLOCATION_DOES_NOT_EXIST: our enrolment key is allocated to no group */
+    case AllocationDoesNotExist
+
+    /** Any other 4xx, typically 400: invalid credential id or enrolment key, or the user is already assigned the enrolment */
+    case AssignmentRejected

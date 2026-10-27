@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentregistrationrisking.services.EmailServiceForFailedNonFix
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingArchivalService
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingResultsService
 import uk.gov.hmrc.agentregistrationrisking.services.SubscriptionService
+import uk.gov.hmrc.agentregistrationrisking.services.AlreadyAllocatedToGroupRecoveryService
 import uk.gov.hmrc.agentregistrationrisking.util.EmptyRequest
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
@@ -38,6 +39,7 @@ class RiskingResultsFileProcessingRunner @Inject() (
   riskingResultsService: RiskingResultsService,
   applicationOutcomeService: ApplicationOutcomeService,
   subscriptionService: SubscriptionService,
+  alreadyAllocatedToGroupRecoveryService: AlreadyAllocatedToGroupRecoveryService,
   emailServiceForApprovedApplications: EmailServiceForApprovedApplications,
   emailServiceForFailedNonFixable: EmailServiceForFailedNonFixable,
   emailServiceForFailedFixable: EmailServiceForFailedFixable,
@@ -52,6 +54,7 @@ extends RequestAwareLogging:
       _ <- stage("RiskingResultsService.processResultsFiles")(riskingResultsService.processResultsFiles())
       _ <- stage("ApplicationOutcomeService.processOverallOutcomes")(applicationOutcomeService.processOverallOutcomes())
       _ <- stage("SubscriptionService.processSubscriptions")(subscriptionService.processSubscriptions())
+      _ <- stage("AlreadyAllocatedToGroupRecoveryService.processRecoveries")(alreadyAllocatedToGroupRecoveryService.processRecoveries())
       _ <- stage("EmailServiceForApprovedApplications.processEmails")(emailServiceForApprovedApplications.processEmails())
       _ <- stage("EmailServiceForFailedNonFixable.processEmails")(emailServiceForFailedNonFixable.processEmails())
       _ <- stage("EmailServiceForFailedFixable.processEmails")(emailServiceForFailedFixable.processEmails())

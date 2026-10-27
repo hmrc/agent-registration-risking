@@ -86,6 +86,7 @@ extends ISpec:
       EnrolmentStoreProxyStubs.verifyAllocateEnrolmentToGroup()
       persisted(readyToSubscribe).isSubscribed shouldBe true
       persisted(readyToSubscribe).enrolmentFailure shouldBe None
+      persisted(readyToSubscribe).applicationData.arn shouldBe Some(arn)
 
     "audits the created agent services account" in:
       stubSubscribeAndEnrol()
@@ -126,6 +127,7 @@ extends ISpec:
 
       persisted(readyToSubscribe).isSubscribed shouldBe false
       persisted(readyToSubscribe).enrolmentFailure shouldBe Some(EnrolmentFailure.GroupDoesNotExist)
+      persisted(readyToSubscribe).applicationData.arn shouldBe Some(arn)
 
     "leaves the application alone when HIP rejects the subscription, so the next run retries it" in:
       AuditStubs.stubAuditWrite()
