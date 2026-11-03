@@ -56,6 +56,22 @@ extends RequestAwareLogging:
           case (throwable, item) => logger.error(s"Failed to delete $item", throwable)
     yield ()
 
+  def deleteProcessedResultsFiles()(using request: RequestHeader): Future[Unit] =
+    for
+      objectListing: ObjectListing <- playObjectStoreClient.listObjects(receivedResultsFilesPath)
+      _ = logger.info(
+        s"Deleting ${objectListing.objectSummaries.size} objects from processed-results-files:...\n ${objectListing.objectSummaries.mkString("\n")}"
+      )
+      deletedCount <-
+        ProcessInSequence.processAllInSequence(objectListing.objectSummaries)(objectSummary =>
+          playObjectStoreClient
+            .deleteObject(objectSummary.location)
+            .map(_ => logger.info(s"Deleted ${objectSummary}"))
+        ):
+          case (throwable, item) => logger.error(s"Failed to delete $item", throwable)
+      _ = logger.info(s"Deleted $deletedCount of ${objectListing.objectSummaries.size} objects from processed-results-files")
+    yield ()
+
   def uploadRiskingFile(riskingFileWithContent: RiskingFileWithContent)(using request: RequestHeader): Future[ObjectSummaryWithMd5] =
     playObjectStoreClient.putObject[RiskingFileWithContent.RiskingFileContent](
       path = Path.Directory("sdes").file(fileName = riskingFileWithContent.riskingFile.riskingFileName.value),

@@ -26,6 +26,7 @@ GET        /agent-registration-risking/test-only/run-results-file-processing    
 GET        /agent-registration-risking/test-only/unprocessed-available-files                          uk.gov.hmrc.agentregistrationrisking.testonly.controllers.SdesTestOnlyController.getUnprocessedAvailableFiles()
 
 DELETE     /agent-registration-risking/test-only/applications                                         uk.gov.hmrc.agentregistrationrisking.testonly.controllers.TestRiskingController.deleteAllApplications
+DELETE     /agent-registration-risking/test-only/processed-results-files                              uk.gov.hmrc.agentregistrationrisking.testonly.controllers.TestRiskingController.deleteProcessedResultsFiles()
 
 GET        /agent-registration-risking/test-only/application-for-risking/:applicationReference        uk.gov.hmrc.agentregistrationrisking.testonly.controllers.TestRiskingController.findApplicationForRisking(applicationReference: ApplicationReference)
 GET        /agent-registration-risking/test-only/individual-for-risking/:personReference              uk.gov.hmrc.agentregistrationrisking.testonly.controllers.TestRiskingController.findIndividualForRisking(personReference: PersonReference)
