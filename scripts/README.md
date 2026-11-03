@@ -24,6 +24,8 @@ Set `STAGING_BASE_URL` to the staging service origin reachable from your approve
 access route (or `http://localhost:22203` locally). This route is not included in
 the production router and accepts no directory or filename parameter.
 
+The cleanup implementation lives in `testonly/services/TestOnlyObjectStoreService`,
+not the production `ObjectStoreService`.
 The endpoint lists `processed-results-files` and attempts every deletion sequentially.
 It returns `204 No Content` after all attempts; individual deletion failures are
 logged and do not stop subsequent deletions. Check the logs for the deleted/discovered
