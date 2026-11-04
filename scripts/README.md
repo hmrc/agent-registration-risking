@@ -11,6 +11,30 @@ All scripts talk to `localhost:22203`, which in `application.conf` is configured
 
 ---
 
+## Clearing processed results files
+
+With the test-only router enabled, use:
+
+```bash
+curl --fail-with-body --show-error --include --request DELETE \
+  "${STAGING_BASE_URL}/agent-registration-risking/test-only/processed-results-files"
+```
+
+Set `STAGING_BASE_URL` to the staging service origin reachable from your approved
+access route (or `http://localhost:22203` locally). This route is not included in
+the production router and accepts no directory or filename parameter.
+
+The cleanup implementation lives in `testonly/services/TestOnlyObjectStoreService`,
+not the production `ObjectStoreService`.
+The endpoint lists `processed-results-files` and attempts every deletion sequentially.
+It returns `204 No Content` after all attempts; individual deletion failures are
+logged and do not stop subsequent deletions. Check the logs for the deleted/discovered
+counts and any failures. A listing failure propagates through the normal error handler.
+
+**Warning:** This deletes the archived results and their filename-based processing
+history. Files still available from SDES can be processed again. Coordinate cleanup
+with processing jobs; objects added after the listing are not included.
+
 ## The Flow
 
 ### Prep

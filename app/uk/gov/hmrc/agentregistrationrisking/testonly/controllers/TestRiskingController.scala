@@ -32,6 +32,7 @@ import uk.gov.hmrc.agentregistrationrisking.repository.RiskingFileRepo
 import uk.gov.hmrc.agentregistrationrisking.runner.RiskingFileUploadRunner
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingFileService
 import uk.gov.hmrc.agentregistrationrisking.services.SdesProxyService
+import uk.gov.hmrc.agentregistrationrisking.testonly.services.TestOnlyObjectStoreService
 import uk.gov.hmrc.agentregistrationrisking.testonly.util.TestMongoCleanup
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -59,6 +60,7 @@ class TestRiskingController @Inject() (
   riskingFileService: RiskingFileService,
   riskingFileRepo: RiskingFileRepo,
   testMongoCleanup: TestMongoCleanup,
+  objectStoreService: TestOnlyObjectStoreService,
   appConfig: AppConfig
 )(using
   clock: Clock
@@ -114,6 +116,11 @@ with Logging:
           _ <- testMongoCleanup.deleteAllIndividuals
           _ <- testMongoCleanup.deleteAllRiskingFiles
         yield NoContent
+
+  def deleteProcessedResultsFiles(): Action[AnyContent] = Action
+    .async:
+      implicit request =>
+        objectStoreService.deleteProcessedResultsFiles().map(_ => NoContent)
 
   private def generateRandomName(): String =
     val firstNames = List(

@@ -145,6 +145,21 @@ object ObjectStoreStubs:
     responseBody = Json.prettyPrint(TdAll.tdAll.listObjectsResponse(processedFileNames))
   )
 
+  def stubDeleteProcessedResultsFile(
+    fileName: String,
+    responseStatus: Int = 204
+  ): StubMapping = StubMaker.make(
+    httpMethod = StubMaker.HttpMethod.DELETE,
+    urlPattern = wm.urlEqualTo(s"/object-store/object/agent-registration-risking/processed-results-files/$fileName"),
+    responseStatus = responseStatus
+  )
+
+  def verifyDeleteProcessedResultsFile(fileName: String): Unit = StubMaker.verify(
+    httpMethod = StubMaker.HttpMethod.DELETE,
+    urlPattern = wm.urlEqualTo(s"/object-store/object/agent-registration-risking/processed-results-files/$fileName"),
+    count = 1
+  )
+
   def stubDownloadMinervaFile(fileDownloadUrl: String): StubMapping = stubDownloadMinervaFile(fileDownloadUrl, passRecordArrayFile)
 
   def stubDownloadMinervaFile(
