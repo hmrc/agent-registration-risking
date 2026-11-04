@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentregistrationrisking.testonly.services
 
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentregistrationrisking.config.AppConfig
 import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
@@ -31,7 +32,8 @@ import scala.concurrent.Future
 
 @Singleton
 class TestOnlyObjectStoreService @Inject() (
-  playObjectStoreClient: PlayObjectStoreClient
+  playObjectStoreClient: PlayObjectStoreClient,
+  appConfig: AppConfig
 )(using ExecutionContext)
 extends RequestAwareLogging:
 
@@ -46,7 +48,7 @@ extends RequestAwareLogging:
       deletedCount <-
         ProcessInSequence.processAllInSequence(objectListing.objectSummaries)(objectSummary =>
           playObjectStoreClient
-            .deleteObject(objectSummary.location)
+            .deleteObject(Path.File(objectSummary.location.asUri.stripPrefix(s"${appConfig.appName}/")))
             .map(_ => logger.info(s"Deleted ${objectSummary}"))
         ):
           case (throwable, item) => logger.error(s"Failed to delete $item", throwable)
