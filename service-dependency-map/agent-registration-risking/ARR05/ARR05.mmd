@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant SDES as SDES (Secure Data Exchange Service)
+    participant Controller as SdesNotificationController
+    participant Logger
+
+    SDES->>Controller: POST /receive-sdes-notifications (SdesNotification JSON, discriminator: "notification")
+    Controller->>Controller: Parse JSON body as SdesNotification
+    alt JSON parse failure or unknown type
+        Controller-->>SDES: 400 Bad Request
+    else FileReady
+        Controller->>Logger: info("File ready notification received for {filename} from SDES [{correlationID}]")
+        Controller-->>SDES: 200 OK
+    else FileReceived
+        Controller->>Logger: info("File received notification received for {filename} from SDES [{correlationID}]")
+        Controller-->>SDES: 200 OK
+    else FileProcessed
+        Controller->>Logger: info("File processed notification received for {filename} from SDES")
+        Controller-->>SDES: 200 OK
+    else FileProcessingFailure
+        Controller->>Logger: warn("File processing failure ... Reason: {failureReason}. Action Required: {actionRequired}")
+        Controller-->>SDES: 200 OK
+    end
