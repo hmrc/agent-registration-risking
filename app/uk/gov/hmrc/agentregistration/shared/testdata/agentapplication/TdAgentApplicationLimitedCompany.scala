@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistration.shared.testdata.agentapplication
 
 import uk.gov.hmrc.agentregistration.shared.ApplicationState.GrsDataReceived
 import uk.gov.hmrc.agentregistration.shared.*
+import uk.gov.hmrc.agentregistration.shared.BusinessType.LimitedCompany
 import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLessOfficers
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
 import uk.gov.hmrc.agentregistration.shared.testdata.TdGrsBusinessDetails
@@ -40,9 +41,6 @@ trait TdAgentApplicationLimitedCompany { dependencies: (TdBase & TdGrsBusinessDe
       submittedAt = None,
       postExpiryGracePeriodEndsAt = None,
       expiredAt = None,
-      expiryReminderEmailSentAt = None,
-      expiredEmailSentAt = None,
-      deletionEmailSentAt = None,
       applicationState = ApplicationState.Started,
       userRole = Some(UserRole.Authorised),
       businessDetails = None,
@@ -94,7 +92,7 @@ trait TdAgentApplicationLimitedCompany { dependencies: (TdBase & TdGrsBusinessDe
     ).assertDataIntegrity()
 
     val afterAgentDetailsComplete: AgentApplicationLimitedCompany = afterContactDetailsComplete.copy(
-      agentDetails = Some(dependencies.completeAgentDetails)
+      agentDetails = Some(dependencies.getCompleteAgentDetails(LimitedCompany))
     ).assertDataIntegrity()
 
     val afterAmlsComplete: AgentApplicationLimitedCompany = afterAgentDetailsComplete.copy(

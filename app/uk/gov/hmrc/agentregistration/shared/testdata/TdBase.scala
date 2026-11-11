@@ -17,6 +17,13 @@
 package uk.gov.hmrc.agentregistration.shared.testdata
 
 import uk.gov.hmrc.agentregistration.shared.*
+import uk.gov.hmrc.agentregistration.shared.BusinessType.LimitedCompany
+import uk.gov.hmrc.agentregistration.shared.BusinessType.SoleTrader
+import uk.gov.hmrc.agentregistration.shared.BusinessType.Partnership.GeneralPartnership
+import uk.gov.hmrc.agentregistration.shared.BusinessType.Partnership.LimitedLiabilityPartnership
+import uk.gov.hmrc.agentregistration.shared.BusinessType.Partnership.LimitedPartnership
+import uk.gov.hmrc.agentregistration.shared.BusinessType.Partnership.ScottishLimitedPartnership
+import uk.gov.hmrc.agentregistration.shared.BusinessType.Partnership.ScottishPartnership
 import uk.gov.hmrc.agentregistration.shared.agentdetails.*
 import uk.gov.hmrc.agentregistration.shared.amls.AmlsDetails
 import uk.gov.hmrc.agentregistration.shared.amls.AmlsRegistrationNumber
@@ -72,16 +79,11 @@ trait TdBase:
   def nowAsInstant: Instant = nowAsLocalDateTime.toInstant(ZoneOffset.UTC)
   def newInstant: Instant = nowAsInstant.plusSeconds(20) // used when a new application is created from existing one
   def applicationExpiresAtAsInstant: Instant = nowAsInstant.plus(Duration.ofDays(73)) // matches days-to-submit-application config
-  def applicationExpiresAtWithinReminderPeriodAsInstant: Instant = nowAsInstant.plus(Duration.ofDays(5))
-  def expiryReminderPeriodEndsAtAsInstant: Instant = nowAsInstant.plus(Duration.ofDays(10)) // matches expiry-reminder-period config
   def createdLongBeforeExpiryAsInstant: Instant = nowAsInstant.minus(Duration.ofDays(200))
   def expiredAtAsInstant: Instant = nowAsInstant
   def postExpiryGracePeriodEndsAtAsInstant: Instant = nowAsInstant.plus(Duration.ofDays(45)) // matches post-expiry-grace-period config
   def postExpiryGracePeriodEndedAtAsInstant: Instant = nowAsInstant.minusSeconds(60)
   def expiredAtForPostExpiryGracePeriodEndedAsInstant: Instant = postExpiryGracePeriodEndedAtAsInstant.minus(Duration.ofDays(45))
-  def expiryReminderEmailSentAtAsInstant: Instant = nowAsInstant
-  def expiredEmailSentAtAsInstant: Instant = nowAsInstant
-  def deletionEmailSentAtAsInstant: Instant = nowAsInstant
 
   final val clock: Clock = Clock.fixed(nowAsInstant, zoneId)
 
@@ -109,21 +111,45 @@ trait TdBase:
   def dateOfBirth: LocalDate = LocalDate.of(2000, 1, 1)
   def dateOfBirthFromCitizenDetails: IndividualDateOfBirth.FromCitizensDetails = IndividualDateOfBirth.FromCitizensDetails(dateOfBirth)
   def dateOfBirthProvided = IndividualDateOfBirth.Provided(dateOfBirth)
-  def fullName: FullName = FullName(firstName = "ST Name", lastName = "ST Lastname")
+  def fullName: FullName = FullName(firstName = "Joe", lastName = "Bloggs")
 
   def applicantEmailAddress: EmailAddress = EmailAddress("user@test.com")
   def individualEmailAddress: EmailAddress = EmailAddress("member@test.com")
 
   def telephoneNumber: TelephoneNumber = TelephoneNumber("(+44) 10794554342")
   def crn: Crn = Crn("1234567890")
-  def companyName = "Test Company Name"
-  def limitedCompanyName = "Test Company Ltd"
-  def limitedPartnershipName = "Test Partnership"
+
+  def agencyNameBase = "ABC Accounting"
+
+  object TdAgencyName:
+
+    val limitedCompany = s"$agencyNameBase LC"
+    val limitedPartnership = s"$agencyNameBase LP"
+    val llp = s"$agencyNameBase LLP"
+    val scottishLimitedPartnership = s"$agencyNameBase SLP"
+    val scottishPartnership = s"$agencyNameBase SP"
+    val generalPartnership = s"$agencyNameBase GP"
+    val soleTrader = s"$agencyNameBase ST"
+
+    def getAgencyName(businessType: BusinessType): String =
+      businessType match
+        case LimitedCompany => limitedCompany
+        case LimitedPartnership => limitedPartnership
+        case LimitedLiabilityPartnership => llp
+        case ScottishLimitedPartnership => scottishLimitedPartnership
+        case ScottishPartnership => scottishPartnership
+        case GeneralPartnership => generalPartnership
+        case SoleTrader => soleTrader
+
   def dateOfIncorporation: LocalDate = LocalDate.now().minusYears(10)
   def applicationReference: ApplicationReference = ApplicationReference("APPREF123")
   def personReference: PersonReference = PersonReference("1234567890")
   def applicantName: ApplicantName = ApplicantName(authorisedPersonName)
-  def agentBusinessName: AgentBusinessName = AgentBusinessName(agentBusinessName = companyName, otherAgentBusinessName = None)
+  def getAgentBusinessName(businessType: BusinessType): AgentBusinessName = AgentBusinessName(
+    agentBusinessName = TdAgencyName.getAgencyName(businessType),
+    otherAgentBusinessName = None
+  )
+
   def amlsCode: AmlsSupervisoryBodyCode = AmlsSupervisoryBodyCode("HMRC")
   def amlsRegistrationNumber: AmlsRegistrationNumber = AmlsRegistrationNumber("XAML00000123456")
   def vrn = Vrn("123456789")
@@ -134,9 +160,9 @@ trait TdBase:
   def riskingCompletedDate: LocalDate = LocalDate.now().minusDays(1)
   def correctiveActionExpiryDate: LocalDate = LocalDate.now().plusDays(45)
 
-  def companyProfile: CompanyProfile = CompanyProfile(
+  def getCompanyProfile(businessType: BusinessType): CompanyProfile = CompanyProfile(
     companyNumber = crn,
-    companyName = companyName,
+    companyName = TdAgencyName.getAgencyName(businessType),
     dateOfIncorporation = Some(dateOfIncorporation),
     unsanitisedCHROAddress = Some(ChroAddress(
       address_line_1 = Some("23 Great Portland Street"),
@@ -146,23 +172,12 @@ trait TdBase:
     ))
   )
 
-  def companyProfileLimited: CompanyProfile = companyProfile.copy(companyName = limitedCompanyName)
-  def companyProfileLimitedPartnership: CompanyProfile = companyProfile.copy(companyName = limitedPartnershipName)
   def postcode: String = "AA1 1AA"
   def authorisedPersonName: String = "Alice Smith"
   def agentVerifiedEmailAddress = AgentVerifiedEmailAddress(
     emailAddress = AgentEmailAddress(
       agentEmailAddress = applicantEmailAddress,
       otherAgentEmailAddress = None
-    ),
-    isVerified = true
-  )
-  def agentUnverifiedEmailAddress: AgentVerifiedEmailAddress = agentVerifiedEmailAddress.copy(isVerified = false)
-  def otherAgentEmailAddress: EmailAddress = EmailAddress("agent@test.com")
-  def agentVerifiedEmailAddressWithOtherEmail: AgentVerifiedEmailAddress = AgentVerifiedEmailAddress(
-    emailAddress = AgentEmailAddress(
-      agentEmailAddress = applicantEmailAddress,
-      otherAgentEmailAddress = Some(otherAgentEmailAddress)
     ),
     isVerified = true
   )
@@ -175,17 +190,11 @@ trait TdBase:
       isVerified = true
     ))
   )
-  def applicantContactDetailsWithUnverifiedEmail: ApplicantContactDetails = applicantContactDetails.copy(
-    applicantEmailAddress = Some(ApplicantEmailAddress(
-      emailAddress = applicantEmailAddress,
-      isVerified = false
-    ))
-  )
-  def completeAgentDetails: AgentDetails = AgentDetails(
+  def getCompleteAgentDetails(businessType: BusinessType): AgentDetails = AgentDetails(
     agentCorrespondenceAddress = Some(chroAddress),
     telephoneNumber = Some(agentTelephoneNumber),
     agentEmailAddress = Some(agentVerifiedEmailAddress),
-    businessName = agentBusinessName
+    businessName = getAgentBusinessName(businessType)
   )
 
   def completeAmlsDetails: AmlsDetails = AmlsDetails(
@@ -241,25 +250,28 @@ trait TdBase:
     identification = None
   )
 
-  def businessPartnerRecordResponse: BusinessPartnerRecordResponse = BusinessPartnerRecordResponse(
-    organisationName = Some("Test Company Name"),
-    agentReferenceNumber = None,
-    individualName = None,
-    address = bprRegisteredAddress,
-    primaryPhoneNumber = Some(bprPrimaryTelephoneNumber),
-    emailAddress = Some(bprEmailAddress),
-    isAnAsaAgent = false
-  )
-
-  def businessPartnerRecordResponseSoleTrader: BusinessPartnerRecordResponse = BusinessPartnerRecordResponse(
-    organisationName = None,
-    agentReferenceNumber = None,
-    individualName = Some(individualName.value),
-    address = bprRegisteredAddress,
-    primaryPhoneNumber = Some(bprPrimaryTelephoneNumber),
-    emailAddress = Some(bprEmailAddress),
-    isAnAsaAgent = false
-  )
+  def getBusinessPartnerRecordResponse(businessType: BusinessType): BusinessPartnerRecordResponse =
+    businessType match
+      case SoleTrader =>
+        BusinessPartnerRecordResponse(
+          organisationName = None,
+          agentReferenceNumber = None,
+          individualName = Some(individualName.value),
+          address = bprRegisteredAddress,
+          primaryPhoneNumber = Some(bprPrimaryTelephoneNumber),
+          emailAddress = Some(bprEmailAddress),
+          isAnAsaAgent = false
+        )
+      case _ =>
+        BusinessPartnerRecordResponse(
+          organisationName = Some(TdAgencyName.getAgencyName(businessType)),
+          agentReferenceNumber = None,
+          individualName = None,
+          address = bprRegisteredAddress,
+          primaryPhoneNumber = Some(bprPrimaryTelephoneNumber),
+          emailAddress = Some(bprEmailAddress),
+          isAnAsaAgent = false
+        )
 
   def fiveOrFewerKeyIndividuals: FiveOrLess = FiveOrLess(
     numberOfKeyIndividuals = 3

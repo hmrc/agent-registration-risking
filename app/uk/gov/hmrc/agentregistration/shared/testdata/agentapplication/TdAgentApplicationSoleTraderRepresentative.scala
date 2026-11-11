@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentregistration.shared.testdata.agentapplication
 
 import uk.gov.hmrc.agentregistration.shared.*
 import uk.gov.hmrc.agentregistration.shared.ApplicationState.GrsDataReceived
+import uk.gov.hmrc.agentregistration.shared.BusinessType.SoleTrader
 import uk.gov.hmrc.agentregistration.shared.risking.EntityFailure
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeEntity
 import uk.gov.hmrc.agentregistration.shared.testdata.TdBase
@@ -41,9 +42,6 @@ trait TdAgentApplicationSoleTraderRepresentative { dependencies: (TdBase & TdGrs
       submittedAt = None,
       postExpiryGracePeriodEndsAt = None,
       expiredAt = None,
-      expiryReminderEmailSentAt = None,
-      expiredEmailSentAt = None,
-      deletionEmailSentAt = None,
       applicationState = ApplicationState.Started,
       userRole = Some(UserRole.Authorised),
       businessDetails = None,
@@ -103,7 +101,7 @@ trait TdAgentApplicationSoleTraderRepresentative { dependencies: (TdBase & TdGrs
     ).assertDataIntegrity()
 
     val afterAgentDetailsComplete: AgentApplicationSoleTrader = afterContactDetailsComplete.copy(
-      agentDetails = Some(dependencies.completeAgentDetails)
+      agentDetails = Some(dependencies.getCompleteAgentDetails(SoleTrader))
     ).assertDataIntegrity()
 
     val afterAmlsComplete: AgentApplicationSoleTrader = afterAgentDetailsComplete.copy(
