@@ -18,6 +18,8 @@ package uk.gov.hmrc.agentregistration.shared.dataintegrity
 
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeApplication
 import uk.gov.hmrc.agentregistration.shared.*
+import uk.gov.hmrc.agentregistration.shared.individual.IndividualProvidedDetails
+import uk.gov.hmrc.agentregistration.shared.util.SafeEquals.*
 
 import java.time.Instant
 
@@ -28,7 +30,71 @@ object DataIntegrity:
       agentApplication.riskingOutcomeApplication match
         case Some(fixable: RiskingOutcomeApplication.FailedFixable) if fixable.reSubmittedAt.isDefined => Resubmission.violations(agentApplication)
         case _ => FirstSubmission.violations(agentApplication)
-    found.map(message => s"integrity check failed [applicationReference=${agentApplication.applicationReference.value}]: $message")
+    (found ++ temporalViolations(agentApplication))
+      .map(message => s"integrity check failed [applicationReference=${agentApplication.applicationReference.value}]: $message")
+
+  /** Needs both because an individual holds the application's id but not its `createdAt`. */
+  def violations(
+    individualProvidedDetails: IndividualProvidedDetails,
+    agentApplication: AgentApplication
+  ): Seq[String] = Seq(
+    requireThat(
+      individualProvidedDetails.agentApplicationId === agentApplication._id,
+      s"individual belongs to ${individualProvidedDetails.agentApplicationId.value}, not to this application"
+    ),
+    requireThat(
+      individualProvidedDetails.createdAt.isAfter(agentApplication.createdAt),
+      s"createdAt ${individualProvidedDetails.createdAt} should be after the application was created at ${agentApplication.createdAt}"
+    )
+  ).flatten
+    .map(message => s"integrity check failed [personReference=${individualProvidedDetails.personReference.value}]: $message")
+
+  /** Checks only that set times could occur in order. State rules decide which fields are required. */
+  private def temporalViolations(agentApplication: AgentApplication): Seq[String] =
+    def after(
+      later: Option[Instant],
+      earlier: Option[Instant],
+      description: String
+    ): Option[String] =
+      for
+        laterInstant <- later
+        earlierInstant <- earlier
+        violation <- requireThat(laterInstant.isAfter(earlierInstant), s"$description, but $laterInstant is not after $earlierInstant")
+      yield violation
+
+    val createdAt: Option[Instant] = Some(agentApplication.createdAt)
+    Seq(
+      after(
+        agentApplication.applicationExpiresAt,
+        createdAt,
+        "an application expires after it is created"
+      ),
+      after(
+        agentApplication.submittedAt,
+        createdAt,
+        "an application is submitted after it is created"
+      ),
+      after(
+        agentApplication.expiredAt,
+        createdAt,
+        "an application is marked expired after it is created"
+      ),
+      after(
+        agentApplication.postExpiryGracePeriodEndsAt,
+        agentApplication.expiredAt,
+        "the grace period ends after the application expired"
+      ),
+      after(
+        reSubmittedAt(agentApplication),
+        agentApplication.submittedAt,
+        "an application is resubmitted after it is first submitted"
+      )
+    ).flatten
+
+  private def reSubmittedAt(agentApplication: AgentApplication): Option[Instant] = agentApplication.riskingOutcomeApplication.flatMap {
+    case fixable: RiskingOutcomeApplication.FailedFixable => fixable.reSubmittedAt
+    case _ => None
+  }
 
   private def requireThat(
     condition: Boolean,
@@ -40,9 +106,7 @@ object DataIntegrity:
       requireThat(agentApplication.applicationExpiresAt.isDefined, s"applicationExpiresAt should be defined in $state state"),
       requireThat(agentApplication.submittedAt.isEmpty, s"submittedAt should not be defined in $state state"),
       requireThat(agentApplication.riskingOutcomeApplication.isEmpty, s"riskingOutcomeApplication should not be defined in $state state"),
-      requireThat(agentApplication.riskingOutcomeEntity.isEmpty, s"riskingOutcomeEntity should not be defined in $state state"),
-      requireThat(agentApplication.expiredEmailSentAt.isEmpty, s"expiredEmailSentAt should not be defined in $state state"),
-      requireThat(agentApplication.deletionEmailSentAt.isEmpty, s"deletionEmailSentAt should not be defined in $state state")
+      requireThat(agentApplication.riskingOutcomeEntity.isEmpty, s"riskingOutcomeEntity should not be defined in $state state")
     ).flatten
 
   /** deployment of v0.335.0 of agent-registration-frontend on 15 June 2026 13:57 added the global ASA enrolment check so we don't log errors if it's missing
@@ -67,9 +131,7 @@ object DataIntegrity:
         s"globalAsaEnrolmentCheckResult should be defined in $state state"
       ),
       requireThat(agentApplication.vrns.isDefined, s"vrns should be defined in $state state"),
-      requireThat(agentApplication.payeRefs.isDefined, s"payeRefs should be defined in $state state"),
-      requireThat(agentApplication.expiredEmailSentAt.isEmpty, s"expiredEmailSentAt should not be defined in $state state"),
-      requireThat(agentApplication.deletionEmailSentAt.isEmpty, s"deletionEmailSentAt should not be defined in $state state")
+      requireThat(agentApplication.payeRefs.isDefined, s"payeRefs should be defined in $state state")
     ).flatten
 
   private object FirstSubmission:
@@ -95,27 +157,12 @@ object DataIntegrity:
         requireThat(agentApplication.riskingOutcomeEntity.isEmpty, s"riskingOutcomeEntity should not be defined in $state state"),
         requireThat(agentApplication.postExpiryGracePeriodEndsAt.isDefined, s"postExpiryGracePeriodEndsAt should be defined in $state state"),
         requireThat(agentApplication.expiredAt.isDefined, s"expiredAt should be defined in $state state"),
-        requireThat(expiredBeforeGracePeriodEnds(agentApplication), s"expiredAt should not be after postExpiryGracePeriodEndsAt in $state state"),
-        requireThat(expiredEmailNotSentBeforeExpiry(agentApplication), s"expiredEmailSentAt should not be before expiredAt in $state state"),
-        requireThat(
-          deletionEmailNotSentBeforeGracePeriodEnds(agentApplication),
-          s"deletionEmailSentAt should not be before postExpiryGracePeriodEndsAt in $state state"
-        )
+        requireThat(expiredBeforeGracePeriodEnds(agentApplication), s"expiredAt should not be after postExpiryGracePeriodEndsAt in $state state")
       ).flatten
 
     private def expiredBeforeGracePeriodEnds(agentApplication: AgentApplication): Boolean =
       (agentApplication.expiredAt, agentApplication.postExpiryGracePeriodEndsAt) match
         case (Some(expiredAt), Some(postExpiryGracePeriodEndsAt)) => !expiredAt.isAfter(postExpiryGracePeriodEndsAt)
-        case _ => true
-
-    private def expiredEmailNotSentBeforeExpiry(agentApplication: AgentApplication): Boolean =
-      (agentApplication.expiredEmailSentAt, agentApplication.expiredAt) match
-        case (Some(expiredEmailSentAt), Some(expiredAt)) => !expiredEmailSentAt.isBefore(expiredAt)
-        case _ => true
-
-    private def deletionEmailNotSentBeforeGracePeriodEnds(agentApplication: AgentApplication): Boolean =
-      (agentApplication.deletionEmailSentAt, agentApplication.postExpiryGracePeriodEndsAt) match
-        case (Some(deletionEmailSentAt), Some(postExpiryGracePeriodEndsAt)) => !deletionEmailSentAt.isBefore(postExpiryGracePeriodEndsAt)
         case _ => true
 
     private def whenGrsDataReceived(agentApplication: AgentApplication): Seq[String] =
