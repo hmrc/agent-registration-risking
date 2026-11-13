@@ -20,7 +20,11 @@ import uk.gov.hmrc.agentregistration.shared.EmailAddress
 import uk.gov.hmrc.agentregistration.shared.ApplicationState.GrsDataReceived
 import uk.gov.hmrc.agentregistration.shared.risking.RiskingOutcomeEntity
 import uk.gov.hmrc.agentregistration.shared.*
-import uk.gov.hmrc.agentregistration.shared.agentdetails.*
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentEmailAddress
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentVerifiedEmailAddress
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentTelephoneNumber
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentBusinessName
+import uk.gov.hmrc.agentregistration.shared.agentdetails.AgentDetails
 import uk.gov.hmrc.agentregistration.shared.BusinessType.Partnership.ScottishPartnership
 import uk.gov.hmrc.agentregistration.shared.lists.FiveOrLess
 import uk.gov.hmrc.agentregistration.shared.lists.SixOrMore
@@ -143,7 +147,7 @@ trait TdAgentApplicationScottishPartnership { dependencies: (TdBase & TdTime & T
       .copy(
         numberOfIndividuals = Some(
           SixOrMore(
-            numberOfKeyIndividualsResponsibleForTaxMatters = 2
+            numberOfKeyIndividualsResponsibleForTaxMatters = Some(2)
           )
         ),
         hasOtherRelevantIndividuals = Some(false)
@@ -160,7 +164,7 @@ trait TdAgentApplicationScottishPartnership { dependencies: (TdBase & TdTime & T
     val afterHowManyKeyIndividualsNeedsNoPadding: AgentApplicationScottishPartnership = afterHmrcStandardForAgentsAgreed.copy(
       numberOfIndividuals = Some(
         SixOrMore(
-          numberOfKeyIndividualsResponsibleForTaxMatters = 6
+          numberOfKeyIndividualsResponsibleForTaxMatters = Some(6)
         )
       )
     ).assertDataIntegrity()
@@ -185,7 +189,7 @@ trait TdAgentApplicationScottishPartnership { dependencies: (TdBase & TdTime & T
       .copy(
         numberOfIndividuals = Some(
           SixOrMore(
-            numberOfKeyIndividualsResponsibleForTaxMatters = 6
+            numberOfKeyIndividualsResponsibleForTaxMatters = Some(6)
           )
         ),
         hasOtherRelevantIndividuals = Some(false)
