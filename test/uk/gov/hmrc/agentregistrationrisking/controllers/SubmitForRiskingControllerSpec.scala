@@ -65,7 +65,7 @@ extends ControllerSpec:
       parameters = Map(
         "agentName" -> submitRequest.applicationData.applicantContactDetails.applicantName.value,
         "applicationRef" -> applicationReference.value,
-        "applicationProcessingTime" -> "35 working days"
+        "applicationProcessingTime" -> "6 weeks"
       )
     ))
 
@@ -126,7 +126,7 @@ extends ControllerSpec:
       parameters = Map(
         "agentName" -> resubmissionRequest.applicationData.applicantContactDetails.applicantName.value,
         "applicationRef" -> applicationReference.value,
-        "applicationProcessingTime" -> "35 working days"
+        "applicationProcessingTime" -> "6 weeks"
       )
     ))
 
@@ -184,7 +184,7 @@ extends ControllerSpec:
       parameters = Map(
         "agentName" -> entityApprovedRequest.applicationData.applicantContactDetails.applicantName.value,
         "applicationRef" -> applicationReference.value,
-        "applicationProcessingTime" -> "35 working days"
+        "applicationProcessingTime" -> "6 weeks"
       )
     ))
 
@@ -237,7 +237,7 @@ extends ControllerSpec:
       parameters = Map(
         "agentName" -> resubmissionRequest.applicationData.applicantContactDetails.applicantName.value,
         "applicationRef" -> applicationReference.value,
-        "applicationProcessingTime" -> "35 working days"
+        "applicationProcessingTime" -> "6 weeks"
       )
     ))
 
