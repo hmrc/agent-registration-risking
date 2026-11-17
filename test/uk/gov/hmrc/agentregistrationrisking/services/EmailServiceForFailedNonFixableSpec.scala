@@ -62,7 +62,8 @@ extends ISpec:
       templateId = EmailTemplateId.ApplicationNonFixableFailure,
       parameters = Map(
         "agentName" -> data.applicantContactDetails.applicantName.value,
-        "applicationRef" -> data.applicationReference.value
+        "applicationRef" -> data.applicationReference.value,
+        "businessName" -> data.agentDetails.businessName.getAgentBusinessName
       )
     )
 
@@ -70,7 +71,8 @@ extends ISpec:
     to = Seq(individual.individualData.emailAddress),
     templateId = EmailTemplateId.IndividualNonFixableFailure,
     parameters = Map(
-      "individualName" -> individual.individualData.individualName.value
+      "individualName" -> individual.individualData.individualName.value,
+      "applicationRef" -> individual.applicationReference.value
     )
   )
 
