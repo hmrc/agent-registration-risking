@@ -127,7 +127,8 @@ extends RequestAwareLogging:
       templateId = emailTemplateId,
       parameters = Map(
         "agentName" -> applicationData.applicantContactDetails.applicantName.value,
-        "applicationRef" -> applicationData.applicationReference.value
+        "applicationRef" -> applicationData.applicationReference.value,
+        "businessName" -> applicationData.agentDetails.businessName.getAgentBusinessName
       )
     )
 
@@ -137,6 +138,7 @@ extends RequestAwareLogging:
     to = Seq(individual.individualData.emailAddress),
     templateId = EmailTemplateId.IndividualNonFixableFailure,
     parameters = Map(
-      "individualName" -> individual.individualData.individualName.value
+      "individualName" -> individual.individualData.individualName.value,
+      "applicationRef" -> individual.applicationReference.value
     )
   )
