@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentregistrationrisking.model.*
 import uk.gov.hmrc.agentregistrationrisking.repository.ApplicationForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.repository.IndividualForRiskingRepo
 import uk.gov.hmrc.agentregistrationrisking.services.RiskingOutcomeHelper.outcome
-import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
+import uk.gov.hmrc.agentregistration.shared.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 
 import java.time.Clock
