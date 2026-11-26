@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentregistrationrisking.services
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingFileWithContent
 import uk.gov.hmrc.agentregistrationrisking.model.RiskingResultRecords
-import uk.gov.hmrc.agentregistrationrisking.util.ProcessInSequence
+import uk.gov.hmrc.agentregistration.shared.util.ProcessInSequence
 import uk.gov.hmrc.agentregistrationrisking.util.RequestAwareLogging
 import uk.gov.hmrc.agentregistrationrisking.util.RequestSupport.hc
 import uk.gov.hmrc.objectstore.client.ObjectListing
